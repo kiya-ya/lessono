@@ -103,7 +103,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .member-info { flex: 1; }
 .member-name { font-size: 14px; font-weight: 500; color: #333; }
 .member-uid { font-size: 12px; color: #888; margin-top: 2px; }
-</style>
+
+/* Cookie 状态 */
+.cookie-status { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.15); font-size: 12px; }
+.cookie-status:hover { background: rgba(255,255,255,0.25); }
+.cookie-dot { width: 8px; height: 8px; border-radius: 50%; }
+.cookie-dot.valid { background: #52c41a; }
+.cookie-dot.invalid { background: #ff4d4f; }
+.cookie-dot.unknown { background: #faad14; }
+
+/* Cookie 更新弹窗 */
+.cookie-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.cookie-modal.active { display: flex; }
+.cookie-modal-content { background: white; border-radius: 8px; padding: 24px; width: 560px; max-width: 90%; max-height: 80vh; overflow-y: auto; }
+.cookie-modal-content h3 { margin-bottom: 16px; color: #333; }
+.cookie-modal-content textarea { width: 100%; min-height: 120px; padding: 10px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 12px; font-family: monospace; resize: vertical; }
+.cookie-modal-content .hint { font-size: 12px; color: #888; margin: 8px 0 16px; }
+.cookie-modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.cookie-modal-actions button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.cookie-modal-actions .btn-cancel { background: #f0f0f0; color: #666; }
+.cookie-modal-actions .btn-save { background: #667eea; color: white; }
 </style>
 </head>
 <body>
@@ -114,6 +133,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="subtitle">运营团队数据看板 · 政策上线追踪</div>
   </div>
   <div class="header-right">
+    <div class="cookie-status" id="cookie-status" onclick="openCookieModal()" title="点击更新 Cookie">
+      <span class="cookie-dot unknown" id="cookie-dot"></span>
+      <span id="cookie-text">Cookie 检测中...</span>
+    </div>
     <span>⏰ 新政策已上线 <span id="policy-days">10</span> 天</span>
     <span>👤 运营组</span>
   </div>
@@ -564,8 +587,85 @@ document.addEventListener('DOMContentLoaded', () => {
   const policyDate = new Date('2026-07-17');
   const now = new Date('2026-07-27');
   document.getElementById('policy-days').textContent = Math.floor((now - policyDate) / (1000*60*60*24));
+  checkCookieStatus();
+});
+
+// ═══════════════════════════════════════════════════════
+//  Cookie 管理
+// ═══════════════════════════════════════════════════════
+
+async function checkCookieStatus() {
+  try {
+    const resp = await fetch(API_BASE + '/api/cookie');
+    const data = await resp.json();
+    const dot = document.getElementById('cookie-dot');
+    const text = document.getElementById('cookie-text');
+    if (data.status === 'valid') {
+      dot.className = 'cookie-dot valid';
+      text.textContent = 'Cookie 有效';
+    } else if (data.status === 'invalid') {
+      dot.className = 'cookie-dot invalid';
+      text.textContent = 'Cookie 无效';
+    } else {
+      dot.className = 'cookie-dot unknown';
+      text.textContent = 'Cookie 未知';
+    }
+  } catch (e) {
+    console.log('Cookie 状态检测失败:', e);
+  }
+}
+
+function openCookieModal() {
+  document.getElementById('cookie-modal').classList.add('active');
+}
+
+function closeCookieModal() {
+  document.getElementById('cookie-modal').classList.remove('active');
+}
+
+async function saveCookie() {
+  const cookieStr = document.getElementById('cookie-input').value.trim();
+  if (!cookieStr) { alert('请输入 Cookie'); return; }
+  if (!cookieStr.includes('PHPSESSID')) { alert('Cookie 格式不正确，缺少 PHPSESSID'); return; }
+
+  try {
+    const resp = await fetch(API_BASE + '/api/cookie', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookie_str: cookieStr })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      alert('✅ Cookie 更新成功！');
+      closeCookieModal();
+      checkCookieStatus();
+    } else {
+      alert('❌ 更新失败: ' + (data.error || '未知错误'));
+    }
+  } catch (e) {
+    alert('❌ 请求失败: ' + e.message);
+  }
+}
+</script>
+  loadKPI(); loadAlerts(); initTrendChart(); loadDetailTable();
+  const policyDate = new Date('2026-07-17');
+  const now = new Date('2026-07-27');
+  document.getElementById('policy-days').textContent = Math.floor((now - policyDate) / (1000*60*60*24));
 });
 </script>
 
+
+<!-- Cookie 更新弹窗 -->
+<div class="cookie-modal" id="cookie-modal">
+  <div class="cookie-modal-content">
+    <h3>🍪 更新 UID 查询 Cookie</h3>
+    <textarea id="cookie-input" placeholder="在此粘贴从浏览器复制的完整 Cookie 字符串..."></textarea>
+    <div class="hint">💡 获取方式：浏览器按 F12 → Network → 点击查询按钮 → 找到 play_user_newcaptian.php → Headers → Request Headers → 复制 Cookie</div>
+    <div class="cookie-modal-actions">
+      <button class="btn-cancel" onclick="closeCookieModal()">取消</button>
+      <button class="btn-save" onclick="saveCookie()">保存并测试</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

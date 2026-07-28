@@ -23,48 +23,53 @@ urllib3.disable_warnings()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  🔴 UID 查询系统认证信息 —— 需要手动更新！
-# ═══════════════════════════════════════════════════════════════════════════
-#
-#  【如何获取 Cookie】
-#  1. 浏览器访问 http://server1.tuwan.com:10010/fly2013/play_user_newcaptian.php
-#  2. 按 F12 → Network → 点击"查询"按钮
-#  3. 找到 play_user_newcaptian.php 请求 → Headers → Request Headers
-#  4. 复制完整的 Cookie 字符串
-#  5. 粘贴到下方 UID_COOKIE_STR 中（替换整个字符串）
-#
-#  ⚠️ Cookie 有效期约 8 小时，过期后需要重新获取
+#  Cookie 配置 —— 从 data/cookie.json 读取，支持前端直接更新
 # ═══════════════════════════════════════════════════════════════════════════
 
-UID_COOKIE_STR = (
-    # ━━━ 从这里开始，替换为你的 UID 查询系统 Cookie ━━━
-    'menuitems=1_1%2C2_1%2C3_1; '
-    'tgid=8db46576-438d-4df9-94fb-919cc70ff394; '
-    'Tuwan_Passport=70BA14BACF64FC23F3A195DE19D9EF3AAD839EC58630830C1198BBBC361716218CA1A115992E624D3A7BB080CFE18C73E0FDC2494FAA32E5AB6AEE78475D5043EA3EEC594645BF35AC727F4A18017107EC2EBE673D0631CAACE8EBC60EA8AF9830F656AD312DD30DB72FF28747763D574A514587530BDBE406B92314FE7F60E13D7A7CAE88E0B032; '
-    'webclientmac=WAmlf122QxlmIVWieZjZiVD6IYo/rDgrDZIHiWyc7XafqccAZVJwFjFIDlCFtMFB; '
-    'Hm_lvt_4f076a14812b9a06461d3e2748176769=1783853097,1783997507; '
-    'HMACCOUNT=ED03E44156D99A6E; '
-    'smdeviceid=BO6GXTt6RjOV/xwo5LWS2cDZl3VVl823f7uBOCksxpFfI6GBjcvVHnVT5raLz26lC7sAzGFgWiTv7SFGRM4s6FQ%3D%3D; '
-    'Hm_lpvt_4f076a14812b9a06461d3e2748176769=1785149095; '
-    'PHPSESSID=6al6eqs5odim6psgs60nj5b1j3; '
-    'PHPSESSID__ckMd5=b313a5c2e8564922; '
-    'dede_admin_id=1769; dede_admin_id__ckMd5=e355c583ca07db4e; '
-    'dede_admin_type=6; dede_admin_type__ckMd5=ff89eded3d12173d; '
-    'dede_admin_channel__ckMd5=fb36da997e13127b; '
-    'dede_admin_name=%E5%BC%A0%E6%81%AC%E8%99%9E; dede_admin_name__ckMd5=f203203b8e4b326a; '
-    'dede_admin_purview=t_AccList+t_AccNew+t_AccEdit+t_AccDel+a_List+a_New+a_Edit+a_Del+a_Commend+a_Check+a_AccNew+a_AccList+a_AccEdit+a_AccDel+a_AccCheck+a_MyList+a_MyEdit+a_MyDel+a_MyCheck+a_Recycling+sys_MdPwd+plus_%E7%BB%9F%E8%AE%A1+plus_%E7%82%B9%E7%82%B9%E5%BC%80%E9%BB%91+plus_%E5%AF%86%E7%A0%81%E4%BF%AE%E6%94%B9; '
-    'dede_admin_purview__ckMd5=2aa325fe2b62bb18; '
-    'dede_admin_style=newdedecms; dede_admin_style__ckMd5=ceda8b7d4c9be289; '
-    'DedeUserID=1769; DedeUserID__ckMd5=e355c583ca07db4e; '
-    'DedeLoginTime=1785208064; DedeLoginTime__ckMd5=6a8cc850cc9c2861'
-    # ━━━ 到这里结束 ━━━
-)
-# 可通过环境变量覆盖
-UID_COOKIE_STR = os.environ.get('UID_QUERY_COOKIE', UID_COOKIE_STR)
+def _load_cookie_config() -> dict:
+    """从 data/cookie.json 读取 Cookie 配置"""
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'cookie.json')
+    default_cookie = (
+        'menuitems=1_1%2C2_1%2C3_1; '
+        'tgid=8db46576-438d-4df9-94fb-919cc70ff394; '
+        'Tuwan_Passport=70BA14BACF64FC23F3A195DE19D9EF3AAD839EC58630830C1198BBBC361716218CA1A115992E624D3A7BB080CFE18C73E0FDC2494FAA32E5AB6AEE78475D5043EA3EEC594645BF35AC727F4A18017107EC2EBE673D0631CAACE8EBC60EA8AF9830F656AD312DD30DB72FF28747763D574A514587530BDBE406B92314FE7F60E13D7A7CAE88E0B032; '
+        'webclientmac=WAmlf122QxlmIVWieZjZiVD6IYo/rDgrDZIHiWyc7XafqccAZVJwFjFIDlCFtMFB; '
+        'Hm_lvt_4f076a14812b9a06461d3e2748176769=1783853097,1783997507; '
+        'HMACCOUNT=ED03E44156D99A6E; '
+        'smdeviceid=BO6GXTt6RjOV/xwo5LWS2cDZl3VVl823f7uBOCksxpFfI6GBjcvVHnVT5raLz26lC7sAzGFgWiTv7SFGRM4s6FQ%3D%3D; '
+        'Hm_lpvt_4f076a14812b9a06461d3e2748176769=1785149095; '
+        'PHPSESSID=6al6eqs5odim6psgs60nj5b1j3; '
+        'PHPSESSID__ckMd5=b313a5c2e8564922; '
+        'dede_admin_id=1769; dede_admin_id__ckMd5=e355c583ca07db4e; '
+        'dede_admin_type=6; dede_admin_type__ckMd5=ff89eded3d12173d; '
+        'dede_admin_channel__ckMd5=fb36da997e13127b; '
+        'dede_admin_name=%E5%BC%A0%E6%81%AC%E8%99%9E; dede_admin_name__ckMd5=f203203b8e4b326a; '
+        'dede_admin_purview=t_AccList+t_AccNew+t_AccEdit+t_AccDel+a_List+a_New+a_Edit+a_Del+a_Commend+a_Check+a_AccNew+a_AccList+a_AccEdit+a_AccDel+a_AccCheck+a_MyList+a_MyEdit+a_MyDel+a_MyCheck+a_Recycling+sys_MdPwd+plus_%E7%BB%9F%E8%AE%A1+plus_%E7%82%B9%E7%82%B9%E5%BC%80%E9%BB%91+plus_%E5%AF%86%E7%A0%81%E4%BF%AE%E6%94%B9; '
+        'dede_admin_purview__ckMd5=2aa325fe2b62bb18; '
+        'dede_admin_style=newdedecms; dede_admin_style__ckMd5=ceda8b7d4c9be289; '
+        'DedeUserID=1769; DedeUserID__ckMd5=e355c583ca07db4e; '
+        'DedeLoginTime=1785208064; DedeLoginTime__ckMd5=6a8cc850cc9c2861'
+    )
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        return {
+            'cookie_str': cfg.get('cookie_str', default_cookie),
+            'basic_auth': cfg.get('basic_auth', 'MjAxODoyMDE4dHV3YW50ZW5nZmVp'),
+            'updated_at': cfg.get('updated_at', ''),
+        }
+    except Exception as e:
+        print(f'[WARN] 读取 cookie.json 失败: {e}，使用默认Cookie')
+        return {
+            'cookie_str': os.environ.get('UID_QUERY_COOKIE', default_cookie),
+            'basic_auth': os.environ.get('UID_BASIC_AUTH', 'MjAxODoyMDE4dHV3YW50ZW5nZmVp'),
+            'updated_at': '',
+        }
 
-# Basic Auth (Authorization: Basic ...)
-# 值: MjAxODoyMDE4dHV3YW50ZW5nZmVp (base64 of "2018:2018tuwantengfei")
-UID_BASIC_AUTH = os.environ.get('UID_BASIC_AUTH', 'MjAxODoyMDE4dHV3YW50ZW5nZmVp')
+
+_COOKIE_CFG = _load_cookie_config()
+UID_COOKIE_STR = _COOKIE_CFG['cookie_str']
+UID_BASIC_AUTH = _COOKIE_CFG['basic_auth']
 
 UID_BASE_URL = 'http://server1.tuwan.com:10010'
 UID_QUERY_URL = f'{UID_BASE_URL}/fly2013/play_user_newcaptian.php'
