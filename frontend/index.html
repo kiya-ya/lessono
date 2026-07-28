@@ -416,6 +416,10 @@ function renderUIDResult(data) {
   document.getElementById('res-type').textContent = data.type_label || '--';
   const cmp = data.compare || {};
   const thisData = data.this_week?.data || {};
+  const lastData = data.last_week?.data || {};
+  // DEBUG: 检查 compare 中是否有 hall
+  console.log('[DEBUG] compare keys:', Object.keys(cmp));
+  console.log('[DEBUG] hall in compare:', 'hall' in cmp, cmp.hall);
   document.getElementById('res-hall').textContent = (cmp.hall?.this || thisData.schedule_hall || '--');
   document.getElementById('res-elite').textContent = (cmp.is_elite?.this || thisData.is_elite || '--');
   document.getElementById('res-protection').textContent = thisData.protection_end || '--';
@@ -430,12 +434,11 @@ function renderUIDResult(data) {
     { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '小时', isNum: true },
     { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
     { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
-    { key: 'hall', label: '👥 参与姐妹团', fmt: v => v || '--' },
     { key: 'punishment', label: '⚠️ 违规处罚', fmt: v => v || '无' },
   ];
 
   const tbody = document.getElementById('uid-compare-body');
-  tbody.innerHTML = rows.map(r => {
+  let html = rows.map(r => {
     const c = cmp[r.key];
     if (!c) return '';
     let trendClass = c.trend || 'flat';
@@ -450,8 +453,13 @@ function renderUIDResult(data) {
     if (c.change_pct === 0 || c.change_pct === undefined) changePct = '—';
     return `<tr><td class="col-metric">${r.label}</td><td class="col-this">${thisVal}</td><td class="col-last">${lastVal}</td><td class="col-change ${trendClass}">${c.change || '—'}</td><td class="col-change ${trendClass}">${changePct}</td><td class="col-trend ${trendClass}">${trendIcon} ${trendText}</td></tr>`;
   }).join('');
-}
 
+  // 无条件添加 hall 行（不依赖 cmp 中是否存在）
+  const hallThis = cmp.hall?.this || thisData.schedule_hall || thisData.auth_hall || '--';
+  const hallLast = cmp.hall?.last || lastData.schedule_hall || lastData.auth_hall || '--';
+  html += `<tr><td class="col-metric">👥 参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat">⚪ 持平</td></tr>`;
+  tbody.innerHTML = html;
+}
 function exportUIDResult() {
   if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
   const d = _lastUIDResult;
