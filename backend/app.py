@@ -263,7 +263,93 @@ def api_export_detail():
 #  UID 查询接口
 # ═══════════════════════════════════════════════════════
 
+def _get_team_info_by_uid(uid: str) -> dict:
+    """从 team_detail 表查询 UID 所在的姐妹团信息"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.execute('''
+            SELECT team_id, form_date, hall_name,
+                   sister_nickname, sister_uid,
+                   sister_nickname2, sister_uid2,
+                   sister_revenue, reward_amount, dissolve_date
+            FROM team_detail
+            WHERE sister_uid = ? OR sister_uid2 = ?
+            ORDER BY snapshot_date DESC LIMIT 1
+        ''', (uid, uid))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return {
+                'team_id': row['team_id'],
+                'hall_name': row['hall_name'],
+                'form_date': row['form_date'],
+                'sister_nickname': row['sister_nickname'],
+                'sister_uid': row['sister_uid'],
+                'sister_nickname2': row['sister_nickname2'],
+                'sister_uid2': row['sister_uid2'],
+                'total_revenue': row['sister_revenue'],
+                'reward_amount': row['reward_amount'],
+                'status': '已解散' if row['dissolve_date'] else '进行中',
+                'dissolve_date': row['dissolve_date'],
+            }
+    except Exception as e:
+        print(f'[WARN] 查询姐妹团明细失败: {e}')
+    return None
+
+
 @app.route('/api/uid-query', methods=['POST'])
+def api_uid_query():
+    """
+    UID查询 + 本周vs上周对比 + 姐妹团参与明细
+    请求体: { uid: string, captain_type?: string, mock?: boolean }
+    返回: { uid, nickname, this_week, last_week, compare, team_info? }
+    """
+    body = request.get_json() or {}
+    uid = str(body.get('uid', '')).strip()
+    captain_type = body.get('captain_type', 'game')
+    use_mock = body.get('mock', False)
+
+    if not uid:
+        return jsonify({'error': 'UID不能为空'}), 400
+
+    result = None
+
+    # Mock 模式（前端开发测试用，无需内网）
+    if use_mock:
+        result = get_mock_uid_data(uid, captain_type)
+    else:
+        # 真实查询模式（需要内网连接 + 有效Cookie）
+        if not _uid_crawler_available:
+            return jsonify({
+                'error': 'UID爬虫模块未加载，请检查 crawler/uid_crawler.py 是否存在',
+                'hint': '可设置 mock=true 使用模拟数据测试前端'
+            }), 500
+
+        try:
+            crawler = UIDCrawler()
+            result = crawler.query_with_compare(uid, captain_type)
+        except Exception as e:
+            error_msg = str(e)
+            if 'Cookie' in error_msg or '过期' in error_msg:
+                return jsonify({
+                    'error': error_msg,
+                    'hint': '请更新 crawler/uid_crawler.py 顶部的 UID_COOKIE_STR，然后重启后端',
+                    'suggest_mock': True
+                }), 503
+            if '无法连接' in error_msg or 'ConnectionError' in error_msg:
+                return jsonify({
+                    'error': error_msg,
+                    'hint': '请确认已连接内网/VPN',
+                    'suggest_mock': True
+                }), 503
+            return jsonify({'error': error_msg}), 500
+
+    # 附加姐妹团信息（从本地 SQLite，无论 Mock/真实都尝试查询）
+    team_info = _get_team_info_by_uid(uid)
+    if team_info:
+        result['team_info'] = team_info
+
+    return jsonify(result)
 def api_uid_query():
     """
     UID查询 + 本周vs上周对比

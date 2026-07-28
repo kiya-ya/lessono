@@ -553,6 +553,21 @@ def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
             'hall': {'this': '♡LOL战争女神厅♡', 'last': '♡LOL战争女神厅♡', 'change': '—', 'trend': 'flat'},
             'is_elite': {'this': '是', 'last': '是', 'change': '—', 'trend': 'flat'},
         },
+        'team_info': {
+            'team_id': 12345,
+            'hall_name': '♡LOL战争女神厅♡',
+            'form_date': '2026-03-15',
+            'sister_nickname': '尾戒ᩚਣ',
+            'sister_uid': uid,
+            'sister_nickname2': '妹妹测试',
+            'sister_uid2': '23073267',
+            'total_revenue': 12500.0,
+            'reward_amount': 3750.0,
+            'status': '进行中',
+            'dissolve_date': None,
+        },
+    }
+        },
     }
 
 

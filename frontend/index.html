@@ -91,6 +91,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .uid-loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
 .uid-error { background: #fff2f0; border: 1px solid #ffccc7; border-radius: 6px; padding: 16px; color: #cf1322; font-size: 13px; }
 .uid-error .hint { color: #666; margin-top: 6px; }
+
+/* 姐妹团参与明细 */
+.team-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.team-detail-item { background: #f8f9fa; border-radius: 6px; padding: 12px; text-align: center; }
+.team-detail-label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; }
+.team-detail-value { display: block; font-size: 14px; color: #333; font-weight: 600; }
+.team-members { display: flex; gap: 16px; flex-wrap: wrap; }
+.team-member { display: flex; align-items: center; gap: 10px; background: #f8f9fa; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 200px; }
+.member-badge { width: 32px; height: 32px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.member-info { flex: 1; }
+.member-name { font-size: 14px; font-weight: 500; color: #333; }
+.member-uid { font-size: 12px; color: #888; margin-top: 2px; }
+</style>
 </style>
 </head>
 <body>
@@ -214,6 +227,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
           <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
           <tbody id="uid-compare-body"></tbody>
         </table>
+      </div>
+      <!-- 姐妹团参与明细 -->
+      <div class="uid-result-card" id="team-info-card" style="display:none;">
+        <h3>🔗 姐妹团参与明细</h3>
+        <div id="team-info-body"></div>
+      </div>
+      <div class="uid-result-card">
+        <h3>🔗 关联信息</h3>
       </div>
       <div class="uid-result-card">
         <h3>🔗 关联信息</h3>
@@ -459,6 +480,62 @@ function renderUIDResult(data) {
   const hallLast = cmp.hall?.last || lastData.schedule_hall || lastData.auth_hall || '--';
   html += `<tr><td class="col-metric">👥 参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat">⚪ 持平</td></tr>`;
   tbody.innerHTML = html;
+  renderTeamInfo(data);
+}
+
+function renderTeamInfo(data) {
+  const card = document.getElementById('team-info-card');
+  const body = document.getElementById('team-info-body');
+  const t = data.team_info;
+  if (!t) { card.style.display = 'none'; return; }
+  
+  const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+  const statusIcon = t.status === '进行中' ? '✓' : '✗';
+  
+  body.innerHTML = `
+    <div class="team-detail-grid">
+      <div class="team-detail-item">
+        <span class="team-detail-label">🏠 大厅名称</span>
+        <span class="team-detail-value">${t.hall_name || '--'}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">📅 成团日期</span>
+        <span class="team-detail-value">${t.form_date || '--'}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">💰 累计流水</span>
+        <span class="team-detail-value">¥${(t.total_revenue || 0).toLocaleString()}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">🎁 奖励金额</span>
+        <span class="team-detail-value">¥${(t.reward_amount || 0).toLocaleString()}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">📊 状态</span>
+        <span class="team-detail-value" style="color:${statusColor}; font-weight:600;">${statusIcon} ${t.status}</span>
+      </div>
+    </div>
+    <div class="team-members">
+      <div class="team-member">
+        <div class="member-badge">姐</div>
+        <div class="member-info">
+          <div class="member-name">${t.sister_nickname || '--'}</div>
+          <div class="member-uid">UID: ${t.sister_uid || '--'}</div>
+        </div>
+      </div>
+      <div class="team-member">
+        <div class="member-badge" style="background:#f6a6c1;">妹</div>
+        <div class="member-info">
+          <div class="member-name">${t.sister_nickname2 || '--'}</div>
+          <div class="member-uid">UID: ${t.sister_uid2 || '--'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+  card.style.display = 'block';
+}
+function exportUIDResult() {
+}
 }
 function exportUIDResult() {
   if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
