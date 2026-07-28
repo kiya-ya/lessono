@@ -437,6 +437,18 @@ def api_cookie_update():
         return jsonify({'error': f'保存失败: {e}'}), 500
 
 
+
+
+@app.route('/api/last-update')
+def api_last_update():
+    """返回上次数据更新时间"""
+    try:
+        with open(os.path.join(PROJECT_ROOT, 'data', 'last_update.json'), 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception:
+        return jsonify({'last_update': '从未更新', 'status': 'unknown'})
+
 # ========== 静态文件服务 ==========
 
 

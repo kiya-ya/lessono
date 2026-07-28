@@ -75,6 +75,17 @@ HEADERS = {
     'Accept-Language': 'zh-CN,zh;q=0.9',
 }
 
+def _load_cookie():
+    """从 data/cookie.json 读取 Cookie（供爬虫使用）"""
+    cookie_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'cookie.json')
+    try:
+        with open(cookie_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        return cfg.get('cookie_str', '')
+    except Exception:
+        return ''
+
+
 def infer_full_date(cycle: str, reference: datetime = None) -> str:
     """
     从 cycle (MM-DD星期X) 推断完整日期 YYYY-MM-DD
@@ -103,13 +114,7 @@ def infer_full_date(cycle: str, reference: datetime = None) -> str:
         return last_year_date.strftime('%Y-%m-%d')
     
     return this_year_date.strftime('%Y-%m-%d')
-    
-    if delta_days > 30:
-        # 是今年之后的日期，推断为去年
-        last_year_date = this_year_date.replace(year=reference.year - 1)
-        return last_year_date.strftime('%Y-%m-%d')
-    
-    return this_year_date.strftime('%Y-%m-%d')
+
 
 
 class SistersCrawler:
@@ -117,7 +122,11 @@ class SistersCrawler:
     
     def __init__(self):
         self.session = requests.Session()
-        self.session.headers.update(HEADERS)
+        # 优先从 data/cookie.json 读取，其次环境变量，最后硬编码
+        cookie_str = _load_cookie() or os.environ.get('SISTERS_COOKIE', COOKIE_STR)
+        headers = dict(HEADERS)
+        headers['Cookie'] = cookie_str
+        self.session.headers.update(headers)
         self.session.verify = False
         self.reference_date = datetime.now()
     
