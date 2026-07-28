@@ -14,6 +14,9 @@ UID查询爬虫模块
 """
 import os
 import re
+import json
+import requests
+import re
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
