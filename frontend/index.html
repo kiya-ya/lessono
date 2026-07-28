@@ -535,10 +535,7 @@ function renderTeamInfo(data) {
   card.style.display = 'block';
 }
 function exportUIDResult() {
-}
-}
-function exportUIDResult() {
-  if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
+    if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
   const d = _lastUIDResult;
   const cmp = d.compare || {};
   const thisLabel = d.this_week?.week_label || '本周';
