@@ -22,6 +22,11 @@ except Exception as e:
     print(f'[WARN] UID爬虫模块加载失败: {e}')
     from uid_crawler import get_mock_uid_data, CAPTAIN_TYPES
 
+# 验证 Mock 数据是否包含 team_info
+_test_mock = get_mock_uid_data('test', 'game')
+print(f'[BOOT] Mock data keys: {list(_test_mock.keys())}')
+print(f'[BOOT] Has team_info: {"team_info" in _test_mock}')
+
 app = Flask(__name__)
 CORS(app)
 
@@ -350,53 +355,6 @@ def api_uid_query():
         result['team_info'] = team_info
 
     return jsonify(result)
-def api_uid_query():
-    """
-    UID查询 + 本周vs上周对比
-    请求体: { uid: string, captain_type?: string, mock?: boolean }
-    返回: { uid, nickname, this_week, last_week, compare }
-    """
-    body = request.get_json() or {}
-    uid = str(body.get('uid', '')).strip()
-    captain_type = body.get('captain_type', 'game')
-    use_mock = body.get('mock', False)
-
-    if not uid:
-        return jsonify({'error': 'UID不能为空'}), 400
-
-    # Mock 模式（前端开发测试用，无需内网）
-    if use_mock:
-        result = get_mock_uid_data(uid, captain_type)
-        return jsonify(result)
-
-    # 真实查询模式（需要内网连接 + 有效Cookie）
-    if not _uid_crawler_available:
-        return jsonify({
-            'error': 'UID爬虫模块未加载，请检查 crawler/uid_crawler.py 是否存在',
-            'hint': '可设置 mock=true 使用模拟数据测试前端'
-        }), 500
-
-    try:
-        crawler = UIDCrawler()
-        result = crawler.query_with_compare(uid, captain_type)
-        return jsonify(result)
-    except Exception as e:
-        error_msg = str(e)
-        if 'Cookie' in error_msg or '过期' in error_msg:
-            return jsonify({
-                'error': error_msg,
-                'hint': '请更新 crawler/uid_crawler.py 顶部的 UID_COOKIE_STR，然后重启后端',
-                'suggest_mock': True
-            }), 503
-        if '无法连接' in error_msg or 'ConnectionError' in error_msg:
-            return jsonify({
-                'error': error_msg,
-                'hint': '请确认已连接内网/VPN',
-                'suggest_mock': True
-            }), 503
-        return jsonify({'error': error_msg}), 500
-
-
 @app.route('/api/uid-query/types')
 def api_uid_types():
     """返回支持的UID查询类型分类"""

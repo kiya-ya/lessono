@@ -567,8 +567,6 @@ def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
             'dissolve_date': None,
         },
     }
-        },
-    }
 
 
 if __name__ == '__main__':
