@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>姐妹团数据统计报表</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f5f7fa; color: #333; }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header .subtitle { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+.header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+.toolbar { background: white; padding: 12px 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e8e8e8; flex-wrap: wrap; }
+.toolbar select, .toolbar input { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; background: white; }
+.toolbar button { padding: 6px 16px; border: none; border-radius: 4px; background: #667eea; color: white; font-size: 13px; cursor: pointer; }
+.toolbar button:hover { background: #5a6fd6; }
+.tabs { background: white; padding: 0 24px; display: flex; border-bottom: 1px solid #e8e8e8; gap: 4px; }
+.tab { padding: 12px 20px; cursor: pointer; font-size: 14px; color: #666; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab:hover { color: #667eea; }
+.tab.active { color: #667eea; border-bottom-color: #667eea; font-weight: 500; }
+.content { padding: 20px 24px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.kpi-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.2s; }
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; color: #333; }
+.kpi-change { font-size: 13px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+.kpi-change.up { color: #52c41a; }
+.kpi-change.down { color: #ff4d4f; }
+.kpi-change.flat { color: #999; }
+.alert-bar { background: white; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.alert-bar h3 { font-size: 14px; margin-bottom: 12px; color: #333; }
+.alert-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+.alert-item.high { background: #fff2f0; border-left: 3px solid #ff4d4f; }
+.alert-item.medium { background: #fffbe6; border-left: 3px solid #faad14; }
+.alert-icon { font-size: 16px; }
+.chart-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.chart-card h3 { font-size: 14px; margin-bottom: 16px; color: #333; }
+.chart-container { width: 100%; height: 320px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { background: #fafafa; padding: 12px; text-align: left; font-weight: 500; color: #666; border-bottom: 1px solid #e8e8e8; }
+.data-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; }
+.data-table tr:hover { background: #fafafa; }
+.pagination { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+.pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: white; border-radius: 4px; cursor: pointer; font-size: 13px; }
+.pagination button:hover { border-color: #667eea; color: #667eea; }
+.pagination button.active { background: #667eea; color: white; border-color: #667eea; }
+.search-box { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-box input { flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
+.policy-divider { text-align: center; padding: 8px; background: linear-gradient(90deg, transparent, #667eea, transparent); color: white; font-size: 12px; margin: 10px 0; border-radius: 4px; }
+
+/* UID查询 */
+.uid-query-bar { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.uid-query-bar .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.uid-query-bar label { font-size: 13px; color: #666; }
+.uid-query-bar input[type="text"] { padding: 8px 14px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 14px; width: 200px; }
+.uid-query-bar select { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
+.uid-query-bar button { padding: 8px 20px; border: none; border-radius: 4px; background: #667eea; color: white; font-size: 13px; cursor: pointer; }
+.uid-query-bar button:hover { background: #5a6fd6; }
+.uid-query-bar .mock-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+.uid-query-bar .mock-toggle input { cursor: pointer; }
+
+.uid-result-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.uid-result-card h3 { font-size: 15px; margin-bottom: 14px; color: #333; display: flex; align-items: center; gap: 8px; }
+.uid-result-card .user-info { display: flex; gap: 20px; margin-bottom: 16px; flex-wrap: wrap; }
+.uid-result-card .user-info span { font-size: 13px; color: #666; }
+.uid-result-card .user-info strong { color: #333; }
+
+.compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.compare-table th { background: #f8f9fa; padding: 12px; text-align: left; font-weight: 500; color: #555; border-bottom: 2px solid #e8e8e8; }
+.compare-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; }
+.compare-table tr:hover { background: #fafafa; }
+.compare-table .col-metric { font-weight: 500; color: #333; }
+.compare-table .col-this { color: #1890ff; font-weight: 500; }
+.compare-table .col-last { color: #888; }
+.compare-table .col-change { font-weight: 500; }
+.compare-table .col-change.up { color: #52c41a; }
+.compare-table .col-change.down { color: #ff4d4f; }
+.compare-table .col-change.flat { color: #999; }
+.compare-table .col-trend { font-size: 16px; }
+.compare-table .col-trend.up::after { content: '🟢'; }
+.compare-table .col-trend.down::after { content: '🔴'; }
+.compare-table .col-trend.flat::after { content: '⚪'; }
+
+.uid-loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
+.uid-error { background: #fff2f0; border: 1px solid #ffccc7; border-radius: 6px; padding: 16px; color: #cf1322; font-size: 13px; }
+.uid-error .hint { color: #666; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🐰 B+ 兔玩大数据 · 姐妹团数据统计报表</h1>
+    <div class="subtitle">运营团队数据看板 · 政策上线追踪</div>
+  </div>
+  <div class="header-right">
+    <span>⏰ 新政策已上线 <span id="policy-days">10</span> 天</span>
+    <span>👤 运营组</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <label>📅 时间:</label>
+  <select id="week-select"><option>第30周 (07-21 ~ 07-27)</option><option>第29周 (07-14 ~ 07-20)</option></select>
+  <label>🏠 大厅:</label>
+  <select id="hall-select"><option value="all">全部大厅</option></select>
+  <button onclick="refreshData()">🔄 刷新</button>
+  <button onclick="exportData()">📤 导出</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">📊 周报概览</div>
+  <div class="tab" onclick="switchTab('trends')">📈 核心趋势</div>
+  <div class="tab" onclick="switchTab('compare')">🔍 对比分析</div>
+  <div class="tab" onclick="switchTab('details')">📋 明细数据</div>
+  <div class="tab" onclick="switchTab('uid')">👤 UID查询</div>
+</div>
+
+<div class="content">
+
+  <!-- 概览 -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">📦 新成团数</div><div class="kpi-value" id="kpi-new">--</div><div class="kpi-change" id="kpi-new-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">🔄 进行中姐妹团</div><div class="kpi-value" id="kpi-active">--</div><div class="kpi-change" id="kpi-active-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">📊 留存率</div><div class="kpi-value" id="kpi-retention">--</div><div class="kpi-change" id="kpi-retention-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">🚫 解散率</div><div class="kpi-value" id="kpi-dissolution">--</div><div class="kpi-change" id="kpi-dissolution-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">💰 总流水</div><div class="kpi-value" id="kpi-revenue">--</div><div class="kpi-change" id="kpi-revenue-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">🎯 活跃度</div><div class="kpi-value" id="kpi-activity">--</div><div class="kpi-change" id="kpi-activity-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">🏆 成就率</div><div class="kpi-value" id="kpi-achievement">--</div><div class="kpi-change" id="kpi-achievement-change">--</div></div>
+      <div class="kpi-card"><div class="kpi-label">⚠️ 主动解散占比</div><div class="kpi-value" id="kpi-active-dissolved">--</div><div class="kpi-change" id="kpi-active-dissolved-change">--</div></div>
+    </div>
+    <div class="alert-bar"><h3>⚠️ 本周预警</h3><div id="alert-list"></div></div>
+    <div class="chart-card"><h3>📈 新成团数趋势（近90天）</h3><div class="chart-container" id="chart-trend"></div></div>
+  </div>
+
+  <!-- 趋势 -->
+  <div id="tab-trends" class="tab-panel">
+    <div class="policy-divider">📌 政策上线分界线：2026-07-17 ← 政策前 | 政策后 →</div>
+    <div class="chart-row">
+      <div class="chart-card"><h3>💯 留存率趋势</h3><div class="chart-container" id="chart-retention"></div></div>
+      <div class="chart-card"><h3>🚫 解散率趋势</h3><div class="chart-container" id="chart-dissolution"></div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card"><h3>💰 礼物流水趋势</h3><div class="chart-container" id="chart-revenue"></div></div>
+      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-container" id="chart-activity"></div></div>
+    </div>
+  </div>
+
+  <!-- 对比 -->
+  <div id="tab-compare" class="tab-panel">
+    <div class="chart-card"><h3>🏠 各大厅数据对比</h3><div class="chart-container" id="chart-hall-compare"></div></div>
+    <div class="chart-card">
+      <h3>📊 政策前后核心指标对比</h3>
+      <table class="data-table"><thead><tr><th>指标</th><th>政策前(均值)</th><th>政策后(当前)</th><th>变化幅度</th><th>趋势</th></tr></thead>
+      <tbody id="compare-table-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- 明细 -->
+  <div id="tab-details" class="tab-panel">
+    <div class="search-box">
+      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称...">
+      <button onclick="loadDetailTable()">🔍 搜索</button>
+      <button onclick="exportDetail()">📥 导出CSV</button>
+    </div>
+    <div class="chart-card">
+      <table class="data-table">
+        <thead><tr><th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>累计流水</th><th>奖励金额</th><th>解散日期</th></tr></thead>
+        <tbody id="detail-table-body"></tbody>
+      </table>
+      <div class="pagination" id="detail-pagination"></div>
+    </div>
+  </div>
+
+  <!-- UID查询 -->
+  <div id="tab-uid" class="tab-panel">
+    <div class="uid-query-bar">
+      <div class="row">
+        <label>类型分类：</label>
+        <select id="uid-type"><option value="game">新队长-游戏</option><option value="karaoke">新队长-歌房</option><option value="werewolf">新队长-狼人杀</option><option value="live">实时-乐园杀</option></select>
+        <label>UID：</label>
+        <input type="text" id="uid-input" placeholder="输入UID，如 26482359">
+        <button onclick="queryUID()">🔍 查询</button>
+        <label class="mock-toggle"><input type="checkbox" id="uid-mock" checked> 模拟数据模式（无需内网）</label>
+      </div>
+    </div>
+    <div id="uid-loading" class="uid-loading" style="display:none;">⏳ 正在查询 UID 数据，请稍候...</div>
+    <div id="uid-error" class="uid-error" style="display:none;"></div>
+    <div id="uid-result" style="display:none;">
+      <div class="uid-result-card">
+        <h3>👤 <span id="uid-result-title">UID 查询结果</span></h3>
+        <div class="user-info">
+          <span>UID：<strong id="res-uid">--</strong></span>
+          <span>昵称：<strong id="res-nickname">--</strong></span>
+          <span>类型：<strong id="res-type">--</strong></span>
+          <span>所属大厅：<strong id="res-hall">--</strong></span>
+          <span>精英队长：<strong id="res-elite">--</strong></span>
+        </div>
+      </div>
+      <div class="uid-result-card">
+        <h3 style="display:flex; justify-content:space-between; align-items:center;">
+          <span>📊 本周 vs 上周 对比分析</span>
+          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">📥 导出CSV</button>
+        </h3>
+        <table class="compare-table">
+          <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
+          <tbody id="uid-compare-body"></tbody>
+        </table>
+      </div>
+      <div class="uid-result-card">
+        <h3>🔗 关联信息</h3>
+        <div class="user-info">
+          <span>保护期结束：<strong id="res-protection">--</strong></span>
+          <span>累计总流水：<strong id="res-total-revenue">--</strong></span>
+          <span>历史最高等级：<strong id="res-hist-level">--</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '';
+let charts = {};
+let _lastUIDResult = null;
+let detailPage = 1;
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tabName + "'"));
+  if (clicked) clicked.classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+  if (tabName === 'overview') setTimeout(initTrendChart, 100);
+  if (tabName === 'trends') setTimeout(initTrendCharts, 100);
+  if (tabName === 'compare') setTimeout(initCompareChart, 100);
+}
+
+async function loadKPI() {
+  try {
+    const res = await fetch(API_BASE + '/api/kpi');
+    const result = await res.json();
+    const d = result.data;
+    document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
+    setChange('kpi-new-change', d.new_team.change);
+    document.getElementById('kpi-active').textContent = d.active_team.value + ' 个';
+    setChange('kpi-active-change', d.active_team.change);
+    document.getElementById('kpi-retention').textContent = d.retention.value + '%';
+    setChange('kpi-retention-change', d.retention.change);
+    document.getElementById('kpi-dissolution').textContent = d.dissolution.value + '%';
+    setChange('kpi-dissolution-change', d.dissolution.change, true);
+    document.getElementById('kpi-revenue').textContent = '¥' + d.revenue.value.toLocaleString();
+    setChange('kpi-revenue-change', d.revenue.change);
+    document.getElementById('kpi-activity').textContent = d.activity.value;
+    setChange('kpi-activity-change', d.activity.change);
+    document.getElementById('kpi-achievement').textContent = d.achievement.value + '%';
+    setChange('kpi-achievement-change', d.achievement.change);
+    document.getElementById('kpi-active-dissolved').textContent = d.active_dissolved_pct.value + '%';
+    setChange('kpi-active-dissolved-change', d.active_dissolved_pct.change, true);
+  } catch (e) { console.error('KPI加载失败:', e); }
+}
+
+function setChange(id, value, reverse = false) {
+  const el = document.getElementById(id);
+  const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→';
+  const isGood = reverse ? value < 0 : value > 0;
+  el.className = 'kpi-change ' + (isGood ? 'up' : value === 0 ? 'flat' : 'down');
+  el.textContent = arrow + ' ' + Math.abs(value) + '%';
+}
+
+async function loadAlerts() {
+  try {
+    const res = await fetch(API_BASE + '/api/alerts');
+    const result = await res.json();
+    document.getElementById('alert-list').innerHTML = result.data.map(a => `
+      <div class="alert-item ${a.severity}">
+        <span class="alert-icon">${a.severity === 'high' ? '🔴' : '🟡'}</span>
+        <strong>[${a.severity === 'high' ? '高' : '中'}]</strong> ${a.title}：${a.message}
+      </div>
+    `).join('');
+  } catch (e) { console.error('预警加载失败:', e); }
+}
+
+async function initTrendChart() {
+  if (charts.trend) { charts.trend.resize(); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/trends?metric=new_team_count&date_type=1');
+    const data = await res.json();
+    const chart = echarts.init(document.getElementById('chart-trend'));
+    charts.trend = chart;
+    chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: data.dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: data.values, smooth: true, lineStyle: { color: '#667eea', width: 2 }, itemStyle: { color: '#667eea' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(102,126,234,0.3)' }, { offset: 1, color: 'rgba(102,126,234,0.05)' }]) } }] });
+  } catch (e) { console.error('趋势图加载失败:', e); }
+}
+
+async function initTrendCharts() {
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
+    const result = await res.json();
+    const data = result.data;
+    if (!data || data.length === 0) return;
+    const labels = data.map(d => d.week_label);
+    const policyDate = '2026-07-17';
+    let policyIndex = data.findIndex(d => d.week_start >= policyDate);
+    if (policyIndex < 0) policyIndex = data.findIndex(d => d.week_end >= policyDate);
+    const markLineData = policyIndex >= 0 ? [{ xAxis: labels[policyIndex], label: { formatter: '政策上线' }, lineStyle: { color: '#ff4d4f', type: 'dashed' } }] : [];
+    const createChartOption = (title, metric, color, unit) => ({ tooltip: { trigger: 'axis', formatter: `{b}<br/>${title}: {c}${unit}` }, grid: { left: 50, right: 30, top: 30, bottom: 50 }, xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } }, yAxis: { type: 'value', name: unit }, series: [{ name: title, type: 'line', data: data.map(d => d[metric]), smooth: true, lineStyle: { color: color, width: 2 }, itemStyle: { color: color }, markLine: { silent: true, data: markLineData } }] });
+    if (!charts.retention) { charts.retention = echarts.init(document.getElementById('chart-retention')); charts.retention.setOption(createChartOption('留存率', 'retention_rate', '#52c41a', '%')); } else { charts.retention.resize(); }
+    if (!charts.dissolution) { charts.dissolution = echarts.init(document.getElementById('chart-dissolution')); charts.dissolution.setOption(createChartOption('解散率', 'dissolution_rate', '#ff4d4f', '%')); } else { charts.dissolution.resize(); }
+    if (!charts.revenue) { charts.revenue = echarts.init(document.getElementById('chart-revenue')); charts.revenue.setOption(createChartOption('流水', 'total_reward', '#faad14', '元')); } else { charts.revenue.resize(); }
+    if (!charts.activity) { charts.activity = echarts.init(document.getElementById('chart-activity')); charts.activity.setOption(createChartOption('活跃度', 'activity_index', '#667eea', '')); } else { charts.activity.resize(); }
+  } catch (e) { console.error('趋势图表加载失败:', e); }
+}
+
+async function initCompareChart() {
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
+    const result = await res.json();
+    const data = result.data;
+    if (data && data.length > 0) {
+      const policyDate = '2026-07-17';
+      const before = data.filter(d => d.week_end < policyDate);
+      const after = data.filter(d => d.week_start >= policyDate);
+      const avg = (arr, key) => arr.length > 0 ? arr.reduce((s, d) => s + d[key], 0) / arr.length : 0;
+      const metrics = [{ name: '📦 周均新成团数', key: 'new_team_count', unit: '个' }, { name: '💯 平均留存率', key: 'retention_rate', unit: '%' }, { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%' }, { name: '💰 周均总流水', key: 'total_reward', unit: '元' }, { name: '📊 平均活跃度', key: 'activity_index', unit: '' }];
+      const tbody = document.getElementById('compare-table-body');
+      tbody.innerHTML = metrics.map(m => { const b = avg(before, m.key); const a = avg(after, m.key); let changePct = 0, arrow = '→', trend = 'flat', trendClass = 'flat'; if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isReverse = m.key === 'dissolution_rate'; const isGood = isReverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; } const bStr = m.unit === '元' ? `¥${b.toFixed(0)}` : `${b.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`; const aStr = m.unit === '元' ? `¥${a.toFixed(0)}` : `${a.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`; return `<tr><td>${m.name}</td><td>${bStr}</td><td>${aStr}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`; }).join('');
+    }
+    try {
+      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=10');
+      const hallResult = await hallRes.json();
+      const hallData = hallResult.data;
+      if (hallData && hallData.length > 0) {
+        const hallNames = hallData.map(d => d.hall_name);
+        const hallCounts = hallData.map(d => d.active_count);
+        if (!charts.hallCompare) { charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare')); }
+        charts.hallCompare.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' }, grid: { left: 160, right: 30, top: 20, bottom: 30 }, xAxis: { type: 'value' }, yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } }, series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }] });
+      }
+    } catch (e) { console.error('大厅排名加载失败:', e); }
+  } catch (e) { console.error('对比分析加载失败:', e); }
+}
+
+async function loadDetailTable(page = 1) {
+  detailPage = page;
+  const search = document.getElementById('detail-search').value;
+  try {
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${search}`);
+    const result = await res.json();
+    document.getElementById('detail-table-body').innerHTML = result.data.map(row => `
+      <tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
+      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
+      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
+      <td>${row.days_since_formed || 0}</td><td>¥${(row.sister_revenue || 0).toFixed(1)}</td>
+      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td>${row.dissolve_date || '-'}</td></tr>
+    `).join('');
+    const totalPages = Math.ceil(result.total / result.per_page);
+    let html = '';
+    if (page > 1) html += `<button onclick="loadDetailTable(${page-1})">上一页</button>`;
+    for (let i = 1; i <= totalPages && i <= 5; i++) html += `<button class="${i === page ? 'active' : ''}" onclick="loadDetailTable(${i})">${i}</button>`;
+    if (page < totalPages) html += `<button onclick="loadDetailTable(${page+1})">下一页</button>`;
+    document.getElementById('detail-pagination').innerHTML = html;
+  } catch (e) { console.error('明细加载失败:', e); }
+}
+
+function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly'; a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail'; a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function refreshData() { loadKPI(); loadAlerts(); initTrendChart(); }
+
+function jumpToUID(uid) {
+  if (!uid || uid === '-') return;
+  switchTab('uid');
+  document.getElementById('uid-input').value = uid;
+  queryUID();
+}
+
+async function queryUID() {
+  const uid = document.getElementById('uid-input').value.trim();
+  const captainType = document.getElementById('uid-type').value;
+  const useMock = document.getElementById('uid-mock').checked;
+  if (!uid) { alert('请输入UID'); return; }
+  document.getElementById('uid-loading').style.display = 'block';
+  document.getElementById('uid-result').style.display = 'none';
+  document.getElementById('uid-error').style.display = 'none';
+  try {
+    const resp = await fetch(API_BASE + '/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid, captain_type: captainType, mock: useMock }) });
+    const result = await resp.json();
+    if (!resp.ok || result.error) throw new Error(result.error || '查询失败');
+    renderUIDResult(result);
+    document.getElementById('uid-result').style.display = 'block';
+  } catch (e) {
+    const errDiv = document.getElementById('uid-error');
+    let html = `<strong>❌ 查询失败</strong><br>${e.message}`;
+    if (e.message.includes('Cookie') || e.message.includes('连接') || e.message.includes('未加载')) html += `<div class="hint">💡 提示：请勾选「模拟数据模式」重新查询，或更新Cookie后重启后端。</div>`;
+    errDiv.innerHTML = html;
+    errDiv.style.display = 'block';
+  } finally {
+    document.getElementById('uid-loading').style.display = 'none';
+  }
+}
+
+function renderUIDResult(data) {
+  _lastUIDResult = data;
+  const thisWeekLabel = data.this_week?.week_label || '本周';
+  const lastWeekLabel = data.last_week?.week_label || '上周';
+  document.getElementById('th-this-week').textContent = thisWeekLabel;
+  document.getElementById('th-last-week').textContent = lastWeekLabel;
+  document.getElementById('res-uid').textContent = data.uid;
+  document.getElementById('res-nickname').textContent = data.nickname || '--';
+  document.getElementById('res-type').textContent = data.type_label || '--';
+  const cmp = data.compare || {};
+  const thisData = data.this_week?.data || {};
+  document.getElementById('res-hall').textContent = (cmp.hall?.this || thisData.schedule_hall || '--');
+  document.getElementById('res-elite').textContent = (cmp.is_elite?.this || thisData.is_elite || '--');
+  document.getElementById('res-protection').textContent = thisData.protection_end || '--';
+  document.getElementById('res-total-revenue').textContent = '¥' + (cmp.total_revenue?.this || 0).toLocaleString();
+  document.getElementById('res-hist-level').textContent = thisData.hist_best_level || '--';
+
+  const rows = [
+    { key: 'week_level', label: '⭐ 当周队长等级', fmt: v => v || '--' },
+    { key: 'week_schedule_days', label: '📅 当周排档天数', fmt: v => v + '天', isNum: true },
+    { key: 'daily_task_count', label: '📋 每日任务完成', fmt: v => v + '次', isNum: true },
+    { key: 'week_revenue', label: '💰 当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
+    { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '小时', isNum: true },
+    { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
+    { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
+    { key: 'hall', label: '👥 参与姐妹团', fmt: v => v || '--' },
+    { key: 'punishment', label: '⚠️ 违规处罚', fmt: v => v || '无' },
+  ];
+
+  const tbody = document.getElementById('uid-compare-body');
+  tbody.innerHTML = rows.map(r => {
+    const c = cmp[r.key];
+    if (!c) return '';
+    let trendClass = c.trend || 'flat';
+    let trendIcon = trendClass === 'up' ? '🟢' : trendClass === 'down' ? '🔴' : '⚪';
+    let trendText = trendClass === 'up' ? '利好' : trendClass === 'down' ? '利空' : '持平';
+    let thisVal, lastVal;
+    if (r.isNum && !r.isRank) { thisVal = r.fmt(c.this); lastVal = r.fmt(c.last); }
+    else if (r.isRank) { thisVal = c.this; lastVal = c.last; }
+    else { thisVal = r.fmt(c.this); lastVal = r.fmt(c.last); }
+    let changePct = c.change_pct !== undefined ? `+${c.change_pct}%` : '—';
+    if (c.change_pct < 0) changePct = `${c.change_pct}%`;
+    if (c.change_pct === 0 || c.change_pct === undefined) changePct = '—';
+    return `<tr><td class="col-metric">${r.label}</td><td class="col-this">${thisVal}</td><td class="col-last">${lastVal}</td><td class="col-change ${trendClass}">${c.change || '—'}</td><td class="col-change ${trendClass}">${changePct}</td><td class="col-trend ${trendClass}">${trendIcon} ${trendText}</td></tr>`;
+  }).join('');
+}
+
+function exportUIDResult() {
+  if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
+  const d = _lastUIDResult;
+  const cmp = d.compare || {};
+  const thisLabel = d.this_week?.week_label || '本周';
+  const lastLabel = d.last_week?.week_label || '上周';
+  let csv = '\uFEFF';
+  csv += `UID查询结果,${d.uid},${d.nickname},${d.type_label}\n`;
+  csv += `指标,${thisLabel},${lastLabel},环比变化,变化率,趋势\n`;
+  const rows = [
+    { key: 'week_level', label: '当周队长等级' }, { key: 'week_schedule_days', label: '当周排档天数' },
+    { key: 'daily_task_count', label: '每日任务完成次数' }, { key: 'week_revenue', label: '当周礼物流水' },
+    { key: 'week_accompany_time', label: '当周陪档时长' }, { key: 'week_rank', label: '排行榜排名' },
+    { key: 'best_4week_level', label: '4周最高等级' }, { key: 'hall', label: '参与姐妹团' }, { key: 'punishment', label: '违规处罚' },
+  ];
+  for (const r of rows) { const c = cmp[r.key]; if (!c) continue; const trendText = c.trend === 'up' ? '利好' : c.trend === 'down' ? '利空' : '持平'; const pct = c.change_pct !== undefined ? `${c.change_pct}%` : '—'; csv += `${r.label},${c.this},${c.last},${c.change || '—'},${pct},${trendText}\n`; }
+  const thisData = d.this_week?.data || {};
+  csv += `\n关联信息\n所属大厅,${cmp.hall?.this || thisData.schedule_hall || '—'}\n精英队长,${cmp.is_elite?.this || thisData.is_elite || '—'}\n保护期结束,${thisData.protection_end || '—'}\n累计总流水,${cmp.total_revenue?.this || 0}\n历史最高等级,${thisData.hist_best_level || '—'}\n`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+window.addEventListener('resize', () => { Object.values(charts).forEach(c => c && c.resize()); });
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadKPI(); loadAlerts(); initTrendChart(); loadDetailTable();
+  const policyDate = new Date('2026-07-17');
+  const now = new Date('2026-07-27');
+  document.getElementById('policy-days').textContent = Math.floor((now - policyDate) / (1000*60*60*24));
+});
+</script>
+
+</body>
+</html>

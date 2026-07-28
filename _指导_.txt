@@ -1,0 +1,11 @@
+在Network面板里：
+
+1. 点击列表中的第一个请求 `play_user_newcaptian.php`（状态200那个）
+2. 右侧会显示该请求的详情
+3. 找到 "Headers"（标头）标签
+4. 在 "Request Headers"（请求标头）里往下翻
+5. 找有没有一行叫 `Authorization:`
+
+如果有，把 `Authorization: Basic xxxxxx` 或者 `Authorization: Bearer xxxxxx` 这整行复制给我。
+
+如果没有Authorization头，那说明弹窗的认证信息可能是通过其他方式传递的（比如POST表单），这时候我需要换方案。
