@@ -207,12 +207,13 @@ def api_daily_retention():
     """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
     days = int(request.args.get('days', 14))
     conn = get_db_conn()
+    hall = request.args.get('hall', '全部')
     cursor = conn.execute('''
         SELECT date_str, active_team_count, dissolved_count
         FROM stats_daily
-        WHERE hall_name = '全部' AND date_str IS NOT NULL
+        WHERE hall_name = ? AND date_str IS NOT NULL
         ORDER BY date_str DESC LIMIT ?
-    ''', (days,))
+    ''', (hall, days))
     rows = cursor.fetchall()
     conn.close()
     
@@ -235,24 +236,25 @@ def api_daily_retention():
     return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution})
 
 
-@app.route('/api/weekly-report')
-
 
 @app.route('/api/weekly-report')
 def api_weekly_report():
     limit = request.args.get('limit', 'all')
+    hall = request.args.get('hall', 'all')
     conn = get_db_conn()
+    
+    hall_filter = hall if hall != 'all' else 'all'
     
     if limit == 'all':
         cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = 'all'
+            SELECT * FROM weekly_report WHERE hall_name = ?
             ORDER BY week_start
-        ''')
+        ''', (hall_filter,))
     else:
         cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = 'all'
+            SELECT * FROM weekly_report WHERE hall_name = ?
             ORDER BY week_start DESC LIMIT ?
-        ''', (int(limit),))
+        ''', (hall_filter, int(limit)))
     
     rows = cursor.fetchall()
     conn.close()
