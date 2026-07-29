@@ -76,8 +76,10 @@ HEADERS = {
 }
 
 def _load_cookie():
-    """从 data/cookie.json 读取 Cookie（供爬虫使用）"""
-    cookie_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'cookie.json')
+    """从 data/cookie_bigdata.json 读取 Cookie（bigdata 抓取专用）
+    ⚠️ 注意：此 Cookie 与 UID 查询的 Cookie 不同，需分别更新
+    """
+    cookie_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'cookie_bigdata.json')
     try:
         with open(cookie_path, 'r', encoding='utf-8') as f:
             cfg = json.load(f)

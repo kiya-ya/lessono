@@ -370,7 +370,117 @@ def api_uid_types():
 #  Cookie 管理接口
 # ═══════════════════════════════════════════════════════
 
-COOKIE_FILE = os.path.join(PROJECT_ROOT, 'data', 'cookie.json')
+# ═══════════════════════════════════════════════════════
+#  Cookie 管理接口（支持两种 Cookie 分别管理）
+#  - data/cookie.json        → UID 查询（server1.tuwan.com:10010）
+#  - data/cookie_bigdata.json → 数据抓取（bigdata.tuwan.com）
+# ═══════════════════════════════════════════════════════
+
+COOKIE_FILE_UID = os.path.join(PROJECT_ROOT, 'data', 'cookie.json')
+COOKIE_FILE_BIGDATA = os.path.join(PROJECT_ROOT, 'data', 'cookie_bigdata.json')
+
+
+def _check_cookie_status(path: str, required_fields: list) -> dict:
+    """通用 Cookie 状态检测"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        cookie_str = cfg.get('cookie_str', '')
+        checks = {field: field in cookie_str for field in required_fields}
+        all_ok = all(checks.values())
+        return {
+            'status': 'valid' if all_ok else 'invalid',
+            'updated_at': cfg.get('updated_at', ''),
+            'length': len(cookie_str),
+            'checks': checks,
+        }
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+
+
+@app.route('/api/cookie', methods=['GET'])
+def api_cookie_get():
+    """获取 UID 查询 Cookie 状态"""
+    return jsonify(_check_cookie_status(COOKIE_FILE_UID, ['PHPSESSID', 'DedeUserID']))
+
+
+@app.route('/api/cookie', methods=['POST'])
+def api_cookie_update():
+    """更新 UID 查询 Cookie
+    请求体: { cookie_str: string, basic_auth?: string }
+    """
+    body = request.get_json() or {}
+    cookie_str = body.get('cookie_str', '').strip()
+    basic_auth = body.get('basic_auth', '').strip()
+
+    if not cookie_str:
+        return jsonify({'error': 'Cookie 不能为空'}), 400
+    if 'PHPSESSID' not in cookie_str:
+        return jsonify({'error': 'Cookie 格式不正确，缺少 PHPSESSID'}), 400
+
+    try:
+        cfg = {
+            'cookie_str': cookie_str,
+            'basic_auth': basic_auth or 'MjAxODoyMDE4dHV3YW50ZW5nZmVp',
+            'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'source': 'frontend',
+        }
+        with open(COOKIE_FILE_UID, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+        os.environ['UID_QUERY_COOKIE'] = cookie_str
+        if basic_auth:
+            os.environ['UID_BASIC_AUTH'] = basic_auth
+
+        return jsonify({
+            'success': True,
+            'message': 'UID 查询 Cookie 更新成功',
+            'updated_at': cfg['updated_at'],
+            'length': len(cookie_str),
+        })
+    except Exception as e:
+        return jsonify({'error': f'保存失败: {e}'}), 500
+
+
+@app.route('/api/cookie/bigdata', methods=['GET'])
+def api_cookie_bigdata_get():
+    """获取 bigdata 抓取 Cookie 状态"""
+    return jsonify(_check_cookie_status(COOKIE_FILE_BIGDATA, ['PHPSESSID', 'Tuwan_Passport']))
+
+
+@app.route('/api/cookie/bigdata', methods=['POST'])
+def api_cookie_bigdata_update():
+    """更新 bigdata 抓取 Cookie
+    请求体: { cookie_str: string }
+    """
+    body = request.get_json() or {}
+    cookie_str = body.get('cookie_str', '').strip()
+
+    if not cookie_str:
+        return jsonify({'error': 'Cookie 不能为空'}), 400
+    if 'PHPSESSID' not in cookie_str:
+        return jsonify({
+            'error': 'Cookie 格式不正确，缺少 PHPSESSID',
+            'hint': '请从浏览器访问 bigdata.tuwan.com/sisters/tj，F12 → Network → 复制 Cookie'
+        }), 400
+
+    try:
+        cfg = {
+            'cookie_str': cookie_str,
+            'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'source': 'frontend',
+        }
+        with open(COOKIE_FILE_BIGDATA, 'w', encoding='utf-8') as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+        return jsonify({
+            'success': True,
+            'message': '数据抓取 Cookie 更新成功',
+            'updated_at': cfg['updated_at'],
+            'length': len(cookie_str),
+        })
+    except Exception as e:
+        return jsonify({'error': f'保存失败: {e}'}), 500
 
 @app.route('/api/cookie', methods=['GET'])
 def api_cookie_get():

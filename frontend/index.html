@@ -133,9 +133,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="subtitle">运营团队数据看板 · 政策上线追踪</div>
   </div>
   <div class="header-right">
-    <div class="cookie-status" id="cookie-status" onclick="openCookieModal()" title="点击更新 Cookie">
-      <span class="cookie-dot unknown" id="cookie-dot"></span>
-      <span id="cookie-text">Cookie 检测中...</span>
+    <div class="cookie-status" id="cookie-status-uid" onclick="openCookieModal('uid')" title="点击更新 UID查询 Cookie">
+      <span class="cookie-dot unknown" id="cookie-dot-uid"></span>
+      <span id="cookie-text-uid">UID查询 Cookie</span>
+    </div>
+    <div class="cookie-status" id="cookie-status-bigdata" onclick="openCookieModal('bigdata')" title="点击更新 数据抓取 Cookie">
+      <span class="cookie-dot unknown" id="cookie-dot-bigdata"></span>
+      <span id="cookie-text-bigdata">抓取 Cookie</span>
     </div>
     <span>⏰ 新政策已上线 <span id="policy-days">10</span> 天</span>
     <span id="last-update">上次更新：--</span>
@@ -598,27 +602,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function checkCookieStatus() {
   try {
-    const resp = await fetch(API_BASE + '/api/cookie');
-    const data = await resp.json();
-    const dot = document.getElementById('cookie-dot');
-    const text = document.getElementById('cookie-text');
-    if (data.status === 'valid') {
-      dot.className = 'cookie-dot valid';
-      text.textContent = 'Cookie 有效';
-    } else if (data.status === 'invalid') {
-      dot.className = 'cookie-dot invalid';
-      text.textContent = 'Cookie 无效';
+    // UID 查询 Cookie
+    const resp1 = await fetch(API_BASE + '/api/cookie');
+    const data1 = await resp1.json();
+    const dot1 = document.getElementById('cookie-dot-uid');
+    const text1 = document.getElementById('cookie-text-uid');
+    if (data1.status === 'valid') {
+      dot1.className = 'cookie-dot valid'; text1.textContent = 'UID查询 Cookie 有效';
+    } else if (data1.status === 'invalid') {
+      dot1.className = 'cookie-dot invalid'; text1.textContent = 'UID查询 Cookie 无效';
     } else {
-      dot.className = 'cookie-dot unknown';
-      text.textContent = 'Cookie 未知';
+      dot1.className = 'cookie-dot unknown'; text1.textContent = 'UID查询 Cookie 未知';
     }
-  } catch (e) {
-    console.log('Cookie 状态检测失败:', e);
-  }
+  } catch (e) { console.log('UID Cookie 检测失败:', e); }
+
+  try {
+    // Bigdata 抓取 Cookie
+    const resp2 = await fetch(API_BASE + '/api/cookie/bigdata');
+    const data2 = await resp2.json();
+    const dot2 = document.getElementById('cookie-dot-bigdata');
+    const text2 = document.getElementById('cookie-text-bigdata');
+    if (data2.status === 'valid') {
+      dot2.className = 'cookie-dot valid'; text2.textContent = '抓取 Cookie 有效';
+    } else if (data2.status === 'invalid') {
+      dot2.className = 'cookie-dot invalid'; text2.textContent = '抓取 Cookie 无效';
+    } else {
+      dot2.className = 'cookie-dot unknown'; text2.textContent = '抓取 Cookie 未知';
+    }
+  } catch (e) { console.log('抓取 Cookie 检测失败:', e); }
 }
 
-function openCookieModal() {
+let _cookieTarget = 'uid';
+
+function openCookieModal(target) {
+  _cookieTarget = target || 'uid';
+  document.getElementById('cookie-target').value = _cookieTarget;
+  onCookieTargetChange();
   document.getElementById('cookie-modal').classList.add('active');
+}
+
+function onCookieTargetChange() {
+  _cookieTarget = document.getElementById('cookie-target').value;
+  const hint = document.getElementById('cookie-hint');
+  if (_cookieTarget === 'bigdata') {
+    hint.innerHTML = '💡 获取方式：浏览器访问 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新页面 → 找到 sisters/tj → Headers → 复制 Cookie';
+  } else {
+    hint.innerHTML = '💡 获取方式：浏览器按 F12 → Network → 点击 UID查询按钮 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie';
+  }
 }
 
 function closeCookieModal() {
@@ -630,15 +660,18 @@ async function saveCookie() {
   if (!cookieStr) { alert('请输入 Cookie'); return; }
   if (!cookieStr.includes('PHPSESSID')) { alert('Cookie 格式不正确，缺少 PHPSESSID'); return; }
 
+  const endpoint = _cookieTarget === 'bigdata' ? '/api/cookie/bigdata' : '/api/cookie';
+  const label = _cookieTarget === 'bigdata' ? '数据抓取' : 'UID查询';
+
   try {
-    const resp = await fetch(API_BASE + '/api/cookie', {
+    const resp = await fetch(API_BASE + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie_str: cookieStr })
     });
     const data = await resp.json();
     if (data.success) {
-      alert('✅ Cookie 更新成功！');
+      alert('✅ ' + label + ' Cookie 更新成功！');
       closeCookieModal();
       checkCookieStatus();
     } else {
@@ -668,9 +701,16 @@ async function loadLastUpdate() {
 <!-- Cookie 更新弹窗 -->
 <div class="cookie-modal" id="cookie-modal">
   <div class="cookie-modal-content">
-    <h3>🍪 更新 UID 查询 Cookie</h3>
+    <h3>🍪 更新 Cookie</h3>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px; color:#666;">选择类型：</label>
+      <select id="cookie-target" onchange="onCookieTargetChange()" style="padding:4px 8px; font-size:13px;">
+        <option value="uid">UID 查询 Cookie（server1.tuwan.com）</option>
+        <option value="bigdata">数据抓取 Cookie（bigdata.tuwan.com）</option>
+      </select>
+    </div>
     <textarea id="cookie-input" placeholder="在此粘贴从浏览器复制的完整 Cookie 字符串..."></textarea>
-    <div class="hint">💡 获取方式：浏览器按 F12 → Network → 点击查询按钮 → 找到 play_user_newcaptian.php → Headers → Request Headers → 复制 Cookie</div>
+    <div class="hint" id="cookie-hint">💡 获取方式：浏览器按 F12 → Network → 点击 UID查询按钮 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
     <div class="cookie-modal-actions">
       <button class="btn-cancel" onclick="closeCookieModal()">取消</button>
       <button class="btn-save" onclick="saveCookie()">保存并测试</button>
