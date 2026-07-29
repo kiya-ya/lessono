@@ -1,8 +1,10 @@
-version: '3.8'
+name: sister-report
 
 services:
-  sister-report:
-    build: .
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: sister-report
     ports:
       - "5000:5000"
