@@ -49,9 +49,24 @@ def get_db_conn():
 
 # ========== API路由 ==========
 
+@app.route('/api/halls')
+def api_halls():
+    """返回所有大厅列表"""
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT DISTINCT hall_name FROM team_detail
+        WHERE hall_name IS NOT NULL AND hall_name != ''
+        ORDER BY hall_name
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify({'data': [r['hall_name'] for r in rows]})
+
+
 @app.route('/api/kpi')
 def api_kpi():
-    """KPI概览数据（8项核心指标）"""
+    """KPI概览数据（8项核心指标），支持按大厅过滤"""
+    hall = request.args.get('hall', 'all')
     conn = get_db_conn()
     
     cursor = conn.execute('''
@@ -150,14 +165,20 @@ def api_detail_table():
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
     search = request.args.get('search', '')
+    hall = request.args.get('hall', 'all')
     
     conn = get_db_conn()
     
-    where_clause = ''
+    conditions = []
     params = []
     if search:
-        where_clause = 'WHERE sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ?'
+        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ?)')
         params = [f'%{search}%', f'%{search}%', f'%{search}%']
+    if hall != 'all':
+        conditions.append('hall_name = ?')
+        params.append(hall)
+    
+    where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
     
     cursor = conn.execute(f'SELECT COUNT(*) as total FROM team_detail {where_clause}', params)
     total = cursor.fetchone()['total']
@@ -241,12 +262,18 @@ def api_export_weekly():
 
 @app.route('/api/export/detail')
 def api_export_detail():
+    hall = request.args.get('hall', 'all')
     conn = get_db_conn()
-    cursor = conn.execute('''
+    where = ''
+    params = []
+    if hall != 'all':
+        where = 'WHERE hall_name = ?'
+        params = [hall]
+    cursor = conn.execute(f'''
         SELECT team_id, form_date, hall_name, sister_nickname, sister_uid,
                sister_nickname2, sister_uid2, sister_revenue, reward_amount, dissolve_date
-        FROM team_detail ORDER BY snapshot_date DESC, team_id DESC
-    ''')
+        FROM team_detail {where} ORDER BY snapshot_date DESC, team_id DESC
+    ''', params)
     rows = cursor.fetchall()
     conn.close()
     

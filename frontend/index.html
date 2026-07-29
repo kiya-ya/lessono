@@ -155,7 +155,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   <label>📅 时间:</label>
   <select id="week-select"><option>第30周 (07-21 ~ 07-27)</option><option>第29周 (07-14 ~ 07-20)</option></select>
   <label>🏠 大厅:</label>
-  <select id="hall-select"><option value="all">全部大厅</option></select>
+  <select id="hall-select" onchange="onHallChange()"><option value="all">全部大厅</option></select>
   <button onclick="refreshData()">🔄 刷新</button>
   <button onclick="exportData()">📤 导出</button>
 </div>
@@ -285,6 +285,31 @@ const API_BASE = '';
 let charts = {};
 let _lastUIDResult = null;
 let detailPage = 1;
+let currentHall = 'all';
+
+function getHallParam() {
+  return currentHall === 'all' ? '' : '&hall=' + encodeURIComponent(currentHall);
+}
+
+async function loadHalls() {
+  try {
+    const res = await fetch(API_BASE + '/api/halls');
+    const result = await res.json();
+    const select = document.getElementById('hall-select');
+    select.innerHTML = '<option value="all">全部大厅</option>';
+    (result.data || []).forEach(hall => {
+      const opt = document.createElement('option');
+      opt.value = hall;
+      opt.textContent = hall;
+      select.appendChild(opt);
+    });
+  } catch (e) { console.error('大厅列表加载失败:', e); }
+}
+
+function onHallChange() {
+  currentHall = document.getElementById('hall-select').value;
+  refreshData();
+}
 
 function switchTab(tabName) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -299,7 +324,7 @@ function switchTab(tabName) {
 
 async function loadKPI() {
   try {
-    const res = await fetch(API_BASE + '/api/kpi');
+    const res = await fetch(API_BASE + '/api/kpi?' + getHallParam());
     const result = await res.json();
     const d = result.data;
     document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
@@ -404,7 +429,7 @@ async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;
   try {
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${search}`);
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${search}` + getHallParam());
     const result = await res.json();
     document.getElementById('detail-table-body').innerHTML = result.data.map(row => `
       <tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
@@ -422,9 +447,9 @@ async function loadDetailTable(page = 1) {
   } catch (e) { console.error('明细加载失败:', e); }
 }
 
-function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly'; a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail'; a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-function refreshData() { loadKPI(); loadAlerts(); initTrendChart(); }
+function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly?' + getHallParam().substring(1); a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail?' + getHallParam().substring(1); a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function refreshData() { loadKPI(); loadAlerts(); initTrendChart(); loadDetailTable(); }
 
 function jumpToUID(uid) {
   if (!uid || uid === '-') return;
@@ -592,6 +617,7 @@ function exportUIDResult() {
 window.addEventListener('resize', () => { Object.values(charts).forEach(c => c && c.resize()); });
 
 document.addEventListener('DOMContentLoaded', () => {
+  loadHalls();
   loadLastUpdate();
   loadKPI(); loadAlerts(); initTrendChart(); loadDetailTable();
   const policyDate = new Date('2026-07-17');
