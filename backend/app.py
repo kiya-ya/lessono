@@ -206,18 +206,8 @@ def api_trends():
 def api_daily_retention():
     """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
     days = int(request.args.get('days', 14))
-    conn = get_db_conn()
-    # 始终使用汇总数据（数据库无分大厅数据）
-    cursor = conn.execute('''
-        SELECT date_str, active_team_count, dissolved_count
-        FROM stats_daily
-        WHERE hall_name = '全部' AND date_str IS NOT NULL
-        ORDER BY date_str DESC LIMIT ?
-    ''', (days,))
-    """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
-    days = int(request.args.get('days', 14))
-    conn = get_db_conn()
     hall = request.args.get('hall', '全部')
+    conn = get_db_conn()
     cursor = conn.execute('''
         SELECT date_str, active_team_count, dissolved_count
         FROM stats_daily
@@ -310,44 +300,6 @@ def api_detail_table():
         'page': page,
         'per_page': per_page
     })
-def api_detail_table():
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
-    search = request.args.get('search', '')
-    hall = request.args.get('hall', 'all')
-    
-    conn = get_db_conn()
-    
-    conditions = []
-    params = []
-    if search:
-        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ?)')
-        params = [f'%{search}%', f'%{search}%', f'%{search}%']
-    if hall != 'all':
-        conditions.append('hall_name = ?')
-        params.append(hall)
-    
-    where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
-    
-    cursor = conn.execute(f'SELECT COUNT(*) as total FROM team_detail {where_clause}', params)
-    total = cursor.fetchone()['total']
-    
-    offset = (page - 1) * per_page
-    cursor = conn.execute(f'''
-        SELECT * FROM team_detail {where_clause}
-        ORDER BY snapshot_date DESC, team_id DESC
-        LIMIT ? OFFSET ?
-    ''', params + [per_page, offset])
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return jsonify({
-        'data': rows,
-        'total': total,
-        'page': page,
-        'per_page': per_page
-    })
-
 
 @app.route('/api/hall-stats')
 def api_hall_stats():
