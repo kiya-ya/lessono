@@ -154,10 +154,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 <div class="toolbar">
   <label>📅 时间:</label>
   <select id="week-select" onchange="onWeekChange()"></select>
-  <span id="hall-filter-wrapper" style="display:inline;">
-    <label>🏠 大厅:</label>
-    <select id="hall-select" onchange="onHallChange()"><option value="all">全部大厅</option></select>
-  </span>
   <button onclick="refreshData()">🔄 刷新</button>
   <button onclick="exportData()">📤 导出</button>
 </div>
@@ -374,12 +370,6 @@ function switchTab(tabName) {
   const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tabName + "'"));
   if (clicked) clicked.classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
-  // 大厅筛选只在支持大厅过滤的页面显示
-  const hallWrapper = document.getElementById('hall-filter-wrapper');
-  if (hallWrapper) {
-    const showHall = ['overview', 'details', 'compare'].includes(tabName);
-    hallWrapper.style.display = showHall ? 'inline' : 'none';
-  }
   if (tabName === 'overview') { setTimeout(initTrendChart, 100); setTimeout(initOverviewRetentionChart, 150); }
   if (tabName === 'trends') setTimeout(initTrendCharts, 100);
   if (tabName === 'compare') setTimeout(initCompareChart, 100);
