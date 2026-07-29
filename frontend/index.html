@@ -452,11 +452,63 @@ async function initTrendCharts() {
     let policyIndex = data.findIndex(d => d.week_start >= policyDate);
     if (policyIndex < 0) policyIndex = data.findIndex(d => d.week_end >= policyDate);
     const markLineData = policyIndex >= 0 ? [{ xAxis: labels[policyIndex], label: { formatter: '政策上线' }, lineStyle: { color: '#ff4d4f', type: 'dashed' } }] : [];
-    const createChartOption = (title, metric, color, unit) => ({ tooltip: { trigger: 'axis', formatter: `{b}<br/>${title}: {c}${unit}` }, grid: { left: 50, right: 30, top: 30, bottom: 50 }, xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } }, yAxis: { type: 'value', name: unit }, series: [{ name: title, type: 'line', data: data.map(d => d[metric]), smooth: true, lineStyle: { color: color, width: 2 }, itemStyle: { color: color }, markLine: { silent: true, data: markLineData } }] });
-    if (!charts.retention) { charts.retention = echarts.init(document.getElementById('chart-retention')); charts.retention.setOption(createChartOption('留存率', 'retention_rate', '#52c41a', '%')); } else { charts.retention.resize(); }
-    if (!charts.dissolution) { charts.dissolution = echarts.init(document.getElementById('chart-dissolution')); charts.dissolution.setOption(createChartOption('解散率', 'dissolution_rate', '#ff4d4f', '%')); } else { charts.dissolution.resize(); }
-    if (!charts.revenue) { charts.revenue = echarts.init(document.getElementById('chart-revenue')); charts.revenue.setOption(createChartOption('流水', 'total_reward', '#faad14', '元')); } else { charts.revenue.resize(); }
-    if (!charts.activity) { charts.activity = echarts.init(document.getElementById('chart-activity')); charts.activity.setOption(createChartOption('活跃度', 'activity_index', '#667eea', '')); } else { charts.activity.resize(); }
+
+    // 1. 留存率 - 折线图
+    const retentionOption = {
+      tooltip: { trigger: 'axis', formatter: '{b}<br/>留存率: {c}%' },
+      grid: { left: 50, right: 30, top: 30, bottom: 50 },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+      yAxis: { type: 'value', name: '%', max: 100 },
+      series: [{
+        name: '留存率', type: 'line', data: data.map(d => Math.min(100, d.retention_rate || 0)),
+        smooth: true, lineStyle: { color: '#52c41a', width: 2 }, itemStyle: { color: '#52c41a' },
+        markLine: { silent: true, data: markLineData }
+      }]
+    };
+    if (!charts.retention) { charts.retention = echarts.init(document.getElementById('chart-retention')); charts.retention.setOption(retentionOption); } else { charts.retention.resize(); }
+
+    // 2. 解散率 - 柱状图 + 折线叠加
+    const dissolutionOption = {
+      tooltip: { trigger: 'axis', formatter: function(p) { return p.map(i => `${i.seriesName}: ${i.value}%`).join('<br/>'); } },
+      legend: { data: ['解散率(柱)', '解散率(线)'], top: 5 },
+      grid: { left: 50, right: 30, top: 40, bottom: 50 },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+      yAxis: { type: 'value', name: '%' },
+      series: [
+        { name: '解散率(柱)', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(255,77,79,0.6)' }, barWidth: '50%' },
+        { name: '解散率(线)', type: 'line', data: data.map(d => d.dissolution_rate || 0), smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' }, markLine: { silent: true, data: markLineData } }
+      ]
+    };
+    if (!charts.dissolution) { charts.dissolution = echarts.init(document.getElementById('chart-dissolution')); charts.dissolution.setOption(dissolutionOption); } else { charts.dissolution.resize(); }
+
+    // 3. 礼物流水 - 柱状图
+    const revenueOption = {
+      tooltip: { trigger: 'axis', formatter: '{b}<br/>流水: ¥{c}' },
+      grid: { left: 50, right: 30, top: 30, bottom: 50 },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+      yAxis: { type: 'value', name: '元' },
+      series: [{
+        name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0),
+        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#faad14' }, { offset: 1, color: '#ffc53d' }]), borderRadius: [4, 4, 0, 0] },
+        barWidth: '50%', markLine: { silent: true, data: markLineData }
+      }]
+    };
+    if (!charts.revenue) { charts.revenue = echarts.init(document.getElementById('chart-revenue')); charts.revenue.setOption(revenueOption); } else { charts.revenue.resize(); }
+
+    // 4. 任务活跃度 - 堆叠柱状图（开车、陪档、收送礼）
+    const activityOption = {
+      tooltip: { trigger: 'axis', formatter: function(p) { let s = p[0].axisValue; p.forEach(i => { s += `<br/>${i.marker} ${i.seriesName}: ${i.value}次`; }); return s; } },
+      legend: { data: ['开车任务', '陪档任务', '收送礼任务'], top: 5 },
+      grid: { left: 50, right: 30, top: 40, bottom: 50 },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+      yAxis: { type: 'value', name: '次数' },
+      series: [
+        { name: '开车任务', type: 'bar', stack: 'total', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#1890ff' } },
+        { name: '陪档任务', type: 'bar', stack: 'total', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#52c41a' } },
+        { name: '收送礼任务', type: 'bar', stack: 'total', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#faad14' } }
+      ]
+    };
+    if (!charts.activity) { charts.activity = echarts.init(document.getElementById('chart-activity')); charts.activity.setOption(activityOption); } else { charts.activity.resize(); }
   } catch (e) { console.error('趋势图表加载失败:', e); }
 }
 
