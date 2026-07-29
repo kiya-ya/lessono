@@ -1,13 +1,7 @@
+# 简化版Dockerfile - 使用官方Python镜像，减少系统依赖
 FROM python:3.11-slim
 
 WORKDIR /app
-
-# 安装系统依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libxml2-dev \
-    libxslt1-dev \
-    && rm -rf /var/lib/apt/lists/*
 
 # 复制依赖并安装
 COPY requirements.txt .
@@ -18,9 +12,10 @@ COPY crawler/ ./crawler/
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 COPY data/schema.sql ./data/
+COPY init_db.py ./
 
-# 创建数据目录（挂载卷用）
-RUN mkdir -p data/exports
+# 创建必要目录
+RUN mkdir -p data/exports logs
 
 # 暴露端口
 EXPOSE 5000

@@ -12,28 +12,3 @@ services:
     environment:
       - FLASK_ENV=production
     restart: unless-stopped
-    command: python backend/app.py
-
-  # 定时任务服务（每日凌晨2点抓取数据）
-  scheduler:
-    build: .
-    container_name: sister-scheduler
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
-    environment:
-      - FLASK_ENV=production
-    restart: unless-stopped
-    command: >
-      sh -c "
-        while true; do
-          now=$$(date +%H%M)
-          if [ \"$$now\" = \"0200\" ]; then
-            echo \"[\$$(date)] Starting daily crawl...\"
-            python crawler/crawler.py && python crawler/metrics.py
-            echo \"[\$$(date)] Daily crawl done.\"
-            sleep 60
-          fi
-          sleep 30
-        done
-      "
