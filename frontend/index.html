@@ -476,6 +476,11 @@ async function initTrendCharts() {
     // 只保留政策上线前2周（2026-07-17）之后的数据
     const cutoffDate = '2026-06-22';
     data = data.filter(d => d.week_start >= cutoffDate);
+    // 根据当前选择的周截断数据（只显示到所选周）
+    if (currentWeek && currentWeek.includes('|')) {
+      const selectedEnd = currentWeek.split('|')[1];
+      data = data.filter(d => d.week_end <= selectedEnd);
+    }
     if (data.length === 0) return;
     const labels = data.map(d => d.week_label);
     const policyDate = '2026-07-17';
@@ -550,7 +555,12 @@ async function initCompareChart() {
     if (data && data.length > 0) {
       const policyDate = '2026-07-17';
       const before = data.filter(d => d.week_end < policyDate);
-      const after = data.filter(d => d.week_start >= policyDate);
+      let after = data.filter(d => d.week_start >= policyDate);
+      // 根据当前选择的周截断政策后数据
+      if (currentWeek && currentWeek.includes('|')) {
+        const selectedEnd = currentWeek.split('|')[1];
+        after = after.filter(d => d.week_end <= selectedEnd);
+      }
       const avg = (arr, key) => arr.length > 0 ? arr.reduce((s, d) => s + d[key], 0) / arr.length : 0;
       const metrics = [
         { name: '📦 周均新成团数', key: 'new_team_count', unit: '个' },
