@@ -209,6 +209,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       <table class="data-table"><thead><tr><th>指标</th><th>政策前(均值)</th><th>政策后(当前)</th><th>变化幅度</th><th>趋势</th></tr></thead>
       <tbody id="compare-table-body"></tbody></table>
     </div>
+    <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div></div>
   </div>
 
   <!-- 明细 -->
@@ -574,6 +575,28 @@ async function initCompareChart() {
         charts.hallCompare.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' }, grid: { left: 160, right: 30, top: 20, bottom: 30 }, xAxis: { type: 'value' }, yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } }, series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }] });
       }
     } catch (e) { console.error('大厅排名加载失败:', e); }
+
+    // 新成团 vs 解散联动（双轴图）
+    try {
+      const labels = data.map(d => d.week_label);
+      const newTeams = data.map(d => d.new_team_count || 0);
+      const dissolved = data.map(d => d.dissolved_count || 0);
+      if (!charts.compareDual) { charts.compareDual = echarts.init(document.getElementById('chart-compare-dual')); }
+      charts.compareDual.setOption({
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+        legend: { data: ['新成团数', '解散数'], top: 5 },
+        grid: { left: 50, right: 50, top: 40, bottom: 50 },
+        xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+        yAxis: [
+          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#667eea' } } },
+          { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#ff4d4f' } } }
+        ],
+        series: [
+          { name: '新成团数', type: 'bar', data: newTeams, itemStyle: { color: '#667eea', borderRadius: [4,4,0,0] }, barWidth: '40%' },
+          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' } }
+        ]
+      });
+    } catch (e) { console.error('双轴图加载失败:', e); }
   } catch (e) { console.error('对比分析加载失败:', e); }
 }
 
