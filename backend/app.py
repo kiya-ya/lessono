@@ -129,7 +129,7 @@ def api_kpi():
             'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
             'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
             'achievement':   {'value': achieve_rate, 'change': round(achieve_rate - prev_achieve_rate, 2), 'unit': '%'},
-            'active_dissolved_pct': {'value': round((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0, 1), 'change': 0, 'unit': '%', 'reverse': True},
+            'active_dissolved_pct': {'value': round((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0, 1), 'change': round(((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0) - ((prev_row['active_dissolved_count'] / prev_row['dissolved_count'] * 100) if prev_row and prev_row['dissolved_count'] > 0 else 0), 2), 'unit': '%', 'reverse': True},
         }
         return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
     
@@ -200,6 +200,42 @@ def api_trends():
     values = [r['value'] for r in rows]
     
     return jsonify({'dates': dates, 'values': values, 'metric': metric})
+
+
+@app.route('/api/daily-retention')
+def api_daily_retention():
+    """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
+    days = int(request.args.get('days', 14))
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT date_str, active_team_count, dissolved_count
+        FROM stats_daily
+        WHERE hall_name = '全部' AND date_str IS NOT NULL
+        ORDER BY date_str DESC LIMIT ?
+    ''', (days,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    rows = list(reversed(rows))
+    dates = [r['date_str'] for r in rows]
+    retention = []
+    dissolution = []
+    for r in rows:
+        active = r['active_team_count'] or 0
+        dissolved = r['dissolved_count'] or 0
+        total = active + dissolved
+        if total > 0:
+            ret = round(active / total * 100, 1)
+            dis = round(dissolved / total * 100, 1)
+        else:
+            ret = dis = 0
+        retention.append(min(100, ret))
+        dissolution.append(dis)
+    
+    return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution})
+
+
+@app.route('/api/weekly-report')
 
 
 @app.route('/api/weekly-report')
