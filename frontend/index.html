@@ -423,6 +423,32 @@ async function initTrendChart() {
 async function initOverviewRetentionChart() {
   if (charts.overviewRetention) { charts.overviewRetention.resize(); return; }
   try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=2');
+    const result = await res.json();
+    let data = result.data || [];
+    if (data.length === 0) return;
+    // 正序排列（从左到右：旧 -> 新）
+    data = data.reverse();
+    const labels = data.map(d => d.week_label);
+    const retention = data.map(d => Math.min(100, d.retention_rate || 0));
+    const dissolution = data.map(d => d.dissolution_rate || 0);
+    const chart = echarts.init(document.getElementById('chart-overview-retention'));
+    charts.overviewRetention = chart;
+    chart.setOption({
+      tooltip: { trigger: 'axis', formatter: function(p) { return p.map(i => `${i.seriesName}: ${i.value}%`).join('<br/>'); } },
+      legend: { data: ['留存率', '解散率'], top: 5 },
+      grid: { left: 50, right: 30, top: 40, bottom: 40 },
+      xAxis: { type: 'category', data: labels, axisLabel: { rotate: 30, fontSize: 10 } },
+      yAxis: { type: 'value', name: '%', max: 120 },
+      series: [
+        { name: '留存率', type: 'line', data: retention, smooth: true, lineStyle: { color: '#52c41a', width: 2 }, itemStyle: { color: '#52c41a' } },
+        { name: '解散率', type: 'line', data: dissolution, smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' } }
+      ]
+    });
+  } catch (e) { console.error('留存/解散趋势图加载失败:', e); }
+}
+  if (charts.overviewRetention) { charts.overviewRetention.resize(); return; }
+  try {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=8');
     const result = await res.json();
     const data = result.data || [];
