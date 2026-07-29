@@ -207,6 +207,17 @@ def api_daily_retention():
     """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
     days = int(request.args.get('days', 14))
     conn = get_db_conn()
+    # 注意：stats_daily 表只有汇总数据（hall_name='全部'），不支持按大厅筛选
+    cursor = conn.execute('''
+        SELECT date_str, active_team_count, dissolved_count
+        FROM stats_daily
+        WHERE hall_name = '全部' AND date_str IS NOT NULL
+        ORDER BY date_str DESC LIMIT ?
+    ''', (days,))
+def api_daily_retention():
+    """返回近N天的日级留存率/解散率（基于 stats_daily 聚合计算）"""
+    days = int(request.args.get('days', 14))
+    conn = get_db_conn()
     hall = request.args.get('hall', '全部')
     cursor = conn.execute('''
         SELECT date_str, active_team_count, dissolved_count
@@ -238,6 +249,21 @@ def api_daily_retention():
 
 
 @app.route('/api/weekly-report')
+def api_weekly_report():
+    limit = request.args.get('limit', 'all')
+    # 注意：weekly_report 表只有汇总数据（hall_name='all'），不支持按大厅筛选
+    conn = get_db_conn()
+    
+    if limit == 'all':
+        cursor = conn.execute('''
+            SELECT * FROM weekly_report WHERE hall_name = 'all'
+            ORDER BY week_start
+        ''')
+    else:
+        cursor = conn.execute('''
+            SELECT * FROM weekly_report WHERE hall_name = 'all'
+            ORDER BY week_start DESC LIMIT ?
+        ''', (int(limit),))
 def api_weekly_report():
     limit = request.args.get('limit', 'all')
     hall = request.args.get('hall', 'all')
