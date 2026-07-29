@@ -65,9 +65,46 @@ def api_halls():
 
 @app.route('/api/kpi')
 def api_kpi():
-    """KPI概览数据（8项核心指标），支持按大厅过滤"""
+    """KPI概览数据（8项核心指标），支持按大厅和周过滤"""
     hall = request.args.get('hall', 'all')
+    week = request.args.get('week', '')
     conn = get_db_conn()
+    
+    
+    if week and '|' in week:
+        ws, we = week.split('|')
+        cursor = conn.execute("""
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                   total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
+        """, (ws, we))
+        this_row = cursor.fetchone()
+        if not this_row:
+            conn.close()
+            return jsonify({'error': '该周暂无数据'}), 404
+        cursor = conn.execute("""
+            SELECT * FROM weekly_report WHERE hall_name = 'all' AND week_start < ?
+            ORDER BY week_start DESC LIMIT 1
+        """, (ws,))
+        prev_row = cursor.fetchone()
+        conn.close()
+        def calc_pct(curr, prev):
+            if prev == 0: return 0
+            return round((curr - prev) / prev * 100, 2)
+        def getv(row, key, default=0):
+            return row[key] if row else default
+        kpis = {
+            'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
+            'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
+            'retention':     {'value': this_row['retention_rate'],      'change': round(this_row['retention_rate'] - getv(prev_row, 'retention_rate'), 2),     'unit': '%'},
+            'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
+            'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
+            'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
+            'achievement':   {'value': 0, 'change': 0, 'unit': '%'},
+            'active_dissolved_pct': {'value': round((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0, 1), 'change': 0, 'unit': '%', 'reverse': True},
+        }
+        return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
     
     cursor = conn.execute('''
         SELECT cycle, new_team_count, active_team_count, dissolved_count, active_dissolved_count,
@@ -220,21 +257,29 @@ def api_hall_stats():
 
 @app.route('/api/alerts')
 def api_alerts():
-    """返回最近一周的预警列表"""
-    from datetime import datetime, timedelta
-    week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-    
+    """返回预警列表，支持按周过滤"""
+    week = request.args.get('week', '')
     conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT alert_type, severity, title, description, metric_value, week_label, created_at
-        FROM alerts
-        WHERE is_resolved = 0 AND created_at >= ?
-        ORDER BY severity DESC, created_at DESC
-        LIMIT 20
-    ''', (week_ago,))
+    if week:
+        cursor = conn.execute('''
+            SELECT alert_type, severity, title, description, metric_value, week_label, created_at
+            FROM alerts
+            WHERE week_label = ?
+            ORDER BY severity DESC, created_at DESC
+            LIMIT 20
+        ''', (week,))
+    else:
+        from datetime import datetime, timedelta
+        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        cursor = conn.execute('''
+            SELECT alert_type, severity, title, description, metric_value, week_label, created_at
+            FROM alerts
+            WHERE is_resolved = 0 AND created_at >= ?
+            ORDER BY severity DESC, created_at DESC
+            LIMIT 20
+        ''', (week_ago,))
     rows = cursor.fetchall()
     conn.close()
-    
     alerts = []
     for row in rows:
         alerts.append({
@@ -245,24 +290,7 @@ def api_alerts():
             'week_label': row['week_label'],
             'created_at': row['created_at'],
         })
-    
     return jsonify({'data': alerts})
-
-def api_alerts():
-    alerts = [
-        {
-            'severity': 'high',
-            'title': '解散率突增',
-            'message': '本周解散率环比上升35.5%，触发大厅：LOL战争女神厅',
-        },
-        {
-            'severity': 'medium',
-            'title': '流水连续下降',
-            'message': '本周流水8.5K，环比↓3.4%，已连续降2周',
-        }
-    ]
-    return jsonify({'data': alerts})
-
 
 @app.route('/api/export/weekly')
 def api_export_weekly():

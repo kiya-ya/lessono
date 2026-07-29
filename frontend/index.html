@@ -286,9 +286,14 @@ let charts = {};
 let _lastUIDResult = null;
 let detailPage = 1;
 let currentHall = 'all';
+let currentWeek = '';
 
 function getHallParam() {
   return currentHall === 'all' ? '' : '&hall=' + encodeURIComponent(currentHall);
+}
+
+function getWeekParam() {
+  return currentWeek ? '&week=' + encodeURIComponent(currentWeek) : '';
 }
 
 async function loadHalls() {
@@ -329,7 +334,9 @@ async function loadWeeks() {
 }
 
 function onWeekChange() {
-  // 切换周时刷新趋势图（重新加载数据）
+  currentWeek = document.getElementById('week-select').value;
+  loadKPI();
+  loadAlerts();
   if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
   initTrendChart();
 }
@@ -347,7 +354,7 @@ function switchTab(tabName) {
 
 async function loadKPI() {
   try {
-    const res = await fetch(API_BASE + '/api/kpi?' + getHallParam());
+    const res = await fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam());
     const result = await res.json();
     const d = result.data;
     document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
@@ -379,7 +386,7 @@ function setChange(id, value, reverse = false) {
 
 async function loadAlerts() {
   try {
-    const res = await fetch(API_BASE + '/api/alerts');
+    const res = await fetch(API_BASE + '/api/alerts?' + getWeekParam().substring(1));
     const result = await res.json();
     const list = document.getElementById('alert-list');
     if (!result.data || result.data.length === 0) {
