@@ -220,6 +220,35 @@ def api_hall_stats():
 
 @app.route('/api/alerts')
 def api_alerts():
+    """返回最近一周的预警列表"""
+    from datetime import datetime, timedelta
+    week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+    
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT alert_type, severity, title, description, metric_value, week_label, created_at
+        FROM alerts
+        WHERE is_resolved = 0 AND created_at >= ?
+        ORDER BY severity DESC, created_at DESC
+        LIMIT 20
+    ''', (week_ago,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    alerts = []
+    for row in rows:
+        alerts.append({
+            'severity': row['severity'],
+            'title': row['title'],
+            'message': row['description'],
+            'metric_value': row['metric_value'],
+            'week_label': row['week_label'],
+            'created_at': row['created_at'],
+        })
+    
+    return jsonify({'data': alerts})
+
+def api_alerts():
     alerts = [
         {
             'severity': 'high',

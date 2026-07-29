@@ -55,6 +55,13 @@ def main():
         status = 'success'
         msg = '数据抓取成功'
         print(f'\n[SUCCESS] {msg}')
+
+        # 抓取成功后运行预警检测
+        try:
+            from alerts_engine import run_alerts_check
+            run_alerts_check()
+        except Exception as ae:
+            print(f'[WARN] 预警检测运行失败: {ae}')
     except Exception as e:
         status = 'failed'
         msg = f'数据抓取失败: {e}'
