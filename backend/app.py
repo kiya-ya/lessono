@@ -88,12 +88,39 @@ def api_kpi():
             ORDER BY week_start DESC LIMIT 1
         """, (ws,))
         prev_row = cursor.fetchone()
-        conn.close()
+        # 先不 close，还需要查询成就数据
         def calc_pct(curr, prev):
             if prev == 0: return 0
             return round((curr - prev) / prev * 100, 2)
         def getv(row, key, default=0):
             return row[key] if row else default
+        
+        # 从 stats_daily 聚合该周的成就数据
+        cursor = conn.execute("""
+            SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
+                   SUM(active_team_count) as active
+            FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
+        """, (ws, we))
+        achieve_row = cursor.fetchone()
+        achieve_total = (achieve_row['lvl'] or 0) + (achieve_row['rev'] or 0)
+        achieve_rate = round(achieve_total / achieve_row['active'] * 100, 1) if achieve_row['active'] else 0
+        
+        # 前一周成就（用于环比）
+        pws = getv(prev_row, 'week_start', '')
+        pwe = getv(prev_row, 'week_end', '')
+        prev_achieve_rate = 0
+        if pws and pwe:
+            cursor = conn.execute("""
+                SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
+                       SUM(active_team_count) as active
+                FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
+            """, (pws, pwe))
+            prev_achieve = cursor.fetchone()
+            pat = (prev_achieve['lvl'] or 0) + (prev_achieve['rev'] or 0)
+            prev_achieve_rate = round(pat / prev_achieve['active'] * 100, 1) if prev_achieve['active'] else 0
+        
+        conn.close()
+        
         kpis = {
             'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
             'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
@@ -101,7 +128,7 @@ def api_kpi():
             'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
             'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
             'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
-            'achievement':   {'value': 0, 'change': 0, 'unit': '%'},
+            'achievement':   {'value': achieve_rate, 'change': round(achieve_rate - prev_achieve_rate, 2), 'unit': '%'},
             'active_dissolved_pct': {'value': round((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0, 1), 'change': 0, 'unit': '%', 'reverse': True},
         }
         return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
