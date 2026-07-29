@@ -153,7 +153,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
 <div class="toolbar">
   <label>📅 时间:</label>
-  <select id="week-select"><option>第30周 (07-21 ~ 07-27)</option><option>第29周 (07-14 ~ 07-20)</option></select>
+  <select id="week-select" onchange="onWeekChange()"></select>
   <label>🏠 大厅:</label>
   <select id="hall-select" onchange="onHallChange()"><option value="all">全部大厅</option></select>
   <button onclick="refreshData()">🔄 刷新</button>
@@ -183,7 +183,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
       <div class="kpi-card"><div class="kpi-label">⚠️ 主动解散占比</div><div class="kpi-value" id="kpi-active-dissolved">--</div><div class="kpi-change" id="kpi-active-dissolved-change">--</div></div>
     </div>
     <div class="alert-bar"><h3>⚠️ 本周预警</h3><div id="alert-list"></div></div>
-    <div class="chart-card"><h3>📈 新成团数趋势（近90天）</h3><div class="chart-container" id="chart-trend"></div></div>
+    <div class="chart-card"><h3>📈 新成团数趋势（近2周）</h3><div class="chart-container" id="chart-trend"></div></div>
   </div>
 
   <!-- 趋势 -->
@@ -311,6 +311,29 @@ function onHallChange() {
   refreshData();
 }
 
+async function loadWeeks() {
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
+    const result = await res.json();
+    const select = document.getElementById('week-select');
+    select.innerHTML = '';
+    const weeks = (result.data || []).slice().reverse(); // 从新到旧
+    weeks.forEach((w, idx) => {
+      const opt = document.createElement('option');
+      opt.value = w.week_start + '|' + w.week_end;
+      opt.textContent = w.week_start + ' ~ ' + w.week_end;
+      if (idx === weeks.length - 1) opt.selected = true; // 默认选最新
+      select.appendChild(opt);
+    });
+  } catch (e) { console.error('周列表加载失败:', e); }
+}
+
+function onWeekChange() {
+  // 切换周时刷新趋势图（重新加载数据）
+  if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
+  initTrendChart();
+}
+
 function switchTab(tabName) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -379,9 +402,13 @@ async function initTrendChart() {
   try {
     const res = await fetch(API_BASE + '/api/trends?metric=new_team_count&date_type=1');
     const data = await res.json();
+    // 只取近2周（14天）
+    const sliceSize = 14;
+    const dates = data.dates.slice(-sliceSize);
+    const values = data.values.slice(-sliceSize);
     const chart = echarts.init(document.getElementById('chart-trend'));
     charts.trend = chart;
-    chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: data.dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: data.values, smooth: true, lineStyle: { color: '#667eea', width: 2 }, itemStyle: { color: '#667eea' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(102,126,234,0.3)' }, { offset: 1, color: 'rgba(102,126,234,0.05)' }]) } }] });
+    chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: values, smooth: true, lineStyle: { color: '#667eea', width: 2 }, itemStyle: { color: '#667eea' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(102,126,234,0.3)' }, { offset: 1, color: 'rgba(102,126,234,0.05)' }]) } }] });
   } catch (e) { console.error('趋势图加载失败:', e); }
 }
 
@@ -625,6 +652,7 @@ window.addEventListener('resize', () => { Object.values(charts).forEach(c => c &
 
 document.addEventListener('DOMContentLoaded', () => {
   loadHalls();
+  loadWeeks();
   loadLastUpdate();
   loadKPI(); loadAlerts(); initTrendChart(); loadDetailTable();
   const policyDate = new Date('2026-07-17');
