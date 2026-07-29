@@ -445,8 +445,12 @@ async function initTrendCharts() {
   try {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
     const result = await res.json();
-    const data = result.data;
+    let data = result.data;
     if (!data || data.length === 0) return;
+    // 只保留政策上线前2周（2026-07-17）之后的数据
+    const cutoffDate = '2026-06-29';
+    data = data.filter(d => d.week_start >= cutoffDate);
+    if (data.length === 0) return;
     const labels = data.map(d => d.week_label);
     const policyDate = '2026-07-17';
     let policyIndex = data.findIndex(d => d.week_start >= policyDate);
