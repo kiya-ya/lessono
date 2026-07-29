@@ -211,14 +211,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
-    <div class="search-box">
-      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称...">
-      <button onclick="loadDetailTable()">🔍 搜索</button>
+    <div class="search-box" style="flex-wrap:wrap;">
+      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称..." style="flex:1;min-width:180px;">
+      <select id="detail-status" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
+        <option value="all">全部状态</option>
+        <option value="active">进行中</option>
+        <option value="dissolved">已解散</option>
+      </select>
+      <select id="detail-per-page" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
+        <option value="10">10条/页</option>
+        <option value="20" selected>20条/页</option>
+        <option value="50">50条/页</option>
+        <option value="100">100条/页</option>
+      </select>
+      <button onclick="loadDetailTable(1)">🔍 搜索</button>
       <button onclick="exportDetail()">📥 导出CSV</button>
     </div>
     <div class="chart-card">
       <table class="data-table">
-        <thead><tr><th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>累计流水</th><th>奖励金额</th><th>解散日期</th></tr></thead>
+        <thead><tr><th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>累计流水</th><th>奖励金额</th><th>状态</th><th>解散日期</th></tr></thead>
         <tbody id="detail-table-body"></tbody>
       </table>
       <div class="pagination" id="detail-pagination"></div>
@@ -557,24 +568,43 @@ async function initCompareChart() {
   } catch (e) { console.error('对比分析加载失败:', e); }
 }
 
+let detailPerPage = 20;
+let detailStatus = 'all';
+
 async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;
+  detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
+  detailStatus = document.getElementById('detail-status').value;
   try {
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${search}` + getHallParam());
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam());
     const result = await res.json();
-    document.getElementById('detail-table-body').innerHTML = result.data.map(row => `
-      <tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
+    document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
+      const status = row.dissolve_date ? '已解散' : '进行中';
+      const statusStyle = row.dissolve_date ? 'color:#ff4d4f;' : 'color:#52c41a;';
+      return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
       <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
       <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
       <td>${row.days_since_formed || 0}</td><td>¥${(row.sister_revenue || 0).toFixed(1)}</td>
-      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td>${row.dissolve_date || '-'}</td></tr>
-    `).join('');
+      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
+    }).join('');
+    
+    // 分页渲染
     const totalPages = Math.ceil(result.total / result.per_page);
-    let html = '';
-    if (page > 1) html += `<button onclick="loadDetailTable(${page-1})">上一页</button>`;
-    for (let i = 1; i <= totalPages && i <= 5; i++) html += `<button class="${i === page ? 'active' : ''}" onclick="loadDetailTable(${i})">${i}</button>`;
-    if (page < totalPages) html += `<button onclick="loadDetailTable(${page+1})">下一页</button>`;
+    let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${result.total} 条 · 第 ${page}/${totalPages} 页</span>`;
+    if (page > 1) html += `<button onclick="loadDetailTable(1)">首页</button><button onclick="loadDetailTable(${page-1})">上一页</button>`;
+    
+    // 页码范围：当前页前后各2页
+    const startPage = Math.max(1, page - 2);
+    const endPage = Math.min(totalPages, page + 2);
+    if (startPage > 1) html += `<button onclick="loadDetailTable(1)">1</button>${startPage > 2 ? '<span style="padding:6px;">...</span>' : ''}`;
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="${i === page ? 'active' : ''}" onclick="loadDetailTable(${i})">${i}</button>`;
+    }
+    if (endPage < totalPages) html += `${endPage < totalPages - 1 ? '<span style="padding:6px;">...</span>' : ''}<button onclick="loadDetailTable(${totalPages})">${totalPages}</button>`;
+    
+    if (page < totalPages) html += `<button onclick="loadDetailTable(${page+1})">下一页</button><button onclick="loadDetailTable(${totalPages})">末页</button>`;
+    html += `<input type="number" id="goto-page" min="1" max="${totalPages}" placeholder="跳转到" style="width:60px;padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;margin-left:8px;"><button onclick="const gp=parseInt(document.getElementById('goto-page').value);if(gp>=1&&gp<=${totalPages})loadDetailTable(gp);" style="margin-left:4px;">GO</button>`;
     document.getElementById('detail-pagination').innerHTML = html;
   } catch (e) { console.error('明细加载失败:', e); }
 }

@@ -266,6 +266,48 @@ def api_detail_table():
     per_page = int(request.args.get('per_page', 20))
     search = request.args.get('search', '')
     hall = request.args.get('hall', 'all')
+    status = request.args.get('status', 'all')
+    
+    conn = get_db_conn()
+    
+    conditions = []
+    params = []
+    if search:
+        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ?)')
+        params = [f'%{search}%', f'%{search}%', f'%{search}%']
+    if hall != 'all':
+        conditions.append('hall_name = ?')
+        params.append(hall)
+    if status == 'active':
+        conditions.append('dissolve_date IS NULL')
+    elif status == 'dissolved':
+        conditions.append('dissolve_date IS NOT NULL')
+    
+    where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
+    
+    cursor = conn.execute(f'SELECT COUNT(*) as total FROM team_detail {where_clause}', params)
+    total = cursor.fetchone()['total']
+    
+    offset = (page - 1) * per_page
+    cursor = conn.execute(f'''
+        SELECT * FROM team_detail {where_clause}
+        ORDER BY snapshot_date DESC, team_id DESC
+        LIMIT ? OFFSET ?
+    ''', params + [per_page, offset])
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return jsonify({
+        'data': rows,
+        'total': total,
+        'page': page,
+        'per_page': per_page
+    })
+def api_detail_table():
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
+    search = request.args.get('search', '')
+    hall = request.args.get('hall', 'all')
     
     conn = get_db_conn()
     
