@@ -692,6 +692,15 @@ async function saveCookie(target) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cookie_str: cookieStr })
     });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      if (resp.status === 404) {
+        alert('❌ 后端接口不存在 (404)，请确认后端已重启并加载最新代码');
+      } else {
+        alert('❌ 服务器错误 (' + resp.status + '): ' + text.substring(0, 200));
+      }
+      return;
+    }
     const data = await resp.json();
     if (data.success) {
       alert('✅ ' + label + ' Cookie 更新成功！');
@@ -702,7 +711,7 @@ async function saveCookie(target) {
       alert('❌ 更新失败: ' + (data.error || '未知错误'));
     }
   } catch (e) {
-    alert('❌ 请求失败: ' + e.message);
+    alert('❌ 网络请求失败: ' + (e.message || '请确认后端服务已启动'));
   }
 }
 
