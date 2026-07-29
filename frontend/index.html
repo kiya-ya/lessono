@@ -608,6 +608,11 @@ async function initCompareChart() {
         ]
       });
     } catch (e) { console.error('双轴图加载失败:', e); }
+    // 确保图表在容器显示后正确渲染尺寸
+    setTimeout(() => {
+      if (charts.hallCompare) charts.hallCompare.resize();
+      if (charts.compareDual) charts.compareDual.resize();
+    }, 100);
   } catch (e) { console.error('对比分析加载失败:', e); }
 }
 
