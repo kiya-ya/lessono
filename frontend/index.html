@@ -337,8 +337,21 @@ function onWeekChange() {
   currentWeek = document.getElementById('week-select').value;
   loadKPI();
   loadAlerts();
+  // 概览页图表刷新
   if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
   initTrendChart();
+  if (charts.overviewRetention) { charts.overviewRetention.dispose(); charts.overviewRetention = null; }
+  initOverviewRetentionChart();
+  // 核心趋势页图表刷新
+  if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
+  if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
+  if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }
+  if (charts.activity) { charts.activity.dispose(); charts.activity = null; }
+  initTrendCharts();
+  // 对比分析页刷新
+  initCompareChart();
+  // 明细数据刷新
+  loadDetailTable();
 }
 
 function switchTab(tabName) {
@@ -448,7 +461,7 @@ async function initTrendCharts() {
     let data = result.data;
     if (!data || data.length === 0) return;
     // 只保留政策上线前2周（2026-07-17）之后的数据
-    const cutoffDate = '2026-06-29';
+    const cutoffDate = '2026-06-22';
     data = data.filter(d => d.week_start >= cutoffDate);
     if (data.length === 0) return;
     const labels = data.map(d => d.week_label);
