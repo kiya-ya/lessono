@@ -482,69 +482,6 @@ def api_cookie_bigdata_update():
     except Exception as e:
         return jsonify({'error': f'保存失败: {e}'}), 500
 
-@app.route('/api/cookie', methods=['GET'])
-def api_cookie_get():
-    """获取当前 Cookie 状态（不返回完整 Cookie，只返回状态）"""
-    try:
-        with open(COOKIE_FILE, 'r', encoding='utf-8') as f:
-            cfg = json.load(f)
-        cookie_str = cfg.get('cookie_str', '')
-        # 提取关键字段判断有效性
-        has_phpssid = 'PHPSESSID' in cookie_str
-        has_dede = 'DedeUserID' in cookie_str
-        return jsonify({
-            'status': 'valid' if (has_phpssid and has_dede) else 'invalid',
-            'updated_at': cfg.get('updated_at', ''),
-            'has_phpssid': has_phpssid,
-            'has_dede': has_dede,
-            'length': len(cookie_str),
-        })
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
-@app.route('/api/cookie', methods=['POST'])
-def api_cookie_update():
-    """更新 Cookie（从前端粘贴）
-    请求体: { cookie_str: string, basic_auth?: string }
-    """
-    body = request.get_json() or {}
-    cookie_str = body.get('cookie_str', '').strip()
-    basic_auth = body.get('basic_auth', '').strip()
-
-    if not cookie_str:
-        return jsonify({'error': 'Cookie 不能为空'}), 400
-
-    # 简单验证
-    if 'PHPSESSID' not in cookie_str:
-        return jsonify({
-            'error': 'Cookie 格式不正确，缺少 PHPSESSID',
-            'hint': '请从浏览器 Network 面板复制完整的 Request Headers Cookie'
-        }), 400
-
-    try:
-        cfg = {
-            'cookie_str': cookie_str,
-            'basic_auth': basic_auth or 'MjAxODoyMDE4dHV3YW50ZW5nZmVp',
-            'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'source': 'frontend',
-        }
-        with open(COOKIE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cfg, f, ensure_ascii=False, indent=2)
-
-        # 重新加载爬虫模块的 Cookie（通过重新导入或设置环境变量）
-        os.environ['UID_QUERY_COOKIE'] = cookie_str
-        if basic_auth:
-            os.environ['UID_BASIC_AUTH'] = basic_auth
-
-        return jsonify({
-            'success': True,
-            'message': 'Cookie 更新成功',
-            'updated_at': cfg['updated_at'],
-            'length': len(cookie_str),
-        })
-    except Exception as e:
-        return jsonify({'error': f'保存失败: {e}'}), 500
 
 
 
