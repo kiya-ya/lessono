@@ -550,9 +550,28 @@ async function initCompareChart() {
       const before = data.filter(d => d.week_end < policyDate);
       const after = data.filter(d => d.week_start >= policyDate);
       const avg = (arr, key) => arr.length > 0 ? arr.reduce((s, d) => s + d[key], 0) / arr.length : 0;
-      const metrics = [{ name: '📦 周均新成团数', key: 'new_team_count', unit: '个' }, { name: '💯 平均留存率', key: 'retention_rate', unit: '%' }, { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%' }, { name: '💰 周均总流水', key: 'total_reward', unit: '元' }, { name: '📊 平均活跃度', key: 'activity_index', unit: '' }];
+      const metrics = [
+        { name: '📦 周均新成团数', key: 'new_team_count', unit: '个' },
+        { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
+        { name: '💯 平均留存率', key: 'retention_rate', unit: '%' },
+        { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%', reverse: true },
+        { name: '💰 周均总流水', key: 'total_reward', unit: '元' },
+        { name: '📊 平均活跃度', key: 'activity_index', unit: '' },
+        { name: '🏆 成就达成率', unit: '%', calc: (d) => { const total = (d.level_achievement_count || 0) + (d.revenue_achievement_count || 0); const active = d.active_team_count_end || 1; return total / active * 100; } },
+        { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
+      ];
       const tbody = document.getElementById('compare-table-body');
-      tbody.innerHTML = metrics.map(m => { const b = avg(before, m.key); const a = avg(after, m.key); let changePct = 0, arrow = '→', trend = 'flat', trendClass = 'flat'; if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isReverse = m.key === 'dissolution_rate'; const isGood = isReverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; } const bStr = m.unit === '元' ? `¥${b.toFixed(0)}` : `${b.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`; const aStr = m.unit === '元' ? `¥${a.toFixed(0)}` : `${a.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`; return `<tr><td>${m.name}</td><td>${bStr}</td><td>${aStr}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`; }).join('');
+      tbody.innerHTML = metrics.map(m => {
+        const getVal = (arr) => {
+          if (m.calc) return arr.reduce((s, d) => s + m.calc(d), 0) / arr.length;
+          return arr.reduce((s, d) => s + (d[m.key] || 0), 0) / arr.length;
+        };
+        const b = getVal(before); const a = getVal(after);
+        let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
+        if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
+        const fmt = (v) => m.unit === '元' ? `¥${v.toFixed(0)}` : `${v.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
+        return `<tr><td>${m.name}</td><td>${fmt(b)}</td><td>${fmt(a)}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
+      }).join('');
     }
     try {
       const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=10');
