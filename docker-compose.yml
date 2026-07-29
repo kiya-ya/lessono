@@ -11,7 +11,6 @@ services:
       - ./logs:/app/logs
     environment:
       - FLASK_ENV=production
-      - SISTERS_COOKIE=${SISTERS_COOKIE}
     restart: unless-stopped
     command: python backend/app.py
 
@@ -23,16 +22,16 @@ services:
       - ./data:/app/data
       - ./logs:/app/logs
     environment:
-      - SISTERS_COOKIE=${SISTERS_COOKIE}
+      - FLASK_ENV=production
     restart: unless-stopped
     command: >
       sh -c "
         while true; do
           now=$$(date +%H%M)
           if [ \"$$now\" = \"0200\" ]; then
-            echo \"[$$(date)] Starting daily crawl...\"
+            echo \"[\$$(date)] Starting daily crawl...\"
             python crawler/crawler.py && python crawler/metrics.py
-            echo \"[$$(date)] Daily crawl done.\"
+            echo \"[\$$(date)] Daily crawl done.\"
             sleep 60
           fi
           sleep 30
