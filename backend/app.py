@@ -249,28 +249,24 @@ def api_daily_retention():
 @app.route('/api/weekly-report')
 def api_weekly_report():
     limit = request.args.get('limit', 'all')
-    hall = request.args.get('hall', 'all')
+    # 始终返回汇总数据（数据库只有 hall_name='all'）
     conn = get_db_conn()
-    
-    hall_filter = hall if hall != 'all' else 'all'
     
     if limit == 'all':
         cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = ?
+            SELECT * FROM weekly_report WHERE hall_name = 'all'
             ORDER BY week_start
-        ''', (hall_filter,))
+        ''')
     else:
         cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = ?
+            SELECT * FROM weekly_report WHERE hall_name = 'all'
             ORDER BY week_start DESC LIMIT ?
-        ''', (hall_filter, int(limit)))
+        ''', (int(limit),))
     
     rows = cursor.fetchall()
     conn.close()
     
     return jsonify({'data': rows})
-
-
 @app.route('/api/detail-table')
 def api_detail_table():
     page = int(request.args.get('page', 1))
