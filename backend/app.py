@@ -321,17 +321,44 @@ def api_hall_stats():
 
 @app.route('/api/alerts')
 def api_alerts():
-    """动态生成预警列表，基于最近3周数据对比"""
+    """动态生成预警列表，支持按指定周或最近3周对比"""
+    week = request.args.get('week', '')
     conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-               dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-               total_reward, activity_index
-        FROM weekly_report WHERE hall_name = 'all'
-        ORDER BY week_start DESC LIMIT 3
-    ''')
-    rows = cursor.fetchall()
-    conn.close()
+    
+    if week and '|' in week:
+        ws, we = week.split('|')
+        # 查询指定周
+        cursor = conn.execute('''
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                   total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
+        ''', (ws, we))
+        this_week = cursor.fetchone()
+        if not this_week:
+            conn.close()
+            return jsonify({'data': []})
+        # 查询前两周（用于环比和连续趋势）
+        cursor = conn.execute('''
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                   total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all' AND week_end < ?
+            ORDER BY week_end DESC LIMIT 2
+        ''', (ws,))
+        prev_rows = cursor.fetchall()
+        conn.close()
+        rows = [this_week] + list(prev_rows)
+    else:
+        cursor = conn.execute('''
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                   total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all'
+            ORDER BY week_start DESC LIMIT 3
+        ''')
+        rows = cursor.fetchall()
+        conn.close()
     
     alerts = []
     if len(rows) < 2:
@@ -424,41 +451,6 @@ def api_alerts():
             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         })
     
-    return jsonify({'data': alerts})
-def api_alerts():
-    """返回预警列表，支持按周过滤"""
-    week = request.args.get('week', '')
-    conn = get_db_conn()
-    if week:
-        cursor = conn.execute('''
-            SELECT alert_type, severity, title, description, metric_value, week_label, created_at
-            FROM alerts
-            WHERE week_label = ?
-            ORDER BY severity DESC, created_at DESC
-            LIMIT 20
-        ''', (week,))
-    else:
-        from datetime import datetime, timedelta
-        week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-        cursor = conn.execute('''
-            SELECT alert_type, severity, title, description, metric_value, week_label, created_at
-            FROM alerts
-            WHERE is_resolved = 0 AND created_at >= ?
-            ORDER BY severity DESC, created_at DESC
-            LIMIT 20
-        ''', (week_ago,))
-    rows = cursor.fetchall()
-    conn.close()
-    alerts = []
-    for row in rows:
-        alerts.append({
-            'severity': row['severity'],
-            'title': row['title'],
-            'message': row['description'],
-            'metric_value': row['metric_value'],
-            'week_label': row['week_label'],
-            'created_at': row['created_at'],
-        })
     return jsonify({'data': alerts})
 
 @app.route('/api/export/weekly')
