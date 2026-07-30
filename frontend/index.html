@@ -156,7 +156,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   <label>📅 时间:</label>
   <select id="week-select" onchange="onWeekChange()"></select>
   <button onclick="refreshData()">🔄 刷新</button>
-  <button onclick="exportData()">📤 导出</button>
+  <button onclick="exportData()">📤 导出CSV</button>
+  <button onclick="exportPDF()">📄 导出PDF</button>
 </div>
 
 <div class="tabs">
@@ -671,6 +672,7 @@ async function loadDetailTable(page = 1) {
 }
 
 function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly?' + getHallParam().substring(1); a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function exportPDF() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/pdf-report?' + getWeekParam().substring(1); a.download = 'sister_report.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail?' + getHallParam().substring(1); a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function refreshData() {
   loadKPI();

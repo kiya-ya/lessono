@@ -478,6 +478,161 @@ def api_export_weekly():
                     headers={'Content-Disposition': 'attachment; filename=weekly_report.csv'})
 
 
+@app.route('/api/export/pdf-report')
+def api_export_pdf_report():
+    """导出周报概览+核心趋势PDF报表"""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    import io, os
+    
+    week = request.args.get('week', '')
+    conn = get_db_conn()
+    
+    # 查询周报数据
+    if week and '|' in week:
+        ws, we = week.split('|')
+        cursor = conn.execute('''
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
+        ''', (ws, we))
+        week_row = cursor.fetchone()
+        # 前一周（用于环比）
+        cursor = conn.execute('''
+            SELECT week_label, new_team_count, active_team_count_end, dissolved_count,
+                   retention_rate, dissolution_rate, total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all' AND week_end < ?
+            ORDER BY week_end DESC LIMIT 1
+        ''', (ws,))
+        prev_row = cursor.fetchone()
+    else:
+        cursor = conn.execute('''
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
+            FROM weekly_report WHERE hall_name = 'all'
+            ORDER BY week_start DESC LIMIT 2
+        ''')
+        rows = cursor.fetchall()
+        week_row = rows[0] if rows else None
+        prev_row = rows[1] if len(rows) > 1 else None
+    
+    # 查询近8周趋势数据
+    cursor = conn.execute('''
+        SELECT week_label, new_team_count, active_team_count_end, dissolved_count,
+               retention_rate, dissolution_rate, total_reward, activity_index
+        FROM weekly_report WHERE hall_name = 'all'
+        ORDER BY week_start DESC LIMIT 8
+    ''')
+    trend_rows = cursor.fetchall()
+    conn.close()
+    
+    # PDF生成
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # 注册中文字体
+    font_name = 'Helvetica'
+    for fp in ['C:/Windows/Fonts/simhei.ttf', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/simsun.ttc']:
+        if os.path.exists(fp):
+            try:
+                pdfmetrics.registerFont(TTFont('CN', fp))
+                font_name = 'CN'
+                break
+            except Exception:
+                pass
+    
+    # 标题
+    title_style = styles['Heading1']
+    title_style.fontName = font_name
+    story.append(Paragraph('姐妹团数据统计报表', title_style))
+    
+    if week_row:
+        story.append(Paragraph(f"统计周期：{week_row['week_start']} ~ {week_row['week_end']} ({week_row['week_label']})", styles['Normal']))
+    story.append(Paragraph(f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
+    story.append(Spacer(1, 16))
+    
+    # 一、KPI概览
+    story.append(Paragraph('一、周报概览（KPI）', styles['Heading2']))
+    if week_row:
+        def calc_pct(curr, prev):
+            if not prev or prev == 0: return '—'
+            return f"{round((curr - prev) / prev * 100, 1)}%"
+        
+        kpi_data = [
+            ['指标', '本周值', '上周值', '环比变化'],
+            ['新成团数', week_row['new_team_count'], prev_row['new_team_count'] if prev_row else '—', calc_pct(week_row['new_team_count'], prev_row['new_team_count'] if prev_row else None)],
+            ['进行中姐妹团', week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else '—', calc_pct(week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else None)],
+            ['留存率(%)', week_row['retention_rate'], prev_row['retention_rate'] if prev_row else '—', calc_pct(week_row['retention_rate'], prev_row['retention_rate'] if prev_row else None)],
+            ['解散率(%)', week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else '—', calc_pct(week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else None)],
+            ['总流水(元)', round(week_row['total_reward'], 1), round(prev_row['total_reward'], 1) if prev_row else '—', calc_pct(week_row['total_reward'], prev_row['total_reward'] if prev_row else None)],
+            ['活跃度', week_row['activity_index'], prev_row['activity_index'] if prev_row else '—', calc_pct(week_row['activity_index'], prev_row['activity_index'] if prev_row else None)],
+        ]
+        table = Table(kpi_data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), font_name),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 1), (-1, -1), font_name),
+        ]))
+        story.append(table)
+    story.append(Spacer(1, 20))
+    
+    # 二、核心趋势
+    story.append(Paragraph('二、核心趋势（近8周）', styles['Heading2']))
+    if trend_rows:
+        trend_data = [['周期', '新成团', '进行中', '解散', '留存率%', '解散率%', '总流水', '活跃度']]
+        for r in trend_rows:
+            trend_data.append([r['week_label'], r['new_team_count'], r['active_team_count_end'], r['dissolved_count'],
+                               r['retention_rate'], r['dissolution_rate'], round(r['total_reward'], 1), r['activity_index']])
+        table = Table(trend_data)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), font_name),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTNAME', (0, 1), (-1, -1), font_name),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(table)
+    
+    doc.build(story)
+    pdf_bytes = buf.getvalue()
+    buf.close()
+    return Response(pdf_bytes, mimetype='application/pdf',
+                    headers={'Content-Disposition': 'attachment; filename=sister_report.pdf'})
+def api_export_weekly():
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+               dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
+        FROM weekly_report WHERE hall_name = 'all' ORDER BY week_start
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    import io, csv
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['周标签', '开始日期', '结束日期', '新成团数', '进行中团数', '解散数', '留存率(%)', '解散率(%)', '总流水(元)', '活跃度'])
+    for r in rows:
+        writer.writerow([r['week_label'], r['week_start'], r['week_end'], r['new_team_count'],
+                         r['active_team_count_end'], r['dissolved_count'], r['retention_rate'],
+                         r['dissolution_rate'], r['total_reward'], r['activity_index']])
+    
+    csv_bytes = output.getvalue().encode('utf-8-sig')
+    return Response(csv_bytes, mimetype='text/csv; charset=utf-8-sig',
+                    headers={'Content-Disposition': 'attachment; filename=weekly_report.csv'})
+
+
 @app.route('/api/export/detail')
 def api_export_detail():
     hall = request.args.get('hall', 'all')
