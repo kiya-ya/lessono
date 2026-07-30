@@ -538,6 +538,27 @@ def api_export_pdf_report():
     
     # 注册中文字体
     font_name = 'Helvetica'
+    for fp, subidx in [('C:/Windows/Fonts/simhei.ttf', None), ('C:/Windows/Fonts/msyh.ttc', 0), ('C:/Windows/Fonts/simsun.ttc', 0)]:
+        if os.path.exists(fp):
+            try:
+                if subidx is not None:
+                    pdfmetrics.registerFont(TTFont('CN', fp, subfontIndex=subidx))
+                else:
+                    pdfmetrics.registerFont(TTFont('CN', fp))
+                font_name = 'CN'
+                break
+            except Exception:
+                pass
+    
+    # 设置所有样式字体
+    for style_name in ['Heading1', 'Heading2', 'Normal', 'BodyText']:
+        if style_name in styles:
+            styles[style_name].fontName = font_name
+    
+    # 标题
+    title_style = styles['Heading1']
+    story.append(Paragraph('姐妹团数据统计报表', title_style))
+    font_name = 'Helvetica'
     for fp in ['C:/Windows/Fonts/simhei.ttf', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/simsun.ttc']:
         if os.path.exists(fp):
             try:
