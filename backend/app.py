@@ -507,13 +507,17 @@ def api_export_weekly():
 
 @app.route('/api/export/pdf-report')
 def api_export_pdf_report():
-    """导出周报概览+核心趋势PDF报表"""
+    """导出周报概览+核心趋势+预警PDF报表"""
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.graphics.shapes import Drawing, Line, String, Rect
+    from reportlab.graphics.charts.linecharts import HorizontalLineChart
+    from reportlab.graphics.charts.barcharts import VerticalBarChart
+    from reportlab.graphics import renderPDF
     import io, os
     
     week = request.args.get('week', '')
@@ -523,43 +527,50 @@ def api_export_pdf_report():
     if week and '|' in week:
         ws, we = week.split('|')
         cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                   total_reward, activity_index
             FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
         ''', (ws, we))
         week_row = cursor.fetchone()
-        # 前一周（用于环比）
+        # 前两周（用于环比和连续趋势）
         cursor = conn.execute('''
-            SELECT week_label, new_team_count, active_team_count_end, dissolved_count,
-                   retention_rate, dissolution_rate, total_reward, activity_index
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
+                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
             FROM weekly_report WHERE hall_name = 'all' AND week_end < ?
-            ORDER BY week_end DESC LIMIT 1
+            ORDER BY week_end DESC LIMIT 2
         ''', (ws,))
-        prev_row = cursor.fetchone()
+        prev_rows = cursor.fetchall()
+        prev_row = prev_rows[0] if prev_rows else None
+        week3_row = prev_rows[1] if len(prev_rows) > 1 else None
     else:
         cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
                    dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
             FROM weekly_report WHERE hall_name = 'all'
-            ORDER BY week_start DESC LIMIT 2
+            ORDER BY week_start DESC LIMIT 3
         ''')
         rows = cursor.fetchall()
         week_row = rows[0] if rows else None
         prev_row = rows[1] if len(rows) > 1 else None
+        week3_row = rows[2] if len(rows) > 2 else None
     
-    # 查询近8周趋势数据
+    # 查询近12周趋势数据（用于图表）
     cursor = conn.execute('''
         SELECT week_label, new_team_count, active_team_count_end, dissolved_count,
                retention_rate, dissolution_rate, total_reward, activity_index
         FROM weekly_report WHERE hall_name = 'all'
-        ORDER BY week_start DESC LIMIT 8
+        ORDER BY week_start DESC LIMIT 12
     ''')
-    trend_rows = cursor.fetchall()
+    trend_rows = list(cursor.fetchall())
+    trend_rows.reverse()  # 从早到晚
     conn.close()
     
     # PDF生成
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4)
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            rightMargin=40, leftMargin=40,
+                            topMargin=40, bottomMargin=30)
     styles = getSampleStyleSheet()
     story = []
     
@@ -578,63 +589,171 @@ def api_export_pdf_report():
                 pass
     
     # 设置所有样式字体
-    for style_name in ['Heading1', 'Heading2', 'Normal', 'BodyText']:
+    for style_name in ['Heading1', 'Heading2', 'Heading3', 'Normal', 'BodyText']:
         if style_name in styles:
             styles[style_name].fontName = font_name
     
-    # 标题
+    # ===== 标题区 =====
     title_style = styles['Heading1']
     story.append(Paragraph('姐妹团数据统计报表', title_style))
-    font_name = 'Helvetica'
-    for fp in ['C:/Windows/Fonts/simhei.ttf', 'C:/Windows/Fonts/msyh.ttc', 'C:/Windows/Fonts/simsun.ttc']:
-        if os.path.exists(fp):
-            try:
-                pdfmetrics.registerFont(TTFont('CN', fp))
-                font_name = 'CN'
-                break
-            except Exception:
-                pass
-    
-    # 标题
-    title_style = styles['Heading1']
-    title_style.fontName = font_name
-    story.append(Paragraph('姐妹团数据统计报表', title_style))
-    
     if week_row:
         story.append(Paragraph(f"统计周期：{week_row['week_start']} ~ {week_row['week_end']} ({week_row['week_label']})", styles['Normal']))
     story.append(Paragraph(f"生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Normal']))
-    story.append(Spacer(1, 16))
+    story.append(Spacer(1, 12))
     
-    # 一、KPI概览
+    # ===== 一、KPI概览 =====
     story.append(Paragraph('一、周报概览（KPI）', styles['Heading2']))
     if week_row:
         def calc_pct(curr, prev):
             if not prev or prev == 0: return '—'
             return f"{round((curr - prev) / prev * 100, 1)}%"
         
+        # 使用修正后的留存率公式
+        def calc_retention(row):
+            if not row: return 0
+            start = row.get('active_team_count_start', 0) or 0
+            end = row.get('active_team_count_end', 0) or 0
+            new = row.get('new_team_count', 0) or 0
+            if start <= 0: return 0
+            return round((end - new) / start * 100, 2)
+        
+        this_ret = calc_retention(week_row)
+        prev_ret = calc_retention(prev_row)
+        
         kpi_data = [
             ['指标', '本周值', '上周值', '环比变化'],
             ['新成团数', week_row['new_team_count'], prev_row['new_team_count'] if prev_row else '—', calc_pct(week_row['new_team_count'], prev_row['new_team_count'] if prev_row else None)],
             ['进行中姐妹团', week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else '—', calc_pct(week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else None)],
-            ['留存率(%)', week_row['retention_rate'], prev_row['retention_rate'] if prev_row else '—', calc_pct(week_row['retention_rate'], prev_row['retention_rate'] if prev_row else None)],
+            ['留存率(%)', this_ret, prev_ret if prev_row else '—', f"{round(this_ret - prev_ret, 1)}%" if prev_row else '—'],
             ['解散率(%)', week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else '—', calc_pct(week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else None)],
             ['总流水(元)', round(week_row['total_reward'], 1), round(prev_row['total_reward'], 1) if prev_row else '—', calc_pct(week_row['total_reward'], prev_row['total_reward'] if prev_row else None)],
             ['活跃度', week_row['activity_index'], prev_row['activity_index'] if prev_row else '—', calc_pct(week_row['activity_index'], prev_row['activity_index'] if prev_row else None)],
         ]
-        table = Table(kpi_data)
+        table = Table(kpi_data, colWidths=[110, 90, 90, 90])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), font_name),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('FONTNAME', (0, 1), (-1, -1), font_name),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
         ]))
         story.append(table)
-    story.append(Spacer(1, 20))
+    story.append(Spacer(1, 16))
     
-    # 二、核心趋势
-    story.append(Paragraph('二、核心趋势（近8周）', styles['Heading2']))
+    # ===== 二、本周预警 =====
+    story.append(Paragraph('二、本周预警', styles['Heading2']))
+    if week_row and prev_row:
+        alerts = []
+        nt_change = 0
+        if prev_row['new_team_count'] and prev_row['new_team_count'] > 0:
+            nt_change = (week_row['new_team_count'] - prev_row['new_team_count']) / prev_row['new_team_count'] * 100
+        diss_change = 0
+        if prev_row['dissolved_count'] and prev_row['dissolved_count'] > 0:
+            diss_change = (week_row['dissolved_count'] - prev_row['dissolved_count']) / prev_row['dissolved_count'] * 100
+        rev_change = 0
+        if prev_row['total_reward'] and prev_row['total_reward'] > 0:
+            rev_change = (week_row['total_reward'] - prev_row['total_reward']) / prev_row['total_reward'] * 100
+        
+        if nt_change < -30:
+            alerts.append(['🔴 高', '新成团数骤降', f"本周新成团{week_row['new_team_count']}个，环比下降{abs(nt_change):.1f}%"])
+        if diss_change > 20:
+            alerts.append(['🔴 高', '解散率突增', f"本周解散{week_row['dissolved_count']}个，环比上升{diss_change:.1f}%"])
+        if rev_change < -25:
+            alerts.append(['🔴 高', '流水大幅下降', f"本周流水¥{week_row['total_reward']:.0f}，环比下降{abs(rev_change):.1f}%"])
+        if week3_row:
+            if week_row['new_team_count'] < prev_row['new_team_count'] < week3_row['new_team_count']:
+                alerts.append(['🟡 中', '新成团数连续下降', f"连续2周下降：{week3_row['new_team_count']} → {prev_row['new_team_count']} → {week_row['new_team_count']}"])
+            if week_row['dissolution_rate'] > prev_row['dissolution_rate'] > week3_row['dissolution_rate']:
+                alerts.append(['🟡 中', '解散率连续上升', f"连续2周上升：{week3_row['dissolution_rate']:.1f}% → {prev_row['dissolution_rate']:.1f}% → {week_row['dissolution_rate']:.1f}%"])
+        if not alerts:
+            alerts.append(['🟢 低', '本周运营正常', '核心指标无异常波动'])
+        
+        alert_data = [['严重程度', '预警项', '详情']]
+        for a in alerts:
+            alert_data.append(a)
+        table = Table(alert_data, colWidths=[60, 110, 260])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ff4d4f')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(table)
+    story.append(Spacer(1, 16))
+    
+    # ===== 三、趋势图表 =====
+    if len(trend_rows) >= 2:
+        story.append(Paragraph('三、核心趋势图表', styles['Heading2']))
+        
+        # 1. 新成团数趋势图（柱状图）
+        story.append(Paragraph('1. 新成团数趋势', styles['Heading3']))
+        labels = [r['week_label'] for r in trend_rows]
+        values = [r['new_team_count'] for r in trend_rows]
+        
+        drawing = Drawing(460, 160)
+        bc = VerticalBarChart()
+        bc.x = 40
+        bc.y = 30
+        bc.height = 110
+        bc.width = 380
+        bc.data = [values]
+        bc.categoryAxis.categoryNames = labels
+        bc.categoryAxis.labels.fontName = font_name
+        bc.categoryAxis.labels.fontSize = 7
+        bc.valueAxis.valueMin = 0
+        bc.bars[0].fillColor = colors.HexColor('#667eea')
+        drawing.add(bc)
+        story.append(drawing)
+        story.append(Spacer(1, 8))
+        
+        # 2. 留存率 & 解散率趋势图（双折线）
+        story.append(Paragraph('2. 留存率 & 解散率趋势', styles['Heading3']))
+        ret_values = [r['retention_rate'] for r in trend_rows]
+        diss_values = [r['dissolution_rate'] for r in trend_rows]
+        
+        drawing2 = Drawing(460, 160)
+        lc = HorizontalLineChart()
+        lc.x = 40
+        lc.y = 30
+        lc.height = 110
+        lc.width = 380
+        lc.data = [ret_values, diss_values]
+        lc.categoryAxis.categoryNames = labels
+        lc.categoryAxis.labels.fontName = font_name
+        lc.categoryAxis.labels.fontSize = 7
+        lc.lines[0].strokeColor = colors.HexColor('#52c41a')
+        lc.lines[1].strokeColor = colors.HexColor('#ff4d4f')
+        drawing2.add(lc)
+        story.append(drawing2)
+        story.append(Spacer(1, 8))
+        
+        # 3. 总流水趋势图（柱状图）
+        story.append(Paragraph('3. 总流水趋势', styles['Heading3']))
+        rev_values = [round(r['total_reward'], 1) for r in trend_rows]
+        
+        drawing3 = Drawing(460, 160)
+        bc2 = VerticalBarChart()
+        bc2.x = 40
+        bc2.y = 30
+        bc2.height = 110
+        bc2.width = 380
+        bc2.data = [rev_values]
+        bc2.categoryAxis.categoryNames = labels
+        bc2.categoryAxis.labels.fontName = font_name
+        bc2.categoryAxis.labels.fontSize = 7
+        bc2.valueAxis.valueMin = 0
+        bc2.bars[0].fillColor = colors.HexColor('#faad14')
+        drawing3.add(bc2)
+        story.append(drawing3)
+        story.append(Spacer(1, 8))
+    
+    # ===== 四、核心趋势明细表 =====
+    story.append(Paragraph('四、核心趋势明细（近12周）', styles['Heading2']))
     if trend_rows:
         trend_data = [['周期', '新成团', '进行中', '解散', '留存率%', '解散率%', '总流水', '活跃度']]
         for r in trend_rows:
@@ -645,9 +764,8 @@ def api_export_pdf_report():
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), font_name),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('FONTNAME', (0, 1), (-1, -1), font_name),
             ('FONTSIZE', (0, 0), (-1, -1), 8),
         ]))
         story.append(table)
