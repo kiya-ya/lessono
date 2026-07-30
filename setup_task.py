@@ -12,6 +12,8 @@ PROJECT_DIR = r'D:\姐妹团看板系统'
 SCRIPT_PATH = os.path.join(PROJECT_DIR, 'daily_crawl.py')
 LOG_PATH = os.path.join(PROJECT_DIR, 'data', 'crawl_log.txt')
 TASK_NAME = '姐妹团数据自动抓取'
+# 使用项目虚拟环境的 Python，避免系统 Python 缺少依赖
+PYTHON_PATH = os.path.join(PROJECT_DIR, '.venv', 'Scripts', 'python.exe')
 
 
 def check_admin():
@@ -34,10 +36,18 @@ def main():
         input('按回车退出...')
         return
 
+    # 检查虚拟环境 Python 是否存在
+    if not os.path.exists(PYTHON_PATH):
+        print(f'[WARN] 虚拟环境 Python 不存在: {PYTHON_PATH}')
+        print(f'[WARN] 将使用系统默认的 python，可能缺少依赖导致抓取失败')
+        python_cmd = 'python'
+    else:
+        python_cmd = f'"{PYTHON_PATH}"'
+
     # 创建命令（每天 23:30）
     cmd = (
         f'cmd /c cd /d "{PROJECT_DIR}" && '
-        f'python daily_crawl.py >> "{LOG_PATH}" 2>&1'
+        f'{python_cmd} daily_crawl.py >> "{LOG_PATH}" 2>&1'
     )
 
     print(f'\n任务名称: {TASK_NAME}')
@@ -66,7 +76,7 @@ def main():
         print('任务详情:')
         print(f'  名称: {TASK_NAME}')
         print(f'  时间: 每天 23:30')
-        print(f'  命令: python daily_crawl.py')
+        print(f'  命令: {python_cmd} daily_crawl.py')
         print()
         print('如需修改或删除，请打开【任务计划程序】搜索"姐妹团"')
     else:
@@ -87,7 +97,7 @@ def main():
         print('3. 名称填: 姐妹团数据自动抓取')
         print('4. 触发器选: 每天，时间 23:30:00')
         print('5. 操作选: 启动程序')
-        print(f'6. 程序/脚本填: python')
+        print(f'6. 程序/脚本填: {PYTHON_PATH}')
         print(f'7. 起始于填: {PROJECT_DIR}')
         print(f'8. 参数填: daily_crawl.py')
 
