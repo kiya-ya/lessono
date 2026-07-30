@@ -775,30 +775,6 @@ def api_export_pdf_report():
     buf.close()
     return Response(pdf_bytes, mimetype='application/pdf',
                     headers={'Content-Disposition': 'attachment; filename=sister_report.pdf'})
-def api_export_weekly():
-    conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-               dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
-        FROM weekly_report WHERE hall_name = 'all' ORDER BY week_start
-    ''')
-    rows = cursor.fetchall()
-    conn.close()
-    
-    import io, csv
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['周标签', '开始日期', '结束日期', '新成团数', '进行中团数', '解散数', '留存率(%)', '解散率(%)', '总流水(元)', '活跃度'])
-    for r in rows:
-        writer.writerow([r['week_label'], r['week_start'], r['week_end'], r['new_team_count'],
-                         r['active_team_count_end'], r['dissolved_count'], r['retention_rate'],
-                         r['dissolution_rate'], r['total_reward'], r['activity_index']])
-    
-    csv_bytes = output.getvalue().encode('utf-8-sig')
-    return Response(csv_bytes, mimetype='text/csv; charset=utf-8-sig',
-                    headers={'Content-Disposition': 'attachment; filename=weekly_report.csv'})
-
-
 @app.route('/api/export/detail')
 def api_export_detail():
     hall = request.args.get('hall', 'all')
