@@ -124,7 +124,7 @@ def api_kpi():
         kpis = {
             'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
             'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
-            'retention':     {'value': min(100, this_row['retention_rate']),      'change': round(min(100, this_row['retention_rate']) - min(100, getv(prev_row, 'retention_rate')), 2),     'unit': '%'},
+            'retention':     {'value': this_row['retention_rate'],      'change': round(this_row['retention_rate'] - getv(prev_row, 'retention_rate'), 2),     'unit': '%'},
             'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
             'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
             'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
@@ -171,7 +171,7 @@ def api_kpi():
     kpis = {
         'new_team':      {'value': today['new_team_count'],      'change': calc_pct(today['new_team_count'], yesterday['new_team_count']),      'unit': '个'},
         'active_team':   {'value': today['active_team_count'],   'change': calc_pct(today['active_team_count'], yesterday['active_team_count']),   'unit': '个'},
-        'retention':     {'value': min(100, this_week['retention_rate']),  'change': round(min(100, this_week['retention_rate']) - min(100, last_week['retention_rate']), 2),    'unit': '%'},
+        'retention':     {'value': this_week['retention_rate'],  'change': round(this_week['retention_rate'] - last_week['retention_rate'], 2),    'unit': '%'},
         'dissolution':   {'value': this_week['dissolution_rate'],'change': round(this_week['dissolution_rate'] - last_week['dissolution_rate'], 2),  'unit': '%', 'reverse': True},
         'revenue':       {'value': round(this_week['total_reward'], 1), 'change': calc_pct(this_week['total_reward'], last_week['total_reward']), 'unit': '元'},
         'activity':      {'value': this_week['activity_index'],  'change': round(this_week['activity_index'] - last_week['activity_index'], 2),     'unit': ''},
