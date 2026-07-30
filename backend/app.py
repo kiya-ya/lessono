@@ -321,6 +321,111 @@ def api_hall_stats():
 
 @app.route('/api/alerts')
 def api_alerts():
+    """动态生成预警列表，基于最近3周数据对比"""
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+               dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+               total_reward, activity_index
+        FROM weekly_report WHERE hall_name = 'all'
+        ORDER BY week_start DESC LIMIT 3
+    ''')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    alerts = []
+    if len(rows) < 2:
+        return jsonify({'data': alerts})
+    
+    this_week = rows[0]
+    last_week = rows[1]
+    week_label = this_week['week_label']
+    
+    # 环比计算
+    new_team_change = 0
+    if last_week['new_team_count'] and last_week['new_team_count'] > 0:
+        new_team_change = (this_week['new_team_count'] - last_week['new_team_count']) / last_week['new_team_count'] * 100
+    
+    diss_change = 0
+    if last_week['dissolved_count'] and last_week['dissolved_count'] > 0:
+        diss_change = (this_week['dissolved_count'] - last_week['dissolved_count']) / last_week['dissolved_count'] * 100
+    
+    revenue_change = 0
+    if last_week['total_reward'] and last_week['total_reward'] > 0:
+        revenue_change = (this_week['total_reward'] - last_week['total_reward']) / last_week['total_reward'] * 100
+    
+    # 1. 新成团数骤降 (>30%)
+    if new_team_change < -30:
+        alerts.append({
+            'severity': 'high',
+            'title': '新成团数骤降',
+            'message': f'本周新成团{this_week["new_team_count"]}个，环比下降{abs(new_team_change):.1f}%',
+            'metric_value': f'{this_week["new_team_count"]}个',
+            'week_label': week_label,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    
+    # 2. 解散数突增 (>20%)
+    if diss_change > 20:
+        alerts.append({
+            'severity': 'high',
+            'title': '解散率突增',
+            'message': f'本周解散{this_week["dissolved_count"]}个，环比上升{diss_change:.1f}%',
+            'metric_value': f'{this_week["dissolved_count"]}个',
+            'week_label': week_label,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    
+    # 3. 流水大幅下降 (>25%)
+    if revenue_change < -25:
+        alerts.append({
+            'severity': 'high',
+            'title': '流水大幅下降',
+            'message': f'本周流水¥{this_week["total_reward"]:.0f}，环比下降{abs(revenue_change):.1f}%',
+            'metric_value': f'¥{this_week["total_reward"]:.0f}',
+            'week_label': week_label,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    
+    # 4. 新成团数连续下降（需要3周数据）
+    if len(rows) >= 3:
+        week3 = rows[2]
+        if this_week['new_team_count'] < last_week['new_team_count'] < week3['new_team_count']:
+            alerts.append({
+                'severity': 'medium',
+                'title': '新成团数连续下降',
+                'message': f'连续2周下降：{week3["new_team_count"]} → {last_week["new_team_count"]} → {this_week["new_team_count"]}',
+                'metric_value': f'{this_week["new_team_count"]}个',
+                'week_label': week_label,
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            })
+    
+    # 5. 解散率连续上升（需要3周数据）
+    if len(rows) >= 3:
+        week3 = rows[2]
+        if this_week['dissolution_rate'] > last_week['dissolution_rate'] > week3['dissolution_rate']:
+            alerts.append({
+                'severity': 'medium',
+                'title': '解散率连续上升',
+                'message': f'连续2周上升：{week3["dissolution_rate"]:.1f}% → {last_week["dissolution_rate"]:.1f}% → {this_week["dissolution_rate"]:.1f}%',
+                'metric_value': f'{this_week["dissolution_rate"]:.1f}%',
+                'week_label': week_label,
+                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            })
+    
+    # 无预警时显示正常
+    if not alerts:
+        alerts.append({
+            'severity': 'low',
+            'title': '本周运营正常',
+            'message': '核心指标无异常波动',
+            'metric_value': '—',
+            'week_label': week_label,
+            'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        })
+    
+    return jsonify({'data': alerts})
+def api_alerts():
     """返回预警列表，支持按周过滤"""
     week = request.args.get('week', '')
     conn = get_db_conn()

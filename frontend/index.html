@@ -338,7 +338,10 @@ async function loadWeeks() {
       const opt = document.createElement('option');
       opt.value = w.week_start + '|' + w.week_end;
       opt.textContent = w.week_start + ' ~ ' + w.week_end;
-      if (idx === weeks.length - 1) opt.selected = true; // 默认选最新
+      if (idx === 0) {
+        opt.selected = true;
+        currentWeek = opt.value; // 同步设置 currentWeek
+      }
       select.appendChild(opt);
     });
   } catch (e) { console.error('周列表加载失败:', e); }
