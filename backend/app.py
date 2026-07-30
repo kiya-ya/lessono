@@ -74,7 +74,7 @@ def api_kpi():
     if week and '|' in week:
         ws, we = week.split('|')
         cursor = conn.execute("""
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
+            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
                    dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
                    total_reward, activity_index
             FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
@@ -121,10 +121,23 @@ def api_kpi():
         
         conn.close()
         
+        def calc_retention(row):
+            if not row:
+                return 0
+            start = row.get('active_team_count_start', 0) or 0
+            end = row.get('active_team_count_end', 0) or 0
+            new = row.get('new_team_count', 0) or 0
+            if start <= 0:
+                return 0
+            return round((end - new) / start * 100, 2)
+        
+        this_retention = calc_retention(this_row)
+        prev_retention = calc_retention(prev_row)
+        
         kpis = {
             'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
             'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
-            'retention':     {'value': this_row['retention_rate'],      'change': round(this_row['retention_rate'] - getv(prev_row, 'retention_rate'), 2),     'unit': '%'},
+            'retention':     {'value': this_retention,                  'change': round(this_retention - prev_retention, 2),                                   'unit': '%'},
             'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
             'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
             'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
@@ -141,7 +154,8 @@ def api_kpi():
     daily_rows = cursor.fetchall()
     
     cursor = conn.execute('''
-        SELECT week_label, retention_rate, dissolution_rate, total_reward, activity_index
+        SELECT week_label, active_team_count_start, active_team_count_end, new_team_count,
+               retention_rate, dissolution_rate, total_reward, activity_index
         FROM weekly_report WHERE hall_name = 'all' ORDER BY week_start DESC LIMIT 2
     ''')
     weekly_rows = cursor.fetchall()
@@ -168,10 +182,23 @@ def api_kpi():
     today_active_pct = (today['active_dissolved_count'] / today['dissolved_count'] * 100) if today['dissolved_count'] > 0 else 0
     yesterday_active_pct = (yesterday['active_dissolved_count'] / yesterday['dissolved_count'] * 100) if yesterday['dissolved_count'] > 0 else 0
     
+    def calc_retention(row):
+        if not row:
+            return 0
+        start = row.get('active_team_count_start', 0) or 0
+        end = row.get('active_team_count_end', 0) or 0
+        new = row.get('new_team_count', 0) or 0
+        if start <= 0:
+            return 0
+        return round((end - new) / start * 100, 2)
+    
+    this_retention = calc_retention(this_week)
+    last_retention = calc_retention(last_week)
+    
     kpis = {
         'new_team':      {'value': today['new_team_count'],      'change': calc_pct(today['new_team_count'], yesterday['new_team_count']),      'unit': '个'},
         'active_team':   {'value': today['active_team_count'],   'change': calc_pct(today['active_team_count'], yesterday['active_team_count']),   'unit': '个'},
-        'retention':     {'value': this_week['retention_rate'],  'change': round(this_week['retention_rate'] - last_week['retention_rate'], 2),    'unit': '%'},
+        'retention':     {'value': this_retention,               'change': round(this_retention - last_retention, 2),                             'unit': '%'},
         'dissolution':   {'value': this_week['dissolution_rate'],'change': round(this_week['dissolution_rate'] - last_week['dissolution_rate'], 2),  'unit': '%', 'reverse': True},
         'revenue':       {'value': round(this_week['total_reward'], 1), 'change': calc_pct(this_week['total_reward'], last_week['total_reward']), 'unit': '元'},
         'activity':      {'value': this_week['activity_index'],  'change': round(this_week['activity_index'] - last_week['activity_index'], 2),     'unit': ''},
