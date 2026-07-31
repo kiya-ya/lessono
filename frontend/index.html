@@ -144,8 +144,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
       <span class="cookie-dot unknown" id="cookie-dot-main"></span>
       <span id="cookie-text-main">Cookie 管理</span>
-    </div>
-    <span>⏰ 新政策已上线 <span id="policy-days">10</span> 天</span>
+        </div>
 <span>📅 当前周期：<span id=current-period>--</span></span>
     <span id="last-update">上次更新：--</span>
     <span>👤 运营组</span>
@@ -1101,10 +1100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadWeeks();
   loadLastUpdate();
   loadKPI(); loadAlerts(); initTrendChart(); initOverviewRetentionChart(); loadDetailTable();
-  const policyDate = new Date('2026-07-17');
-  const now = new Date('2026-07-27');
-  document.getElementById('policy-days').textContent = Math.floor((now - policyDate) / (1000*60*60*24));
-  checkCookieStatus();
 });
 
 // ═══════════════════════════════════════════════════════
