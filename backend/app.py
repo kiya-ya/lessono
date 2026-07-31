@@ -303,9 +303,9 @@ def api_detail_table():
         conditions.append('hall_name = ?')
         params.append(hall)
     if status == 'active':
-        conditions.append('dissolve_date IS NULL')
+        conditions.append("(dissolve_date = '' OR dissolve_date IS NULL)")
     elif status == 'dissolved':
-        conditions.append('dissolve_date IS NOT NULL')
+        conditions.append("dissolve_date != '' AND dissolve_date IS NOT NULL")
     
     where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
     
