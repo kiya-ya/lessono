@@ -201,7 +201,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
-    <div class="chart-card"><h3>🏠 各大厅数据对比</h3><div class="chart-container" id="chart-hall-compare"></div></div>
+    <div class="chart-card">
+      <h3>🏠 各大厅数据对比</h3>
+      <div class="chart-container" id="chart-hall-compare"></div>
+      <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
+    </div>
     <div class="chart-card">
       <h3>📊 政策前后核心指标对比</h3>
       <table class="data-table"><thead><tr><th>指标</th><th>政策前(均值)</th><th>政策后(当前)</th><th>变化幅度</th><th>趋势</th></tr></thead>
@@ -560,8 +564,10 @@ async function initCompareChart() {
     const data = result.data;
     if (data && data.length > 0) {
       const policyDate = '2026-07-17';
-      const before = data.filter(d => d.week_end < policyDate);
-      let after = data.filter(d => d.week_start >= policyDate);
+      // 过滤掉 2025 年的旧数据
+      const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+      const before = validData.filter(d => d.week_end < policyDate);
+      let after = validData.filter(d => d.week_start >= policyDate);
       // 根据当前选择的周截断政策后数据
       if (currentWeek && currentWeek.includes('|')) {
         const selectedEnd = currentWeek.split('|')[1];
@@ -571,7 +577,7 @@ async function initCompareChart() {
       const metrics = [
         { name: '📦 周均新成团数', key: 'new_team_count', unit: '个' },
         { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
-        { name: '💯 平均留存率', key: 'retention_rate', unit: '%' },
+        { name: '💯 平均留存率', key: 'retention_rate', unit: '%', cap: 100 },
         { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%', reverse: true },
         { name: '💰 周均总流水', key: 'total_reward', unit: '元' },
         { name: '📊 平均活跃度', key: 'activity_index', unit: '' },
@@ -582,7 +588,9 @@ async function initCompareChart() {
       tbody.innerHTML = metrics.map(m => {
         const getVal = (arr) => {
           if (m.calc) return arr.reduce((s, d) => s + m.calc(d), 0) / arr.length;
-          return arr.reduce((s, d) => s + (d[m.key] || 0), 0) / arr.length;
+          let v = arr.reduce((s, d) => s + (d[m.key] || 0), 0) / arr.length;
+          if (m.cap) v = Math.min(m.cap, v);
+          return v;
         };
         const b = getVal(before); const a = getVal(after);
         let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
@@ -592,22 +600,22 @@ async function initCompareChart() {
       }).join('');
     }
     try {
-      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=10');
+      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999');
       const hallResult = await hallRes.json();
-      const hallData = hallResult.data;
-      if (hallData && hallData.length > 0) {
-        const hallNames = hallData.map(d => d.hall_name);
-        const hallCounts = hallData.map(d => d.active_count);
-        if (!charts.hallCompare) { charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare')); }
-        charts.hallCompare.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' }, grid: { left: 160, right: 30, top: 20, bottom: 30 }, xAxis: { type: 'value' }, yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } }, series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }] });
-      }
+      hallCompareData = hallResult.data || [];
+      renderHallComparePage();
     } catch (e) { console.error('大厅排名加载失败:', e); }
 
     // 新成团 vs 解散联动（双轴图）
     try {
-      const labels = data.map(d => d.week_label);
-      const newTeams = data.map(d => d.new_team_count || 0);
-      const dissolved = data.map(d => d.dissolved_count || 0);
+      // 过滤有效数据（2026年）
+      const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+      const labels = validData.map((d, i) => {
+        const isLast = i === validData.length - 1;
+        return isLast ? d.week_label + ' (收集中)' : d.week_label;
+      });
+      const newTeams = validData.map(d => d.new_team_count || 0);
+      const dissolved = validData.map(d => d.dissolved_count || 0);
       if (!charts.compareDual) { charts.compareDual = echarts.init(document.getElementById('chart-compare-dual')); }
       charts.compareDual.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
@@ -633,6 +641,8 @@ async function initCompareChart() {
 }
 
 let detailPerPage = 20;
+let hallComparePage = 0;
+let hallCompareData = [];
 let detailStatus = 'all';
 
 async function loadDetailTable(page = 1) {
@@ -676,6 +686,43 @@ async function loadDetailTable(page = 1) {
 function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly?' + getHallParam().substring(1); a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function exportPDF() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/pdf-report?' + getWeekParam().substring(1); a.download = 'sister_report.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail?' + getHallParam().substring(1); a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function renderHallComparePage() {
+  const perPage = 10;
+  const total = hallCompareData.length;
+  const totalPages = Math.ceil(total / perPage);
+  const start = hallComparePage * perPage;
+  const end = Math.min(start + perPage, total);
+  const pageData = hallCompareData.slice(start, end);
+
+  if (pageData.length > 0) {
+    const hallNames = pageData.map(d => d.hall_name);
+    const hallCounts = pageData.map(d => d.active_count);
+    if (!charts.hallCompare) {
+      charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare'));
+      charts.hallCompare.on('click', function(params) {
+        switchTab('details');
+        document.getElementById('detail-search').value = params.name;
+        loadDetailTable(1);
+      });
+    }
+    charts.hallCompare.setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' },
+      grid: { left: 160, right: 30, top: 20, bottom: 30 },
+      xAxis: { type: 'value' },
+      yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
+      series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }]
+    });
+  }
+
+  // Render pagination
+  let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${total} 个大厅 · 第 ${hallComparePage + 1}/${totalPages} 页</span>`;
+  if (hallComparePage > 0) html += `<button onclick="hallComparePage--;renderHallComparePage();">上一页</button>`;
+  for (let i = 0; i < totalPages; i++) {
+    html += `<button class="${i === hallComparePage ? 'active' : ''}" onclick="hallComparePage=${i};renderHallComparePage();">${i + 1}</button>`;
+  }
+  if (hallComparePage < totalPages - 1) html += `<button onclick="hallComparePage++;renderHallComparePage();">下一页</button>`;
+  document.getElementById('hall-compare-pagination').innerHTML = html;
+}
 function refreshData() {
   loadKPI();
   loadAlerts();
