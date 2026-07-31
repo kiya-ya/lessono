@@ -277,8 +277,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
         <h3>🔗 姐妹团参与明细</h3>
         <div id="team-info-body"></div>
       </div>
-      <div class="uid-result-card">
-        <h3>🔗 关联信息</h3>
+      <div class="uid-result-card" id="partner-compare-card" style="display:none;">
+        <h3>👭 姐姐 vs 妹妹 本周数据对比</h3>
+        <div id="partner-compare-chart" style="width:100%; height:300px;"></div>
+        <div id="partner-compare-table" style="margin-top:12px;"></div>
       </div>
       <div class="uid-result-card">
         <h3>🔗 关联信息</h3>
@@ -288,7 +290,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
           <span>历史最高等级：<strong id="res-hist-level">--</strong></span>
         </div>
       </div>
-    </div>
   </div>
 </div>
 
@@ -827,6 +828,173 @@ function renderTeamInfo(data) {
     </div>
   `;
   card.style.display = 'block';
+  renderPartnerCompare(data);
+}
+
+
+let _partnerChart = null;
+
+async function renderPartnerCompare(data) {
+  const card = document.getElementById('partner-compare-card');
+  const chartDiv = document.getElementById('partner-compare-chart');
+  const tableDiv = document.getElementById('partner-compare-table');
+  const t = data.team_info;
+
+  if (!t || !t.sister_uid || !t.sister_uid2) {
+    card.style.display = 'none';
+    return;
+  }
+
+  // 判断当前查询的是姐姐还是妹妹，获取另一个成员的UID
+  const currentUid = String(data.uid);
+  const sisterUid = String(t.sister_uid);
+  const sisterUid2 = String(t.sister_uid2);
+  let partnerUid, partnerLabel, currentLabel;
+
+  if (currentUid === sisterUid) {
+    partnerUid = sisterUid2;
+    currentLabel = t.sister_nickname || '姐姐';
+    partnerLabel = t.sister_nickname2 || '妹妹';
+  } else if (currentUid === sisterUid2) {
+    partnerUid = sisterUid;
+    currentLabel = t.sister_nickname2 || '妹妹';
+    partnerLabel = t.sister_nickname || '姐姐';
+  } else {
+    // UID不在团中（异常情况）
+    card.style.display = 'none';
+    return;
+  }
+
+  // 显示加载状态
+  card.style.display = 'block';
+  chartDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#888;">⏳ 正在查询 ' + partnerLabel + ' 的数据...</div>';
+  tableDiv.innerHTML = '';
+
+  // 查询另一个成员的数据
+  const mockMode = document.getElementById('uid-mock').checked;
+  const captainType = document.getElementById('uid-type').value;
+
+  try {
+    const resp = await fetch(API_BASE + '/api/uid-query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: partnerUid, captain_type: captainType, mock: mockMode }),
+    });
+    const partnerData = await resp.json();
+
+    if (partnerData.error) {
+      chartDiv.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">⚠️ ' + partnerLabel + ' 数据查询失败：' + partnerData.error + '</div>';
+      return;
+    }
+
+    renderPartnerChart(data, partnerData, currentLabel, partnerLabel);
+    renderPartnerTable(data, partnerData, currentLabel, partnerLabel);
+
+  } catch (e) {
+    chartDiv.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">⚠️ 查询 ' + partnerLabel + ' 数据失败</div>';
+    console.error('Partner compare error:', e);
+  }
+}
+
+function renderPartnerChart(selfData, partnerData, selfLabel, partnerLabel) {
+  const chartDiv = document.getElementById('partner-compare-chart');
+  const self = selfData.this_week?.data || {};
+  const partner = partnerData.this_week?.data || {};
+
+  const levelOrder = { '无': 0, '铜牌': 1, '银牌': 2, '金牌': 3, '王牌': 4, '大神': 5 };
+  const selfLevel = levelOrder[self.week_level] ?? -1;
+  const partnerLevel = levelOrder[partner.week_level] ?? -1;
+
+  // 排名越小越好，转换为分数（100 - 排名百分比）
+  const selfRank = self.week_rank || 0;
+  const partnerRank = partner.week_rank || 0;
+  const maxRank = Math.max(selfRank, partnerRank, 100);
+  const selfRankScore = selfRank > 0 ? Math.round((1 - selfRank / maxRank) * 100) : 0;
+  const partnerRankScore = partnerRank > 0 ? Math.round((1 - partnerRank / maxRank) * 100) : 0;
+
+  const metrics = [
+    { name: '等级', self: selfLevel, partner: partnerLevel, unit: '级', isLevel: true },
+    { name: '排档天数', self: self.week_schedule_days || 0, partner: partner.week_schedule_days || 0, unit: '天' },
+    { name: '任务完成', self: self.daily_task_count || 0, partner: partner.daily_task_count || 0, unit: '次' },
+    { name: '礼物流水', self: self.week_revenue || 0, partner: partner.week_revenue || 0, unit: '元' },
+    { name: '陪档时长', self: self.week_accompany_time || 0, partner: partner.week_accompany_time || 0, unit: 'h' },
+    { name: '排名得分', self: selfRankScore, partner: partnerRankScore, unit: '分', note: '排名越小得分越高' },
+  ];
+
+  if (!_partnerChart) {
+    _partnerChart = echarts.init(chartDiv);
+  }
+
+  _partnerChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: function(params) {
+        let html = '<strong>' + params[0].axisValue + '</strong><br/>';
+        params.forEach(p => {
+          const m = metrics[p.dataIndex];
+          let val = p.value;
+          if (m.name === '等级') {
+            const levels = ['无', '铜牌', '银牌', '金牌', '王牌', '大神'];
+            val = levels[val] || val;
+          }
+          html += p.marker + ' ' + p.seriesName + ': ' + val + m.unit + '<br/>';
+        });
+        if (params[0].dataIndex === 5) {
+          html += '<small style="color:#999;">（排名越小，得分越高）</small>';
+        }
+        return html;
+      }
+    },
+    legend: { data: [selfLabel, partnerLabel], top: 5 },
+    grid: { left: 50, right: 30, top: 40, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: metrics.map(m => m.name),
+      axisLabel: { fontSize: 11 }
+    },
+    yAxis: { type: 'value', axisLabel: { fontSize: 10 } },
+    series: [
+      {
+        name: selfLabel,
+        type: 'bar',
+        data: metrics.map(m => m.self),
+        itemStyle: { color: '#667eea', borderRadius: [4, 4, 0, 0] },
+        barGap: '20%'
+      },
+      {
+        name: partnerLabel,
+        type: 'bar',
+        data: metrics.map(m => m.partner),
+        itemStyle: { color: '#f6a6c1', borderRadius: [4, 4, 0, 0] }
+      }
+    ]
+  });
+}
+
+function renderPartnerTable(selfData, partnerData, selfLabel, partnerLabel) {
+  const tableDiv = document.getElementById('partner-compare-table');
+  const self = selfData.this_week?.data || {};
+  const partner = partnerData.this_week?.data || {};
+
+  const rows = [
+    { label: '当周队长等级', self: self.week_level || '--', partner: partner.week_level || '--' },
+    { label: '当周排档天数', self: (self.week_schedule_days || 0) + '天', partner: (partner.week_schedule_days || 0) + '天' },
+    { label: '每日任务完成', self: (self.daily_task_count || 0) + '次', partner: (partner.daily_task_count || 0) + '次' },
+    { label: '当周礼物流水', self: '¥' + (self.week_revenue || 0).toLocaleString(), partner: '¥' + (partner.week_revenue || 0).toLocaleString() },
+    { label: '当周陪档时长', self: (self.week_accompany_time || 0) + '小时', partner: (partner.week_accompany_time || 0) + '小时' },
+    { label: '排行榜排名', self: self.week_rank ? '第' + self.week_rank + '名' : '未上榜', partner: partner.week_rank ? '第' + partner.week_rank + '名' : '未上榜' },
+    { label: '累计总流水', self: '¥' + (self.total_revenue || 0).toLocaleString(), partner: '¥' + (partner.total_revenue || 0).toLocaleString() },
+    { label: '4周最高等级', self: self.best_4week_level || '--', partner: partner.best_4week_level || '--' },
+    { label: '是否精英队长', self: self.is_elite || '否', partner: partner.is_elite || '否' },
+  ];
+
+  let html = '<table class="compare-table"><thead><tr><th>指标</th><th>' + selfLabel + '</th><th>' + partnerLabel + '</th></tr></thead><tbody>';
+  rows.forEach(r => {
+    html += '<tr><td class="col-metric">' + r.label + '</td><td class="col-this">' + r.self + '</td><td class="col-last">' + r.partner + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  tableDiv.innerHTML = html;
 }
 function exportUIDResult() {
     if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
@@ -851,7 +1019,7 @@ function exportUIDResult() {
   const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-window.addEventListener('resize', () => { Object.values(charts).forEach(c => c && c.resize()); });
+window.addEventListener('resize', () => { Object.values(charts).forEach(c => c && c.resize()); if (_partnerChart) _partnerChart.resize(); });
 
 document.addEventListener('DOMContentLoaded', () => {
   loadHalls();
