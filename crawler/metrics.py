@@ -74,7 +74,14 @@ def calculate_weekly_metrics(hall_name: str = 'all',
     metrics['system_dissolved_count'] = int(df['system_dissolved_count'].sum())
     metrics['total_reward'] = float(df['reward_amount'].sum())
     
-    # 2. 留存率
+    # 2. 留存率 = (期末进行中 - 本周新成团) / 期初进行中 × 100
+    if metrics['active_team_count_start'] > 0:
+        metrics['retention_rate'] = round(
+            (metrics['active_team_count_end'] - metrics['new_team_count']) 
+            / metrics['active_team_count_start'] * 100, 2
+        )
+    else:
+        metrics['retention_rate'] = 0.0
     if metrics['active_team_count_start'] > 0:
         metrics['retention_rate'] = round(
             metrics['active_team_count_end'] / metrics['active_team_count_start'] * 100, 2
