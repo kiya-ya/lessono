@@ -296,6 +296,8 @@ def api_detail_table():
     
     conditions = []
     params = []
+    # 只显示最新快照的数据，避免历史快照重复
+    conditions.append('snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)')
     if search:
         conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ?)')
         params = [f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%']
