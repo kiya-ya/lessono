@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """姐妹团看板一键启动器"""
 import subprocess
-import time
+import time 
 import sys
 import os
 import socket
