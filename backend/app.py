@@ -297,8 +297,8 @@ def api_detail_table():
     conditions = []
     params = []
     if search:
-        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ?)')
-        params = [f'%{search}%', f'%{search}%', f'%{search}%']
+        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ?)')
+        params = [f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%']
     if hall != 'all':
         conditions.append('hall_name = ?')
         params.append(hall)
@@ -313,11 +313,7 @@ def api_detail_table():
     total = cursor.fetchone()['total']
     
     offset = (page - 1) * per_page
-    cursor = conn.execute(f'''
-        SELECT * FROM team_detail {where_clause}
-        ORDER BY snapshot_date DESC, team_id DESC
-        LIMIT ? OFFSET ?
-    ''', params + [per_page, offset])
+    cursor = conn.execute(f'SELECT * FROM team_detail {where_clause} ORDER BY snapshot_date DESC, team_id DESC LIMIT ? OFFSET ?', params + [per_page, offset])
     rows = cursor.fetchall()
     conn.close()
     
@@ -327,7 +323,6 @@ def api_detail_table():
         'page': page,
         'per_page': per_page
     })
-
 @app.route('/api/hall-stats')
 def api_hall_stats():
     limit = int(request.args.get('limit', 10))

@@ -213,14 +213,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
     <div class="search-box" style="flex-wrap:wrap;">
-      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称..." style="flex:1;min-width:180px;">
+      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="flex:1;min-width:180px;">
       <select id="detail-status" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
         <option value="all">全部状态</option>
         <option value="active">进行中</option>
         <option value="dissolved">已解散</option>
-      </select>
-      <select id="detail-hall" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
-        <option value="all">全部大厅</option>
       </select>
       <select id="detail-per-page" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
         <option value="10">10条/页</option>
@@ -318,19 +315,16 @@ async function loadHalls() {
     const result = await res.json();
     const select = document.getElementById('hall-select');
     select.innerHTML = '<option value="all">全部大厅</option>';
+
     (result.data || []).forEach(hall => {
       const opt = document.createElement('option');
       opt.value = hall;
       opt.textContent = hall;
       select.appendChild(opt);
-      const opt2 = document.createElement('option');
-      opt2.value = hall;
-      opt2.textContent = hall;
-      document.getElementById('detail-hall').appendChild(opt2);
+
     });
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
-
 function onHallChange() {
   currentHall = document.getElementById('hall-select').value;
   refreshData();
@@ -647,9 +641,7 @@ async function loadDetailTable(page = 1) {
   detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
   detailStatus = document.getElementById('detail-status').value;
   try {
-    const detailHall = document.getElementById('detail-hall').value;
-    const hallParam = detailHall === 'all' ? '' : '&hall=' + encodeURIComponent(detailHall);
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + hallParam);
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam());
     const result = await res.json();
     document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
       const status = row.dissolve_date ? '已解散' : '进行中';
@@ -683,7 +675,7 @@ async function loadDetailTable(page = 1) {
 
 function exportData() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/weekly?' + getHallParam().substring(1); a.download = 'weekly_report.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function exportPDF() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/pdf-report?' + getWeekParam().substring(1); a.download = 'sister_report.pdf'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
-function exportDetail() { const detailHall = document.getElementById('detail-hall').value; const hallParam = detailHall === 'all' ? '' : 'hall=' + encodeURIComponent(detailHall); const sep = hallParam ? '?' : ''; const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail' + sep + hallParam; a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function exportDetail() { const a = document.createElement('a'); a.href = API_BASE + '/api/export/detail?' + getHallParam().substring(1); a.download = 'team_detail.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
 function refreshData() {
   loadKPI();
   loadAlerts();
