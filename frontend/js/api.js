@@ -245,15 +245,3 @@ function selectSearchSuggest(name) {
   document.getElementById('search-suggest').style.display = 'none';
   loadDetailTable(1);
 }
-  try {
-    const res = await fetch(API_BASE + '/api/last-update');
-    const data = await res.json();
-    const el = document.getElementById('last-update');
-    if (data.last_update) {
-      el.textContent = '上次更新：' + data.last_update;
-      el.style.color = data.status === 'success' ? '#52c41a' : data.status === 'failed' ? '#ff4d4f' : '';
-    } else {
-      el.textContent = '上次更新：--';
-    }
-  } catch (e) { console.error('加载更新时间失败:', e); }
-}
