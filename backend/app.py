@@ -873,12 +873,18 @@ def _get_bound_sisters(uid: str) -> list:
             FROM team_detail
             WHERE sister_uid = ?
               AND snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+              AND (dissolve_date = '' OR dissolve_date IS NULL)
             ORDER BY form_date DESC
         ''', (uid,))
         rows = cursor.fetchall()
         conn.close()
         sisters = []
+        seen_uids = set()
         for row in rows:
+            sister_uid2 = row['sister_uid2']
+            if not sister_uid2 or sister_uid2 in seen_uids:
+                continue
+            seen_uids.add(sister_uid2)
             sisters.append({
                 'team_id': row['team_id'],
                 'hall_name': row['hall_name'],
