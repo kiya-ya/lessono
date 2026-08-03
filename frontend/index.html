@@ -1023,6 +1023,13 @@ function renderPartnerChartMulti(participants) {
   const colors = ['#667eea', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1'];
   const levelOrder = { '无': 0, '铜牌': 1, '银牌': 2, '金牌': 3, '王牌': 4, '大神': 5 };
 
+  // 调试：检查数据
+  const debugInfo = participants.map(p => {
+    const d = p.data.this_week?.data || {};
+    return { label: p.label, hasData: !!p.data.this_week?.data, revenue: d.week_revenue, days: d.week_schedule_days };
+  });
+  console.log('[PartnerChart] participants:', debugInfo);
+
   const metricsLeft = [
     { key: 'week_level', name: '等级', isLevel: true },
     { key: 'week_schedule_days', name: '排档天数' },
@@ -1074,6 +1081,16 @@ function renderPartnerChartMulti(participants) {
 
   if (!_partnerChart) {
     _partnerChart = echarts.init(chartDiv);
+  }
+
+  // 检查是否有有效数据
+  const hasAnyData = participants.some(p => {
+    const d = p.data.this_week?.data || {};
+    return (d.week_revenue || 0) > 0 || (d.week_schedule_days || 0) > 0 || (d.daily_task_count || 0) > 0;
+  });
+  if (!hasAnyData) {
+    chartDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">⚠️ 对比数据为空（妹妹UID数据可能未成功加载）</div>';
+    return;
   }
 
   _partnerChart.setOption({
