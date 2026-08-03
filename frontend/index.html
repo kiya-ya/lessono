@@ -843,6 +843,13 @@ function renderUIDResult(data) {
   tbody.innerHTML = html;
   renderTeamInfo(data);
   renderBoundSisters(data);
+  renderPartnerCompare(data);
+}
+
+// 辅助：检查是否有有效的对比数据
+function hasValidCompareData(data) {
+  const cmp = data.compare || {};
+  return cmp.week_level !== undefined;
 }
 
 function renderTeamInfo(data) {
@@ -919,7 +926,6 @@ function renderTeamInfo(data) {
     </div>
   `;
   card.style.display = 'block';
-  renderPartnerCompare(data);
 }
 
 
