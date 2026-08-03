@@ -1131,6 +1131,7 @@ function renderPartnerChartMulti(participants) {
     ],
     series: [...participantSeriesLeft, ...participantSeriesRight],
   }, true);
+  setTimeout(() => { if (_partnerChart) _partnerChart.resize(); }, 0);
 }
 
 function renderPartnerTableMulti(participants) {
