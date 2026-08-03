@@ -841,6 +841,46 @@ def _get_team_info_by_uid(uid: str) -> dict:
     return None
 
 
+def _get_bound_sisters(uid: str) -> list:
+    """
+    获取某UID作为姐姐时绑定的所有妹妹。
+    一个姐姐可能同时绑定多个妹妹（多对姐妹团）。
+    """
+    try:
+        conn = get_db_conn()
+        cursor = conn.execute('''
+            SELECT team_id, form_date, hall_name,
+                   sister_nickname, sister_uid,
+                   sister_nickname2, sister_uid2,
+                   sister_revenue, reward_amount, dissolve_date
+            FROM team_detail
+            WHERE sister_uid = ?
+              AND snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+            ORDER BY form_date DESC
+        ''', (uid,))
+        rows = cursor.fetchall()
+        conn.close()
+        sisters = []
+        for row in rows:
+            sisters.append({
+                'team_id': row['team_id'],
+                'hall_name': row['hall_name'],
+                'form_date': row['form_date'],
+                'sister_nickname': row['sister_nickname'],
+                'sister_uid': row['sister_uid'],
+                'sister_nickname2': row['sister_nickname2'],
+                'sister_uid2': row['sister_uid2'],
+                'total_revenue': row['sister_revenue'],
+                'reward_amount': row['reward_amount'],
+                'status': '已解散' if row['dissolve_date'] else '进行中',
+                'dissolve_date': row['dissolve_date'],
+            })
+        return sisters
+    except Exception as e:
+        print(f'[WARN] 查询绑定妹妹失败: {e}')
+    return []
+
+
 @app.route('/api/uid-query', methods=['POST'])
 def api_uid_query():
     """
@@ -892,6 +932,30 @@ def api_uid_query():
     team_info = _get_team_info_by_uid(uid)
     if team_info:
         result['team_info'] = team_info
+
+    # 查询绑定的妹妹（如果该UID是姐姐）
+    bound_teams = _get_bound_sisters(uid)
+    if bound_teams:
+        result['bound_sisters'] = []
+        for team in bound_teams:
+            sister_uid = team.get('sister_uid2')
+            sister_nickname = team.get('sister_nickname2', '')
+            if not sister_uid:
+                continue
+            # 尝试查询妹妹的 UID 数据
+            sister_data = None
+            if _uid_crawler_available and not use_mock:
+                try:
+                    c = UIDCrawler()
+                    sister_data = c.query_with_compare(str(sister_uid), captain_type)
+                except Exception as e:
+                    print(f'[WARN] 查询妹妹UID {sister_uid} 失败: {e}')
+            result['bound_sisters'].append({
+                'uid': sister_uid,
+                'nickname': sister_nickname,
+                'team_info': team,
+                'uid_data': sister_data,
+            })
 
     return jsonify(result)
 @app.route('/api/uid-query/types')

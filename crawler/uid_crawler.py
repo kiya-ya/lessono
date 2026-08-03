@@ -122,7 +122,7 @@ FIELD_MAP = {
     '4周最高等级': 'best_4week_level',
     '历史最高等级': 'hist_best_level',
     '上次回归时间': 'last_return_time',
-    '违规处罚': 'punishment',
+
     '外宣': 'promotion',
     '招新系统': 'recruitment',
     '上月是否连续7日排档': 'last_month_continuous7',
@@ -317,14 +317,9 @@ class UIDCrawler:
                 except:
                     value = 0.0
             elif field == 'week_accompany_time':
+                # 服务端返回的是分钟数，直接保留
                 try:
-                    if 'h' in str(value).lower():
-                        value = float(str(value).lower().replace('h', '').strip())
-                    elif '小时' in str(value):
-                        match = re.search(r'[\d.]+', str(value))
-                        value = float(match.group()) if match else 0.0
-                    else:
-                        value = float(value) if value else 0.0
+                    value = float(value) if value else 0.0
                 except:
                     value = 0.0
 
@@ -335,8 +330,10 @@ class UIDCrawler:
 
     def query_with_compare(self, uid: str, captain_type: str = 'game') -> dict:
         """
-        查询UID并自动对比本周 vs 上周数据
+        查询UID并自动对比本周 vs 上周数据（并行请求，提速约一倍）
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         today = datetime.now()
 
         this_monday = today - timedelta(days=today.weekday())
@@ -345,14 +342,32 @@ class UIDCrawler:
         last_sunday = this_sunday - timedelta(days=7)
 
         this_start = this_monday.strftime('%Y-%m-%d')
-        this_end = this_sunday.strftime('%Y-%m-%d')
+        this_end   = this_sunday.strftime('%Y-%m-%d')
         last_start = last_monday.strftime('%Y-%m-%d')
-        last_end = last_sunday.strftime('%Y-%m-%d')
+        last_end   = last_sunday.strftime('%Y-%m-%d')
 
-        print(f'[UID-Crawl] 开始对比查询: 本周({this_start}~{this_end}) vs 上周({last_start}~{last_end})')
+        print(f'[UID-Crawl] 开始并行对比查询: 本周({this_start}~{this_end}) vs 上周({last_start}~{last_end})')
 
-        this_data = self.query(uid, captain_type, this_start, this_end)
-        last_data = self.query(uid, captain_type, last_start, last_end)
+        # 并行请求本周 + 上周（各用独立 Crawler 实例，完全线程安全）
+        def _query_week(start: str, end: str, label: str) -> tuple:
+            print(f'[UID-Crawl] [{label}] 请求开始 {start}~{end}')
+            c = UIDCrawler()  # 每个线程独立实例
+            result = c.query(uid, captain_type, start, end)
+            print(f'[UID-Crawl] [{label}] 请求完成 {start}~{end}, found={result.get("found")}')
+            return label, result
+
+        results = {}
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = {
+                executor.submit(_query_week, this_start, this_end, 'this'): 'this',
+                executor.submit(_query_week, last_start, last_end, 'last'):  'last',
+            }
+            for future in as_completed(futures):
+                label, data = future.result()
+                results[label] = data
+
+        this_data = results['this']
+        last_data = results['last']
 
         compare = self._build_compare(this_data, last_data)
 
@@ -411,7 +426,7 @@ class UIDCrawler:
 
         # 5. 陪档时长
         compare['week_accompany_time'] = self._compare_numeric(
-            this.get('week_accompany_time', 0), last.get('week_accompany_time', 0), '小时')
+            this.get('week_accompany_time', 0), last.get('week_accompany_time', 0), '分钟')
 
         # 6. 排名（越小越好）
         this_rank = this.get('week_rank', 0)
@@ -427,17 +442,7 @@ class UIDCrawler:
         else:
             compare['week_rank'] = {'this': f'第{this_rank}名' if this_rank else '未上榜', 'last': f'第{last_rank}名' if last_rank else '未上榜', 'change': '—', 'trend': 'flat'}
 
-        # 7. 违规
-        this_punish = this.get('punishment', '无')
-        last_punish = last.get('punishment', '无')
-        if this_punish == '无' and last_punish == '无':
-            compare['punishment'] = {'this': '无', 'last': '无', 'change': '—', 'trend': 'flat'}
-        elif this_punish != '无':
-            compare['punishment'] = {'this': this_punish, 'last': last_punish, 'change': '⚠️有违规', 'trend': 'down'}
-        else:
-            compare['punishment'] = {'this': '无', 'last': last_punish, 'change': '已解除', 'trend': 'up'}
-
-        # 8. 累计流水
+        # 7. 累计流水
         compare['total_revenue'] = {
             'this': this.get('total_revenue', 0), 'last': last.get('total_revenue', 0),
             'change': '累计值', 'trend': 'flat'}
@@ -511,14 +516,13 @@ def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
                 'week_schedule_count': 25,
                 'daily_task_count': 12,
                 'week_rank': 15,
-                'week_accompany_time': 8.5,
+                'week_accompany_time': 510,
                 'week_drive_count': 10,
                 'week_total_drive': 12,
                 'week_revenue': 1280.0,
                 'total_revenue': 12500.0,
                 'best_4week_level': '金牌',
                 'hist_best_level': '金牌',
-                'punishment': '无',
                 'protection_end': '2026-08-01',
             },
         },
@@ -537,14 +541,13 @@ def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
                 'week_schedule_count': 18,
                 'daily_task_count': 7,
                 'week_rank': 42,
-                'week_accompany_time': 5.2,
+                'week_accompany_time': 312,
                 'week_drive_count': 6,
                 'week_total_drive': 8,
                 'week_revenue': 850.0,
                 'total_revenue': 11220.0,
                 'best_4week_level': '银牌',
                 'hist_best_level': '金牌',
-                'punishment': '无',
                 'protection_end': '2026-08-01',
             },
         },
@@ -553,9 +556,8 @@ def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
             'week_schedule_days': {'this': 5, 'last': 3, 'change': '↑2.0天', 'change_pct': 66.7, 'trend': 'up'},
             'daily_task_count': {'this': 12, 'last': 7, 'change': '↑5.0次', 'change_pct': 71.4, 'trend': 'up'},
             'week_revenue': {'this': 1280.0, 'last': 850.0, 'change': '↑430.0元', 'change_pct': 50.6, 'trend': 'up'},
-            'week_accompany_time': {'this': 8.5, 'last': 5.2, 'change': '↑3.3小时', 'change_pct': 63.5, 'trend': 'up'},
+            'week_accompany_time': {'this': 8.5, 'last': 5.2, 'change': '↑198.0分钟', 'change_pct': 63.5, 'trend': 'up'},
             'week_rank': {'this': '第15名', 'last': '第42名', 'change': '↑27名', 'trend': 'up'},
-            'punishment': {'this': '无', 'last': '无', 'change': '—', 'trend': 'flat'},
             'total_revenue': {'this': 12500.0, 'last': 11220.0, 'change': '累计值', 'trend': 'flat'},
             'best_4week_level': {'this': '金牌', 'last': '银牌', 'change': '↑晋升', 'trend': 'up'},
             'hall': {'this': '♡LOL战争女神厅♡', 'last': '♡LOL战争女神厅♡', 'change': '—', 'trend': 'flat'},

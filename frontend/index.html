@@ -297,6 +297,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
         <div id="partner-compare-chart" style="width:100%; height:300px;"></div>
         <div id="partner-compare-table" style="margin-top:12px;"></div>
       </div>
+      <!-- 绑定妹妹列表 -->
+      <div class="uid-result-card" id="bound-sisters-card" style="display:none;">
+        <h3>👭 绑定妹妹列表</h3>
+        <div id="bound-sisters-body"></div>
+      </div>
       <div class="uid-result-card">
         <h3>🔗 关联信息</h3>
         <div class="user-info">
@@ -806,10 +811,10 @@ function renderUIDResult(data) {
     { key: 'week_schedule_days', label: '📅 当周排档天数', fmt: v => v + '天', isNum: true },
     { key: 'daily_task_count', label: '📋 每日任务完成', fmt: v => v + '次', isNum: true },
     { key: 'week_revenue', label: '💰 当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
-    { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '小时', isNum: true },
+    { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '分钟', isNum: true },
     { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
     { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
-    { key: 'punishment', label: '⚠️ 违规处罚', fmt: v => v || '无' },
+
   ];
 
   const tbody = document.getElementById('uid-compare-body');
@@ -835,6 +840,7 @@ function renderUIDResult(data) {
   html += `<tr><td class="col-metric">👥 参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat">⚪ 持平</td></tr>`;
   tbody.innerHTML = html;
   renderTeamInfo(data);
+  renderBoundSisters(data);
 }
 
 function renderTeamInfo(data) {
@@ -890,6 +896,35 @@ function renderTeamInfo(data) {
   renderPartnerCompare(data);
 }
 
+
+function renderBoundSisters(data) {
+  const card = document.getElementById('bound-sisters-card');
+  const body = document.getElementById('bound-sisters-body');
+  const sisters = data.bound_sisters || [];
+  if (!sisters.length) { card.style.display = 'none'; return; }
+
+  let html = '<table class="compare-table"><thead><tr><th>妹妹昵称</th><th>UID</th><th>所在大厅</th><th>状态</th><th>成团日期</th><th>本周等级</th><th>本周流水</th></tr></thead><tbody>';
+  for (const s of sisters) {
+    const t = s.team_info || {};
+    const u = s.uid_data || {};
+    const thisData = u.this_week?.data || {};
+    const level = thisData.week_level || '--';
+    const revenue = thisData.week_revenue !== undefined ? '¥' + thisData.week_revenue.toLocaleString() : '--';
+    const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+    html += `<tr>
+      <td>${s.nickname || '--'}</td>
+      <td>${s.uid || '--'}</td>
+      <td>${t.hall_name || '--'}</td>
+      <td style="color:${statusColor}; font-weight:600;">${t.status || '--'}</td>
+      <td>${t.form_date || '--'}</td>
+      <td>${level}</td>
+      <td>${revenue}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+  card.style.display = 'block';
+}
 
 let _partnerChart = null;
 
@@ -1056,7 +1091,7 @@ function renderPartnerTable(selfData, partnerData, selfLabel, partnerLabel) {
     { label: '当周排档天数', self: (self.week_schedule_days || 0) + '天', partner: (partner.week_schedule_days || 0) + '天' },
     { label: '每日任务完成', self: (self.daily_task_count || 0) + '次', partner: (partner.daily_task_count || 0) + '次' },
     { label: '当周礼物流水', self: '¥' + (self.week_revenue || 0).toLocaleString(), partner: '¥' + (partner.week_revenue || 0).toLocaleString() },
-    { label: '当周陪档时长', self: (self.week_accompany_time || 0) + '小时', partner: (partner.week_accompany_time || 0) + '小时' },
+    { label: '当周陪档时长', self: (self.week_accompany_time || 0) + '分钟', partner: (partner.week_accompany_time || 0) + '分钟' },
     { label: '排行榜排名', self: self.week_rank ? '第' + self.week_rank + '名' : '未上榜', partner: partner.week_rank ? '第' + partner.week_rank + '名' : '未上榜' },
     { label: '累计总流水', self: '¥' + (self.total_revenue || 0).toLocaleString(), partner: '¥' + (partner.total_revenue || 0).toLocaleString() },
     { label: '4周最高等级', self: self.best_4week_level || '--', partner: partner.best_4week_level || '--' },
@@ -1083,7 +1118,7 @@ function exportUIDResult() {
     { key: 'week_level', label: '当周队长等级' }, { key: 'week_schedule_days', label: '当周排档天数' },
     { key: 'daily_task_count', label: '每日任务完成次数' }, { key: 'week_revenue', label: '当周礼物流水' },
     { key: 'week_accompany_time', label: '当周陪档时长' }, { key: 'week_rank', label: '排行榜排名' },
-    { key: 'best_4week_level', label: '4周最高等级' }, { key: 'hall', label: '参与姐妹团' }, { key: 'punishment', label: '违规处罚' },
+    { key: 'best_4week_level', label: '4周最高等级' }, { key: 'hall', label: '参与姐妹团' },
   ];
   for (const r of rows) { const c = cmp[r.key]; if (!c) continue; const trendText = c.trend === 'up' ? '增长' : c.trend === 'down' ? '下降' : '持平'; const pct = c.change_pct !== undefined ? `${c.change_pct}%` : '—'; csv += `${r.label},${c.this},${c.last},${c.change || '—'},${pct},${trendText}\n`; }
   const thisData = d.this_week?.data || {};
