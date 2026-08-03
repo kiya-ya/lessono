@@ -245,7 +245,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
     </div>
     <div class="chart-card">
       <table class="data-table">
-        <thead><tr><th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>累计流水</th><th>奖励金额</th><th>状态</th><th>解散日期</th></tr></thead>
+        <thead><tr>
+<th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
+<th onclick="toggleSort('form_date')" style="cursor:pointer;">成团日期 <span id="sort-form_date">▲▼</span></th>
+<th onclick="toggleSort('hall_name')" style="cursor:pointer;">大厅 <span id="sort-hall_name">▲▼</span></th>
+<th>姐姐</th>
+<th>妹妹</th>
+<th onclick="toggleSort('days_since_formed')" style="cursor:pointer;">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
+<th onclick="toggleSort('sister_revenue')" style="cursor:pointer;">累计流水 <span id="sort-sister_revenue">▲▼</span></th>
+<th onclick="toggleSort('reward_amount')" style="cursor:pointer;">奖励金额 <span id="sort-reward_amount">▲▼</span></th>
+<th>状态</th>
+<th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
+</tr></thead>
         <tbody id="detail-table-body"></tbody>
       </table>
       <div class="pagination" id="detail-pagination"></div>
@@ -318,6 +329,8 @@ const API_BASE = '';
 let charts = {};
 let _lastUIDResult = null;
 let detailPage = 1;
+let detailSortField = '';
+let detailSortOrder = 'asc';  // 'asc' 或 'desc'
 let currentHall = 'all';
 let currentWeek = '';
 
@@ -661,13 +674,34 @@ let hallComparePage = 0;
 let hallCompareData = [];
 let detailStatus = 'all';
 
+function toggleSort(field) {
+  if (detailSortField === field) {
+    detailSortOrder = detailSortOrder === 'asc' ? 'desc' : 'asc';
+  } else {
+    detailSortField = field;
+    detailSortOrder = 'asc';
+  }
+  // 更新表头箭头显示
+  ['team_id','form_date','hall_name','days_since_formed','sister_revenue','reward_amount','dissolve_date'].forEach(f => {
+    const el = document.getElementById('sort-' + f);
+    if (el) el.textContent = '▲▼';
+  });
+  const activeEl = document.getElementById('sort-' + field);
+  if (activeEl) activeEl.textContent = detailSortOrder === 'asc' ? '▲' : '▼';
+  loadDetailTable(1);
+}
+
 async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;
   detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
   detailStatus = document.getElementById('detail-status').value;
   try {
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam());
+    let sortParam = '';
+    if (detailSortField) {
+      sortParam = `&sort_field=${detailSortField}&sort_order=${detailSortOrder}`;
+    }
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam() + sortParam);
     const result = await res.json();
     document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
       const status = row.dissolve_date ? '已解散' : '进行中';

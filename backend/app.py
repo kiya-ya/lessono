@@ -291,6 +291,15 @@ def api_detail_table():
     search = request.args.get('search', '')
     hall = request.args.get('hall', 'all')
     status = request.args.get('status', 'all')
+    sort_field = request.args.get('sort_field', 'team_id')
+    sort_order = request.args.get('sort_order', 'asc')
+    
+    # 允许的排序字段白名单
+    allowed_fields = ['team_id', 'form_date', 'hall_name', 'days_since_formed', 
+                      'sister_revenue', 'reward_amount', 'dissolve_date']
+    if sort_field not in allowed_fields:
+        sort_field = 'team_id'
+    order_sql = 'ASC' if sort_order == 'asc' else 'DESC'
     
     conn = get_db_conn()
     
@@ -315,7 +324,7 @@ def api_detail_table():
     total = cursor.fetchone()['total']
     
     offset = (page - 1) * per_page
-    cursor = conn.execute(f'SELECT * FROM team_detail {where_clause} ORDER BY snapshot_date DESC, team_id DESC LIMIT ? OFFSET ?', params + [per_page, offset])
+    cursor = conn.execute(f'SELECT * FROM team_detail {where_clause} ORDER BY {sort_field} {order_sql} LIMIT ? OFFSET ?', params + [per_page, offset])
     rows = cursor.fetchall()
     conn.close()
     
