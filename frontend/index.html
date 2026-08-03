@@ -1023,67 +1023,47 @@ function renderPartnerChartMulti(participants) {
   const colors = ['#667eea', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1'];
   const levelOrder = { '无': 0, '铜牌': 1, '银牌': 2, '金牌': 3, '王牌': 4, '大神': 5 };
 
-  // 调试：检查数据
-  const debugInfo = participants.map(p => {
-    const d = p.data.this_week?.data || {};
-    return { label: p.label, hasData: !!p.data.this_week?.data, revenue: d.week_revenue, days: d.week_schedule_days };
-  });
-  console.log('[PartnerChart] participants:', debugInfo);
-
   const metricsLeft = [
     { key: 'week_level', name: '等级', isLevel: true },
     { key: 'week_schedule_days', name: '排档天数' },
     { key: 'daily_task_count', name: '任务完成' },
   ];
-  const metricsRight = [
+  const metricsCenter = [
     { key: 'week_revenue', name: '礼物流水' },
+  ];
+  const metricsRight = [
     { key: 'week_accompany_time', name: '陪档时长' },
-    { key: 'week_rank', name: '排名', isRank: true },
   ];
 
-  const allRanks = participants.map(p => p.data.this_week?.data?.week_rank || 0);
-  const maxRank = Math.max(...allRanks, 100);
-
-  const participantSeriesLeft = participants.map((p, idx) => {
+  const series = [];
+  participants.forEach((p, idx) => {
     const d = p.data.this_week?.data || {};
-    return {
-      name: p.label,
-      type: 'bar',
-      xAxisIndex: 0,
-      yAxisIndex: 0,
-      data: metricsLeft.map(m => {
-        if (m.isLevel) return levelOrder[d[m.key]] ?? -1;
-        return d[m.key] || 0;
-      }),
-      itemStyle: { color: colors[idx % colors.length], borderRadius: [4, 4, 0, 0] },
-      barMaxWidth: 20,
-    };
-  });
+    const color = colors[idx % colors.length];
 
-  const participantSeriesRight = participants.map((p, idx) => {
-    const d = p.data.this_week?.data || {};
-    return {
-      name: p.label,
-      type: 'bar',
-      xAxisIndex: 1,
-      yAxisIndex: 1,
-      data: metricsRight.map(m => {
-        if (m.isRank) {
-          const rank = d[m.key] || 0;
-          return rank > 0 ? Math.round((1 - rank / maxRank) * 100) : 0;
-        }
-        return d[m.key] || 0;
-      }),
-      itemStyle: { color: colors[idx % colors.length], borderRadius: [4, 4, 0, 0] },
-      barMaxWidth: 20,
-    };
+    // 左图：基础指标
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 0, yAxisIndex: 0,
+      data: metricsLeft.map(m => m.isLevel ? (levelOrder[d[m.key]] ?? -1) : (d[m.key] || 0)),
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
+    // 中图：礼物流水
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
+      data: [d.week_revenue || 0],
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
+    // 右图：陪档时长（独立Y轴）
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 2, yAxisIndex: 2,
+      data: [d.week_accompany_time || 0],
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
   });
 
   if (!_partnerChart) {
     _partnerChart = echarts.init(chartDiv);
   }
 
-  // 检查是否有有效数据
   const hasAnyData = participants.some(p => {
     const d = p.data.this_week?.data || {};
     return (d.week_revenue || 0) > 0 || (d.week_schedule_days || 0) > 0 || (d.daily_task_count || 0) > 0;
@@ -1108,7 +1088,6 @@ function renderPartnerChartMulti(participants) {
             val = levels[val] || val;
           } else if (p.axisValue === '礼物流水') unit = '元';
           else if (p.axisValue === '陪档时长') unit = '分钟';
-          else if (p.axisValue === '排名') unit = '分';
           else if (p.axisValue === '任务完成') unit = '次';
           else if (p.axisValue === '排档天数') unit = '天';
           html += p.marker + ' ' + p.seriesName + ': ' + val + unit + '<br/>';
@@ -1118,18 +1097,21 @@ function renderPartnerChartMulti(participants) {
     },
     legend: { data: participants.map(p => p.label), top: 5 },
     grid: [
-      { left: 50, right: '52%', top: 40, bottom: 30 },
-      { left: '52%', right: 20, top: 40, bottom: 30 },
+      { left: '3%', width: '30%', top: 40, bottom: 30 },
+      { left: '36%', width: '30%', top: 40, bottom: 30 },
+      { left: '69%', width: '30%', top: 40, bottom: 30 },
     ],
     xAxis: [
       { type: 'category', data: metricsLeft.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 0 },
-      { type: 'category', data: metricsRight.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 1 },
+      { type: 'category', data: metricsCenter.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 1 },
+      { type: 'category', data: metricsRight.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 2 },
     ],
     yAxis: [
       { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 0, name: '基础指标', nameLocation: 'middle', nameGap: 25 },
-      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 1, name: '产出指标', nameLocation: 'middle', nameGap: 25 },
+      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 1, name: '礼物流水(元)', nameLocation: 'middle', nameGap: 25 },
+      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 2, name: '陪档时长(分钟)', nameLocation: 'middle', nameGap: 25 },
     ],
-    series: [...participantSeriesLeft, ...participantSeriesRight],
+    series: series,
   }, true);
   setTimeout(() => { if (_partnerChart) _partnerChart.resize(); }, 0);
 }
