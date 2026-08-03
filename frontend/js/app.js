@@ -152,4 +152,41 @@ document.addEventListener('DOMContentLoaded', () => {
   initTrendChart();
   initOverviewRetentionChart();
   loadDetailTable();
+
+  // 明细搜索框自动补全
+  const searchInput = document.getElementById('detail-search');
+  const suggestBox = document.getElementById('search-suggest');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      clearTimeout(_suggestTimer);
+      if (!val) {
+        suggestBox.style.display = 'none';
+        return;
+      }
+      _suggestTimer = setTimeout(() => loadSearchSuggestions(val), 200);
+    });
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        suggestBox.style.display = 'none';
+        loadDetailTable(1);
+      }
+    });
+  }
+  // 点击外部关闭搜索建议
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-autocomplete-wrap')) {
+      if (suggestBox) suggestBox.style.display = 'none';
+    }
+  });
+});
+document.addEventListener('DOMContentLoaded', () => {
+  loadHalls();
+  loadWeeks();
+  loadLastUpdate();
+  loadKPI();
+  loadAlerts();
+  initTrendChart();
+  initOverviewRetentionChart();
+  loadDetailTable();
 });

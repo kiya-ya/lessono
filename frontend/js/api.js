@@ -209,3 +209,51 @@ async function loadLastUpdate() {
     }
   } catch (e) { console.error('加载更新时间失败:', e); }
 }
+
+let _suggestTimer = null;
+
+async function loadSearchSuggestions(keyword) {
+  const box = document.getElementById('search-suggest');
+  if (!keyword || keyword.length < 1) {
+    box.style.display = 'none';
+    return;
+  }
+  try {
+    const res = await fetch(API_BASE + '/api/search-suggest?keyword=' + encodeURIComponent(keyword));
+    const result = await res.json();
+    const data = result.data || [];
+    if (data.length === 0) {
+      box.innerHTML = '<div class="search-suggest-empty">无匹配结果</div>';
+      box.style.display = 'block';
+      return;
+    }
+    box.innerHTML = data.map(item => {
+      const tagClass = 'role-' + (item.role || '其他');
+      const meta = item.uid ? `UID:${item.uid}` : (item.hall || '');
+      return `<div class="search-suggest-item" onclick="selectSearchSuggest('${item.name.replace(/'/g, "\\'")}')">
+        <span class="suggest-name">${item.name}</span>
+        <span class="suggest-meta">${meta}<span class="suggest-tag ${tagClass}">${item.role}</span></span>
+      </div>`;
+    }).join('');
+    box.style.display = 'block';
+  } catch (e) { console.error('搜索建议加载失败:', e); }
+}
+
+function selectSearchSuggest(name) {
+  const input = document.getElementById('detail-search');
+  input.value = name;
+  document.getElementById('search-suggest').style.display = 'none';
+  loadDetailTable(1);
+}
+  try {
+    const res = await fetch(API_BASE + '/api/last-update');
+    const data = await res.json();
+    const el = document.getElementById('last-update');
+    if (data.last_update) {
+      el.textContent = '上次更新：' + data.last_update;
+      el.style.color = data.status === 'success' ? '#52c41a' : data.status === 'failed' ? '#ff4d4f' : '';
+    } else {
+      el.textContent = '上次更新：--';
+    }
+  } catch (e) { console.error('加载更新时间失败:', e); }
+}

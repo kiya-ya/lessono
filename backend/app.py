@@ -49,6 +49,84 @@ def get_db_conn():
 
 # ========== API路由 ==========
 
+@app.route('/api/search-suggest')
+def api_search_suggest():
+    """模糊搜索建议：根据输入关键词返回匹配的昵称/UID/大厅名"""
+    keyword = request.args.get('keyword', '').strip()
+    if not keyword:
+        return jsonify({'data': []})
+    
+    conn = get_db_conn()
+    # 模糊匹配 sister_nickname、sister_nickname2、UID、hall_name、team_id
+    like = f'%{keyword}%'
+    cursor = conn.execute('''
+        SELECT DISTINCT 
+            sister_nickname as name,
+            sister_uid as uid,
+            hall_name,
+            '姐姐' as role
+        FROM team_detail
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+          AND (sister_nickname LIKE ? OR sister_uid LIKE ? OR hall_name LIKE ? OR CAST(team_id AS TEXT) LIKE ?)
+          AND (sister_nickname IS NOT NULL AND sister_nickname != '')
+        LIMIT 5
+    ''', (like, like, like, like))
+    rows1 = cursor.fetchall()
+    
+    cursor = conn.execute('''
+        SELECT DISTINCT 
+            sister_nickname2 as name,
+            sister_uid2 as uid,
+            hall_name,
+            '妹妹' as role
+        FROM team_detail
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+          AND (sister_nickname2 LIKE ? OR sister_uid2 LIKE ? OR hall_name LIKE ? OR CAST(team_id AS TEXT) LIKE ?)
+          AND (sister_nickname2 IS NOT NULL AND sister_nickname2 != '')
+        LIMIT 5
+    ''', (like, like, like, like))
+    rows2 = cursor.fetchall()
+    conn.close()
+    
+    seen = set()
+    suggestions = []
+    for r in rows1 + rows2:
+        key = f"{r['name']}|{r['uid']}"
+        if key in seen or not r['name']:
+            continue
+        seen.add(key)
+        suggestions.append({
+            'name': r['name'],
+            'uid': r['uid'] or '',
+            'hall': r['hall_name'] or '',
+            'role': r['role']
+        })
+    
+    # 再补充大厅名建议（去重）
+    conn = get_db_conn()
+    cursor = conn.execute('''
+        SELECT DISTINCT hall_name
+        FROM team_detail
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+          AND hall_name LIKE ?
+        LIMIT 3
+    ''', (like,))
+    hall_rows = cursor.fetchall()
+    conn.close()
+    
+    for h in hall_rows:
+        if h['hall_name'] and h['hall_name'] not in seen:
+            seen.add(h['hall_name'])
+            suggestions.append({
+                'name': h['hall_name'],
+                'uid': '',
+                'hall': h['hall_name'],
+                'role': '大厅'
+            })
+    
+    return jsonify({'data': suggestions[:10]})
+
+
 @app.route('/api/halls')
 def api_halls():
     """返回所有大厅列表"""

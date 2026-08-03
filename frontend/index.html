@@ -90,7 +90,10 @@
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
     <div class="search-box" style="flex-wrap:wrap;">
-      <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="flex:1;min-width:180px;">
+      <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
+        <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
+        <div class="search-suggest" id="search-suggest" style="display:none;"></div>
+      </div>
       <select id="detail-status" onchange="loadDetailTable(1)" style="padding:8px 12px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
         <option value="all">全部状态</option>
         <option value="active">进行中</option>
