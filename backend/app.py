@@ -807,19 +807,36 @@ def api_export_detail():
 #  UID 查询接口
 # ═══════════════════════════════════════════════════════
 
-def _get_team_info_by_uid(uid: str) -> dict:
-    """从 team_detail 表查询 UID 所在的姐妹团信息"""
+def _get_team_info_by_uid(uid: str, team_id: str = None) -> dict:
+    """从 team_detail 表查询 UID 所在的姐妹团信息
+    team_id: 如果提供了 team_id，则精确匹配该团
+    """
     try:
         conn = get_db_conn()
-        cursor = conn.execute('''
-            SELECT team_id, form_date, hall_name,
-                   sister_nickname, sister_uid,
-                   sister_nickname2, sister_uid2,
-                   sister_revenue, reward_amount, dissolve_date
-            FROM team_detail
-            WHERE sister_uid = ? OR sister_uid2 = ?
-            ORDER BY snapshot_date DESC LIMIT 1
-        ''', (uid, uid))
+        if team_id:
+            # 精确匹配团ID（从明细表跳转时使用）
+            cursor = conn.execute('''
+                SELECT team_id, form_date, hall_name,
+                       sister_nickname, sister_uid,
+                       sister_nickname2, sister_uid2,
+                       sister_revenue, reward_amount, dissolve_date
+                FROM team_detail
+                WHERE team_id = ?
+                  AND snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                LIMIT 1
+            ''', (team_id,))
+        else:
+            # 模糊匹配：返回最新快照中包含该UID的团
+            cursor = conn.execute('''
+                SELECT team_id, form_date, hall_name,
+                       sister_nickname, sister_uid,
+                       sister_nickname2, sister_uid2,
+                       sister_revenue, reward_amount, dissolve_date
+                FROM team_detail
+                WHERE (sister_uid = ? OR sister_uid2 = ?)
+                  AND snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                ORDER BY form_date DESC LIMIT 1
+            ''', (uid, uid))
         row = cursor.fetchone()
         conn.close()
         if row:
@@ -929,7 +946,8 @@ def api_uid_query():
             return jsonify({'error': error_msg}), 500
 
     # 附加姐妹团信息（从本地 SQLite，无论 Mock/真实都尝试查询）
-    team_info = _get_team_info_by_uid(uid)
+    team_id = body.get('team_id')
+    team_info = _get_team_info_by_uid(uid, team_id)
     if team_info:
         result['team_info'] = team_info
 

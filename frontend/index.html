@@ -673,8 +673,8 @@ async function loadDetailTable(page = 1) {
       const status = row.dissolve_date ? '已解散' : '进行中';
       const statusStyle = row.dissolve_date ? 'color:#ff4d4f;' : 'color:#52c41a;';
       return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
-      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
-      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
+      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
+      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
       <td>${row.days_since_formed || 0}</td><td>¥${(row.sister_revenue || 0).toFixed(1)}</td>
       <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
     }).join('');
@@ -753,14 +753,14 @@ function refreshData() {
   initCompareChart();
 }
 
-function jumpToUID(uid) {
+function jumpToUID(uid, teamId) {
   if (!uid || uid === '-') return;
   switchTab('uid');
   document.getElementById('uid-input').value = uid;
-  queryUID();
+  queryUID(teamId);
 }
 
-async function queryUID() {
+async function queryUID(teamId) {
   const uid = document.getElementById('uid-input').value.trim();
   const captainType = document.getElementById('uid-type').value;
   const useMock = document.getElementById('uid-mock').checked;
@@ -768,8 +768,10 @@ async function queryUID() {
   document.getElementById('uid-loading').style.display = 'block';
   document.getElementById('uid-result').style.display = 'none';
   document.getElementById('uid-error').style.display = 'none';
+  const body = { uid, captain_type: captainType, mock: useMock };
+  if (teamId) body.team_id = teamId;
   try {
-    const resp = await fetch(API_BASE + '/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid, captain_type: captainType, mock: useMock }) });
+    const resp = await fetch(API_BASE + '/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const result = await resp.json();
     if (!resp.ok || result.error) throw new Error(result.error || '查询失败');
     renderUIDResult(result);
@@ -852,6 +854,43 @@ function renderTeamInfo(data) {
   const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
   const statusIcon = t.status === '进行中' ? '✓' : '✗';
   
+  // 构建成员列表：姐姐 + 所有绑定的妹妹
+  let membersHtml = `
+    <div class="team-member">
+      <div class="member-badge">姐</div>
+      <div class="member-info">
+        <div class="member-name">${t.sister_nickname || '--'}</div>
+        <div class="member-uid">UID: ${t.sister_uid || '--'}</div>
+      </div>
+    </div>`;
+  
+  // 优先使用 bound_sisters 数据（支持多妹妹）
+  const boundSisters = data.bound_sisters || [];
+  if (boundSisters.length > 0) {
+    // 有 bound_sisters 数据，显示所有绑定的妹妹
+    for (let i = 0; i < boundSisters.length; i++) {
+      const bs = boundSisters[i];
+      membersHtml += `
+        <div class="team-member">
+          <div class="member-badge" style="background:#f6a6c1;">妹${i + 1}</div>
+          <div class="member-info">
+            <div class="member-name">${bs.nickname || bs.team_info?.sister_nickname2 || '--'}</div>
+            <div class="member-uid">UID: ${bs.uid || bs.team_info?.sister_uid2 || '--'}</div>
+          </div>
+        </div>`;
+    }
+  } else if (t.sister_nickname2 || t.sister_uid2) {
+    // 只有一个妹妹（兼容旧数据）
+    membersHtml += `
+      <div class="team-member">
+        <div class="member-badge" style="background:#f6a6c1;">妹</div>
+        <div class="member-info">
+          <div class="member-name">${t.sister_nickname2 || '--'}</div>
+          <div class="member-uid">UID: ${t.sister_uid2 || '--'}</div>
+        </div>
+      </div>`;
+  }
+  
   body.innerHTML = `
     <div class="team-detail-grid">
       <div class="team-detail-item">
@@ -876,20 +915,7 @@ function renderTeamInfo(data) {
       </div>
     </div>
     <div class="team-members">
-      <div class="team-member">
-        <div class="member-badge">姐</div>
-        <div class="member-info">
-          <div class="member-name">${t.sister_nickname || '--'}</div>
-          <div class="member-uid">UID: ${t.sister_uid || '--'}</div>
-        </div>
-      </div>
-      <div class="team-member">
-        <div class="member-badge" style="background:#f6a6c1;">妹</div>
-        <div class="member-info">
-          <div class="member-name">${t.sister_nickname2 || '--'}</div>
-          <div class="member-uid">UID: ${t.sister_uid2 || '--'}</div>
-        </div>
-      </div>
+      ${membersHtml}
     </div>
   `;
   card.style.display = 'block';
@@ -934,9 +960,16 @@ async function renderPartnerCompare(data) {
   const tableDiv = document.getElementById('partner-compare-table');
   const t = data.team_info;
 
-  if (!t || !t.sister_uid || !t.sister_uid2) {
+  if (!t || !t.sister_uid) {
     card.style.display = 'none';
     return;
+  }
+  
+  // 如果有多个绑定妹妹，在图表上方显示提示
+  const boundSisters = data.bound_sisters || [];
+  let multiHint = '';
+  if (boundSisters.length > 1) {
+    multiHint = '<div style="padding:8px 12px; background:#fffbe6; border:1px solid #ffe58f; border-radius:4px; margin-bottom:12px; font-size:12px; color:#d48806;">💡 该姐姐绑定了 ' + boundSisters.length + ' 个妹妹，当前仅对比其中一位。可在下方「绑定妹妹列表」查看全部妹妹数据。</div>';
   }
 
   // 判断当前查询的是姐姐还是妹妹，获取另一个成员的UID
@@ -981,6 +1014,7 @@ async function renderPartnerCompare(data) {
       return;
     }
 
+    tableDiv.innerHTML = multiHint;
     renderPartnerChart(data, partnerData, currentLabel, partnerLabel);
     renderPartnerTable(data, partnerData, currentLabel, partnerLabel);
 
