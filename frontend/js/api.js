@@ -1,0 +1,211 @@
+async function loadHalls() {
+  try {
+    const res = await fetch(API_BASE + '/api/halls');
+    const result = await res.json();
+    const select = document.getElementById('hall-select');
+    select.innerHTML = '<option value="all">全部大厅</option>';
+
+    (result.data || []).forEach(hall => {
+      const opt = document.createElement('option');
+      opt.value = hall;
+      opt.textContent = hall;
+      select.appendChild(opt);
+
+    });
+  } catch (e) { console.error('大厅列表加载失败:', e); }
+}
+async function loadWeeks() {
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
+    const result = await res.json();
+    const select = document.getElementById('week-select');
+    select.innerHTML = '';
+    const weeks = (result.data || []).slice().reverse(); // 从新到旧
+    weeks.forEach((w, idx) => {
+      const opt = document.createElement('option');
+      opt.value = w.week_start + '|' + w.week_end;
+      opt.textContent = w.week_start + ' ~ ' + w.week_end;
+      if (idx === 0) {
+        opt.selected = true;
+        currentWeek = opt.value; // 同步设置 currentWeek
+      }
+      select.appendChild(opt);
+    });
+  } catch (e) { console.error('周列表加载失败:', e); }
+}
+async function loadAlerts() {
+  try {
+    const res = await fetch(API_BASE + '/api/alerts?' + getWeekParam().substring(1));
+    const result = await res.json();
+    const list = document.getElementById('alert-list');
+    if (!result.data || result.data.length === 0) {
+      list.innerHTML = '<div style="color:#888; font-size:13px; padding:10px;">✅ 近期暂无异常预警</div>';
+      return;
+    }
+    list.innerHTML = result.data.map(a => `
+      <div class="alert-item ${a.severity}">
+        <span class="alert-icon">${a.severity === 'high' ? '🔴' : a.severity === 'medium' ? '🟡' : '🟢'}</span>
+        <strong>[${a.severity === 'high' ? '高' : a.severity === 'medium' ? '中' : '低'}]</strong>
+        ${a.title}：${a.message}
+        <span style="color:#999; font-size:11px; margin-left:auto;">${a.created_at ? a.created_at.split(' ')[0] : ''}</span>
+      </div>
+    `).join('');
+  } catch (e) { console.error('预警加载失败:', e); }
+}
+
+async function loadDetailTable(page = 1) {
+  detailPage = page;
+  const search = document.getElementById('detail-search').value;
+  detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
+  detailStatus = document.getElementById('detail-status').value;
+  try {
+    let sortParam = '';
+    if (detailSortField) {
+      sortParam = `&sort_field=${detailSortField}&sort_order=${detailSortOrder}`;
+    }
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam() + sortParam);
+    const result = await res.json();
+    document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
+      const status = row.dissolve_date ? '已解散' : '进行中';
+      const statusStyle = row.dissolve_date ? 'color:#ff4d4f;' : 'color:#52c41a;';
+      return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
+      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
+      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
+      <td>${row.days_since_formed || 0}</td><td>¥${(row.sister_revenue || 0).toFixed(1)}</td>
+      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
+    }).join('');
+    
+    // 分页渲染
+    const totalPages = Math.ceil(result.total / result.per_page);
+    let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${result.total} 条 · 第 ${page}/${totalPages} 页</span>`;
+    if (page > 1) html += `<button onclick="loadDetailTable(1)">首页</button><button onclick="loadDetailTable(${page-1})">上一页</button>`;
+    
+    // 页码范围：当前页前后各2页
+    const startPage = Math.max(1, page - 2);
+    const endPage = Math.min(totalPages, page + 2);
+    if (startPage > 1) html += `<button onclick="loadDetailTable(1)">1</button>${startPage > 2 ? '<span style="padding:6px;">...</span>' : ''}`;
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="${i === page ? 'active' : ''}" onclick="loadDetailTable(${i})">${i}</button>`;
+    }
+    if (endPage < totalPages) html += `${endPage < totalPages - 1 ? '<span style="padding:6px;">...</span>' : ''}<button onclick="loadDetailTable(${totalPages})">${totalPages}</button>`;
+    
+    if (page < totalPages) html += `<button onclick="loadDetailTable(${page+1})">下一页</button><button onclick="loadDetailTable(${totalPages})">末页</button>`;
+    html += `<input type="number" id="goto-page" min="1" max="${totalPages}" placeholder="跳转到" style="width:60px;padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;margin-left:8px;"><button onclick="const gp=parseInt(document.getElementById('goto-page').value);if(gp>=1&&gp<=${totalPages})loadDetailTable(gp);" style="margin-left:4px;">GO</button>`;
+    document.getElementById('detail-pagination').innerHTML = html;
+  } catch (e) { console.error('明细加载失败:', e); }
+}
+
+async function checkCookieStatus() {
+  let uidOk = false, bigOk = false;
+  let uidStatus = 'unknown', bigStatus = 'unknown';
+
+  try {
+    const resp1 = await fetch(API_BASE + '/api/cookie');
+    const data1 = await resp1.json();
+    uidOk = data1.status === 'valid';
+    uidStatus = data1.status;
+  } catch (e) { console.log('UID Cookie 检测失败:', e); }
+
+  try {
+    const resp2 = await fetch(API_BASE + '/api/cookie/bigdata');
+    const data2 = await resp2.json();
+    bigOk = data2.status === 'valid';
+    bigStatus = data2.status;
+  } catch (e) { console.log('抓取 Cookie 检测失败:', e); }
+
+  // 综合状态显示在 header 按钮上
+  const mainDot = document.getElementById('cookie-dot-main');
+  const mainText = document.getElementById('cookie-text-main');
+  if (uidOk && bigOk) {
+    mainDot.className = 'cookie-dot valid'; mainText.textContent = 'Cookie 全部有效';
+  } else if (!uidOk && !bigOk) {
+    mainDot.className = 'cookie-dot invalid'; mainText.textContent = 'Cookie 全部无效';
+  } else {
+    mainDot.className = 'cookie-dot unknown'; mainText.textContent = '部分 Cookie 需更新';
+  }
+
+  // 缓存状态供弹窗使用
+  window._cookieStatus = { uid: uidStatus, bigdata: bigStatus };
+}
+
+async function updateCookiePanelStatus() {
+  try {
+    const resp1 = await fetch(API_BASE + '/api/cookie');
+    const data1 = await resp1.json();
+    const dot1 = document.getElementById('panel-dot-uid');
+    const status1 = document.getElementById('panel-status-uid');
+    if (data1.status === 'valid') {
+      dot1.style.background = '#52c41a'; status1.textContent = '✅ 状态：有效（' + (data1.updated_at || '未知') + ' 更新）';
+    } else if (data1.status === 'invalid') {
+      dot1.style.background = '#ff4d4f'; status1.textContent = '❌ 状态：无效，请重新粘贴';
+    } else {
+      dot1.style.background = '#faad14'; status1.textContent = '⚠️ 状态：未知';
+    }
+  } catch (e) { console.log('UID panel 检测失败:', e); }
+
+  try {
+    const resp2 = await fetch(API_BASE + '/api/cookie/bigdata');
+    const data2 = await resp2.json();
+    const dot2 = document.getElementById('panel-dot-bigdata');
+    const status2 = document.getElementById('panel-status-bigdata');
+    if (data2.status === 'valid') {
+      dot2.style.background = '#52c41a'; status2.textContent = '✅ 状态：有效（' + (data2.updated_at || '未知') + ' 更新）';
+    } else if (data2.status === 'invalid') {
+      dot2.style.background = '#ff4d4f'; status2.textContent = '❌ 状态：无效，请重新粘贴';
+    } else {
+      dot2.style.background = '#faad14'; status2.textContent = '⚠️ 状态：未知';
+    }
+  } catch (e) { console.log('抓取 panel 检测失败:', e); }
+}
+
+async function saveCookie(target) {
+  const inputId = target === 'bigdata' ? 'cookie-input-bigdata' : 'cookie-input-uid';
+  const cookieStr = document.getElementById(inputId).value.trim();
+  if (!cookieStr) { alert('请输入 Cookie'); return; }
+  if (!cookieStr.includes('PHPSESSID')) { alert('Cookie 格式不正确，缺少 PHPSESSID'); return; }
+
+  const endpoint = target === 'bigdata' ? '/api/cookie/bigdata' : '/api/cookie';
+  const label = target === 'bigdata' ? '数据抓取' : 'UID查询';
+
+  try {
+    const resp = await fetch(API_BASE + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cookie_str: cookieStr })
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      if (resp.status === 404) {
+        alert('❌ 后端接口不存在 (404)，请确认后端已重启并加载最新代码');
+      } else {
+        alert('❌ 服务器错误 (' + resp.status + '): ' + text.substring(0, 200));
+      }
+      return;
+    }
+    const data = await resp.json();
+    if (data.success) {
+      alert('✅ ' + label + ' Cookie 更新成功！');
+      document.getElementById(inputId).value = '';
+      checkCookieStatus();
+      updateCookiePanelStatus();
+    } else {
+      alert('❌ 更新失败: ' + (data.error || '未知错误'));
+    }
+  } catch (e) {
+    alert('❌ 网络请求失败: ' + (e.message || '请确认后端服务已启动'));
+  }
+}
+
+async function loadLastUpdate() {
+  try {
+    const res = await fetch(API_BASE + '/api/last-update');
+    const data = await res.json();
+    const el = document.getElementById('last-update');
+    if (data.last_update) {
+      el.textContent = '上次更新：' + data.last_update;
+      el.style.color = data.status === 'success' ? '#52c41a' : data.status === 'failed' ? '#ff4d4f' : '';
+    } else {
+      el.textContent = '上次更新：--';
+    }
+  } catch (e) { console.error('加载更新时间失败:', e); }
+}
