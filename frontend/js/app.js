@@ -66,6 +66,40 @@ function refreshData() {
   initCompareChart();
 }
 
+// 大厅对比搜索
+let _hallSearchTimer = null;
+function onHallCompareSearch() {
+  clearTimeout(_hallSearchTimer);
+  _hallSearchTimer = setTimeout(() => {
+    hallCompareSearch = document.getElementById('hall-compare-search').value.trim();
+    hallComparePage = 0;
+    renderHallComparePage();
+  }, 300);
+}
+
+function onHallCompareSortChange() {
+  const val = document.getElementById('hall-compare-sort').value;
+  const [field, order] = val.split('|');
+  hallCompareSortField = field;
+  hallCompareSortOrder = order;
+  hallComparePage = 0;
+  renderHallComparePage();
+}
+
+function jumpToUID(uid, teamId) {
+  loadKPI();
+  loadAlerts();
+  initTrendChart();
+  initOverviewRetentionChart();
+  loadDetailTable();
+  if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
+  if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
+  if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }
+  if (charts.activity) { charts.activity.dispose(); charts.activity = null; }
+  initTrendCharts();
+  initCompareChart();
+}
+
 function jumpToUID(uid, teamId) {
   if (!uid || uid === '-') return;
   switchTab('uid');
@@ -179,14 +213,4 @@ document.addEventListener('DOMContentLoaded', () => {
       if (suggestBox) suggestBox.style.display = 'none';
     }
   });
-});
-document.addEventListener('DOMContentLoaded', () => {
-  loadHalls();
-  loadWeeks();
-  loadLastUpdate();
-  loadKPI();
-  loadAlerts();
-  initTrendChart();
-  initOverviewRetentionChart();
-  loadDetailTable();
 });

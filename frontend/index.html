@@ -74,7 +74,22 @@
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
     <div class="chart-card">
-      <h3>🏠 各大厅数据对比</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>🏠 各大厅数据对比</span>
+        <div class="hall-compare-controls" style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="hall-compare-search" placeholder="搜索大厅名称..." style="padding:4px 10px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;width:150px;" oninput="onHallCompareSearch()">
+          <select id="hall-compare-sort" onchange="onHallCompareSortChange()" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;">
+            <option value="active_count|desc" selected>进行中团数 ↓</option>
+            <option value="active_count|asc">进行中团数 ↑</option>
+            <option value="team_count|desc">总团数 ↓</option>
+            <option value="team_count|asc">总团数 ↑</option>
+            <option value="dissolved_count|desc">解散数 ↓</option>
+            <option value="dissolved_count|asc">解散数 ↑</option>
+            <option value="total_revenue|desc">总流水 ↓</option>
+            <option value="total_revenue|asc">总流水 ↑</option>
+          </select>
+        </div>
+      </h3>
       <div class="chart-container" id="chart-hall-compare"></div>
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
     </div>
