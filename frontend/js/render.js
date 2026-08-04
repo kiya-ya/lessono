@@ -139,32 +139,35 @@ async function initCompareChart() {
     const result = await res.json();
     const data = result.data;
     if (data && data.length > 0) {
-      const policyDate = '2026-07-17';
       const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
-      const before = validData.filter(d => d.week_end < policyDate);
-      let after = validData.filter(d => d.week_start >= policyDate);
+      // Filter by selected week if applicable
+      let filteredData = validData;
       if (currentWeek && currentWeek.includes('|')) {
         const selectedEnd = currentWeek.split('|')[1];
-        after = after.filter(d => d.week_end <= selectedEnd);
+        filteredData = validData.filter(d => d.week_end <= selectedEnd);
       }
-      const avg = (arr, key) => arr.length > 0 ? arr.reduce((s, d) => s + d[key], 0) / arr.length : 0;
+      // Take last two records as 上周 and 本周
+      const lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
+      const thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
       const metrics = [
-        { name: '📦 周均新成团数', key: 'new_team_count', unit: '个' },
+        { name: '📦 周新成团数', key: 'new_team_count', unit: '个' },
         { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
-        { name: '💯 平均留存率', key: 'retention_rate', unit: '%', cap: 100 },
-        { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%', reverse: true },
-        { name: '💰 周均总流水', key: 'total_reward', unit: '元' },
+        { name: '💯 留存率', key: 'retention_rate', unit: '%', cap: 100 },
+        { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
+        { name: '💰 周总流水', key: 'total_reward', unit: '元' },
         { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
       ];
       const tbody = document.getElementById('compare-table-body');
       tbody.innerHTML = metrics.map(m => {
-        const getVal = (arr) => {
-          if (m.calc) return arr.reduce((s, d) => s + m.calc(d), 0) / arr.length;
-          let v = arr.reduce((s, d) => s + (d[m.key] || 0), 0) / arr.length;
+        const getVal = (weekData) => {
+          if (!weekData) return 0;
+          if (m.calc) return m.calc(weekData);
+          let v = weekData[m.key] || 0;
           if (m.cap) v = Math.min(m.cap, v);
           return v;
         };
-        const b = getVal(before); const a = getVal(after);
+        const b = getVal(lastWeek);
+        const a = getVal(thisWeek);
         let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
         if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
         const fmt = (v) => m.unit === '元' ? `¥${v.toFixed(0)}` : `${v.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
