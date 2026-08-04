@@ -252,9 +252,9 @@ function renderHallComparePage() {
     charts.hallCompare.setOption({
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' },
       grid: { left: 160, right: 30, top: 20, bottom: 30 },
-      xAxis: { type: 'value' },
+      xAxis: { type: 'value', max: 20, minInterval: 1 },
       yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
-      series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }]
+      series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), barMaxWidth: 30, itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }]
     });
   } else {
     // 无数据时清空图表
