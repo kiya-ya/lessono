@@ -377,11 +377,6 @@ class SistersCrawler:
                         year = datetime.now().year
                         value = f'{year}-{m.group(1)}-{m.group(2)}'
                 record[field] = value
-                    try:
-                        value = float(value) if value else 0.0
-                    except:
-                        value = 0.0
-                record[field] = value
         
         return record if 'team_id' in record else None
     

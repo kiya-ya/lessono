@@ -1,0 +1,36 @@
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
+Traceback (most recent call last):
+  File "D:\姐妹团看板系统\daily_crawl.py", line 21, in <module>
+    from crawler import run_all
+  File "D:\姐妹团看板系统\crawler\crawler.py", line 380
+    try:
+IndentationError: unexpected indent
