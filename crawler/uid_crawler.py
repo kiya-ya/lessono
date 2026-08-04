@@ -318,10 +318,6 @@ class UIDCrawler:
                     value = float(clean) if clean else 0.0
                 except:
                     value = 0.0
-                try:
-                    value = float(value.replace(',', '')) if value else 0.0
-                except:
-                    value = 0.0
             elif field == 'week_accompany_time':
                 # 服务端返回的是分钟数，直接保留
                 try:
