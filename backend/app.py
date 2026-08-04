@@ -207,7 +207,7 @@ def api_kpi():
             new = row.get('new_team_count', 0) or 0
             if start <= 0:
                 return 0
-            return round((end - new) / start * 100, 2)
+            return min(100, round((end - new) / start * 100, 2))
         
         this_retention = calc_retention(this_row)
         prev_retention = calc_retention(prev_row)
@@ -268,7 +268,7 @@ def api_kpi():
         new = row.get('new_team_count', 0) or 0
         if start <= 0:
             return 0
-        return round((end - new) / start * 100, 2)
+        return min(100, round((end - new) / start * 100, 2))
     
     this_retention = calc_retention(this_week)
     last_retention = calc_retention(last_week)
@@ -364,25 +364,6 @@ def api_weekly_report():
             SELECT * FROM weekly_report WHERE {hall_filter}
             ORDER BY week_start DESC LIMIT ?
         ''', params + (int(limit),))
-    
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return jsonify({'data': rows})
-    limit = request.args.get('limit', 'all')
-    # 始终返回汇总数据（数据库只有 hall_name='all'）
-    conn = get_db_conn()
-    
-    if limit == 'all':
-        cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = 'all'
-            ORDER BY week_start
-        ''')
-    else:
-        cursor = conn.execute('''
-            SELECT * FROM weekly_report WHERE hall_name = 'all'
-            ORDER BY week_start DESC LIMIT ?
-        ''', (int(limit),))
     
     rows = cursor.fetchall()
     conn.close()
@@ -725,7 +706,7 @@ def api_export_pdf_report():
             end = row.get('active_team_count_end', 0) or 0
             new = row.get('new_team_count', 0) or 0
             if start <= 0: return 0
-            return round((end - new) / start * 100, 2)
+            return min(100, round((end - new) / start * 100, 2))
         
         this_ret = calc_retention(week_row)
         prev_ret = calc_retention(prev_row)

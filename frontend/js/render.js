@@ -170,7 +170,15 @@ async function initCompareChart() {
         const a = getVal(thisWeek);
         let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
         if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
-        const fmt = (v) => m.unit === '元' ? `¥${v.toFixed(0)}` : `${v.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
+        const fmt = (v) => {
+          if (v === null || v === undefined || Number.isNaN(v)) return '—';
+          const n = Number(v);
+          if (!Number.isFinite(n)) return '—';
+          if (m.unit === '元') return `¥${n.toFixed(0)}`;
+          return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
+        };
+        const lastWeekLabel = lastWeek ? lastWeek.week_label || '上周' : '—';
+        const thisWeekLabel = thisWeek ? thisWeek.week_label || '本周' : '—';
         return `<tr><td>${m.name}</td><td>${fmt(b)}</td><td>${fmt(a)}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
       }).join('');
     }
@@ -182,7 +190,11 @@ async function initCompareChart() {
     } catch (e) { console.error('大厅排名加载失败:', e); }
 
     try {
-      const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+      let validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+      if (currentWeek && currentWeek.includes('|')) {
+        const selectedEnd = currentWeek.split('|')[1];
+        validData = validData.filter(d => d.week_end <= selectedEnd);
+      }
       const labels = validData.map((d, i) => {
         const isLast = i === validData.length - 1;
         return isLast ? d.week_label + ' (收集中)' : d.week_label;
@@ -203,7 +215,7 @@ async function initCompareChart() {
           { name: '新成团数', type: 'bar', data: newTeams, itemStyle: { color: '#667eea', borderRadius: [4,4,0,0] }, barWidth: '40%' },
           { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' } }
         ]
-      });
+      }, true);
     } catch (e) { console.error('双轴图加载失败:', e); }
     setTimeout(() => {
       if (charts.hallCompare) charts.hallCompare.resize();
