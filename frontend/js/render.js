@@ -238,9 +238,21 @@ function renderHallComparePage() {
   const end = Math.min(start + perPage, total);
   const pageData = filtered.slice(start, end);
 
+  // 指标配置：标签、单位、颜色
+  const metricConfig = {
+    active_count:    { label: '进行中团数', unit: '个', color: '#667eea' },
+    team_count:      { label: '总团数',     unit: '个', color: '#52c41a' },
+    dissolved_count: { label: '解散数',     unit: '个', color: '#ff4d4f' },
+    total_revenue:   { label: '总流水',     unit: '元', color: '#faad14' },
+  };
+  const cfg = metricConfig[hallCompareSortField] || metricConfig.active_count;
+
   if (pageData.length > 0) {
     const hallNames = pageData.map(d => d.hall_name);
-    const hallCounts = pageData.map(d => d.active_count);
+    const values = pageData.map(d => d[hallCompareSortField] || 0);
+    const maxVal = Math.max(...values);
+    const xMax = Math.ceil(maxVal * 1.2) || 1;
+
     if (!charts.hallCompare) {
       charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare'));
       charts.hallCompare.on('click', function(params) {
@@ -250,11 +262,11 @@ function renderHallComparePage() {
       });
     }
     charts.hallCompare.setOption({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>进行中团数: {c}' },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
       grid: { left: 160, right: 30, top: 20, bottom: 30 },
-      xAxis: { type: 'value', max: 20, minInterval: 1 },
+      xAxis: { type: 'value', max: xMax, minInterval: 1 },
       yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
-      series: [{ name: '进行中团数', type: 'bar', data: hallCounts.reverse(), barMaxWidth: 30, itemStyle: { color: '#667eea', borderRadius: [0,4,4,0] } }]
+      series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30, itemStyle: { color: cfg.color, borderRadius: [0,4,4,0] } }]
     });
   } else {
     // 无数据时清空图表
