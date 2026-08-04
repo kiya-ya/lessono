@@ -174,7 +174,13 @@ def calculate_weekly_metrics_from_detail(hall_name: str = 'all',
     ''', conn, params=(first_snap, hall_name) if hall_name != 'all' else (first_snap,))
     active_start = len(df_start[df_start['dissolve_date'].isna() | (df_start['dissolve_date'] == '')])
     
-    # 2. 周末进行中 + 奖励金额 + 任务数
+    # 2. 周末进行中 + 流水 + 奖励金额 + 任务数
+    df_end = pd.read_sql_query(f'''
+        SELECT team_id, dissolve_date, sister_revenue, reward_amount,
+               drive_task_count, accompany_task_count, gift_task_count
+        FROM team_detail 
+        WHERE snapshot_date = ? {hall_sql}
+    ''', conn, params=(last_snap, hall_name) if hall_name != 'all' else (last_snap,))
     df_end = pd.read_sql_query(f'''
         SELECT team_id, dissolve_date, reward_amount,
                drive_task_count, accompany_task_count, gift_task_count
@@ -197,7 +203,21 @@ def calculate_weekly_metrics_from_detail(hall_name: str = 'all',
     ''', conn, params=(week_start, week_end, hall_name) if hall_name != 'all' else (week_start, week_end))
     dissolved_count = len(df_diss)
     
-    # 5. 总流水（reward_amount 增量近似）
+    # 5. 总流水（sister_revenue 增量近似）
+    prev_week_end = (start_dt - timedelta(days=1)).strftime('%Y-%m-%d')
+    prev_snap = pd.read_sql_query('''
+        SELECT MAX(snapshot_date) as d FROM team_detail WHERE snapshot_date <= ?
+    ''', conn, params=(prev_week_end,))
+    prev_revenue = 0
+    if not prev_snap.empty and prev_snap['d'].iloc[0]:
+        df_prev = pd.read_sql_query(f'''
+            SELECT sister_revenue FROM team_detail 
+            WHERE snapshot_date = ? {hall_sql}
+        ''', conn, params=(prev_snap['d'].iloc[0], hall_name) if hall_name != 'all' else (prev_snap['d'].iloc[0],))
+        prev_revenue = df_prev['sister_revenue'].sum() if not df_prev.empty else 0
+    
+    curr_revenue = df_end['sister_revenue'].sum() if not df_end.empty else 0
+    total_reward = max(0, float(curr_revenue - prev_revenue))
     prev_week_end = (start_dt - timedelta(days=1)).strftime('%Y-%m-%d')
     prev_snap = pd.read_sql_query('''
         SELECT MAX(snapshot_date) as d FROM team_detail WHERE snapshot_date <= ?
