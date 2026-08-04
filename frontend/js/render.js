@@ -154,8 +154,6 @@ async function initCompareChart() {
         { name: '💯 平均留存率', key: 'retention_rate', unit: '%', cap: 100 },
         { name: '🚫 平均解散率', key: 'dissolution_rate', unit: '%', reverse: true },
         { name: '💰 周均总流水', key: 'total_reward', unit: '元' },
-        { name: '📊 平均活跃度', key: 'activity_index', unit: '' },
-        { name: '🏆 成就达成率', unit: '%', calc: (d) => { const total = (d.level_achievement_count || 0) + (d.revenue_achievement_count || 0); const active = d.active_team_count_end || 1; return total / active * 100; } },
         { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
       ];
       const tbody = document.getElementById('compare-table-body');
