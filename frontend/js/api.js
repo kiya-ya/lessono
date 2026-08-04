@@ -3,6 +3,7 @@ async function loadHalls() {
     const res = await fetch(API_BASE + '/api/halls');
     const result = await res.json();
     const select = document.getElementById('hall-select');
+    if (!select) return; // 页面无大厅选择器时跳过
     select.innerHTML = '<option value="all">全部大厅</option>';
 
     (result.data || []).forEach(hall => {

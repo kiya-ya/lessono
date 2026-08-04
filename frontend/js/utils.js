@@ -1,5 +1,7 @@
 function getHallParam() {
-  return currentHall === 'all' ? '' : '&hall=' + encodeURIComponent(currentHall);
+  const select = document.getElementById('hall-select');
+  const hall = select ? select.value : currentHall;
+  return hall === 'all' ? '' : '&hall=' + encodeURIComponent(hall);
 }
 
 function getWeekParam() {
