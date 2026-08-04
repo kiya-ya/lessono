@@ -12,8 +12,6 @@ from datetime import datetime, timedelta
 import pandas as pd
 from db import get_db
 from metrics import calculate_weekly_metrics, calculate_weekly_metrics_from_detail, save_weekly_report
-from db import get_db
-from metrics import calculate_weekly_metrics, calculate_weekly_metrics_from_detail, save_weekly_report
 
 
 def get_all_weeks():

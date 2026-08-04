@@ -368,6 +368,19 @@ class SistersCrawler:
                         value = float(value) if value else 0.0
                     except:
                         value = 0.0
+                elif field == 'form_date':
+                    # 规范化日期格式：从 "MM-DD星期X" 转换为 "YYYY-MM-DD"
+                    import re
+                    m = re.match(r'(\d{2})-(\d{2})星期.', value)
+                    if m:
+                        from datetime import datetime
+                        year = datetime.now().year
+                        value = f'{year}-{m.group(1)}-{m.group(2)}'
+                record[field] = value
+                    try:
+                        value = float(value) if value else 0.0
+                    except:
+                        value = 0.0
                 record[field] = value
         
         return record if 'team_id' in record else None
