@@ -344,6 +344,32 @@ def api_daily_retention():
 @app.route('/api/weekly-report')
 def api_weekly_report():
     limit = request.args.get('limit', 'all')
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    
+    if hall == 'all':
+        hall_filter = "hall_name = 'all'"
+        params = ()
+    else:
+        hall_filter = 'hall_name = ?'
+        params = (hall,)
+    
+    if limit == 'all':
+        cursor = conn.execute(f'''
+            SELECT * FROM weekly_report WHERE {hall_filter}
+            ORDER BY week_start
+        ''', params)
+    else:
+        cursor = conn.execute(f'''
+            SELECT * FROM weekly_report WHERE {hall_filter}
+            ORDER BY week_start DESC LIMIT ?
+        ''', params + (int(limit),))
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return jsonify({'data': rows})
+    limit = request.args.get('limit', 'all')
     # 始终返回汇总数据（数据库只有 hall_name='all'）
     conn = get_db_conn()
     

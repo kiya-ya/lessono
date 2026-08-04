@@ -9,8 +9,11 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'crawler'))
 
 from datetime import datetime, timedelta
+import pandas as pd
 from db import get_db
-from metrics import calculate_weekly_metrics, save_weekly_report
+from metrics import calculate_weekly_metrics, calculate_weekly_metrics_from_detail, save_weekly_report
+from db import get_db
+from metrics import calculate_weekly_metrics, calculate_weekly_metrics_from_detail, save_weekly_report
 
 
 def get_all_weeks():
@@ -43,19 +46,35 @@ def run_batch_weekly():
     success = 0
     failed = 0
     
+    # 获取所有大厅列表
+    conn = get_db()
+    halls_df = pd.read_sql_query(
+        'SELECT DISTINCT hall_name FROM team_detail WHERE snapshot_date IS NOT NULL',
+        conn
+    )
+    conn.close()
+    hall_list = ['all'] + halls_df['hall_name'].tolist()
+    
     for i, week_start in enumerate(weeks):
         dt = datetime.strptime(week_start, '%Y-%m-%d')
         week_end = dt + timedelta(days=6)
         print(f'\n[{i+1}/{len(weeks)}] 计算周报: {week_start} (周一) ~ {week_end.strftime("%Y-%m-%d")} (周日)')
         
-        metrics = calculate_weekly_metrics(hall_name='all', target_week_start=week_start)
-        if metrics:
-            save_weekly_report(metrics)
-            print(f'  ✅ 完成: 新成团{metrics["new_team_count"]}, 留存率{metrics["retention_rate"]}%, 解散率{metrics["dissolution_rate"]}%, 流水¥{metrics["total_reward"]:.0f}')
-            success += 1
-        else:
-            print(f'  ⚠️ 跳过: 该周无数据')
-            failed += 1
+        for hall in hall_list:
+            if hall == 'all':
+                metrics = calculate_weekly_metrics(hall_name='all', target_week_start=week_start)
+            else:
+                metrics = calculate_weekly_metrics_from_detail(hall_name=hall, target_week_start=week_start)
+            
+            if metrics:
+                save_weekly_report(metrics)
+                if hall == 'all':
+                    print(f'  ✅ 汇总: 新成团{metrics["new_team_count"]}, 留存率{metrics["retention_rate"]}%, 解散率{metrics["dissolution_rate"]}%')
+                success += 1
+            else:
+                if hall == 'all':
+                    print(f'  ⚠️ 跳过: 该周无数据')
+                failed += 1
     
     print(f'\n{"="*50}')
     print(f'批量计算完成: 成功{success}周, 跳过{failed}周')

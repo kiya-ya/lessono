@@ -124,6 +124,128 @@ def calculate_weekly_metrics(hall_name: str = 'all',
     return metrics
 
 
+
+
+def calculate_weekly_metrics_from_detail(hall_name: str = 'all',
+                                          target_week_start: str = None) -> dict:
+    """
+    从 team_detail 快照表计算分厅周报指标
+    （当 stats_daily 中没有分厅数据时使用）
+    """
+    conn = get_db()
+    
+    # 计算周起止
+    if not target_week_start:
+        cursor = conn.execute('SELECT MAX(snapshot_date) FROM team_detail')
+        row = cursor.fetchone()
+        if row and row[0]:
+            latest = datetime.strptime(row[0], '%Y-%m-%d')
+            target_week_start = (latest - timedelta(days=latest.weekday())).strftime('%Y-%m-%d')
+        else:
+            conn.close()
+            return None
+    
+    start_dt = datetime.strptime(target_week_start, '%Y-%m-%d')
+    end_dt = start_dt + timedelta(days=6)
+    week_start = start_dt.strftime('%Y-%m-%d')
+    week_end = end_dt.strftime('%Y-%m-%d')
+    
+    # 获取本周的所有 snapshot_date
+    snapshots = pd.read_sql_query('''
+        SELECT DISTINCT snapshot_date FROM team_detail 
+        WHERE snapshot_date >= ? AND snapshot_date <= ? 
+        ORDER BY snapshot_date
+    ''', conn, params=(week_start, week_end))
+    
+    if snapshots.empty:
+        conn.close()
+        return None
+    
+    first_snap = snapshots['snapshot_date'].iloc[0]
+    last_snap = snapshots['snapshot_date'].iloc[-1]
+    
+    # 大厅参数
+    hall_sql = '' if hall_name == 'all' else 'AND hall_name = ?'
+    
+    # 1. 周初进行中
+    df_start = pd.read_sql_query(f'''
+        SELECT team_id, dissolve_date FROM team_detail 
+        WHERE snapshot_date = ? {hall_sql}
+    ''', conn, params=(first_snap, hall_name) if hall_name != 'all' else (first_snap,))
+    active_start = len(df_start[df_start['dissolve_date'].isna() | (df_start['dissolve_date'] == '')])
+    
+    # 2. 周末进行中 + 奖励金额 + 任务数
+    df_end = pd.read_sql_query(f'''
+        SELECT team_id, dissolve_date, reward_amount,
+               drive_task_count, accompany_task_count, gift_task_count
+        FROM team_detail 
+        WHERE snapshot_date = ? {hall_sql}
+    ''', conn, params=(last_snap, hall_name) if hall_name != 'all' else (last_snap,))
+    active_end = len(df_end[df_end['dissolve_date'].isna() | (df_end['dissolve_date'] == '')])
+    
+    # 3. 新成团
+    df_new = pd.read_sql_query(f'''
+        SELECT DISTINCT team_id FROM team_detail 
+        WHERE form_date >= ? AND form_date <= ? {hall_sql}
+    ''', conn, params=(week_start, week_end, hall_name) if hall_name != 'all' else (week_start, week_end))
+    new_count = len(df_new)
+    
+    # 4. 解散数
+    df_diss = pd.read_sql_query(f'''
+        SELECT DISTINCT team_id FROM team_detail 
+        WHERE dissolve_date >= ? AND dissolve_date <= ? {hall_sql}
+    ''', conn, params=(week_start, week_end, hall_name) if hall_name != 'all' else (week_start, week_end))
+    dissolved_count = len(df_diss)
+    
+    # 5. 总流水（reward_amount 增量近似）
+    prev_week_end = (start_dt - timedelta(days=1)).strftime('%Y-%m-%d')
+    prev_snap = pd.read_sql_query('''
+        SELECT MAX(snapshot_date) as d FROM team_detail WHERE snapshot_date <= ?
+    ''', conn, params=(prev_week_end,))
+    prev_reward = 0
+    if not prev_snap.empty and prev_snap['d'].iloc[0]:
+        df_prev = pd.read_sql_query(f'''
+            SELECT reward_amount FROM team_detail 
+            WHERE snapshot_date = ? {hall_sql}
+        ''', conn, params=(prev_snap['d'].iloc[0], hall_name) if hall_name != 'all' else (prev_snap['d'].iloc[0],))
+        prev_reward = df_prev['reward_amount'].sum() if not df_prev.empty else 0
+    
+    curr_reward = df_end['reward_amount'].sum() if not df_end.empty else 0
+    total_reward = max(0, float(curr_reward - prev_reward))
+    
+    # 6. 任务数
+    total_drive = int(df_end['drive_task_count'].sum()) if 'drive_task_count' in df_end.columns else 0
+    total_accompany = int(df_end['accompany_task_count'].sum()) if 'accompany_task_count' in df_end.columns else 0
+    total_gift = int(df_end['gift_task_count'].sum()) if 'gift_task_count' in df_end.columns else 0
+    
+    conn.close()
+    
+    # 组装指标
+    avg_teams = (active_start + active_end) / 2
+    metrics = {
+        'week_label': f'{start_dt.strftime("%m-%d")}~{end_dt.strftime("%m-%d")}',
+        'week_start': week_start,
+        'week_end': week_end,
+        'hall_name': hall_name,
+        'new_team_count': new_count,
+        'active_team_count_end': active_end,
+        'active_team_count_start': active_start,
+        'dissolved_count': dissolved_count,
+        'active_dissolved_count': dissolved_count,
+        'system_dissolved_count': 0,
+        'total_reward': total_reward,
+        'avg_reward_per_team': round(total_reward / active_end, 2) if active_end > 0 else 0,
+        'total_drive_tasks': total_drive,
+        'total_accompany_tasks': total_accompany,
+        'total_gift_tasks': total_gift,
+        'activity_index': round((total_drive + total_accompany + total_gift) / active_end, 2) if active_end > 0 else 0,
+        'retention_rate': round(active_end / active_start * 100, 2) if active_start > 0 else 0,
+        'dissolution_rate': round(dissolved_count / avg_teams * 100, 2) if avg_teams > 0 else 0,
+        'level_achievement_count': 0,
+        'revenue_achievement_count': 0,
+    }
+    
+    return metrics
 def save_weekly_report(metrics: dict):
     """保存周报指标到数据库"""
     if not metrics:
@@ -200,16 +322,16 @@ def run_metrics_pipeline():
         save_weekly_report(metrics)
         print(f'全部大厅汇总: 新成团{metrics["new_team_count"]}, 留存率{metrics["retention_rate"]}%, 解散率{metrics["dissolution_rate"]}%')
     
-    # 2. 计算各分厅周报（如果有分厅数据）
+    # 2. 计算各分厅周报（从 team_detail 快照表聚合）
     conn = get_db()
     halls = pd.read_sql_query(
-        'SELECT DISTINCT hall_name FROM stats_daily WHERE hall_name != "全部" AND date_str IS NOT NULL',
+        'SELECT DISTINCT hall_name FROM team_detail WHERE snapshot_date IS NOT NULL',
         conn
     )
     conn.close()
     
     for hall in halls['hall_name']:
-        m = calculate_weekly_metrics(hall_name=hall)
+        m = calculate_weekly_metrics_from_detail(hall_name=hall)
         if m:
             save_weekly_report(m)
     
