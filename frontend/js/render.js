@@ -272,3 +272,377 @@ function renderHallComparePage() {
   document.getElementById('hall-compare-pagination').innerHTML = html;
 }
 
+function renderUIDResult(data) {
+  _lastUIDResult = data;
+  const thisWeekLabel = data.this_week?.week_label || '本周';
+  const lastWeekLabel = data.last_week?.week_label || '上周';
+  document.getElementById('th-this-week').textContent = thisWeekLabel;
+  document.getElementById('th-last-week').textContent = lastWeekLabel;
+  document.getElementById('res-uid').textContent = data.uid;
+  document.getElementById('res-nickname').textContent = data.nickname || '--';
+  document.getElementById('res-type').textContent = data.type_label || '--';
+  const cmp = data.compare || {};
+  const thisData = data.this_week?.data || {};
+  const lastData = data.last_week?.data || {};
+  document.getElementById('res-hall').textContent = (cmp.hall?.this || thisData.schedule_hall || '--');
+  document.getElementById('res-elite').textContent = (cmp.is_elite?.this || thisData.is_elite || '--');
+  document.getElementById('res-protection').textContent = thisData.protection_end || '--';
+  document.getElementById('res-total-revenue').textContent = '¥' + (cmp.total_revenue?.this || 0).toLocaleString();
+  document.getElementById('res-hist-level').textContent = thisData.hist_best_level || '--';
+
+  const rows = [
+    { key: 'week_level', label: '⭐ 当周队长等级', fmt: v => v || '--' },
+    { key: 'week_schedule_days', label: '📅 当周排档天数', fmt: v => v + '天', isNum: true },
+    { key: 'daily_task_count', label: '📋 每日任务完成', fmt: v => v + '次', isNum: true },
+    { key: 'week_revenue', label: '💰 当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
+    { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '分钟', isNum: true },
+    { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
+    { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
+  ];
+
+  const tbody = document.getElementById('uid-compare-body');
+  let html = rows.map(r => {
+    const c = cmp[r.key];
+    if (!c) return '';
+    let trendClass = c.trend || 'flat';
+    let trendIcon = trendClass === 'up' ? '🟢' : trendClass === 'down' ? '🔴' : '⚪';
+    let trendText = trendClass === 'up' ? '增长' : trendClass === 'down' ? '下降' : '持平';
+    let thisVal, lastVal;
+    if (r.isNum && !r.isRank) { thisVal = r.fmt(c.this); lastVal = r.fmt(c.last); }
+    else if (r.isRank) { thisVal = c.this; lastVal = c.last; }
+    else { thisVal = r.fmt(c.this); lastVal = r.fmt(c.last); }
+    let changePct = c.change_pct !== undefined ? `+${c.change_pct}%` : '—';
+    if (c.change_pct < 0) changePct = `${c.change_pct}%`;
+    if (c.change_pct === 0 || c.change_pct === undefined) changePct = '—';
+    return `<tr><td class="col-metric">${r.label}</td><td class="col-this">${thisVal}</td><td class="col-last">${lastVal}</td><td class="col-change ${trendClass}">${c.change || '—'}</td><td class="col-change ${trendClass}">${changePct}</td><td class="col-trend ${trendClass}">${trendIcon} ${trendText}</td></tr>`;
+  }).join('');
+
+  const hallThis = cmp.hall?.this || thisData.schedule_hall || thisData.auth_hall || '--';
+  const hallLast = cmp.hall?.last || lastData.schedule_hall || lastData.auth_hall || '--';
+  html += `<tr><td class="col-metric">👥 参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat">⚪ 持平</td></tr>`;
+  tbody.innerHTML = html;
+  renderTeamInfo(data);
+  renderBoundSisters(data);
+  renderPartnerCompare(data);
+}
+
+function renderTeamInfo(data) {
+  const card = document.getElementById('team-info-card');
+  const body = document.getElementById('team-info-body');
+  const t = data.team_info;
+  if (!t) { card.style.display = 'none'; return; }
+
+  const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+  const statusIcon = t.status === '进行中' ? '✓' : '✗';
+
+  let membersHtml = `
+    <div class="team-member">
+      <div class="member-badge">姐</div>
+      <div class="member-info">
+        <div class="member-name">${t.sister_nickname || '--'}</div>
+        <div class="member-uid">UID: ${t.sister_uid || '--'}</div>
+      </div>
+    </div>`;
+
+  const boundSisters = data.bound_sisters || [];
+  if (boundSisters.length > 0) {
+    for (let i = 0; i < boundSisters.length; i++) {
+      const bs = boundSisters[i];
+      membersHtml += `
+        <div class="team-member">
+          <div class="member-badge" style="background:#f6a6c1;">妹${i + 1}</div>
+          <div class="member-info">
+            <div class="member-name">${bs.nickname || bs.team_info?.sister_nickname2 || '--'}</div>
+            <div class="member-uid">UID: ${bs.uid || bs.team_info?.sister_uid2 || '--'}</div>
+          </div>
+        </div>`;
+    }
+  } else if (t.sister_nickname2 || t.sister_uid2) {
+    membersHtml += `
+      <div class="team-member">
+        <div class="member-badge" style="background:#f6a6c1;">妹</div>
+        <div class="member-info">
+          <div class="member-name">${t.sister_nickname2 || '--'}</div>
+          <div class="member-uid">UID: ${t.sister_uid2 || '--'}</div>
+        </div>
+      </div>`;
+  }
+
+  body.innerHTML = `
+    <div class="team-detail-grid">
+      <div class="team-detail-item">
+        <span class="team-detail-label">🏠 大厅名称</span>
+        <span class="team-detail-value">${t.hall_name || '--'}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">📅 成团日期</span>
+        <span class="team-detail-value">${t.form_date || '--'}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">💰 累计流水</span>
+        <span class="team-detail-value">¥${(t.total_revenue || 0).toLocaleString()}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">🎁 奖励金额</span>
+        <span class="team-detail-value">¥${(t.reward_amount || 0).toLocaleString()}</span>
+      </div>
+      <div class="team-detail-item">
+        <span class="team-detail-label">📊 状态</span>
+        <span class="team-detail-value" style="color:${statusColor}; font-weight:600;">${statusIcon} ${t.status}${t.status === '已解散' && t.dissolve_date ? ' (' + t.dissolve_date + ')' : ''}</span>
+      </div>
+    </div>
+    <div class="team-members">
+      ${membersHtml}
+    </div>
+  `;
+  card.style.display = 'block';
+}
+
+function renderBoundSisters(data) {
+  const card = document.getElementById('bound-sisters-card');
+  const body = document.getElementById('bound-sisters-body');
+  const sisters = data.bound_sisters || [];
+  if (!sisters.length) { card.style.display = 'none'; return; }
+
+  let html = '<table class="compare-table"><thead><tr><th>妹妹昵称</th><th>UID</th><th>所在大厅</th><th>状态</th><th>成团日期</th><th>本周等级</th><th>本周流水</th></tr></thead><tbody>';
+  for (const s of sisters) {
+    const t = s.team_info || {};
+    const u = s.uid_data || {};
+    const thisData = u.this_week?.data || {};
+    const level = thisData.week_level || '--';
+    const revenue = thisData.week_revenue !== undefined ? '¥' + thisData.week_revenue.toLocaleString() : '--';
+    const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+    html += `<tr>
+      <td>${s.nickname || '--'}</td>
+      <td>${s.uid || '--'}</td>
+      <td>${t.hall_name || '--'}</td>
+      <td style="color:${statusColor}; font-weight:600;">${t.status || '--'}</td>
+      <td>${t.form_date || '--'}</td>
+      <td>${level}</td>
+      <td>${revenue}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+  card.style.display = 'block';
+}
+
+let _partnerChart = null;
+
+async function renderPartnerCompare(data) {
+  const card = document.getElementById('partner-compare-card');
+  const chartDiv = document.getElementById('partner-compare-chart');
+  const tableDiv = document.getElementById('partner-compare-table');
+  const t = data.team_info;
+
+  if (!t || !t.sister_uid) {
+    card.style.display = 'none';
+    return;
+  }
+
+  const currentUid = String(data.uid);
+  const sisterUid = String(t.sister_uid);
+  const sisterUid2 = String(t.sister_uid2);
+
+  const participants = [];
+  const currentLabel = (currentUid === sisterUid) ? (t.sister_nickname || '姐姐') : (t.sister_nickname2 || '妹妹');
+  participants.push({ label: currentLabel, data: data, isSelf: true });
+
+  const boundSisters = data.bound_sisters || [];
+  if (boundSisters.length > 0) {
+    for (const bs of boundSisters) {
+      if (bs.uid_data) {
+        participants.push({
+          label: bs.nickname || '妹妹',
+          data: bs.uid_data,
+          isSelf: false
+        });
+      }
+    }
+  } else if (currentUid === sisterUid2 && sisterUid) {
+    const mockMode = document.getElementById('uid-mock').checked;
+    const captainType = document.getElementById('uid-type').value;
+    try {
+      const resp = await fetch(API_BASE + '/api/uid-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: sisterUid, captain_type: captainType, mock: mockMode }),
+      });
+      const partnerData = await resp.json();
+      if (!partnerData.error) {
+        participants.push({
+          label: t.sister_nickname || '姐姐',
+          data: partnerData,
+          isSelf: false
+        });
+      }
+    } catch (e) {
+      console.error('Partner compare error:', e);
+    }
+  }
+
+  if (participants.length < 2) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  if (_partnerChart) { _partnerChart.dispose(); _partnerChart = null; }
+  tableDiv.innerHTML = '';
+  renderPartnerChartMulti(participants);
+  renderPartnerTableMulti(participants);
+}
+
+function renderPartnerChartMulti(participants) {
+  const chartDiv = document.getElementById('partner-compare-chart');
+  const colors = ['#667eea', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1'];
+  const levelOrder = { '无': 0, '铜牌': 1, '银牌': 2, '金牌': 3, '王牌': 4, '大神': 5 };
+
+  const metricsLeft = [
+    { key: 'week_level', name: '等级', isLevel: true },
+    { key: 'week_schedule_days', name: '排档天数' },
+    { key: 'daily_task_count', name: '任务完成' },
+  ];
+  const metricsCenter = [
+    { key: 'week_revenue', name: '礼物流水' },
+  ];
+  const metricsRight = [
+    { key: 'week_accompany_time', name: '陪档时长' },
+  ];
+
+  const series = [];
+  participants.forEach((p, idx) => {
+    const d = p.data.this_week?.data || {};
+    const color = colors[idx % colors.length];
+
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 0, yAxisIndex: 0,
+      data: metricsLeft.map(m => m.isLevel ? (levelOrder[d[m.key]] ?? -1) : (d[m.key] || 0)),
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 1, yAxisIndex: 1,
+      data: [d.week_revenue || 0],
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
+    series.push({
+      name: p.label, type: 'bar', xAxisIndex: 2, yAxisIndex: 2,
+      data: [d.week_accompany_time || 0],
+      itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
+    });
+  });
+
+  if (!_partnerChart) {
+    _partnerChart = echarts.init(chartDiv);
+  }
+
+  const hasAnyData = participants.some(p => {
+    const d = p.data.this_week?.data || {};
+    return (d.week_revenue || 0) > 0 || (d.week_schedule_days || 0) > 0 || (d.daily_task_count || 0) > 0;
+  });
+  if (!hasAnyData) {
+    chartDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">⚠️ 对比数据为空（妹妹UID数据可能未成功加载）</div>';
+    return;
+  }
+
+  _partnerChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: function(params) {
+        if (!params.length) return '';
+        let html = '<strong>' + params[0].axisValue + '</strong><br/>';
+        params.forEach(p => {
+          let val = p.value;
+          let unit = '';
+          if (p.axisValue === '等级') {
+            const levels = ['无', '铜牌', '银牌', '金牌', '王牌', '大神'];
+            val = levels[val] || val;
+          } else if (p.axisValue === '礼物流水') unit = '元';
+          else if (p.axisValue === '陪档时长') unit = '分钟';
+          else if (p.axisValue === '任务完成') unit = '次';
+          else if (p.axisValue === '排档天数') unit = '天';
+          html += p.marker + ' ' + p.seriesName + ': ' + val + unit + '<br/>';
+        });
+        return html;
+      }
+    },
+    legend: { data: participants.map(p => p.label), top: 5 },
+    grid: [
+      { left: '3%', width: '30%', top: 40, bottom: 30 },
+      { left: '36%', width: '30%', top: 40, bottom: 30 },
+      { left: '69%', width: '30%', top: 40, bottom: 30 },
+    ],
+    xAxis: [
+      { type: 'category', data: metricsLeft.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 0 },
+      { type: 'category', data: metricsCenter.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 1 },
+      { type: 'category', data: metricsRight.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 2 },
+    ],
+    yAxis: [
+      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 0, name: '基础指标', nameLocation: 'middle', nameGap: 25 },
+      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 1, name: '礼物流水(元)', nameLocation: 'middle', nameGap: 25 },
+      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 2, name: '陪档时长(分钟)', nameLocation: 'middle', nameGap: 25 },
+    ],
+    series: series,
+  }, true);
+  setTimeout(() => { if (_partnerChart) _partnerChart.resize(); }, 0);
+}
+
+function renderPartnerTableMulti(participants) {
+  const tableDiv = document.getElementById('partner-compare-table');
+
+  const rows = [
+    { key: 'week_level', label: '当周队长等级', fmt: v => v || '--' },
+    { key: 'week_schedule_days', label: '当周排档天数', fmt: v => (v || 0) + '天' },
+    { key: 'daily_task_count', label: '每日任务完成', fmt: v => (v || 0) + '次' },
+    { key: 'week_revenue', label: '当周礼物流水', fmt: v => '¥' + (v || 0).toLocaleString() },
+    { key: 'week_accompany_time', label: '当周陪档时长', fmt: v => (v || 0) + '分钟' },
+    { key: 'week_rank', label: '排行榜排名', fmt: v => v ? '第' + v + '名' : '未上榜' },
+    { key: 'total_revenue', label: '累计总流水', fmt: v => '¥' + (v || 0).toLocaleString() },
+    { key: 'best_4week_level', label: '4周最高等级', fmt: v => v || '--' },
+    { key: 'is_elite', label: '是否精英队长', fmt: v => v || '否' },
+  ];
+
+  let html = '<table class="compare-table"><thead><tr><th>指标</th>';
+  participants.forEach(p => {
+    html += '<th>' + p.label + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  rows.forEach(r => {
+    html += '<tr><td class="col-metric">' + r.label + '</td>';
+    participants.forEach(p => {
+      const d = p.data.this_week?.data || {};
+      const val = r.fmt(d[r.key]);
+      const cls = p.isSelf ? 'col-this' : 'col-last';
+      html += '<td class="' + cls + '">' + val + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  tableDiv.innerHTML = html;
+}
+
+function exportUIDResult() {
+  if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
+  const d = _lastUIDResult;
+  const cmp = d.compare || {};
+  const thisLabel = d.this_week?.week_label || '本周';
+  const lastLabel = d.last_week?.week_label || '上周';
+  let csv = '\uFEFF';
+  csv += `UID查询结果,${d.uid},${d.nickname},${d.type_label}\n`;
+  csv += `指标,${thisLabel},${lastLabel},环比变化,变化率,趋势\n`;
+  const rows = [
+    { key: 'week_level', label: '当周队长等级' }, { key: 'week_schedule_days', label: '当周排档天数' },
+    { key: 'daily_task_count', label: '每日任务完成次数' }, { key: 'week_revenue', label: '当周礼物流水' },
+    { key: 'week_accompany_time', label: '当周陪档时长' }, { key: 'week_rank', label: '排行榜排名' },
+    { key: 'best_4week_level', label: '4周最高等级' }, { key: 'hall', label: '参与姐妹团' },
+  ];
+  for (const r of rows) { const c = cmp[r.key]; if (!c) continue; const trendText = c.trend === 'up' ? '增长' : c.trend === 'down' ? '下降' : '持平'; const pct = c.change_pct !== undefined ? `${c.change_pct}%` : '—'; csv += `${r.label},${c.this},${c.last},${c.change || '—'},${pct},${trendText}\n`; }
+  const thisData = d.this_week?.data || {};
+  csv += `\n关联信息\n所属大厅,${cmp.hall?.this || thisData.schedule_hall || '—'}\n精英队长,${cmp.is_elite?.this || thisData.is_elite || '—'}\n保护期结束,${thisData.protection_end || '—'}\n累计总流水,${cmp.total_revenue?.this || 0}\n历史最高等级,${thisData.hist_best_level || '—'}\n`;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
