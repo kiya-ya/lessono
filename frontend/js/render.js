@@ -65,7 +65,7 @@ async function initTrendCharts() {
     const result = await res.json();
     let data = result.data;
     if (!data || data.length === 0) return;
-    const cutoffDate = '2026-06-22';
+    const cutoffDate = '2026-07-01';
     data = data.filter(d => d.week_start >= cutoffDate);
     if (currentWeek && currentWeek.includes('|')) {
       const selectedEnd = currentWeek.split('|')[1];

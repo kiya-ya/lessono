@@ -313,6 +313,12 @@ class UIDCrawler:
                     value = 0
             elif field in ['week_revenue', 'total_revenue']:
                 try:
+                    # 去除可能的货币符号和逗号
+                    clean = re.sub(r'[¥,元\s]', '', str(value)) if value else ''
+                    value = float(clean) if clean else 0.0
+                except:
+                    value = 0.0
+                try:
                     value = float(value.replace(',', '')) if value else 0.0
                 except:
                     value = 0.0
