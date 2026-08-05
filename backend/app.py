@@ -1093,7 +1093,7 @@ def api_uid_query():
 
         try:
             crawler = UIDCrawler()
-            result = crawler.query_with_compare(uid, captain_type, reference_date=ref_date)
+            result = crawler.query_with_compare(uid, captain_type)
         except Exception as e:
             error_msg = str(e)
             if 'Cookie' in error_msg or '过期' in error_msg:
