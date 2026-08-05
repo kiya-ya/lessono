@@ -1013,6 +1013,19 @@ def api_uid_query():
     if not uid:
         return jsonify({'error': 'UID不能为空'}), 400
 
+    # 先查询本地姐妹团信息，判断是否已解散（用于决定对比周期）
+    team_id = body.get('team_id')
+    team_info = _get_team_info_by_uid(uid, team_id)
+
+    # 已解散的团：用解散日期作为参考日期，显示解散周 vs 前一周
+    ref_date = None
+    if team_info and team_info.get('status') == '已解散' and team_info.get('dissolve_date'):
+        try:
+            ref_date = datetime.strptime(team_info['dissolve_date'], '%Y-%m-%d')
+            print(f'[UID-API] 团已解散({team_info["dissolve_date"]}), 使用解散周作为参考日期')
+        except ValueError:
+            pass
+
     result = None
 
     # Mock 模式（前端开发测试用，无需内网）
@@ -1028,7 +1041,7 @@ def api_uid_query():
 
         try:
             crawler = UIDCrawler()
-            result = crawler.query_with_compare(uid, captain_type)
+            result = crawler.query_with_compare(uid, captain_type, reference_date=ref_date)
         except Exception as e:
             error_msg = str(e)
             if 'Cookie' in error_msg or '过期' in error_msg:
@@ -1045,9 +1058,7 @@ def api_uid_query():
                 }), 503
             return jsonify({'error': error_msg}), 500
 
-    # 附加姐妹团信息（从本地 SQLite，无论 Mock/真实都尝试查询）
-    team_id = body.get('team_id')
-    team_info = _get_team_info_by_uid(uid, team_id)
+    # 附加姐妹团信息
     if team_info:
         result['team_info'] = team_info
 

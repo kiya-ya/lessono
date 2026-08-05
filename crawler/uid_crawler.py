@@ -330,11 +330,35 @@ class UIDCrawler:
         result['_query_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         return result
 
-    def query_with_compare(self, uid: str, captain_type: str = 'game') -> dict:
+    def query_with_compare(self, uid: str, captain_type: str = 'game',
+                           reference_date: datetime = None) -> dict:
+        """
+        查询UID并自动对比本周 vs 上周数据（并行请求，提速约一倍）
+        
+        Args:
+            reference_date: 参考日期，用于推算本周/上周。
+                           对于已解散的团，传入解散日期，显示解散周 vs 前一周。
+                           不传则默认使用当前日期。
+        """
         """
         查询UID并自动对比本周 vs 上周数据（并行请求，提速约一倍）
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        today = reference_date if reference_date else datetime.now()
+
+        this_monday = today - timedelta(days=today.weekday())
+        this_sunday = this_monday + timedelta(days=6)
+        last_monday = this_monday - timedelta(days=7)
+        last_sunday = this_sunday - timedelta(days=7)
+
+        this_start = this_monday.strftime('%Y-%m-%d')
+        this_end   = this_sunday.strftime('%Y-%m-%d')
+        last_start = last_monday.strftime('%Y-%m-%d')
+        last_end   = last_sunday.strftime('%Y-%m-%d')
+
+        ref_label = '解散周' if reference_date else '本周'
+        print(f'[UID-Crawl] 开始并行对比查询: {ref_label}({this_start}~{this_end}) vs 上周({last_start}~{last_end})')
 
         today = datetime.now()
 
