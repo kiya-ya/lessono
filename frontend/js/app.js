@@ -74,7 +74,18 @@ function onHallCompareSearch() {
     hallCompareSearch = document.getElementById('hall-compare-search').value.trim();
     hallComparePage = 0;
 
-    // 联动：搜索到唯一匹配大厅时，同步更新全局 currentHall 并刷新政策前后对比+双轴图
+    // 联动：搜索到匹配大厅时，同步更新全局 currentHall 并刷新政策前后对比+双轴图
+    if (hallCompareSearch && hallCompareData.length > 0) {
+      const kw = hallCompareSearch.toLowerCase();
+      const matched = hallCompareData.filter(d => d.hall_name && d.hall_name.toLowerCase().includes(kw));
+      if (matched.length >= 1) {
+        currentHall = matched[0].hall_name;  // 取第一个匹配
+      } else {
+        currentHall = 'all';
+      }
+    } else if (!hallCompareSearch) {
+      currentHall = 'all';
+    }
     if (hallCompareSearch && hallCompareData.length > 0) {
       const kw = hallCompareSearch.toLowerCase();
       const matched = hallCompareData.filter(d => d.hall_name && d.hall_name.toLowerCase().includes(kw));
