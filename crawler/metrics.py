@@ -203,36 +203,9 @@ def calculate_weekly_metrics_from_detail(hall_name: str = 'all',
     ''', conn, params=(week_start, week_end, hall_name) if hall_name != 'all' else (week_start, week_end))
     dissolved_count = len(df_diss)
     
-    # 5. 总流水（sister_revenue 增量近似）
-    prev_week_end = (start_dt - timedelta(days=1)).strftime('%Y-%m-%d')
-    prev_snap = pd.read_sql_query('''
-        SELECT MAX(snapshot_date) as d FROM team_detail WHERE snapshot_date <= ?
-    ''', conn, params=(prev_week_end,))
-    prev_revenue = 0
-    if not prev_snap.empty and prev_snap['d'].iloc[0]:
-        df_prev = pd.read_sql_query(f'''
-            SELECT sister_revenue FROM team_detail 
-            WHERE snapshot_date = ? {hall_sql}
-        ''', conn, params=(prev_snap['d'].iloc[0], hall_name) if hall_name != 'all' else (prev_snap['d'].iloc[0],))
-        prev_revenue = df_prev['sister_revenue'].sum() if not df_prev.empty else 0
     
-    curr_revenue = df_end['sister_revenue'].sum() if not df_end.empty else 0
-    total_reward = max(0, float(curr_revenue - prev_revenue))
-    prev_week_end = (start_dt - timedelta(days=1)).strftime('%Y-%m-%d')
-    prev_snap = pd.read_sql_query('''
-        SELECT MAX(snapshot_date) as d FROM team_detail WHERE snapshot_date <= ?
-    ''', conn, params=(prev_week_end,))
-    prev_reward = 0
-    if not prev_snap.empty and prev_snap['d'].iloc[0]:
-        df_prev = pd.read_sql_query(f'''
-            SELECT reward_amount FROM team_detail 
-            WHERE snapshot_date = ? {hall_sql}
-        ''', conn, params=(prev_snap['d'].iloc[0], hall_name) if hall_name != 'all' else (prev_snap['d'].iloc[0],))
-        prev_reward = df_prev['reward_amount'].sum() if not df_prev.empty else 0
-    
-    curr_reward = df_end['reward_amount'].sum() if not df_end.empty else 0
-    total_reward = max(0, float(curr_reward - prev_reward))
-    
+    # 5. 总流水（直接使用累计值，不计算增量）
+    total_reward = float(df_end['sister_revenue'].sum()) if not df_end.empty else 0
     # 6. 任务数
     total_drive = int(df_end['drive_task_count'].sum()) if 'drive_task_count' in df_end.columns else 0
     total_accompany = int(df_end['accompany_task_count'].sum()) if 'accompany_task_count' in df_end.columns else 0

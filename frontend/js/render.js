@@ -170,12 +170,10 @@ async function initCompareChart() {
         const a = getVal(thisWeek);
         let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
         if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
-        const fmt = (v, weekData) => {
+        const fmt = (v) => {
           if (v === null || v === undefined || Number.isNaN(v)) return '—';
           const n = Number(v);
           if (!Number.isFinite(n)) return '—';
-          // 分厅模式下，流水为0但有活跃团时显示"—"（增量计算可能不完整）
-          if (m.unit === '元' && currentHall !== 'all' && n === 0 && weekData && weekData.active_team_count_end > 0) return '—';
           if (m.unit === '元') return `¥${n.toFixed(0)}`;
           return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
         };
