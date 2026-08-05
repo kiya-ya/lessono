@@ -1013,7 +1013,59 @@ def api_uid_query():
     if not uid:
         return jsonify({'error': 'UID不能为空'}), 400
 
-    # 先查询本地姐妹团信息，判断是否已解散（用于决定对比周期）
+    # 先查询本地姐妹团信息（用于覆盖累计流水为团总流水）
+    team_id = body.get('team_id')
+    team_info = _get_team_info_by_uid(uid, team_id)
+
+    result = None
+
+    # Mock 模式（前端开发测试用，无需内网）
+    if use_mock:
+        result = get_mock_uid_data(uid, captain_type)
+    else:
+        # 真实查询模式（需要内网连接 + 有效Cookie）
+        if not _uid_crawler_available:
+            return jsonify({
+                'error': 'UID爬虫模块未加载，请检查 crawler/uid_crawler.py 是否存在',
+                'hint': '可设置 mock=true 使用模拟数据测试前端'
+            }), 500
+
+        try:
+            crawler = UIDCrawler()
+            result = crawler.query_with_compare(uid, captain_type)
+        except Exception as e:
+            error_msg = str(e)
+            if 'Cookie' in error_msg or '过期' in error_msg:
+                return jsonify({
+                    'error': error_msg,
+                    'hint': '请更新 crawler/uid_crawler.py 顶部的 UID_COOKIE_STR，然后重启后端',
+                    'suggest_mock': True
+                }), 503
+            if '无法连接' in error_msg or 'ConnectionError' in error_msg:
+                return jsonify({
+                    'error': error_msg,
+                    'hint': '请确认已连接内网/VPN',
+                    'suggest_mock': True
+                }), 503
+            return jsonify({'error': error_msg}), 500
+
+    # 用本地团总流水覆盖个人累计流水
+    if team_info and team_info.get('total_revenue'):
+        team_total = team_info['total_revenue']
+        print(f'[UID-API] 用团总流水 {team_total} 覆盖个人累计流水')
+        # 覆盖 this_week / last_week 中的 total_revenue
+        if result.get('this_week', {}).get('data'):
+            result['this_week']['data']['total_revenue'] = team_total
+        if result.get('last_week', {}).get('data'):
+            result['last_week']['data']['total_revenue'] = team_total
+        # 覆盖 compare 中的 total_revenue
+        if result.get('compare', {}).get('total_revenue'):
+            result['compare']['total_revenue']['this'] = team_total
+            result['compare']['total_revenue']['last'] = team_total
+
+    # 附加姐妹团信息
+    if team_info:
+        result['team_info'] = team_info
     team_id = body.get('team_id')
     team_info = _get_team_info_by_uid(uid, team_id)
 
