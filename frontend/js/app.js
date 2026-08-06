@@ -43,7 +43,7 @@ function toggleSort(field) {
     detailSortOrder = 'asc';
   }
   // 更新表头箭头显示
-  ['team_id','form_date','hall_name','days_since_formed','sister_revenue','reward_amount','dissolve_date'].forEach(f => {
+  ['team_id','form_date','hall_name','days_since_formed','reward_amount','dissolve_date'].forEach(f => {
     const el = document.getElementById('sort-' + f);
     if (el) el.textContent = '▲▼';
   });

@@ -72,7 +72,7 @@ async function loadDetailTable(page = 1) {
       return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
       <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
       <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
-      <td>${row.days_since_formed || 0}</td><td>¥${(row.sister_revenue || 0).toFixed(1)}</td>
+      <td>${row.days_since_formed || 0}</td>
       <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
     }).join('');
     
