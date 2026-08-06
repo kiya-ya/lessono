@@ -402,7 +402,7 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">${t.form_date || '--'}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">💰 成团累计流水</span>
+        <span class="team-detail-label">💰 姐妹团累计流水</span>
         <span class="team-detail-value">¥${(data.team_total_revenue || t.total_revenue || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">

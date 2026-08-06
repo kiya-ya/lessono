@@ -1077,7 +1077,7 @@ def api_uid_query():
                 'uid_data': sister_data,
             })
 
-    # 计算成团累计流水 = 姐姐累计 + 所有绑定妹妹累计（数据来源 server1.tuwan.com:10010）
+    # 计算姐妹团累计流水 = 姐姐累计 + 所有绑定妹妹累计（数据来源 server1.tuwan.com:10010）
     team_total_revenue = 0.0
     crawled_uids = set()
 
