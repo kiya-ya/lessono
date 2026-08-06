@@ -314,9 +314,12 @@ def api_daily_retention():
     hall = request.args.get('hall', '全部')
     conn = get_db_conn()
     cursor = conn.execute('''
-        SELECT date_str, active_team_count, dissolved_count
+        SELECT date_str,
+               SUM(active_team_count) as active_team_count,
+               SUM(dissolved_count) as dissolved_count
         FROM stats_daily
         WHERE hall_name = ? AND date_str IS NOT NULL
+        GROUP BY date_str
         ORDER BY date_str DESC LIMIT ?
     ''', (hall, days))
     rows = cursor.fetchall()
