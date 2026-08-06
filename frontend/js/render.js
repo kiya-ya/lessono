@@ -310,7 +310,7 @@ function renderUIDResult(data) {
   document.getElementById('res-hall').textContent = (cmp.hall?.this || thisData.schedule_hall || '--');
   document.getElementById('res-elite').textContent = (cmp.is_elite?.this || thisData.is_elite || '--');
   document.getElementById('res-protection').textContent = thisData.protection_end || '--';
-  document.getElementById('res-total-revenue').textContent = '¥' + (cmp.total_revenue?.this || 0).toLocaleString();
+  document.getElementById('res-total-revenue').textContent = '¥' + (data.team_total_revenue || 0).toLocaleString();
   document.getElementById('res-hist-level').textContent = thisData.hist_best_level || '--';
 
   const rows = [
@@ -402,8 +402,8 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">${t.form_date || '--'}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">💰 累计流水</span>
-        <span class="team-detail-value">¥${(t.total_revenue || 0).toLocaleString()}</span>
+        <span class="team-detail-label">💰 成团累计流水</span>
+        <span class="team-detail-value">¥${(t.team_total_revenue || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">
         <span class="team-detail-label">🎁 奖励金额</span>
@@ -621,7 +621,7 @@ function renderPartnerTableMulti(participants) {
     { key: 'week_revenue', label: '当周礼物流水', fmt: v => '¥' + (v || 0).toLocaleString() },
     { key: 'week_accompany_time', label: '当周陪档时长', fmt: v => (v || 0) + '分钟' },
     { key: 'week_rank', label: '排行榜排名', fmt: v => v ? '第' + v + '名' : '未上榜' },
-    { key: 'total_revenue', label: '累计总流水', fmt: v => '¥' + (v || 0).toLocaleString() },
+    { key: 'team_total_revenue', label: '成团累计流水', fmt: v => '¥' + (v || 0).toLocaleString() },
     { key: 'best_4week_level', label: '4周最高等级', fmt: v => v || '--' },
     { key: 'is_elite', label: '是否精英队长', fmt: v => v || '否' },
   ];
@@ -635,8 +635,14 @@ function renderPartnerTableMulti(participants) {
   rows.forEach(r => {
     html += '<tr><td class="col-metric">' + r.label + '</td>';
     participants.forEach(p => {
-      const d = p.data.this_week?.data || {};
-      const val = r.fmt(d[r.key]);
+      let rawVal;
+      if (r.key === 'team_total_revenue') {
+        rawVal = p.data.team_total_revenue;
+      } else {
+        const d = p.data.this_week?.data || {};
+        rawVal = d[r.key];
+      }
+      const val = r.fmt(rawVal);
       const cls = p.isSelf ? 'col-this' : 'col-last';
       html += '<td class="' + cls + '">' + val + '</td>';
     });
@@ -664,7 +670,7 @@ function exportUIDResult() {
   ];
   for (const r of rows) { const c = cmp[r.key]; if (!c) continue; const trendText = c.trend === 'up' ? '增长' : c.trend === 'down' ? '下降' : '持平'; const pct = c.change_pct !== undefined ? `${c.change_pct}%` : '—'; csv += `${r.label},${c.this},${c.last},${c.change || '—'},${pct},${trendText}\n`; }
   const thisData = d.this_week?.data || {};
-  csv += `\n关联信息\n所属大厅,${cmp.hall?.this || thisData.schedule_hall || '—'}\n精英队长,${cmp.is_elite?.this || thisData.is_elite || '—'}\n保护期结束,${thisData.protection_end || '—'}\n累计总流水,${cmp.total_revenue?.this || 0}\n历史最高等级,${thisData.hist_best_level || '—'}\n`;
+  csv += `\n关联信息\n所属大厅,${cmp.hall?.this || thisData.schedule_hall || '—'}\n精英队长,${cmp.is_elite?.this || thisData.is_elite || '—'}\n保护期结束,${thisData.protection_end || '—'}\n成团累计流水,${d.team_total_revenue || 0}\n历史最高等级,${thisData.hist_best_level || '—'}\n`;
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);

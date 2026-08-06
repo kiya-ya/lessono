@@ -1077,6 +1077,19 @@ def api_uid_query():
                 'uid_data': sister_data,
             })
 
+    # 计算成团累计流水 = 姐姐累计 + 所有绑定妹妹累计（数据来源 server1.tuwan.com:10010）
+    team_total_revenue = 0.0
+    if result.get('this_week', {}).get('data', {}).get('total_revenue'):
+        team_total_revenue += float(result['this_week']['data']['total_revenue'])
+
+    if result.get('bound_sisters'):
+        for sister in result['bound_sisters']:
+            sister_uid_data = sister.get('uid_data', {})
+            if sister_uid_data and sister_uid_data.get('this_week', {}).get('data', {}).get('total_revenue'):
+                team_total_revenue += float(sister_uid_data['this_week']['data']['total_revenue'])
+
+    result['team_total_revenue'] = round(team_total_revenue, 2)
+
     return jsonify(result)
 @app.route('/api/uid-query/types')
 def api_uid_types():
