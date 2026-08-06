@@ -31,3 +31,7 @@ fix2.py
 *.bak
 node_modules/
 package-lock.json
+/data/cookie.json
+/data/cookie_bigdata.json
+/data/crawl_log.txt
+/data/last_update.json
