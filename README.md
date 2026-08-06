@@ -13,7 +13,10 @@
 | 🔍 对比分析 | 政策前后对比表、大厅排名 Top10、新成团vs解散双轴图 |
 | 📋 明细数据 | 搜索（ID/昵称/大厅）、状态筛选、分页导航、UID点击跳转、大厅切换 |
 | 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、姐姐vs妹妹对比图、CSV导出 |
-| 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、CSV导出 |
+| 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、**姐妹团累计流水**（姐姐+妹妹 server1 合计）、姐姐vs妹妹对比图、CSV导出 |
+| 🍪 Cookie管理 | 双Cookie分别管理（UID查询 / 数据抓取）|
+| 📤 数据导出 | 周报CSV、明细CSV、周报PDF（含KPI+预警+图表）|
+| 🧹 测试文件清理 | `clean_tests.bat` 一键清理临时调试文件 |
 | 🍪 Cookie管理 | 双Cookie分别管理（UID查询 / 数据抓取）|
 | 📤 数据导出 | 周报CSV、明细CSV、周报PDF（含KPI+预警+图表）|
 
@@ -22,7 +25,9 @@
 ## 技术栈
 
 - **后端**: Python 3.11 + Flask + SQLite
-- **前端**: 纯 HTML + JavaScript + ECharts 5
+- **前端**: 纯 HTML + JavaScript + ECharts 5（模块化拆分：config / api / app / render）
+- **数据抓取**: requests + BeautifulSoup4
+- **部署**: Docker / Windows 本地
 - **数据抓取**: requests + BeautifulSoup4
 - **部署**: Docker / Windows 本地
 
@@ -138,7 +143,15 @@ python setup_task.py
 │   └── index.html          # 前端单页应用
 ├── Dockerfile              # Docker镜像构建
 ├── docker-compose.yml      # Docker编排
+├── tests/                  # 临时调试文件存放目录
+│   ├── debug_uid_*.html    # UID爬虫调试页面
+│   ├── check_*.py          # 数据库检查脚本
+│   └── test_*.py           # 测试脚本
+├── clean_tests.bat         # 一键清理测试文件
 ├── deploy.bat              # Windows一键部署
+├── start.bat               # 开发启动
+├── requirements.txt        # Python依赖
+└── 需求文档.md              # PRD需求文档
 ├── start.bat               # 开发启动
 ├── requirements.txt        # Python依赖
 └── 需求文档.md              # PRD需求文档
@@ -180,6 +193,17 @@ python setup_task.py
 
 ## 版本历史
 
+### v1.0.2 (2026-08-06)
+
+- ✅ 姐妹团累计流水：数据来源改为 `server1.tuwan.com:10010`，计算方式为姐姐+妹妹累计总流水合计
+- ✅ UID查询：查询妹妹UID时，自动追加姐姐的累计流水，确保团合计准确
+- ✅ 明细数据：默认按最新快照日期**倒序排列**（最新在前）
+- ✅ 明细数据：删除"姐妹团累计流水"列（数据来源不一致，改为在UID查询中查看）
+- ✅ 留存率/解散率趋势：修复日期重复问题（SQL按日期聚合去重）
+- ✅ 前端模块化：拆分为 config.js / api.js / app.js / render.js
+- ✅ 测试文件整理：所有临时脚本移至 `tests/` 目录，提供 `clean_tests.bat` 一键清理
+- ✅ .gitignore：排除敏感数据文件（cookie.json、cookie_bigdata.json 等）
+
 ### v1.0.1 (2026-07-31)
 
 - ✅ 明细数据搜索支持大厅名称筛选（搜索框输入大厅名即可过滤）
@@ -216,6 +240,9 @@ A: 两种方式：
 A: 两种方式：
 1. **顶部工具栏**的「全部大厅」下拉框 → 控制**整个页面**的数据范围（KPI、趋势图、明细表等）
 2. **明细搜索框**输入大厅名称 → 只过滤**明细表格**的数据
+
+**Q: 如何清理临时调试文件？**
+A: 双击运行项目根目录的 `clean_tests.bat`，自动清理 `tests/` 目录下的所有临时文件。
 
 **Q: 页面空白怎么办？**
 A: 按 `Ctrl+F5` 强制刷新清除缓存；检查后端是否启动；F12 控制台查看 JS 错误。
