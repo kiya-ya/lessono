@@ -83,15 +83,13 @@ def calculate_weekly_metrics(hall_name: str = 'all',
     else:
         metrics['retention_rate'] = 0.0
     
-    # 3. 解散率
-    avg_teams = (metrics['active_team_count_start'] + metrics['active_team_count_end']) / 2
-    if avg_teams > 0:
+    # 3. 解散率 = 本周解散数 / 周始进行中 × 100
+    if metrics['active_team_count_start'] > 0:
         metrics['dissolution_rate'] = round(
-            metrics['dissolved_count'] / avg_teams * 100, 2
+            metrics['dissolved_count'] / metrics['active_team_count_start'] * 100, 2
         )
     else:
         metrics['dissolution_rate'] = 0.0
-    
     # 4. 单团平均流水
     if metrics['active_team_count_end'] > 0:
         metrics['avg_reward_per_team'] = round(
