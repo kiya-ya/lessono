@@ -1279,5 +1279,23 @@ def static_files(path):
     return response
 
 
+# 全局响应拦截：所有响应强制禁用浏览器缓存
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
+if __name__ == '__main__':
+def static_files(path):
+    response = send_from_directory(os.path.join(PROJECT_ROOT, 'frontend'), path)
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
