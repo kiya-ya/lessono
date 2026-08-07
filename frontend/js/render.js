@@ -105,12 +105,12 @@ async function initTrendCharts() {
     if (!charts.dissolution) { charts.dissolution = echarts.init(document.getElementById('chart-dissolution')); charts.dissolution.setOption(dissolutionOption); } else { charts.dissolution.resize(); }
 
     const revenueOption = {
-      tooltip: { trigger: 'axis', formatter: '{b}<br/>流水: ¥{c}' },
+      tooltip: { trigger: 'axis', formatter: '{b}<br/>礼物奖励金额: ¥{c}' },
       grid: { left: 50, right: 30, top: 30, bottom: 50 },
       xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
       yAxis: { type: 'value', name: '元' },
       series: [{
-        name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0),
+        name: '礼物奖励金额', type: 'bar', data: data.map(d => d.total_reward || 0),
         itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#faad14' }, { offset: 1, color: '#ffc53d' }]), borderRadius: [4, 4, 0, 0] },
         barWidth: '50%', markLine: { silent: true, data: markLineData }
       }]
