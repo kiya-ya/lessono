@@ -23,9 +23,9 @@ async function loadKPI() {
 async function initTrendChart() {
   if (charts.trend) { charts.trend.resize(); return; }
   try {
-    const res = await fetch(API_BASE + '/api/daily-retention?days=14' + getHallParam());
+    const res = await fetch(API_BASE + '/api/daily-retention?weeks=10' + getHallParam());
     const data = await res.json();
-    const sliceSize = 14;
+    const sliceSize = 10;
     const dates = data.dates.slice(-sliceSize);
     const values = data.new_teams.slice(-sliceSize);
     const chart = echarts.init(document.getElementById('chart-trend'));
@@ -37,7 +37,7 @@ async function initTrendChart() {
 async function initOverviewRetentionChart() {
   if (charts.overviewRetention) { charts.overviewRetention.resize(); return; }
   try {
-    const res = await fetch(API_BASE + '/api/daily-retention?days=14' + getHallParam());
+    const res = await fetch(API_BASE + '/api/daily-retention?weeks=10' + getHallParam());
     const data = await res.json();
     const labels = data.dates || [];
     const retention = data.retention || [];
