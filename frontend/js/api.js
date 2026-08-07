@@ -246,3 +246,27 @@ function selectSearchSuggest(name) {
   document.getElementById('search-suggest').style.display = 'none';
   loadDetailTable(1);
 }
+
+// ========== 全局 401 拦截 ==========
+(function() {
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options) {
+    return originalFetch(url, options).then(function(response) {
+      if (response.status === 401) {
+        // 延迟跳转，避免并发请求导致多次跳转
+        if (!window._authRedirecting) {
+          window._authRedirecting = true;
+          setTimeout(function() {
+            window.location.href = '/login.html';
+          }, 100);
+        }
+      }
+      return response;
+    });
+  };
+})();
+  const input = document.getElementById('detail-search');
+  input.value = name;
+  document.getElementById('search-suggest').style.display = 'none';
+  loadDetailTable(1);
+}

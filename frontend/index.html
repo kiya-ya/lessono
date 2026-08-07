@@ -24,7 +24,8 @@
         </div>
 <span>📅 当前周期：<span id=current-period>--</span></span>
     <span id="last-update">上次更新：--</span>
-    <span>👤 运营组</span>
+    <span id="header-user-info"></span>
+  </div>
   </div>
 </div>
 
@@ -252,6 +253,18 @@
     var t = new Date().getTime();
     var files = ['config.js', 'utils.js', 'api.js', 'render.js', 'app.js'];
     files.forEach(function(f) {
+      var s = document.createElement('script');
+      s.src = 'js/' + f + '?t=' + t;
+      document.head.appendChild(s);
+    });
+  })();
+</script>
+<script src="js/config.js?v=2"></script>
+<script src="js/utils.js?v=2"></script>
+<script src="js/api.js?v=2"></script>
+<script src="js/auth.js?v=2"></script>
+<script src="js/render.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
       var s = document.createElement('script');
       s.src = 'js/' + f + '?t=' + t;
       document.head.appendChild(s);

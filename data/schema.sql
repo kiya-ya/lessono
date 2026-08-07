@@ -143,3 +143,14 @@ CREATE INDEX IF NOT EXISTS idx_detail_team ON team_detail(team_id);
 CREATE INDEX IF NOT EXISTS idx_detail_snapshot ON team_detail(snapshot_date);
 CREATE INDEX IF NOT EXISTS idx_trend_metric ON trend_data(metric_name, date_type);
 CREATE INDEX IF NOT EXISTS idx_report_week ON weekly_report(week_start, week_end);
+
+-- 6. 管理员用户表（UID白名单登录）
+CREATE TABLE IF NOT EXISTS users (
+    uid TEXT PRIMARY KEY,
+    nickname TEXT,
+    role TEXT DEFAULT 'admin',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 默认插入一个管理员（后续可手动添加更多）
+-- INSERT OR IGNORE INTO users (uid, nickname) VALUES ('123456', '管理员');

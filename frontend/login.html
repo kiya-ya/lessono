@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>登录 - 姐妹团数据统计报表</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    background: #121212;
+  }
+  .login-wrap {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+  }
+  .login-card {
+    background: rgba(31, 31, 31, 0.92);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: cardIn 0.6s ease-out both;
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .login-card h2 {
+    color: rgba(255,255,255,0.84);
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .login-card .subtitle {
+    color: rgba(255,255,255,0.56);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-group label {
+    display: block;
+    color: rgba(255,255,255,0.56);
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.84);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-group input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+  }
+  .form-group input::placeholder {
+    color: rgba(255,255,255,0.3);
+  }
+  .captcha-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .captcha-row input {
+    flex: 1;
+  }
+  .captcha-img {
+    width: 120px;
+    height: 44px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .captcha-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  .btn-login {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 8px;
+  }
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(102,126,234,0.35);
+  }
+  .btn-login:active {
+    transform: translateY(0);
+  }
+  .error-msg {
+    color: #ff4d4f;
+    font-size: 13px;
+    margin-top: 12px;
+    text-align: center;
+    min-height: 20px;
+  }
+  .footer-hint {
+    color: rgba(255,255,255,0.3);
+    font-size: 11px;
+    text-align: center;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <h2>🐰 B+ 兔玩大数据</h2>
+    <div class="subtitle">姐妹团数据统计报表 · 管理员登录</div>
+
+    <div class="form-group">
+      <label>UID</label>
+      <input type="text" id="login-uid" placeholder="请输入您的 UID" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label>验证码</label>
+      <div class="captcha-row">
+        <input type="text" id="login-captcha" placeholder="输入验证码" maxlength="4" autocomplete="off">
+        <div class="captcha-img" id="captcha-box" onclick="loadCaptcha()" title="点击刷新">
+          <span>加载中...</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">登 录</button>
+    <div class="error-msg" id="login-error"></div>
+    <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID</div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '';
+
+// ========== 动态渐变背景 Canvas ==========
+(function initBg() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const blobs = [
+    { x: 0.3, y: 0.4, r: 0.45, dx: 0.0003, dy: 0.0002, hue: 260 }, // 紫
+    { x: 0.7, y: 0.6, r: 0.4,  dx: -0.0002, dy: 0.0003, hue: 220 }, // 蓝
+    { x: 0.5, y: 0.3, r: 0.35, dx: 0.0002, dy: -0.0002, hue: 280 }, // 深紫
+  ];
+
+  function draw() {
+    ctx.fillStyle = '#121212';
+    ctx.fillRect(0, 0, W, H);
+
+    blobs.forEach(b => {
+      b.x += b.dx;
+      b.y += b.dy;
+      if (b.x < -0.2 || b.x > 1.2) b.dx *= -1;
+      if (b.y < -0.2 || b.y > 1.2) b.dy *= -1;
+
+      const cx = b.x * W;
+      const cy = b.y * H;
+      const radius = b.r * Math.min(W, H);
+
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+      grad.addColorStop(0, `hsla(${b.hue}, 70%, 45%, 0.35)`);
+      grad.addColorStop(0.5, `hsla(${b.hue}, 70%, 35%, 0.15)`);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+    });
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ========== 验证码 ==========
+async function loadCaptcha() {
+  const box = document.getElementById('captcha-box');
+  box.innerHTML = '<span>加载中...</span>';
+  try {
+    const res = await fetch(API_BASE + '/api/captcha?t=' + Date.now());
+    const data = await res.json();
+    if (data.image) {
+      box.innerHTML = '<img src="' + data.image + '" alt="验证码">';
+    }
+  } catch (e) {
+    box.innerHTML = '<span style="font-size:11px;">加载失败</span>';
+  }
+}
+
+// ========== 登录 ==========
+async function doLogin() {
+  const uid = document.getElementById('login-uid').value.trim();
+  const captcha = document.getElementById('login-captcha').value.trim();
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  if (!uid) { errEl.textContent = '请输入 UID'; return; }
+  if (!captcha) { errEl.textContent = '请输入验证码'; return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid, captcha })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location.href = '/';
+    } else {
+      errEl.textContent = data.error || '登录失败';
+      loadCaptcha();
+    }
+  } catch (e) {
+    errEl.textContent = '网络错误，请检查后端服务';
+  }
+}
+
+// 回车键登录
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+
+// 页面加载时获取验证码
+loadCaptcha();
+</script>
+</body>
+</html>

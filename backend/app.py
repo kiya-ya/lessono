@@ -5,6 +5,17 @@ import os
 import sys
 import sqlite3
 import json
+import random
+import string
+import base64
+import io
+from datetime import datetime, timedelta
+from flask import Flask, jsonify, request, send_from_directory, Response, session
+from flask_cors import CORS
+from PIL import Image, ImageDraw, ImageFont
+import sys
+import sqlite3
+import json
 from datetime import datetime, timedelta
 from flask import Flask, jsonify, request, send_from_directory, Response
 from flask_cors import CORS
@@ -28,7 +39,33 @@ print(f'[BOOT] Mock data keys: {list(_test_mock.keys())}')
 print(f'[BOOT] Has team_info: {"team_info" in _test_mock}')
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'sisters-dashboard-secret-key-2026')
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
+CORS(app, supports_credentials=True)
+app.secret_key = os.environ.get('SECRET_KEY', 'sisters-dashboard-secret-key-2026')
 CORS(app)
+
+# 登录白名单检查（装饰器）
+def require_auth(f):
+    def wrapper(*args, **kwargs):
+        if 'user_uid' not in request.session:
+            return jsonify({'error': '未登录'}), 401
+        return f(*args, **kwargs)
+    wrapper.__name__ = f.__name__
+    return wrapper
+
+# 使用 Flask session
+from functools import wraps
+
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        user_uid = request.cookies.get('auth_uid')
+        if not user_uid:
+            return jsonify({'error': '未登录', 'login_url': '/login.html'}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(PROJECT_ROOT, 'data', 'stats.db')
@@ -50,6 +87,7 @@ def get_db_conn():
 # ========== API路由 ==========
 
 @app.route('/api/search-suggest')
+@login_required
 def api_search_suggest():
     """模糊搜索建议：根据输入关键词返回匹配的昵称/UID/大厅名"""
     keyword = request.args.get('keyword', '').strip()
@@ -128,6 +166,7 @@ def api_search_suggest():
 
 
 @app.route('/api/halls')
+@login_required
 def api_halls():
     """返回所有大厅列表"""
     conn = get_db_conn()
@@ -142,6 +181,7 @@ def api_halls():
 
 
 @app.route('/api/kpi')
+@login_required
 def api_kpi():
     """KPI概览数据（8项核心指标），支持按大厅和周过滤"""
     hall = request.args.get('hall', 'all')
@@ -288,6 +328,7 @@ def api_kpi():
 
 
 @app.route('/api/trends')
+@login_required
 def api_trends():
     metric = request.args.get('metric', 'new_team_count')
     date_type = int(request.args.get('date_type', 1))
@@ -308,6 +349,7 @@ def api_trends():
 
 
 @app.route('/api/daily-retention')
+@login_required
 def api_daily_retention():
     """返回近N周的周级留存率/解散率/新成团数（基于 weekly_report，与KPI卡片一致）"""
     weeks = int(request.args.get('weeks', 10))
@@ -331,6 +373,7 @@ def api_daily_retention():
     return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution, 'new_teams': new_teams})
 
 @app.route('/api/weekly-report')
+@login_required
 def api_weekly_report():
     limit = request.args.get('limit', 'all')
     hall = request.args.get('hall', 'all')
@@ -359,6 +402,7 @@ def api_weekly_report():
     
     return jsonify({'data': rows})
 @app.route('/api/detail-table')
+@login_required
 def api_detail_table():
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
@@ -409,6 +453,7 @@ def api_detail_table():
         'per_page': per_page
     })
 @app.route('/api/hall-stats')
+@login_required
 def api_hall_stats():
     limit = int(request.args.get('limit', 10))
     
@@ -427,6 +472,7 @@ def api_hall_stats():
 
 
 @app.route('/api/alerts')
+@login_required
 def api_alerts():
     """动态生成预警列表，支持按指定周或最近3周对比"""
     week = request.args.get('week', '')
@@ -561,6 +607,7 @@ def api_alerts():
     return jsonify({'data': alerts})
 
 @app.route('/api/export/weekly')
+@login_required
 def api_export_weekly():
     conn = get_db_conn()
     cursor = conn.execute('''
@@ -586,6 +633,7 @@ def api_export_weekly():
 
 
 @app.route('/api/export/pdf-report')
+@login_required
 def api_export_pdf_report():
     """导出周报概览+核心趋势+预警PDF报表"""
     from reportlab.lib import colors
@@ -856,6 +904,7 @@ def api_export_pdf_report():
     return Response(pdf_bytes, mimetype='application/pdf',
                     headers={'Content-Disposition': 'attachment; filename=sister_report.pdf'})
 @app.route('/api/export/detail')
+@login_required
 def api_export_detail():
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
@@ -988,6 +1037,7 @@ def _get_bound_sisters(uid: str) -> list:
 
 
 @app.route('/api/uid-query', methods=['POST'])
+@login_required
 def api_uid_query():
     """
     UID查询 + 本周vs上周对比 + 姐妹团参与明细
@@ -1103,6 +1153,7 @@ def api_uid_query():
 
     return jsonify(result)
 @app.route('/api/uid-query/types')
+@login_required
 def api_uid_types():
     """返回支持的UID查询类型分类"""
     return jsonify({'types': [
@@ -1111,6 +1162,162 @@ def api_uid_types():
         {'key': 'werewolf', 'label': '新队长-狼人杀'},
         {'key': 'live', 'label': '实时-乐园杀'},
     ]})
+
+
+# ═══════════════════════════════════════════════════════
+#  登录鉴权接口
+# ═══════════════════════════════════════════════════════
+
+def generate_captcha_code(length=4):
+    """生成随机字母验证码"""
+    letters = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(letters, k=length))
+
+def generate_captcha_image(code):
+    """生成验证码图片，返回 base64 字符串"""
+    width, height = 120, 44
+    img = Image.new('RGB', (width, height), color=(31, 31, 31))
+    draw = ImageDraw.Draw(img)
+
+    # 绘制干扰线
+    for _ in range(5):
+        x1, y1 = random.randint(0, width), random.randint(0, height)
+        x2, y2 = random.randint(0, width), random.randint(0, height)
+        draw.line([(x1, y1), (x2, y2)], fill=(80, 80, 80), width=1)
+
+    # 绘制干扰点
+    for _ in range(30):
+        x, y = random.randint(0, width), random.randint(0, height)
+        draw.point((x, y), fill=(100, 100, 100))
+
+    # 绘制文字
+    font_paths = [
+        'C:/Windows/Fonts/arialbd.ttf',
+        'C:/Windows/Fonts/arial.ttf',
+    ]
+    font = None
+    for fp in font_paths:
+        if os.path.exists(fp):
+            try:
+                font = ImageFont.truetype(fp, 26)
+                break
+            except Exception:
+                pass
+    if font is None:
+        font = ImageFont.load_default()
+
+    # 每个字符 slightly different position
+    for i, ch in enumerate(code):
+        x = 15 + i * 24 + random.randint(-3, 3)
+        y = 8 + random.randint(-4, 4)
+        # 随机颜色（亮色）
+        color = random.choice([
+            (167, 139, 250),  # 紫
+            (96, 165, 250),   # 蓝
+            (250, 204, 21),   # 黄
+            (251, 146, 60),   # 橙
+        ])
+        draw.text((x, y), ch, font=font, fill=color)
+
+    # 输出 base64
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+
+@app.route('/api/captcha', methods=['GET'])
+def api_captcha():
+    """获取验证码图片"""
+    code = generate_captcha_code(4)
+    session['captcha_code'] = code
+    session.permanent = True
+    img_b64 = generate_captcha_image(code)
+    return jsonify({
+        'image': f'data:image/png;base64,{img_b64}',
+        'length': len(code)
+    })
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """登录：验证 UID 白名单 + 验证码"""
+    body = request.get_json() or {}
+    uid = str(body.get('uid', '')).strip()
+    captcha = str(body.get('captcha', '')).strip().upper()
+
+    if not uid:
+        return jsonify({'error': 'UID 不能为空'}), 400
+    if not captcha:
+        return jsonify({'error': '验证码不能为空'}), 400
+
+    # 验证码校验（不区分大小写）
+    expected = (session.get('captcha_code') or '').upper()
+    if not expected or captcha != expected:
+        return jsonify({'error': '验证码错误'}), 401
+
+    # 白名单校验
+    conn = get_db_conn()
+    cursor = conn.execute('SELECT uid, nickname, role FROM users WHERE uid = ?', (uid,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        return jsonify({'error': '该 UID 不在白名单中，请联系管理员添加'}), 403
+
+    # 设置 Cookie，7 天有效期
+    resp = jsonify({
+        'success': True,
+        'uid': user['uid'],
+        'nickname': user['nickname'],
+        'role': user['role']
+    })
+    expires = datetime.now() + timedelta(days=7)
+    resp.set_cookie(
+        'auth_uid', user['uid'],
+        expires=expires,
+        httponly=True,
+        samesite='Lax',
+        path='/'
+    )
+    return resp
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    """退出登录，清除 Cookie"""
+    resp = jsonify({'success': True})
+    resp.set_cookie('auth_uid', '', expires=0, path='/')
+    session.pop('captcha_code', None)
+    return resp
+
+
+@app.route('/api/check-auth', methods=['GET'])
+def api_check_auth():
+    """检查登录状态"""
+    uid = request.cookies.get('auth_uid')
+    if not uid:
+        return jsonify({'logged_in': False}), 200
+
+    conn = get_db_conn()
+    cursor = conn.execute('SELECT uid, nickname, role FROM users WHERE uid = ?', (uid,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        resp = jsonify({'logged_in': False})
+        resp.set_cookie('auth_uid', '', expires=0, path='/')
+        return resp
+
+    return jsonify({
+        'logged_in': True,
+        'uid': user['uid'],
+        'nickname': user['nickname'],
+        'role': user['role']
+    })
+
+
+# ═══════════════════════════════════════════════════════
+#  Cookie 管理接口
 
 
 # ═══════════════════════════════════════════════════════
@@ -1146,12 +1353,14 @@ def _check_cookie_status(path: str, required_fields: list) -> dict:
 
 
 @app.route('/api/cookie', methods=['GET'])
+@login_required
 def api_cookie_get():
     """获取 UID 查询 Cookie 状态"""
     return jsonify(_check_cookie_status(COOKIE_FILE_UID, ['PHPSESSID', 'DedeUserID']))
 
 
 @app.route('/api/cookie', methods=['POST'])
+@login_required
 def api_cookie_update():
     """更新 UID 查询 Cookie
     请求体: { cookie_str: string, basic_auth?: string }
@@ -1190,12 +1399,14 @@ def api_cookie_update():
 
 
 @app.route('/api/cookie/bigdata', methods=['GET'])
+@login_required
 def api_cookie_bigdata_get():
     """获取 bigdata 抓取 Cookie 状态"""
     return jsonify(_check_cookie_status(COOKIE_FILE_BIGDATA, ['PHPSESSID', 'Tuwan_Passport']))
 
 
 @app.route('/api/cookie/bigdata', methods=['POST'])
+@login_required
 def api_cookie_bigdata_update():
     """更新 bigdata 抓取 Cookie
     请求体: { cookie_str: string }
@@ -1234,6 +1445,7 @@ def api_cookie_bigdata_update():
 
 
 @app.route('/api/last-update')
+@login_required
 def api_last_update():
     """返回上次数据更新时间"""
     try:
