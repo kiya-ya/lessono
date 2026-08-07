@@ -227,7 +227,7 @@ def api_kpi():
     cursor = conn.execute('''
         SELECT cycle, new_team_count, active_team_count, dissolved_count, active_dissolved_count,
                reward_amount, level_achievement_count, revenue_achievement_count
-        FROM stats_daily WHERE hall_name = '全部' ORDER BY cycle DESC LIMIT 2
+        FROM stats_daily WHERE hall_name = '全部' ORDER BY date_str DESC LIMIT 2
     ''')
     daily_rows = cursor.fetchall()
     
