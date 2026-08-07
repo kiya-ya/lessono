@@ -2,18 +2,21 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#121212">
 <title>登录 - 姐妹团数据统计报表</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
+    background: #121212;
+    -webkit-font-smoothing: antialiased;
   }
   #bg-canvas {
     position: fixed;
@@ -29,77 +32,97 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    padding: 20px;
+    height: 100dvh;
+    padding: 16px;
   }
+
+  /* ========== iOS 玻璃拟态卡片 ========== */
   .login-card {
-    background: rgba(31, 31, 31, 0.92);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 16px;
+    /* 核心：毛玻璃 + 半透明 */
+    background: rgba(28, 28, 30, 0.65);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+
+    /* iOS 风格边框：顶部微亮，其余更暗 */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+
+    /* 内发光效果 */
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+    border-radius: 24px;
     padding: 40px 36px;
     width: 100%;
     max-width: 400px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    animation: cardIn 0.6s ease-out both;
+
+    animation: cardIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+
   @keyframes cardIn {
-    from { opacity: 0; transform: translateY(20px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
   }
+
   .login-card h2 {
-    color: rgba(255,255,255,0.84);
+    color: rgba(255,255,255,0.92);
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 6px;
     text-align: center;
+    letter-spacing: -0.3px;
   }
   .login-card .subtitle {
-    color: rgba(255,255,255,0.56);
+    color: rgba(255,255,255,0.45);
     font-size: 13px;
     text-align: center;
-    margin-bottom: 28px;
+    margin-bottom: 32px;
+    font-weight: 400;
   }
-  .form-group {
-    margin-bottom: 18px;
-  }
+
+  .form-group { margin-bottom: 18px; }
   .form-group label {
     display: block;
-    color: rgba(255,255,255,0.56);
+    color: rgba(255,255,255,0.5);
     font-size: 12px;
     margin-bottom: 6px;
+    font-weight: 500;
+    padding-left: 2px;
   }
   .form-group input {
     width: 100%;
-    padding: 10px 14px;
+    min-height: 48px;
+    padding: 12px 16px;
     background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px;
-    color: rgba(255,255,255,0.84);
-    font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    color: rgba(255,255,255,0.9);
+    font-size: 16px;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-appearance: none;
   }
   .form-group input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+    border-color: rgba(102, 126, 234, 0.6);
+    background: rgba(255,255,255,0.08);
   }
   .form-group input::placeholder {
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.25);
   }
+
   .captcha-row {
     display: flex;
     gap: 10px;
     align-items: center;
   }
-  .captcha-row input {
-    flex: 1;
-  }
+  .captcha-row input { flex: 1; }
   .captcha-img {
     width: 120px;
-    height: 44px;
-    border-radius: 8px;
+    height: 48px;
+    border-radius: 12px;
     cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.1);
     background: rgba(255,255,255,0.06);
     display: flex;
     align-items: center;
@@ -109,45 +132,68 @@
     user-select: none;
     overflow: hidden;
     flex-shrink: 0;
+    transition: border-color 0.2s;
   }
+  .captcha-img:hover { border-color: rgba(255,255,255,0.2); }
   .captcha-img img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 12px;
   }
+
   .btn-login {
     width: 100%;
-    padding: 12px;
+    min-height: 50px;
     border: none;
-    border-radius: 8px;
+    border-radius: 14px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
     margin-top: 8px;
+    -webkit-appearance: none;
   }
   .btn-login:hover {
     transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(102,126,234,0.35);
+    box-shadow: 0 10px 28px rgba(102,126,234,0.35);
+    opacity: 0.95;
   }
   .btn-login:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
   }
+
   .error-msg {
-    color: #ff4d4f;
+    color: #ff453a;
     font-size: 13px;
     margin-top: 12px;
     text-align: center;
     min-height: 20px;
+    font-weight: 500;
   }
   .footer-hint {
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.25);
     font-size: 11px;
     text-align: center;
     margin-top: 20px;
+    line-height: 1.6;
+  }
+
+  /* ========== 手机端适配 ========== */
+  @media (max-width: 480px) {
+    .login-wrap { padding: 12px; }
+    .login-card {
+      padding: 32px 22px;
+      border-radius: 20px;
+    }
+    .login-card h2 { font-size: 20px; }
+    .login-card .subtitle { font-size: 12px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group input { min-height: 52px; font-size: 16px; border-radius: 14px; }
+    .captcha-img { height: 52px; width: 110px; border-radius: 14px; }
+    .btn-login { min-height: 52px; border-radius: 14px; font-size: 16px; }
   }
 </style>
 </head>
@@ -161,13 +207,13 @@
 
     <div class="form-group">
       <label>UID</label>
-      <input type="text" id="login-uid" placeholder="请输入您的 UID" autocomplete="off">
+      <input type="text" id="login-uid" placeholder="请输入您的 UID" autocomplete="off" inputmode="numeric">
     </div>
 
     <div class="form-group">
       <label>验证码</label>
       <div class="captcha-row">
-        <input type="text" id="login-captcha" placeholder="输入验证码" maxlength="4" autocomplete="off">
+        <input type="text" id="login-captcha" placeholder="输入验证码" maxlength="4" autocomplete="off" autocapitalize="characters">
         <div class="captcha-img" id="captcha-box" onclick="loadCaptcha()" title="点击刷新">
           <span>加载中...</span>
         </div>
@@ -176,53 +222,103 @@
 
     <button class="btn-login" onclick="doLogin()">登 录</button>
     <div class="error-msg" id="login-error"></div>
-    <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID</div>
+    <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID<br>Design by LuDeng</div>
   </div>
 </div>
 
 <script>
 const API_BASE = '';
 
-// ========== 动态渐变背景 Canvas ==========
-(function initBg() {
+// ========== 粒子连线背景 ==========
+(function initParticleBg() {
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas.getContext('2d');
   let W, H;
 
   function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.width = window.innerWidth * dpr;
+    H = canvas.height = window.innerHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   window.addEventListener('resize', resize);
   resize();
 
-  const blobs = [
-    { x: 0.3, y: 0.4, r: 0.45, dx: 0.0003, dy: 0.0002, hue: 260 }, // 紫
-    { x: 0.7, y: 0.6, r: 0.4,  dx: -0.0002, dy: 0.0003, hue: 220 }, // 蓝
-    { x: 0.5, y: 0.3, r: 0.35, dx: 0.0002, dy: -0.0002, hue: 280 }, // 深紫
-  ];
+  const PARTICLE_COUNT = Math.min(80, Math.floor((window.innerWidth * window.innerHeight) / 15000));
+  const CONNECT_DIST = 120;
+  const MOUSE_DIST = 180;
+
+  const particles = [];
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: (Math.random() - 0.5) * 0.6,
+      r: Math.random() * 1.5 + 1,
+      hue: Math.random() > 0.5 ? 260 : 220, // 紫 or 蓝
+    });
+  }
+
+  let mouse = { x: -9999, y: -9999 };
+  document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
+  }, { passive: true });
+  document.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
 
   function draw() {
     ctx.fillStyle = '#121212';
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    blobs.forEach(b => {
-      b.x += b.dx;
-      b.y += b.dy;
-      if (b.x < -0.2 || b.x > 1.2) b.dx *= -1;
-      if (b.y < -0.2 || b.y > 1.2) b.dy *= -1;
+    // 更新 & 绘制粒子
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
 
-      const cx = b.x * W;
-      const cy = b.y * H;
-      const radius = b.r * Math.min(W, H);
+      // 边界反弹
+      if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
+      if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
 
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-      grad.addColorStop(0, `hsla(${b.hue}, 70%, 45%, 0.35)`);
-      grad.addColorStop(0.5, `hsla(${b.hue}, 70%, 35%, 0.15)`);
-      grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    });
+      // 鼠标排斥
+      const mdx = p.x - mouse.x;
+      const mdy = p.y - mouse.y;
+      const md = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (md < MOUSE_DIST && md > 0) {
+        const f = (MOUSE_DIST - md) / MOUSE_DIST * 0.8;
+        p.vx += (mdx / md) * f;
+        p.vy += (mdy / md) * f;
+      }
+
+      // 速度阻尼
+      p.vx *= 0.995;
+      p.vy *= 0.995;
+
+      // 绘制粒子
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 75%, 65%, 0.7)`;
+      ctx.fill();
+    }
+
+    // 粒子连线
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < CONNECT_DIST) {
+          const alpha = (1 - dist / CONNECT_DIST) * 0.25;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(140, 160, 255, ${alpha})`;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+        }
+      }
+    }
 
     requestAnimationFrame(draw);
   }
@@ -247,7 +343,7 @@ async function loadCaptcha() {
 // ========== 登录 ==========
 async function doLogin() {
   const uid = document.getElementById('login-uid').value.trim();
-  const captcha = document.getElementById('login-captcha').value.trim();
+  const captcha = document.getElementById('login-captcha').value.trim().toUpperCase();
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
 
