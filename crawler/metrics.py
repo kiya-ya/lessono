@@ -82,12 +82,6 @@ def calculate_weekly_metrics(hall_name: str = 'all',
         )
     else:
         metrics['retention_rate'] = 0.0
-    if metrics['active_team_count_start'] > 0:
-        metrics['retention_rate'] = round(
-            metrics['active_team_count_end'] / metrics['active_team_count_start'] * 100, 2
-        )
-    else:
-        metrics['retention_rate'] = 0.0
     
     # 3. 解散率
     avg_teams = (metrics['active_team_count_start'] + metrics['active_team_count_end']) / 2
