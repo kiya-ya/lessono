@@ -588,7 +588,7 @@ def api_export_weekly():
     import io, csv
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['周标签', '开始日期', '结束日期', '新成团数', '进行中团数', '解散数', '留存率(%)', '解散率(%)', '总流水(元)', '活跃度'])
+    writer.writerow(['周标签', '开始日期', '结束日期', '新成团数', '进行中团数', '解散数', '留存率(%)', '解散率(%)', '礼物奖励金额(元)', '活跃度'])
     for r in rows:
         writer.writerow([r['week_label'], r['week_start'], r['week_end'], r['new_team_count'],
                          r['active_team_count_end'], r['dissolved_count'], r['retention_rate'],
@@ -720,7 +720,7 @@ def api_export_pdf_report():
             ['进行中姐妹团', week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else '—', calc_pct(week_row['active_team_count_end'], prev_row['active_team_count_end'] if prev_row else None)],
             ['留存率(%)', this_ret, prev_ret if prev_row else '—', f"{round(this_ret - prev_ret, 1)}%" if prev_row else '—'],
             ['解散率(%)', week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else '—', calc_pct(week_row['dissolution_rate'], prev_row['dissolution_rate'] if prev_row else None)],
-            ['总流水(元)', round(week_row['total_reward'], 1), round(prev_row['total_reward'], 1) if prev_row else '—', calc_pct(week_row['total_reward'], prev_row['total_reward'] if prev_row else None)],
+            ['礼物奖励金额(元)', round(week_row['total_reward'], 1), round(prev_row['total_reward'], 1) if prev_row else '—', calc_pct(week_row['total_reward'], prev_row['total_reward'] if prev_row else None)],
             ['活跃度', week_row['activity_index'], prev_row['activity_index'] if prev_row else '—', calc_pct(week_row['activity_index'], prev_row['activity_index'] if prev_row else None)],
         ]
         table = Table(kpi_data, colWidths=[110, 90, 90, 90])
@@ -826,8 +826,8 @@ def api_export_pdf_report():
         story.append(drawing2)
         story.append(Spacer(1, 8))
         
-        # 3. 总流水趋势图（柱状图）
-        story.append(Paragraph('3. 总流水趋势', styles['Heading3']))
+        # 3. 礼物奖励金额趋势图（柱状图）
+        story.append(Paragraph('3. 礼物奖励金额趋势', styles['Heading3']))
         rev_values = [round(r['total_reward'], 1) for r in trend_rows]
         
         drawing3 = Drawing(460, 160)
@@ -849,7 +849,7 @@ def api_export_pdf_report():
     # ===== 四、核心趋势明细表 =====
     story.append(Paragraph('四、核心趋势明细（近12周）', styles['Heading2']))
     if trend_rows:
-        trend_data = [['周期', '新成团', '进行中', '解散', '留存率%', '解散率%', '总流水', '活跃度']]
+        trend_data = [['周期', '新成团', '进行中', '解散', '留存率%', '解散率%', '礼物奖励金额', '活跃度']]
         for r in trend_rows:
             trend_data.append([r['week_label'], r['new_team_count'], r['active_team_count_end'], r['dissolved_count'],
                                r['retention_rate'], r['dissolution_rate'], round(r['total_reward'], 1), r['activity_index']])
@@ -1016,7 +1016,7 @@ def api_uid_query():
     if not uid:
         return jsonify({'error': 'UID不能为空'}), 400
 
-    # 先查询本地姐妹团信息（用于覆盖累计流水为团总流水）
+    # 先查询本地姐妹团信息（用于用团总流水覆盖个人累计流水）
     team_id = body.get('team_id')
     team_info = _get_team_info_by_uid(uid, team_id)
 

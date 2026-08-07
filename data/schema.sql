@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS stats_daily (
     revenue_achievement_count INTEGER DEFAULT 0, -- 流水成就达成数
     reward_amount REAL DEFAULT 0.0,         -- 发放礼物奖励金额
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(cycle, hall_name)
+    UNIQUE(date_str, hall_name)
 );
 
 -- 2. 基础数据明细表 (来自 sisters/detail/)

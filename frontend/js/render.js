@@ -154,7 +154,7 @@ async function initCompareChart() {
         { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
         { name: '💯 留存率', key: 'retention_rate', unit: '%', cap: 100 },
         { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
-        { name: '💰 周总流水', key: 'total_reward', unit: '元' },
+        { name: '💰 周礼物奖励金额', key: 'total_reward', unit: '元' },
         { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
       ];
       const tbody = document.getElementById('compare-table-body');
@@ -254,7 +254,7 @@ function renderHallComparePage() {
     active_count:    { label: '进行中团数', unit: '个', color: '#667eea' },
     team_count:      { label: '总团数',     unit: '个', color: '#52c41a' },
     dissolved_count: { label: '解散数',     unit: '个', color: '#ff4d4f' },
-    total_revenue:   { label: '总流水',     unit: '元', color: '#faad14' },
+    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#faad14' },
   };
   const cfg = metricConfig[hallCompareSortField] || metricConfig.active_count;
 
