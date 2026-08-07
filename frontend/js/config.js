@@ -18,6 +18,3 @@ document.addEventListener('visibilitychange', () => {
     refreshData();
   }
 });
-let hallCompareSortField = 'active_count';
-let hallCompareSortOrder = 'desc';
-let hallCompareSearch = '';
