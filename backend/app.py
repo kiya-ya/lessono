@@ -316,7 +316,7 @@ def api_daily_retention():
     cursor = conn.execute('''
         SELECT date_str,
                SUM(active_team_count) as active_team_count,
-               SUM(dissolved_count) as dissolved_count
+               SUM(dissolved_count) as dissolved_count,               SUM(new_team_count) as new_team_count
         FROM stats_daily
         WHERE hall_name = ? AND date_str IS NOT NULL
         GROUP BY date_str
@@ -329,6 +329,7 @@ def api_daily_retention():
     dates = [r['date_str'] for r in rows]
     retention = []
     dissolution = []
+    new_teams = []
     for r in rows:
         active = r['active_team_count'] or 0
         dissolved = r['dissolved_count'] or 0
@@ -340,8 +341,9 @@ def api_daily_retention():
             ret = dis = 0
         retention.append(min(100, ret))
         dissolution.append(dis)
+        new_teams.append(r['new_team_count'] or 0)
     
-    return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution})
+    return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution, 'new_teams': new_teams})
 
 
 @app.route('/api/weekly-report')

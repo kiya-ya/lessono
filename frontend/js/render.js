@@ -23,11 +23,11 @@ async function loadKPI() {
 async function initTrendChart() {
   if (charts.trend) { charts.trend.resize(); return; }
   try {
-    const res = await fetch(API_BASE + '/api/trends?metric=new_team_count&date_type=1');
+    const res = await fetch(API_BASE + '/api/daily-retention?days=14' + getHallParam());
     const data = await res.json();
     const sliceSize = 14;
     const dates = data.dates.slice(-sliceSize);
-    const values = data.values.slice(-sliceSize);
+    const values = data.new_teams.slice(-sliceSize);
     const chart = echarts.init(document.getElementById('chart-trend'));
     charts.trend = chart;
     chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: values, smooth: true, lineStyle: { color: '#667eea', width: 2 }, itemStyle: { color: '#667eea' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(102,126,234,0.3)' }, { offset: 1, color: 'rgba(102,126,234,0.05)' }]) } }] });
