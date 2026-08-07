@@ -11,3 +11,13 @@ let currentWeek = '';
 let hallCompareSortField = 'active_count';
 let hallCompareSortOrder = 'desc';
 let hallCompareSearch = '';
+
+// 页面获得焦点时自动刷新数据（避免后台数据更新后前端显示旧值）
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && typeof refreshData === 'function') {
+    refreshData();
+  }
+});
+let hallCompareSortField = 'active_count';
+let hallCompareSortOrder = 'desc';
+let hallCompareSearch = '';
