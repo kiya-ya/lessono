@@ -1,4 +1,4 @@
-# 简化版Dockerfile - 使用官方Python镜像，减少系统依赖
+# 简化版Dockerfile - 使用官方Python镜像
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -17,30 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY crawler/ ./crawler/
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
-COPY data/schema.sql ./data/
-COPY init_db.py ./
-
-# 创建必要目录
-RUN mkdir -p data/exports logs
-
-# 暴露端口
-EXPOSE 5000
-
-# 启动命令
-CMD ["python", "backend/app.py"]
-FROM python:3.11-slim
-
-WORKDIR /app
-
-# 复制依赖并安装
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# 复制代码
-COPY crawler/ ./crawler/
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
-COPY data/schema.sql ./data/
+COPY data/ ./data/
 COPY init_db.py ./
 
 # 创建必要目录

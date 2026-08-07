@@ -71,6 +71,32 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.path.join(PROJECT_ROOT, 'data', 'stats.db')
 
 
+def init_auth_db():
+    """启动时自动创建 users 表并插入白名单 UID（支持 Docker 首次启动）"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                uid TEXT PRIMARY KEY,
+                nickname TEXT,
+                role TEXT DEFAULT 'admin',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.execute('''
+            INSERT OR IGNORE INTO users (uid, nickname, role) VALUES (?, ?, ?)
+        ''', ('34315471', '管理员', 'admin'))
+        conn.commit()
+        conn.close()
+        print('[BOOT] 用户认证表初始化完成')
+    except Exception as e:
+        print(f'[WARN] 用户认证表初始化失败: {e}')
+
+
+# 启动时执行
+init_auth_db()
+
+
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
