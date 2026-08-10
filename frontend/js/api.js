@@ -265,8 +265,3 @@ function selectSearchSuggest(name) {
     });
   };
 })();
-  const input = document.getElementById('detail-search');
-  input.value = name;
-  document.getElementById('search-suggest').style.display = 'none';
-  loadDetailTable(1);
-}
