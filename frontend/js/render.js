@@ -10,19 +10,13 @@ function getCurrentWeekRange() {
   return fmt(monday) + ' ~ ' + fmt(sunday);
 }
 
+
 async function loadKPI() {
   try {
     const res = await fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam());
     const result = await res.json();
     const d = result.data;
-    // 当前周期：优先用前端根据今天日期计算本周一~周日，避免后端数据未更新时显示上周
     document.getElementById('current-period').textContent = getCurrentWeekRange() || result.week || result.date || '--';
-    document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
-  try {
-    const res = await fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam());
-    const result = await res.json();
-    const d = result.data;
-    document.getElementById('current-period').textContent = result.week || result.date || '--';
     document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
     setChange('kpi-new-change', d.new_team.change);
     document.getElementById('kpi-active').textContent = d.active_team.value + ' 个';
