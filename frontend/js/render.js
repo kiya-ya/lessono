@@ -1,4 +1,23 @@
+function getCurrentWeekRange() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = d => String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return fmt(monday) + ' ~ ' + fmt(sunday);
+}
+
 async function loadKPI() {
+  try {
+    const res = await fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam());
+    const result = await res.json();
+    const d = result.data;
+    // 当前周期：优先用前端根据今天日期计算本周一~周日，避免后端数据未更新时显示上周
+    document.getElementById('current-period').textContent = getCurrentWeekRange() || result.week || result.date || '--';
+    document.getElementById('kpi-new').textContent = d.new_team.value + ' 个';
   try {
     const res = await fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam());
     const result = await res.json();
@@ -519,7 +538,8 @@ async function renderPartnerCompare(data) {
 function renderPartnerChartMulti(participants) {
   const chartDiv = document.getElementById('partner-compare-chart');
   const colors = ['#667eea', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1'];
-  const levelOrder = { '无': 0, '铜牌': 1, '银牌': 2, '金牌': 3, '王牌': 4, '大神': 5 };
+  const levelOrder = { '无': 0, '铜牌': 1, '初级银牌': 2, '银牌': 3, '金牌': 4, '王牌': 5, '大神': 6 };
+  const levelLabels = ['无', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
 
   const metricsLeft = [
     { key: 'week_level', name: '等级', isLevel: true },
@@ -540,7 +560,7 @@ function renderPartnerChartMulti(participants) {
 
     series.push({
       name: p.label, type: 'bar', xAxisIndex: 0, yAxisIndex: 0,
-      data: metricsLeft.map(m => m.isLevel ? (levelOrder[d[m.key]] ?? -1) : (d[m.key] || 0)),
+      data: metricsLeft.map(m => m.isLevel ? (levelOrder[d[m.key]] ?? 0) : (d[m.key] || 0)),
       itemStyle: { color, borderRadius: [4, 4, 0, 0] }, barMaxWidth: 20,
     });
     series.push({
@@ -579,6 +599,8 @@ function renderPartnerChartMulti(participants) {
           let val = p.value;
           let unit = '';
           if (p.axisValue === '等级') {
+            const levels = ['无', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
+            val = levels[val] || val;
             const levels = ['无', '铜牌', '银牌', '金牌', '王牌', '大神'];
             val = levels[val] || val;
           } else if (p.axisValue === '礼物流水') unit = '元';
@@ -602,7 +624,7 @@ function renderPartnerChartMulti(participants) {
       { type: 'category', data: metricsRight.map(m => m.name), axisLabel: { fontSize: 11 }, gridIndex: 2 },
     ],
     yAxis: [
-      { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 0, name: '基础指标', nameLocation: 'middle', nameGap: 25 },
+      { type: 'value', min: 0, axisLabel: { fontSize: 10 }, gridIndex: 0, name: '基础指标', nameLocation: 'middle', nameGap: 25 },
       { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 1, name: '礼物流水(元)', nameLocation: 'middle', nameGap: 25 },
       { type: 'value', axisLabel: { fontSize: 10 }, gridIndex: 2, name: '陪档时长(分钟)', nameLocation: 'middle', nameGap: 25 },
     ],
