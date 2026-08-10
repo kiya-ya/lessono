@@ -8,7 +8,29 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="stylesheet" href="css/style.css?v=3">
+<!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
+<script>
+(function() {
+  if (window.location.pathname === '/login.html') return;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/api/check-auth', false);
+  xhr.withCredentials = true;
+  try {
+    xhr.send();
+    if (xhr.status === 200) {
+      var data = JSON.parse(xhr.responseText);
+      if (!data.logged_in) {
+        window.location.replace('/login.html');
+      }
+    } else {
+      window.location.replace('/login.html');
+    }
+  } catch(e) {
+    window.location.replace('/login.html');
+  }
+})();
+</script>
 </head>
 <body>
 
@@ -246,23 +268,11 @@
   </div>
 </div>
 
-<!-- 模块化 JS 加载（带时间戳防缓存） -->
-<script>
-  (function() {
-    var t = new Date().getTime();
-    var files = ['config.js', 'utils.js', 'api.js', 'render.js', 'app.js'];
-    files.forEach(function(f) {
-      var s = document.createElement('script');
-      s.src = 'js/' + f + '?t=' + t;
-      document.head.appendChild(s);
-    });
-  })();
-</script>
-<script src="js/config.js?v=2"></script>
-<script src="js/utils.js?v=2"></script>
-<script src="js/api.js?v=2"></script>
-<script src="js/auth.js?v=2"></script>
-<script src="js/render.js?v=2"></script>
-<script src="js/app.js?v=2"></script>
+<script src="js/config.js?v=3"></script>
+<script src="js/utils.js?v=3"></script>
+<script src="js/api.js?v=3"></script>
+<script src="js/auth.js?v=3"></script>
+<script src="js/render.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>
