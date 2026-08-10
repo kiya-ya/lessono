@@ -56,24 +56,6 @@ async function loadWeeks() {
     });
   } catch (e) { console.error('周列表加载失败:', e); }
 }
-  try {
-    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
-    const result = await res.json();
-    const select = document.getElementById('week-select');
-    select.innerHTML = '';
-    const weeks = (result.data || []).slice().reverse(); // 从新到旧
-    weeks.forEach((w, idx) => {
-      const opt = document.createElement('option');
-      opt.value = w.week_start + '|' + w.week_end;
-      opt.textContent = w.week_start + ' ~ ' + w.week_end;
-      if (idx === 0) {
-        opt.selected = true;
-        currentWeek = opt.value; // 同步设置 currentWeek
-      }
-      select.appendChild(opt);
-    });
-  } catch (e) { console.error('周列表加载失败:', e); }
-}
 async function loadAlerts() {
   try {
     const res = await fetch(API_BASE + '/api/alerts?' + getWeekParam().substring(1));
