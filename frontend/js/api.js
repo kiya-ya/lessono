@@ -21,6 +21,46 @@ async function loadWeeks() {
     const result = await res.json();
     const select = document.getElementById('week-select');
     select.innerHTML = '';
+    const dbWeeks = (result.data || []).slice().reverse(); // 从新到旧
+
+    // 计算本周（周一~周日）
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const fmt = d => d.toISOString().split('T')[0];
+    const thisWeekStart = fmt(monday);
+    const thisWeekEnd = fmt(sunday);
+    const thisWeekValue = thisWeekStart + '|' + thisWeekEnd;
+
+    // 如果数据库不包含本周，先插一个「本周·收集中」选项
+    const hasThisWeek = dbWeeks.some(w => w.week_start === thisWeekStart);
+    const weeks = [];
+    if (!hasThisWeek) {
+      weeks.push({ week_start: thisWeekStart, week_end: thisWeekEnd, _labelSuffix: '（本周·收集中）' });
+    }
+    weeks.push(...dbWeeks);
+
+    weeks.forEach((w, idx) => {
+      const opt = document.createElement('option');
+      opt.value = w.week_start + '|' + w.week_end;
+      opt.textContent = w.week_start + ' ~ ' + w.week_end + (w._labelSuffix || '');
+      if (idx === 0) {
+        opt.selected = true;
+        currentWeek = opt.value;
+      }
+      select.appendChild(opt);
+    });
+  } catch (e) { console.error('周列表加载失败:', e); }
+}
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
+    const result = await res.json();
+    const select = document.getElementById('week-select');
+    select.innerHTML = '';
     const weeks = (result.data || []).slice().reverse(); // 从新到旧
     weeks.forEach((w, idx) => {
       const opt = document.createElement('option');
