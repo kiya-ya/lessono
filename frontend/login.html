@@ -229,9 +229,15 @@
 <script>
 const API_BASE = '';
 
+// 页面加载时自动清除可能残留的 auth_uid Cookie
+(function clearAuthCookie() {
+  document.cookie = 'auth_uid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+})();
+
 // ========== 粒子连线背景 ==========
 (function initParticleBg() {
   const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   let W, H;
 
@@ -255,8 +261,8 @@ const API_BASE = '';
       y: Math.random() * window.innerHeight,
       vx: (Math.random() - 0.5) * 0.6,
       vy: (Math.random() - 0.5) * 0.6,
-      r: Math.random() * 1.5 + 1,
-      hue: Math.random() > 0.5 ? 260 : 220, // 紫 or 蓝
+      r: Math.random() * 2 + 1.5,
+      hue: Math.random() > 0.5 ? 260 : 220,
     });
   }
 
@@ -271,17 +277,12 @@ const API_BASE = '';
     ctx.fillStyle = '#121212';
     ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 
-    // 更新 & 绘制粒子
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
-
-      // 边界反弹
       if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
       if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
-
-      // 鼠标排斥
       const mdx = p.x - mouse.x;
       const mdy = p.y - mouse.y;
       const md = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -290,26 +291,21 @@ const API_BASE = '';
         p.vx += (mdx / md) * f;
         p.vy += (mdy / md) * f;
       }
-
-      // 速度阻尼
       p.vx *= 0.995;
       p.vy *= 0.995;
-
-      // 绘制粒子
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 75%, 65%, 0.7)`;
+      ctx.fillStyle = `hsla(${p.hue}, 75%, 70%, 0.85)`;
       ctx.fill();
     }
 
-    // 粒子连线
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
         const dx = particles[i].x - particles[j].x;
         const dy = particles[i].y - particles[j].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECT_DIST) {
-          const alpha = (1 - dist / CONNECT_DIST) * 0.25;
+          const alpha = (1 - dist / CONNECT_DIST) * 0.3;
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
@@ -319,7 +315,6 @@ const API_BASE = '';
         }
       }
     }
-
     requestAnimationFrame(draw);
   }
   draw();
@@ -330,13 +325,22 @@ async function loadCaptcha() {
   const box = document.getElementById('captcha-box');
   box.innerHTML = '<span>加载中...</span>';
   try {
-    const res = await fetch(API_BASE + '/api/captcha?t=' + Date.now());
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(API_BASE + '/api/captcha?t=' + Date.now(), { signal: controller.signal });
+    clearTimeout(timer);
     const data = await res.json();
     if (data.image) {
       box.innerHTML = '<img src="' + data.image + '" alt="验证码">';
+    } else {
+      box.innerHTML = '<span style="font-size:11px;">加载失败，点击重试</span>';
     }
   } catch (e) {
-    box.innerHTML = '<span style="font-size:11px;">加载失败</span>';
+    if (e.name === 'AbortError') {
+      box.innerHTML = '<span style="font-size:11px;">请求超时，点击重试</span>';
+    } else {
+      box.innerHTML = '<span style="font-size:11px;">加载失败，点击重试</span>';
+    }
   }
 }
 
@@ -376,5 +380,6 @@ document.addEventListener('keydown', function(e) {
 // 页面加载时获取验证码
 loadCaptcha();
 </script>
+
 </body>
 </html>

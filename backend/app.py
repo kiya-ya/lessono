@@ -10,15 +10,10 @@ import string
 import base64
 import io
 from datetime import datetime, timedelta
+
 from flask import Flask, jsonify, request, send_from_directory, Response, session
 from flask_cors import CORS
 from PIL import Image, ImageDraw, ImageFont
-import sys
-import sqlite3
-import json
-from datetime import datetime, timedelta
-from flask import Flask, jsonify, request, send_from_directory, Response
-from flask_cors import CORS
 
 # 将crawler目录加入路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'crawler'))
@@ -43,17 +38,6 @@ app.secret_key = os.environ.get('SECRET_KEY', 'sisters-dashboard-secret-key-2026
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=10)
 CORS(app, supports_credentials=True)
-app.secret_key = os.environ.get('SECRET_KEY', 'sisters-dashboard-secret-key-2026')
-CORS(app)
-
-# 登录白名单检查（装饰器）
-def require_auth(f):
-    def wrapper(*args, **kwargs):
-        if 'user_uid' not in request.session:
-            return jsonify({'error': '未登录'}), 401
-        return f(*args, **kwargs)
-    wrapper.__name__ = f.__name__
-    return wrapper
 
 # 使用 Flask session
 from functools import wraps
@@ -1314,6 +1298,16 @@ def api_logout():
     resp = jsonify({'success': True})
     resp.set_cookie('auth_uid', '', expires=0, path='/')
     session.pop('captcha_code', None)
+    return resp
+
+
+@app.route('/logout', methods=['GET'])
+def page_logout():
+    """页面级退出：清除 Cookie 并重定向到登录页"""
+    resp = send_from_directory(os.path.join(PROJECT_ROOT, 'frontend'), 'login.html')
+    resp.set_cookie('auth_uid', '', expires=0, path='/')
+    session.pop('captcha_code', None)
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     return resp
 
 
