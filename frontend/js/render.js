@@ -595,8 +595,6 @@ function renderPartnerChartMulti(participants) {
           if (p.axisValue === '等级') {
             const levels = ['无', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
             val = levels[val] || val;
-            const levels = ['无', '铜牌', '银牌', '金牌', '王牌', '大神'];
-            val = levels[val] || val;
           } else if (p.axisValue === '礼物流水') unit = '元';
           else if (p.axisValue === '陪档时长') unit = '分钟';
           else if (p.axisValue === '任务完成') unit = '次';
