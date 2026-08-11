@@ -291,7 +291,6 @@ def api_kpi():
     
     if len(daily_rows) < 1 and len(weekly_rows) < 1:
         return jsonify({'error': '数据不足'}), 400
-        return jsonify({'error': '数据不足'}), 400
     
     today = daily_rows[0]
     yesterday = daily_rows[1]
