@@ -178,6 +178,31 @@ def api_search_suggest():
 @app.route('/api/halls')
 @login_required
 def api_halls():
+    """返回大厅列表，根据用户角色过滤"""
+    user_uid = request.cookies.get('auth_uid')
+    conn = get_db_conn()
+    cursor = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,))
+    user = cursor.fetchone()
+    role = user['role'] if user else 'admin'
+    
+    if role == 'admin':
+        cursor = conn.execute('''
+            SELECT DISTINCT hall_name FROM team_detail
+            WHERE hall_name IS NOT NULL AND hall_name != ''
+            ORDER BY hall_name
+        ''')
+        halls = [r['hall_name'] for r in cursor.fetchall()]
+    else:
+        # hall_manager：只返回管理的厅
+        cursor = conn.execute('''
+            SELECT hall_name FROM hall_managers WHERE uid = ? ORDER BY hall_name
+        ''', (user_uid,))
+        halls = [r['hall_name'] for r in cursor.fetchall()]
+    
+    conn.close()
+    return jsonify({'data': halls, 'role': role})
+@login_required
+def api_halls():
     """返回所有大厅列表"""
     conn = get_db_conn()
     cursor = conn.execute('''

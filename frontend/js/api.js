@@ -3,16 +3,38 @@ async function loadHalls() {
     const res = await fetch(API_BASE + '/api/halls');
     const result = await res.json();
     const select = document.getElementById('hall-select');
-    if (!select) return; // 页面无大厅选择器时跳过
-    select.innerHTML = '<option value="all">全部大厅</option>';
+    if (!select) return;
 
-    (result.data || []).forEach(hall => {
+    select.innerHTML = '';
+    const role = result.role || 'admin';
+    const halls = result.data || [];
+
+    // 添加默认选项
+    if (role === 'admin') {
+      const opt = document.createElement('option');
+      opt.value = 'all';
+      opt.textContent = '全部大厅';
+      select.appendChild(opt);
+    } else {
+      // hall_manager: 添加"运营大厅"选项（代表所有管理的厅）
+      const opt = document.createElement('option');
+      opt.value = 'all';
+      opt.textContent = '运营大厅';
+      select.appendChild(opt);
+    }
+
+    halls.forEach(hall => {
       const opt = document.createElement('option');
       opt.value = hall;
       opt.textContent = hall;
       select.appendChild(opt);
-
     });
+
+    // 厅运营默认选中第一个具体厅（不是"全部大厅"/"运营大厅"）
+    if (role === 'hall_manager' && halls.length > 0) {
+      select.value = halls[0];
+      currentHall = halls[0];
+    }
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
 async function loadWeeks() {

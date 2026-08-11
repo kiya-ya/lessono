@@ -207,8 +207,8 @@ window.addEventListener('resize', () => {
 });
 
 // 页面加载完成后初始化
-document.addEventListener('DOMContentLoaded', () => {
-  loadHalls();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadHalls();
   loadWeeks();
   loadLastUpdate();
   loadKPI();

@@ -22,6 +22,8 @@
       var data = JSON.parse(xhr.responseText);
       if (!data.logged_in) {
         window.location.replace('/login.html');
+      } else {
+        window.currentUser = data;
       }
     } else {
       window.location.replace('/login.html');
@@ -54,6 +56,8 @@
 <div class="toolbar">
   <label>📅 时间:</label>
   <select id="week-select" onchange="onWeekChange()"></select>
+  <label>🏠 大厅:</label>
+  <select id="hall-select" onchange="onHallChange()"></select>
   <button onclick="refreshData()">🔄 刷新</button>
   <button onclick="exportData()">📤 导出CSV</button>
   <button onclick="exportPDF()">📄 导出PDF</button>
