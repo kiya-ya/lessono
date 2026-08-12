@@ -125,10 +125,10 @@ async function loadDetailTable(page = 1) {
     const result = await res.json();
     document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
       const status = row.dissolve_date ? '已解散' : '进行中';
-      const statusStyle = row.dissolve_date ? 'color:#ff4d4f;' : 'color:#52c41a;';
+      const statusStyle = row.dissolve_date ? 'color:#D56060;' : 'color:#3D9A6C;';
       return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
-      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
-      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#667eea; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
+      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#4F5BD5; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
+      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#4F5BD5; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
       <td>${row.days_since_formed || 0}</td>
       <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
     }).join('');
@@ -193,11 +193,11 @@ async function updateCookiePanelStatus() {
     const dot1 = document.getElementById('panel-dot-uid');
     const status1 = document.getElementById('panel-status-uid');
     if (data1.status === 'valid') {
-      dot1.style.background = '#52c41a'; status1.textContent = '✅ 状态：有效（' + (data1.updated_at || '未知') + ' 更新）';
+      dot1.style.background = '#3D9A6C'; status1.textContent = '✅ 状态：有效（' + (data1.updated_at || '未知') + ' 更新）';
     } else if (data1.status === 'invalid') {
-      dot1.style.background = '#ff4d4f'; status1.textContent = '❌ 状态：无效，请重新粘贴';
+      dot1.style.background = '#D56060'; status1.textContent = '❌ 状态：无效，请重新粘贴';
     } else {
-      dot1.style.background = '#faad14'; status1.textContent = '⚠️ 状态：未知';
+      dot1.style.background = '#C98A2D'; status1.textContent = '⚠️ 状态：未知';
     }
   } catch (e) { console.log('UID panel 检测失败:', e); }
 
@@ -207,11 +207,11 @@ async function updateCookiePanelStatus() {
     const dot2 = document.getElementById('panel-dot-bigdata');
     const status2 = document.getElementById('panel-status-bigdata');
     if (data2.status === 'valid') {
-      dot2.style.background = '#52c41a'; status2.textContent = '✅ 状态：有效（' + (data2.updated_at || '未知') + ' 更新）';
+      dot2.style.background = '#3D9A6C'; status2.textContent = '✅ 状态：有效（' + (data2.updated_at || '未知') + ' 更新）';
     } else if (data2.status === 'invalid') {
-      dot2.style.background = '#ff4d4f'; status2.textContent = '❌ 状态：无效，请重新粘贴';
+      dot2.style.background = '#D56060'; status2.textContent = '❌ 状态：无效，请重新粘贴';
     } else {
-      dot2.style.background = '#faad14'; status2.textContent = '⚠️ 状态：未知';
+      dot2.style.background = '#C98A2D'; status2.textContent = '⚠️ 状态：未知';
     }
   } catch (e) { console.log('抓取 panel 检测失败:', e); }
 }
@@ -261,7 +261,7 @@ async function loadLastUpdate() {
     const el = document.getElementById('last-update');
     if (data.last_update) {
       el.textContent = '上次更新：' + data.last_update;
-      el.style.color = data.status === 'success' ? '#52c41a' : data.status === 'failed' ? '#ff4d4f' : '';
+      el.style.color = data.status === 'success' ? '#3D9A6C' : data.status === 'failed' ? '#D56060' : '';
       // 数据新鲜度色点：>24h 黄、>48h 红
       const wrap = el.closest('.fresh');
       if (wrap) {

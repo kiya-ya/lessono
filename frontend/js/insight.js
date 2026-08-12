@@ -51,7 +51,7 @@ async function loadPolicyImpact() {
         yAxis: { type: 'category', inverse: true, data: shown.map(x => x.hall_name), axisLabel: { fontSize: 11, color: '#6B7280' } },
         series: [{
           type: 'bar', data: shown.map(x => x.ret_delta), barWidth: '55%',
-          itemStyle: { color: p => p.value >= 0 ? '#16A34A' : '#DC2626', borderRadius: [3, 3, 3, 3] },
+          itemStyle: { color: p => p.value >= 0 ? '#3D9A6C' : '#D56060', borderRadius: [3, 3, 3, 3] },
           label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => (p.value > 0 ? '+' : '') + p.value + 'pp' }
         }]
       });

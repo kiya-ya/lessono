@@ -275,7 +275,7 @@ function wbRenderCharts() {
   const policyIdx = data.findIndex(d => d.week_start >= WB_POLICY_DATE || d.week_end >= WB_POLICY_DATE);
   const mark = policyIdx >= 0 ? {
     silent: true, symbol: 'none',
-    data: [{ xAxis: labels[policyIdx], label: { formatter: '政策上线', fontSize: 10, color: '#7C5CFF' }, lineStyle: { color: '#7C5CFF', type: 'dashed', width: 1 } }]
+    data: [{ xAxis: labels[policyIdx], label: { formatter: '政策上线', fontSize: 10, color: '#4F5BD5' }, lineStyle: { color: '#4F5BD5', type: 'dashed', width: 1 } }]
   } : null;
   const base = {
     tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
@@ -298,20 +298,20 @@ function wbRenderCharts() {
   const defs = {
     'wb-retention': { ...base,
       legend: platOf ? legendOpt : undefined,
-      series: [{ name: '留存率', type: 'line', smooth: true, data: data.map(d => Math.min(100, d.retention_rate || 0)), lineStyle: { color: '#16A34A', width: 2 }, itemStyle: { color: '#16A34A' }, areaStyle: { color: 'rgba(22,163,74,.06)' }, markLine: mark },
+      series: [{ name: '留存率', type: 'line', smooth: true, data: data.map(d => Math.min(100, d.retention_rate || 0)), lineStyle: { color: '#3D9A6C', width: 2 }, itemStyle: { color: '#3D9A6C' }, areaStyle: { color: 'rgba(22,163,74,.06)' }, markLine: mark },
         ...(platOf ? [platSeries('retention_rate')] : [])] },
     'wb-dissolution': { ...base,
       legend: platOf ? legendOpt : undefined,
       series: [{ name: '解散率', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(220,38,38,.55)', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark },
         ...(platOf ? [platSeries('dissolution_rate')] : [])] },
-    'wb-revenue': { ...base, series: [{ name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0), itemStyle: { color: '#D97706', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark }] },
+    'wb-revenue': { ...base, series: [{ name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0), itemStyle: { color: '#C98A2D', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark }] },
     'wb-activity': {
       ...base,
       legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 10, color: '#6B7280' } },
       series: [
-        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#7C5CFF' } },
-        { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#16A34A' } },
-        { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#D97706' } },
+        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#4F5BD5' } },
+        { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#3D9A6C' } },
+        { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#C98A2D' } },
       ],
     },
   };
@@ -361,8 +361,8 @@ async function initQuadrantChart() {
   const medRev = median(pts.map(p => p.rev));
   const medRet = median(pts.map(p => p.ret));
   const quadOf = p => p.rev >= medRev
-    ? (p.ret >= medRet ? ['明星厅', '#16A34A'] : ['风险厅', '#D97706'])
-    : (p.ret >= medRet ? ['潜力厅', '#7C5CFF'] : ['衰退厅', '#DC2626']);
+    ? (p.ret >= medRet ? ['明星厅', '#3D9A6C'] : ['风险厅', '#C98A2D'])
+    : (p.ret >= medRet ? ['潜力厅', '#4F5BD5'] : ['衰退厅', '#D56060']);
   const groups = {};
   pts.forEach(p => {
     const [label, color] = quadOf(p);
@@ -380,10 +380,10 @@ async function initQuadrantChart() {
     markArea: {
       silent: true, label: { fontSize: 11, color: '#9CA3AF' },
       data: [
-        [{ name: '明星厅', coord: [medRev, medRet], itemStyle: { color: 'rgba(22,163,74,.05)' }, label: { position: 'insideTopRight', color: '#16A34A' } }, { coord: [maxRev, '100'] }],
-        [{ name: '潜力厅', coord: [0, medRet], itemStyle: { color: 'rgba(124,92,255,.05)' }, label: { position: 'insideTopLeft', color: '#7C5CFF' } }, { coord: [medRev, '100'] }],
-        [{ name: '风险厅', coord: [medRev, 0], itemStyle: { color: 'rgba(217,119,6,.06)' }, label: { position: 'insideBottomRight', color: '#D97706' } }, { coord: [maxRev, medRet] }],
-        [{ name: '衰退厅', coord: [0, 0], itemStyle: { color: 'rgba(220,38,38,.05)' }, label: { position: 'insideBottomLeft', color: '#DC2626' } }, { coord: [medRev, medRet] }],
+        [{ name: '明星厅', coord: [medRev, medRet], itemStyle: { color: 'rgba(22,163,74,.05)' }, label: { position: 'insideTopRight', color: '#3D9A6C' } }, { coord: [maxRev, '100'] }],
+        [{ name: '潜力厅', coord: [0, medRet], itemStyle: { color: 'rgba(124,92,255,.05)' }, label: { position: 'insideTopLeft', color: '#4F5BD5' } }, { coord: [medRev, '100'] }],
+        [{ name: '风险厅', coord: [medRev, 0], itemStyle: { color: 'rgba(217,119,6,.06)' }, label: { position: 'insideBottomRight', color: '#C98A2D' } }, { coord: [maxRev, medRet] }],
+        [{ name: '衰退厅', coord: [0, 0], itemStyle: { color: 'rgba(220,38,38,.05)' }, label: { position: 'insideBottomLeft', color: '#D56060' } }, { coord: [medRev, medRet] }],
       ]
     },
     markLine: {
@@ -439,10 +439,10 @@ async function loadDailyOverlay() {
     });
     if (charts['dailyNew']) charts['dailyNew'].dispose();
     charts['dailyNew'] = echarts.init(elNew);
-    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#7C5CFF'));
+    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#4F5BD5'));
     if (charts['dailyDiss']) charts['dailyDiss'].dispose();
     charts['dailyDiss'] = echarts.init(elDiss);
-    charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#DC2626'));
+    charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#D56060'));
   } catch (e) { console.error('日级叠加图加载失败:', e); }
 }
 
@@ -481,7 +481,7 @@ async function loadSurvival() {
       grid: { left: 46, right: 20, top: 16, bottom: 30 },
       xAxis: { type: 'category', data: histPairs.map(p => p[0]), axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-      series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: '#16A34A', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
+      series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: '#3D9A6C', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
     });
   } catch (e) { console.error('存活分析加载失败:', e); }
 }

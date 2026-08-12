@@ -36,49 +36,48 @@
 </head>
 <body>
 
-<div class="header">
-  <div class="wb-wrap header-inner">
-    <div class="nav-brand">
-      <h1>B+ 兔玩大数据 · 姐妹团看板</h1>
-      <span class="sub">运营工作台</span>
+<div class="layout">
+  <!-- 侧边栏 -->
+  <aside class="sidebar">
+    <div class="side-brand">
+      <h1>B+ 兔玩大数据</h1>
+      <span>姐妹团看板</span>
     </div>
-    <div class="header-right">
+    <nav class="side-nav">
+      <div class="tab active" onclick="switchTab('overview')">工作台</div>
+      <div class="tab" onclick="switchTab('trends')">核心趋势</div>
+      <div class="tab" onclick="switchTab('compare')">对比分析</div>
+      <div class="tab" onclick="switchTab('policy')">政策评估</div>
+      <div class="tab" onclick="switchTab('captains')">姐姐分析</div>
+      <div class="tab" onclick="switchTab('details')">明细数据</div>
+      <div class="tab" onclick="switchTab('alerts')">预警中心</div>
+      <div class="tab" onclick="switchTab('uid')">UID查询</div>
+    </nav>
+    <div class="side-foot">
       <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
         <span class="cookie-dot unknown" id="cookie-dot-main"></span>
         <span id="cookie-text-main">Cookie 管理</span>
       </div>
-      <span class="fresh"><i id="fresh-dot"></i><span id="last-update">上次更新：--</span></span>
-      <span class="period">📅 <span id="current-period">--</span></span>
       <span id="header-user-info"></span>
-      <a href="/logout" class="logout-link" title="点击退出当前账号">🚪 退出登录</a>
     </div>
-  </div>
-</div>
+  </aside>
 
-<div class="toolbar">
-  <div class="wb-wrap toolbar-inner">
-    <label>时间</label>
-    <select id="week-select" onchange="onWeekChange()"></select>
-    <label>大厅</label>
-    <select id="hall-select" onchange="onHallChange()"></select>
-    <button onclick="refreshData()">🔄 刷新</button>
-  </div>
-</div>
+  <!-- 主区域 -->
+  <div class="main">
+    <div class="topbar">
+      <div class="wb-wrap topbar-inner">
+        <label>时间</label>
+        <select id="week-select" onchange="onWeekChange()"></select>
+        <label>大厅</label>
+        <select id="hall-select" onchange="onHallChange()"></select>
+        <button onclick="refreshData()">刷新</button>
+        <span class="tb-spacer"></span>
+        <span class="fresh"><i id="fresh-dot"></i><span id="last-update">上次更新：--</span></span>
+        <span class="period">📅 <span id="current-period">--</span></span>
+      </div>
+    </div>
 
-<div class="tabs">
-  <div class="wb-wrap tabs-inner">
-    <div class="tab active" onclick="switchTab('overview')">📊 工作台</div>
-    <div class="tab" onclick="switchTab('trends')">📈 核心趋势</div>
-    <div class="tab" onclick="switchTab('compare')">🔍 对比分析</div>
-    <div class="tab" onclick="switchTab('policy')">📐 政策评估</div>
-    <div class="tab" onclick="switchTab('captains')">👑 姐姐分析</div>
-    <div class="tab" onclick="switchTab('details')">📋 明细数据</div>
-    <div class="tab" onclick="switchTab('alerts')">🔔 预警中心</div>
-    <div class="tab" onclick="switchTab('uid')">👤 UID查询</div>
-  </div>
-</div>
-
-<div class="content wb-wrap">
+    <div class="content wb-wrap">
 
   <!-- 工作台 -->
   <div id="tab-overview" class="tab-panel active">
@@ -333,7 +332,9 @@
     <div class="survival-chips" id="alerts-summary"></div>
     <div class="chart-card"><div id="alerts-center-list"></div></div>
   </div>
-</div>
+    </div><!-- /.content -->
+  </div><!-- /.main -->
+</div><!-- /.layout -->
 
 <!-- Cookie 管理弹窗 -->
 <div class="cookie-modal" id="cookie-modal">

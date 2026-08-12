@@ -34,7 +34,7 @@ function renderUserInfo(user) {
   if (!container) return;
   container.innerHTML = `
     <span style="display:flex;align-items:center;gap:8px;">
-      <span style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">
+      <span style="width:28px;height:28px;border-radius:50%;background:#4F5BD5;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">
         ${(user.nickname || '管').charAt(0)}
       </span>
       <span style="color:rgba(255,255,255,0.84);font-size:13px;">${user.nickname || '管理员'}</span>

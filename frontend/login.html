@@ -6,205 +6,160 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="theme-color" content="#121212">
-<title>登录 - 姐妹团数据统计报表</title>
+<meta name="theme-color" content="#0E1016">
+<title>登录 - 姐妹团数据看板</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    overflow: hidden;
     height: 100vh;
     width: 100vw;
-    background: #121212;
+    overflow: hidden;
+    background: #0E1016;
     -webkit-font-smoothing: antialiased;
   }
-  #bg-canvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    z-index: 0;
-    background: #121212;
+
+  /* 背景：深墨底 + 两束克制的光晕（无粒子，纯 CSS） */
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(640px 480px at 18% 12%, rgba(79, 91, 213, 0.16), transparent 65%),
+      radial-gradient(520px 420px at 85% 88%, rgba(61, 154, 108, 0.08), transparent 65%),
+      #0E1016;
   }
+  /* 细网格纹理，增加层次而不喧宾夺主 */
+  .bg::after {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
+  }
+
   .login-wrap {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    height: 100dvh;
-    padding: 16px;
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; height: 100dvh; padding: 20px;
   }
 
-  /* ========== iOS 玻璃拟态卡片 ========== */
+  /* 品牌区 */
+  .brand { text-align: center; margin-bottom: 30px; animation: fadeDown .6s cubic-bezier(.16,1,.3,1) both; }
+  .brand .logo {
+    width: 46px; height: 46px; margin: 0 auto 16px;
+    border-radius: 12px; background: #4F5BD5;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff; letter-spacing: .02em;
+    box-shadow: 0 8px 28px rgba(79, 91, 213, 0.4);
+  }
+  .brand h1 {
+    color: rgba(255,255,255,0.94); font-size: 24px; font-weight: 600;
+    letter-spacing: .06em;
+  }
+  .brand .en {
+    color: rgba(255,255,255,0.32); font-size: 11px; letter-spacing: .32em;
+    margin-top: 8px; text-transform: uppercase; font-weight: 500;
+  }
+  .brand .rule {
+    width: 36px; height: 2px; background: #4F5BD5; border-radius: 2px;
+    margin: 14px auto 0;
+  }
+
+  /* 登录卡 */
   .login-card {
-    /* 核心：毛玻璃 + 半透明 */
-    background: rgba(28, 28, 30, 0.65);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
-    backdrop-filter: blur(40px) saturate(180%);
-
-    /* iOS 风格边框：顶部微亮，其余更暗 */
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.18);
-
-    /* 内发光效果 */
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-
-    border-radius: 24px;
-    padding: 40px 36px;
-    width: 100%;
-    max-width: 400px;
-
-    animation: cardIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    width: 100%; max-width: 380px;
+    background: rgba(22, 25, 34, 0.72);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 32px 30px 26px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+    animation: cardIn .55s cubic-bezier(.16,1,.3,1) .08s both;
   }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
-  @keyframes cardIn {
-    from { opacity: 0; transform: translateY(24px) scale(0.96); }
-    to   { opacity: 1; transform: translateY(0)   scale(1); }
-  }
-
-  .login-card h2 {
-    color: rgba(255,255,255,0.92);
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 6px;
-    text-align: center;
-    letter-spacing: -0.3px;
-  }
-  .login-card .subtitle {
-    color: rgba(255,255,255,0.45);
-    font-size: 13px;
-    text-align: center;
-    margin-bottom: 32px;
-    font-weight: 400;
-  }
-
-  .form-group { margin-bottom: 18px; }
+  .form-group { margin-bottom: 16px; }
   .form-group label {
-    display: block;
-    color: rgba(255,255,255,0.5);
-    font-size: 12px;
-    margin-bottom: 6px;
-    font-weight: 500;
-    padding-left: 2px;
+    display: block; color: rgba(255,255,255,0.42); font-size: 12px;
+    margin-bottom: 7px; font-weight: 500; letter-spacing: .04em; padding-left: 2px;
   }
   .form-group input {
-    width: 100%;
-    min-height: 48px;
-    padding: 12px 16px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    color: rgba(255,255,255,0.9);
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s;
+    width: 100%; min-height: 46px; padding: 11px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.92); font-size: 15px;
+    outline: none; transition: border-color .2s, background .2s, box-shadow .2s;
     -webkit-appearance: none;
   }
   .form-group input:focus {
-    border-color: rgba(102, 126, 234, 0.6);
-    background: rgba(255,255,255,0.08);
+    border-color: rgba(79, 91, 213, 0.75);
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 0 3px rgba(79, 91, 213, 0.18);
   }
-  .form-group input::placeholder {
-    color: rgba(255,255,255,0.25);
-  }
+  .form-group input::placeholder { color: rgba(255,255,255,0.22); }
 
-  .captcha-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
+  .captcha-row { display: flex; gap: 10px; align-items: stretch; }
   .captcha-row input { flex: 1; }
   .captcha-img {
-    width: 120px;
-    height: 48px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.06);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255,255,255,0.4);
-    font-size: 12px;
-    user-select: none;
-    overflow: hidden;
-    flex-shrink: 0;
-    transition: border-color 0.2s;
+    width: 112px; min-height: 46px;
+    border-radius: 10px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.09);
+    background: rgba(255,255,255,0.05);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.35); font-size: 12px;
+    user-select: none; overflow: hidden; flex-shrink: 0;
+    transition: border-color .2s;
   }
-  .captcha-img:hover { border-color: rgba(255,255,255,0.2); }
-  .captcha-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-  }
+  .captcha-img:hover { border-color: rgba(255,255,255,0.22); }
+  .captcha-img img { width: 100%; height: 100%; object-fit: cover; }
 
   .btn-login {
-    width: 100%;
-    min-height: 50px;
-    border: none;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
-    margin-top: 8px;
+    width: 100%; min-height: 48px; margin-top: 10px;
+    border: none; border-radius: 10px;
+    background: #4F5BD5;
+    color: #fff; font-size: 15px; font-weight: 600; letter-spacing: .28em; text-indent: .28em;
+    cursor: pointer; transition: background .2s, transform .15s, box-shadow .2s;
     -webkit-appearance: none;
   }
-  .btn-login:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 28px rgba(102,126,234,0.35);
-    opacity: 0.95;
-  }
-  .btn-login:active {
-    transform: translateY(0) scale(0.98);
-  }
+  .btn-login:hover { background: #5A68E0; box-shadow: 0 8px 24px rgba(79, 91, 213, 0.35); transform: translateY(-1px); }
+  .btn-login:active { transform: scale(0.985); }
 
   .error-msg {
-    color: #ff453a;
-    font-size: 13px;
-    margin-top: 12px;
-    text-align: center;
-    min-height: 20px;
-    font-weight: 500;
+    color: #E06666; font-size: 13px; margin-top: 12px;
+    text-align: center; min-height: 20px; font-weight: 500;
   }
   .footer-hint {
-    color: rgba(255,255,255,0.25);
-    font-size: 11px;
-    text-align: center;
-    margin-top: 20px;
-    line-height: 1.6;
+    color: rgba(255,255,255,0.22); font-size: 11px;
+    text-align: center; margin-top: 18px; line-height: 1.7; letter-spacing: .03em;
   }
 
-  /* ========== 手机端适配 ========== */
   @media (max-width: 480px) {
-    .login-wrap { padding: 12px; }
-    .login-card {
-      padding: 32px 22px;
-      border-radius: 20px;
-    }
-    .login-card h2 { font-size: 20px; }
-    .login-card .subtitle { font-size: 12px; margin-bottom: 24px; }
-    .form-group { margin-bottom: 14px; }
-    .form-group input { min-height: 52px; font-size: 16px; border-radius: 14px; }
-    .captcha-img { height: 52px; width: 110px; border-radius: 14px; }
-    .btn-login { min-height: 52px; border-radius: 14px; font-size: 16px; }
+    .brand h1 { font-size: 20px; }
+    .login-card { padding: 26px 20px 20px; border-radius: 14px; }
+    .form-group input { min-height: 50px; }
+    .btn-login { min-height: 50px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand, .login-card { animation: none; }
   }
 </style>
 </head>
 <body>
-<canvas id="bg-canvas"></canvas>
+<div class="bg"></div>
 
 <div class="login-wrap">
-  <div class="login-card">
-    <h2>🐰 B+ 兔玩大数据</h2>
-    <div class="subtitle">姐妹团数据统计报表 · 管理员登录</div>
+  <div class="brand">
+    <div class="logo">B+</div>
+    <h1>兔玩大数据 · 姐妹团看板</h1>
+    <div class="en">Sisters Data Console</div>
+    <div class="rule"></div>
+  </div>
 
+  <div class="login-card">
     <div class="form-group">
       <label>UID</label>
       <input type="text" id="login-uid" placeholder="请输入您的 UID" autocomplete="off" inputmode="numeric">
@@ -222,7 +177,7 @@
 
     <button class="btn-login" onclick="doLogin()">登 录</button>
     <div class="error-msg" id="login-error"></div>
-    <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID<br>Design by LuDeng</div>
+    <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID</div>
   </div>
 </div>
 
@@ -232,92 +187,6 @@ const API_BASE = '';
 // 页面加载时自动清除可能残留的 auth_uid Cookie
 (function clearAuthCookie() {
   document.cookie = 'auth_uid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-})();
-
-// ========== 粒子连线背景 ==========
-(function initParticleBg() {
-  const canvas = document.getElementById('bg-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let W, H;
-
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    W = canvas.width = window.innerWidth * dpr;
-    H = canvas.height = window.innerHeight * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  const PARTICLE_COUNT = Math.min(80, Math.floor((window.innerWidth * window.innerHeight) / 15000));
-  const CONNECT_DIST = 120;
-  const MOUSE_DIST = 180;
-
-  const particles = [];
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    particles.push({
-      x: Math.random() * window.innerWidth,
-      y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.6,
-      vy: (Math.random() - 0.5) * 0.6,
-      r: Math.random() * 2 + 1.5,
-      hue: Math.random() > 0.5 ? 260 : 220,
-    });
-  }
-
-  let mouse = { x: -9999, y: -9999 };
-  document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-  document.addEventListener('touchmove', e => {
-    if (e.touches.length) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
-  }, { passive: true });
-  document.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
-
-  function draw() {
-    ctx.fillStyle = '#121212';
-    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      if (p.x < 0 || p.x > window.innerWidth) p.vx *= -1;
-      if (p.y < 0 || p.y > window.innerHeight) p.vy *= -1;
-      const mdx = p.x - mouse.x;
-      const mdy = p.y - mouse.y;
-      const md = Math.sqrt(mdx * mdx + mdy * mdy);
-      if (md < MOUSE_DIST && md > 0) {
-        const f = (MOUSE_DIST - md) / MOUSE_DIST * 0.8;
-        p.vx += (mdx / md) * f;
-        p.vy += (mdy / md) * f;
-      }
-      p.vx *= 0.995;
-      p.vy *= 0.995;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${p.hue}, 75%, 70%, 0.85)`;
-      ctx.fill();
-    }
-
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < CONNECT_DIST) {
-          const alpha = (1 - dist / CONNECT_DIST) * 0.3;
-          ctx.beginPath();
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(140, 160, 255, ${alpha})`;
-          ctx.lineWidth = 0.8;
-          ctx.stroke();
-        }
-      }
-    }
-    requestAnimationFrame(draw);
-  }
-  draw();
 })();
 
 // ========== 验证码 ==========

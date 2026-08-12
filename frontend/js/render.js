@@ -43,7 +43,7 @@ async function initTrendChart() {
     const values = data.new_teams.slice(-sliceSize);
     const chart = echarts.init(document.getElementById('chart-trend'));
     charts.trend = chart;
-    chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: values, smooth: true, lineStyle: { color: '#667eea', width: 2 }, itemStyle: { color: '#667eea' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(102,126,234,0.3)' }, { offset: 1, color: 'rgba(102,126,234,0.05)' }]) } }] });
+    chart.setOption({ tooltip: { trigger: 'axis' }, grid: { left: 50, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'category', data: dates, axisLabel: { rotate: 45, fontSize: 11 } }, yAxis: { type: 'value', name: '个' }, series: [{ name: '新成团数', type: 'line', data: values, smooth: true, lineStyle: { color: '#4F5BD5', width: 2 }, itemStyle: { color: '#4F5BD5' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(79,91,213,0.3)' }, { offset: 1, color: 'rgba(79,91,213,0.05)' }]) } }] });
   } catch (e) { console.error('趋势图加载失败:', e); }
 }
 
@@ -65,8 +65,8 @@ async function initOverviewRetentionChart() {
       xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
       yAxis: { type: 'value', name: '%', max: 120 },
       series: [
-        { name: '留存率', type: 'line', data: retention, smooth: true, lineStyle: { color: '#52c41a', width: 2 }, itemStyle: { color: '#52c41a' } },
-        { name: '解散率', type: 'line', data: dissolution, smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' } }
+        { name: '留存率', type: 'line', data: retention, smooth: true, lineStyle: { color: '#3D9A6C', width: 2 }, itemStyle: { color: '#3D9A6C' } },
+        { name: '解散率', type: 'line', data: dissolution, smooth: true, lineStyle: { color: '#D56060', width: 2 }, itemStyle: { color: '#D56060' } }
       ]
     });
   } catch (e) { console.error('留存/解散趋势图加载失败:', e); }
@@ -89,7 +89,7 @@ async function initTrendCharts() {
     const policyDate = '2026-07-17';
     let policyIndex = data.findIndex(d => d.week_start >= policyDate);
     if (policyIndex < 0) policyIndex = data.findIndex(d => d.week_end >= policyDate);
-    const markLineData = policyIndex >= 0 ? [{ xAxis: labels[policyIndex], label: { formatter: '政策上线' }, lineStyle: { color: '#ff4d4f', type: 'dashed' } }] : [];
+    const markLineData = policyIndex >= 0 ? [{ xAxis: labels[policyIndex], label: { formatter: '政策上线' }, lineStyle: { color: '#D56060', type: 'dashed' } }] : [];
 
     const retentionOption = {
       tooltip: { trigger: 'axis', formatter: '{b}<br/>留存率: {c}%' },
@@ -98,7 +98,7 @@ async function initTrendCharts() {
       yAxis: { type: 'value', name: '%', max: 100 },
       series: [{
         name: '留存率', type: 'line', data: data.map(d => Math.min(100, d.retention_rate || 0)),
-        smooth: true, lineStyle: { color: '#52c41a', width: 2 }, itemStyle: { color: '#52c41a' },
+        smooth: true, lineStyle: { color: '#3D9A6C', width: 2 }, itemStyle: { color: '#3D9A6C' },
         markLine: { silent: true, data: markLineData }
       }]
     };
@@ -111,8 +111,8 @@ async function initTrendCharts() {
       xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
       yAxis: { type: 'value', name: '%' },
       series: [
-        { name: '解散率(柱)', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(255,77,79,0.6)' }, barWidth: '50%' },
-        { name: '解散率(线)', type: 'line', data: data.map(d => d.dissolution_rate || 0), smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' }, markLine: { silent: true, data: markLineData } }
+        { name: '解散率(柱)', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(213,96,96,0.55)' }, barWidth: '50%' },
+        { name: '解散率(线)', type: 'line', data: data.map(d => d.dissolution_rate || 0), smooth: true, lineStyle: { color: '#D56060', width: 2 }, itemStyle: { color: '#D56060' }, markLine: { silent: true, data: markLineData } }
       ]
     };
     if (!charts.dissolution) { charts.dissolution = echarts.init(document.getElementById('chart-dissolution')); charts.dissolution.setOption(dissolutionOption); } else { charts.dissolution.resize(); }
@@ -124,7 +124,7 @@ async function initTrendCharts() {
       yAxis: { type: 'value', name: '元' },
       series: [{
         name: '礼物奖励金额', type: 'bar', data: data.map(d => d.total_reward || 0),
-        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#faad14' }, { offset: 1, color: '#ffc53d' }]), borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#C98A2D' }, { offset: 1, color: '#D9A94E' }]), borderRadius: [4, 4, 0, 0] },
         barWidth: '50%', markLine: { silent: true, data: markLineData }
       }]
     };
@@ -137,9 +137,9 @@ async function initTrendCharts() {
       xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
       yAxis: { type: 'value', name: '次数' },
       series: [
-        { name: '开车任务', type: 'bar', stack: 'total', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#1890ff' } },
-        { name: '陪档任务', type: 'bar', stack: 'total', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#52c41a' } },
-        { name: '收送礼任务', type: 'bar', stack: 'total', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#faad14' } }
+        { name: '开车任务', type: 'bar', stack: 'total', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#4F5BD5' } },
+        { name: '陪档任务', type: 'bar', stack: 'total', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#3D9A6C' } },
+        { name: '收送礼任务', type: 'bar', stack: 'total', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#C98A2D' } }
       ]
     };
     if (!charts.activity) { charts.activity = echarts.init(document.getElementById('chart-activity')); charts.activity.setOption(activityOption); } else { charts.activity.resize(); }
@@ -220,12 +220,12 @@ async function initCompareChart() {
         grid: { left: 50, right: 50, top: 40, bottom: 50 },
         xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
         yAxis: [
-          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#667eea' } } },
-          { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#ff4d4f' } } }
+          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#4F5BD5' } } },
+          { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
         ],
         series: [
-          { name: '新成团数', type: 'bar', data: newTeams, itemStyle: { color: '#667eea', borderRadius: [4,4,0,0] }, barWidth: '40%' },
-          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#ff4d4f', width: 2 }, itemStyle: { color: '#ff4d4f' } }
+          { name: '新成团数', type: 'bar', data: newTeams, itemStyle: { color: '#4F5BD5', borderRadius: [4,4,0,0] }, barWidth: '40%' },
+          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#D56060', width: 2 }, itemStyle: { color: '#D56060' } }
         ]
       }, true);
     } catch (e) { console.error('双轴图加载失败:', e); }
@@ -265,10 +265,10 @@ function renderHallComparePage() {
 
   // 指标配置：标签、单位、颜色
   const metricConfig = {
-    active_count:    { label: '进行中团数', unit: '个', color: '#667eea' },
-    team_count:      { label: '总团数',     unit: '个', color: '#52c41a' },
-    dissolved_count: { label: '解散数',     unit: '个', color: '#ff4d4f' },
-    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#faad14' },
+    active_count:    { label: '进行中团数', unit: '个', color: '#4F5BD5' },
+    team_count:      { label: '总团数',     unit: '个', color: '#3D9A6C' },
+    dissolved_count: { label: '解散数',     unit: '个', color: '#D56060' },
+    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#C98A2D' },
   };
   const cfg = metricConfig[hallCompareSortField] || metricConfig.active_count;
 
@@ -369,7 +369,7 @@ function renderTeamInfo(data) {
   const t = data.team_info;
   if (!t) { card.style.display = 'none'; return; }
 
-  const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+  const statusColor = t.status === '进行中' ? '#3D9A6C' : '#D56060';
   const statusIcon = t.status === '进行中' ? '✓' : '✗';
 
   let membersHtml = `
@@ -448,7 +448,7 @@ function renderBoundSisters(data) {
     const thisData = u.this_week?.data || {};
     const level = thisData.week_level || '--';
     const revenue = thisData.week_revenue !== undefined ? '¥' + thisData.week_revenue.toLocaleString() : '--';
-    const statusColor = t.status === '进行中' ? '#52c41a' : '#ff4d4f';
+    const statusColor = t.status === '进行中' ? '#3D9A6C' : '#D56060';
     html += `<tr>
       <td>${s.nickname || '--'}</td>
       <td>${s.uid || '--'}</td>
@@ -532,7 +532,7 @@ async function renderPartnerCompare(data) {
 
 function renderPartnerChartMulti(participants) {
   const chartDiv = document.getElementById('partner-compare-chart');
-  const colors = ['#667eea', '#52c41a', '#faad14', '#ff4d4f', '#13c2c2', '#722ed1'];
+  const colors = ['#4F5BD5', '#3D9A6C', '#C98A2D', '#D56060', '#13c2c2', '#722ed1'];
   const levelOrder = { '无': 0, '铜牌': 1, '初级银牌': 2, '银牌': 3, '金牌': 4, '王牌': 5, '大神': 6 };
   const levelLabels = ['无', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
 
