@@ -1,17 +1,15 @@
 function onHallChange() {
   currentHall = document.getElementById('hall-select').value;
+  localStorage.setItem('wb_hall', currentHall);
   refreshData();
+  if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
 }
 
 function onWeekChange() {
   currentWeek = document.getElementById('week-select').value;
-  loadKPI();
-  loadAlerts();
-  // 概览页图表刷新
-  if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
-  initTrendChart();
-  if (charts.overviewRetention) { charts.overviewRetention.dispose(); charts.overviewRetention = null; }
-  initOverviewRetentionChart();
+  localStorage.setItem('wb_week', currentWeek);
+  // 工作台刷新
+  if (typeof refreshWorkbench === 'function') refreshWorkbench();
   // 核心趋势页图表刷新
   if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
   if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
@@ -30,7 +28,7 @@ function switchTab(tabName) {
   const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tabName + "'"));
   if (clicked) clicked.classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
-  if (tabName === 'overview') { setTimeout(initTrendChart, 100); setTimeout(initOverviewRetentionChart, 150); }
+  if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
   if (tabName === 'trends') setTimeout(initTrendCharts, 100);
   if (tabName === 'compare') setTimeout(initCompareChart, 300);
 }
@@ -53,13 +51,8 @@ function toggleSort(field) {
 }
 
 function refreshData() {
-  loadKPI();
-  loadAlerts();
-  // 先销毁旧图表实例，否则 init 函数内部只会 resize 而不会拉取新数据
-  if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
-  if (charts.overviewRetention) { charts.overviewRetention.dispose(); charts.overviewRetention = null; }
-  initTrendChart();
-  initOverviewRetentionChart();
+  // 工作台（KPI + 趋势图）
+  if (typeof refreshWorkbench === 'function') refreshWorkbench();
   loadDetailTable();
   if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
   if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
@@ -212,12 +205,10 @@ window.addEventListener('resize', () => {
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
   await loadHalls();
-  loadWeeks();
+  await loadWeeks();
   loadLastUpdate();
-  loadKPI();
-  loadAlerts();
-  initTrendChart();
-  initOverviewRetentionChart();
+  // 工作台初始化（卡墙/排行榜 + KPI + 趋势图）
+  if (typeof initWorkbench === 'function') await initWorkbench();
   loadDetailTable();
 
   // 明细搜索框自动补全

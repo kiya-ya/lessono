@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工作台原型 · 姐妹团数据看板</title>
+<script src="js/echarts.min.js"></script>
+<style>
+:root {
+  --bg: #F6F7F9;
+  --card: #FFFFFF;
+  --nav: #1E2235;
+  --text: #1A1D26;
+  --text-2: #6B7280;
+  --text-3: #9CA3AF;
+  --up: #16A34A;
+  --down: #DC2626;
+  --warn: #D97706;
+  --accent: #7C5CFF;
+  --line: #ECEEF2;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(26,29,38,.04), 0 4px 16px rgba(26,29,38,.05);
+  --page: 1200px;
+  --pad: 24px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg); color: var(--text); font-size: 14px;
+}
+.num, .kpi-value, .hall-metric-value, .rank-table td { font-variant-numeric: tabular-nums; }
+button { font-family: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* 居中容器：导航/工具条/内容都收进同一栏宽 */
+.wrap { max-width: var(--page); margin: 0 auto; padding: 0 var(--pad); }
+
+/* ── 原型提示条 ── */
+.proto-note {
+  background: #FFF7E8; color: #92600A; font-size: 12px;
+  padding: 6px var(--pad); text-align: center; letter-spacing: .02em;
+}
+
+/* ── 导航条 ── */
+.nav { background: var(--nav); color: #fff; }
+.nav-inner { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; gap: 12px; }
+.nav-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.nav-brand h1 { font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+.nav-brand .sub { font-size: 11px; color: rgba(255,255,255,.45); white-space: nowrap; }
+.nav-right { display: flex; align-items: center; gap: 14px; font-size: 12px; color: rgba(255,255,255,.7); flex-shrink: 0; }
+.fresh { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.fresh i { width: 7px; height: 7px; border-radius: 50%; background: var(--up); display: inline-block; }
+.fresh.stale i { background: var(--warn); }
+.nav-user {
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,.08); padding: 4px 10px 4px 4px; border-radius: 999px; white-space: nowrap;
+}
+.nav-user .avatar {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: #fff;
+}
+
+/* ── 工具条 ── */
+.toolbar { background: var(--card); border-bottom: 1px solid var(--line); }
+.toolbar-inner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+.toolbar label { font-size: 12px; color: var(--text-2); }
+.toolbar select {
+  padding: 6px 10px; border: 1px solid #DDE1E8; border-radius: 6px;
+  font-size: 13px; background: #fff; color: var(--text); max-width: 100%;
+}
+.tb-btn {
+  padding: 6px 14px; border: 1px solid #DDE1E8; border-radius: 6px;
+  background: #fff; color: var(--text-2); font-size: 12px;
+}
+.tb-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tb-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tb-spacer { flex: 1; }
+.seg { display: flex; border: 1px solid #DDE1E8; border-radius: 6px; overflow: hidden; }
+.seg button { padding: 6px 12px; border: none; background: #fff; font-size: 12px; color: var(--text-2); }
+.seg button.on { background: var(--nav); color: #fff; }
+
+/* ── 预警横幅 ── */
+.alert-banner {
+  margin: 16px auto 0; max-width: calc(var(--page) - var(--pad) * 2);
+  background: #FEF2F2; border: 1px solid #FECACA; border-left: 3px solid var(--down);
+  border-radius: 8px; padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px; font-size: 13px; flex-wrap: wrap;
+}
+.alert-banner .tag {
+  background: var(--down); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+}
+.alert-banner a { color: var(--down); font-weight: 600; text-decoration: none; font-size: 12px; }
+.alert-banner a:hover { text-decoration: underline; }
+.alert-banner .more { margin-left: auto; }
+
+/* ── 内容区 ── */
+.content { padding-top: 4px; padding-bottom: 40px; }
+.section-head { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 12px; flex-wrap: wrap; }
+.section-head h2 { font-size: 15px; font-weight: 600; }
+.section-head .hint { font-size: 12px; color: var(--text-3); }
+.section-head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.mini-btn {
+  border: 1px solid #DDE1E8; background: #fff; border-radius: 5px;
+  font-size: 11px; color: var(--text-2); padding: 3px 10px;
+}
+.mini-btn.on { border-color: var(--accent); color: var(--accent); }
+
+/* ── 厅体检卡 ── */
+.hall-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px;
+}
+.hall-card {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 14px 16px; cursor: pointer; border: 1.5px solid transparent;
+  transition: border-color .15s, transform .15s;
+}
+.hall-card:hover { transform: translateY(-2px); }
+.hall-card.active { border-color: var(--accent); }
+.hall-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot.red { background: var(--down); box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
+.dot.amber { background: var(--warn); box-shadow: 0 0 0 3px rgba(217,119,6,.12); }
+.dot.green { background: var(--up); box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+.hall-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hall-metric { display: flex; align-items: baseline; gap: 6px; }
+.hall-metric-label { font-size: 11px; color: var(--text-3); }
+.hall-metric-value { font-size: 20px; font-weight: 700; }
+.chip { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
+.chip.up { color: var(--up); background: rgba(22,163,74,.08); }
+.chip.down { color: var(--down); background: rgba(220,38,38,.08); }
+.chip.flat { color: var(--text-3); background: rgba(107,114,128,.08); }
+.hall-sub { font-size: 11px; color: var(--text-2); margin-top: 6px; display: flex; gap: 10px; }
+.spark { margin-top: 8px; display: block; }
+
+/* ── KPI ── */
+.kpi-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kpi-sub { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.kpi-card {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 20px;
+}
+.kpi-card.small { padding: 12px 20px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.kpi-label { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.kpi-value { font-size: 34px; font-weight: 700; letter-spacing: -.01em; margin: 6px 0 4px; }
+.kpi-card.small .kpi-value { font-size: 20px; margin: 0; }
+.kpi-foot { display: flex; align-items: center; gap: 8px; }
+.kpi-note { font-size: 11px; color: var(--text-3); }
+
+/* ── 图表 ── */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.chart-card {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px;
+}
+.chart-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.chart-card .src { font-size: 10px; color: var(--text-3); margin-bottom: 8px; }
+.chart-box { width: 100%; height: 260px; }
+
+/* ── 排行榜（管理员视角） ── */
+.rank-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px 0 4px; }
+.rank-scroll { overflow-x: auto; }
+.rank-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
+.rank-table th {
+  text-align: left; font-size: 11px; font-weight: 500; color: var(--text-3);
+  padding: 10px 16px; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.rank-table td { padding: 10px 16px; border-bottom: 1px solid #F4F5F8; white-space: nowrap; }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table tr:hover { background: #FAFBFD; }
+.rank-no { font-weight: 700; color: var(--text-3); width: 36px; }
+.rank-no.top { color: var(--accent); }
+.move { font-size: 11px; font-weight: 600; }
+.move.up { color: var(--up); }
+.move.down { color: var(--down); }
+.move.same { color: var(--text-3); }
+
+.footer-note { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 32px; }
+
+/* ── 平板 ── */
+@media (max-width: 960px) {
+  .chart-grid, .kpi-hero, .kpi-sub { grid-template-columns: 1fr; }
+}
+
+/* ── 手机 ── */
+@media (max-width: 720px) {
+  :root { --pad: 12px; }
+  .nav-inner { flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+  .nav-brand h1 { font-size: 14px; white-space: normal; }
+  .nav-right { width: 100%; justify-content: space-between; }
+  .nav-right .period { display: none; }
+  .toolbar-inner { gap: 8px; }
+  .toolbar select { flex: 1; min-width: 0; font-size: 12px; }
+  .tb-spacer { display: none; }
+  .hall-grid { grid-template-columns: 1fr 1fr; }
+  .hall-card { padding: 12px; }
+  .hall-metric-value { font-size: 17px; }
+  .kpi-value { font-size: 26px; }
+  .kpi-card { padding: 14px 16px; }
+  .kpi-card.small { padding: 10px 16px; }
+  .chart-box { height: 220px; }
+  .section-head .right { margin-left: 0; width: 100%; }
+  .alert-banner { font-size: 12px; }
+}
+@media (max-width: 400px) {
+  .hall-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hall-card { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="proto-note">原型预览 · 数据为模拟数据 · 仅「工作台」页可交互</div>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <div class="nav-brand">
+      <h1>B+ 兔玩大数据 · 姐妹团看板</h1>
+      <span class="sub">运营工作台</span>
+    </div>
+    <div class="nav-right">
+      <span class="fresh"><i></i>数据 10:00 已更新</span>
+      <span class="period">📅 08-10 ~ 08-16（本周·收集中）</span>
+      <span class="nav-user"><span class="avatar">31</span><span>31053950 · 厅运营</span></span>
+    </div>
+  </div>
+</nav>
+
+<div class="toolbar">
+  <div class="wrap toolbar-inner">
+    <label>时间</label>
+    <select><option>2026-08-10 ~ 08-16（本周·收集中）</option><option>2026-08-03 ~ 08-09</option></select>
+    <label>大厅</label>
+    <select id="hall-select"></select>
+    <button class="tb-btn primary">刷新</button>
+    <span class="tb-spacer"></span>
+    <label>视角预览</label>
+    <div class="seg">
+      <button id="view-manager" class="on" onclick="setView('manager')">厅运营</button>
+      <button id="view-admin" onclick="setView('admin')">管理员</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="alert-banner" id="alert-banner"></div>
+</div>
+
+<div class="wrap content">
+
+  <!-- 厅体检卡墙（厅运营视角） -->
+  <div id="hall-wall">
+    <div class="section-head">
+      <h2>我的 6 个厅</h2>
+      <span class="hint">点击卡片联动下方全部数据</span>
+      <div class="right">
+        <button class="mini-btn on">按健康度</button>
+        <button class="mini-btn">按流水</button>
+      </div>
+    </div>
+    <div class="hall-grid" id="hall-grid"></div>
+  </div>
+
+  <!-- 厅排行榜（管理员视角） -->
+  <div id="rank-board" style="display:none">
+    <div class="section-head">
+      <h2>厅排行榜 · 本周</h2>
+      <span class="hint">位次为较上周变化</span>
+      <div class="right">
+        <button class="mini-btn on">按流水</button>
+        <button class="mini-btn">按留存率</button>
+        <button class="mini-btn">按新成团</button>
+      </div>
+    </div>
+    <div class="rank-card"><div class="rank-scroll">
+      <table class="rank-table" id="rank-table"></table>
+    </div></div>
+  </div>
+
+  <!-- KPI -->
+  <div class="section-head">
+    <h2 id="kpi-title">核心指标</h2>
+    <span class="hint" id="kpi-subtitle"></span>
+  </div>
+  <div class="kpi-hero" id="kpi-hero"></div>
+  <div class="kpi-sub" id="kpi-sub"></div>
+
+  <!-- 趋势 -->
+  <div class="section-head">
+    <h2>趋势</h2>
+    <span class="hint">虚线为政策上线（07-17）</span>
+    <div class="right">
+      <button class="mini-btn on" id="gran-week" onclick="setGran('week')">周</button>
+      <button class="mini-btn" id="gran-day" onclick="setGran('day')">日</button>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="chart-card"><h3>留存率</h3><div class="src">(周末进行中 - 本周新成团) / 周始进行中</div><div class="chart-box" id="c-retention"></div></div>
+    <div class="chart-card"><h3>解散率</h3><div class="src">本周解散数 / 平均进行中</div><div class="chart-box" id="c-dissolution"></div></div>
+    <div class="chart-card"><h3>礼物奖励金额</h3><div class="src">本周 7 天流水累计</div><div class="chart-box" id="c-revenue"></div></div>
+    <div class="chart-card"><h3>任务活跃度</h3><div class="src">开车 / 陪档 / 收送礼任务次数</div><div class="chart-box" id="c-activity"></div></div>
+  </div>
+
+  <div class="footer-note">其余标签页（对比分析 / 明细数据 / UID查询）在正式版中保持不变</div>
+</div>
+
+<script>
+/* ═══════════════ 模拟数据 ═══════════════ */
+const WEEKS = ['06-29','07-06','07-13','07-20','07-27','08-03','08-10'];
+const HALLS = [
+  { name:'三角洲★一吻定心', retention:[62,60,58,61,55,49,38], dissolution:[12,13,14,15,18,22,31],
+    revenue:[8200,8600,9100,9800,12400,17020,12100], newTeams:[2,1,1,1,0,0,0], active:2, activeDiss:35 },
+  { name:'❀和平精英·吉星高照❀', retention:[70,71,69,72,70,68,66], dissolution:[9,10,9,8,10,11,12],
+    revenue:[15200,15800,16100,16600,17200,18400,16200], newTeams:[3,3,4,3,3,4,2], active:18, activeDiss:18 },
+  { name:'❀王者荣耀·甜音女团❀', retention:[68,70,72,71,73,74,75], dissolution:[10,9,9,8,8,7,7],
+    revenue:[22400,23100,23800,24600,25900,26800,27200], newTeams:[5,5,6,5,6,6,7], active:34, activeDiss:12 },
+  { name:'三角洲★揽月之恋', retention:[65,66,68,69,70,71,72], dissolution:[11,10,10,9,9,8,8],
+    revenue:[12800,13200,13900,14500,15100,15800,16400], newTeams:[3,4,4,4,5,5,5], active:26, activeDiss:14 },
+  { name:'三角洲★水墨云图', retention:[66,65,67,68,67,69,70], dissolution:[12,12,11,10,11,10,9],
+    revenue:[9600,9900,10400,10800,11200,11900,12500], newTeams:[2,3,3,3,3,4,4], active:15, activeDiss:16 },
+  { name:'三角洲★猫鼠姐妹', retention:[58,57,55,54,52,50,48], dissolution:[14,15,16,17,19,21,24],
+    revenue:[18200,17600,16900,15800,14600,13100,9800], newTeams:[2,2,1,1,1,0,1], active:9, activeDiss:28 },
+];
+/* 管理员排行榜模拟数据 */
+const RANKS = [
+  ['❀王者荣耀·甜音女团❀', 27200, 1, 75, 0, 7],
+  ['♛王者荣耀在逃公主厅♛', 24800, -1, 71, 2, 6],
+  ['ღ和平Sweet宝贝厅ღ', 21500, 2, 69, -1, 5],
+  ['三角洲★揽月之恋', 16400, 1, 72, 0, 5],
+  ['❀和平精英·吉星高照❀', 16200, -2, 66, 1, 2],
+  ['『和平小鹿乱撞开黑厅』', 14900, 0, 68, -2, 4],
+  ['❃成都·Space❃', 13800, 3, 67, 1, 4],
+  ['三角洲★水墨云图', 12500, -1, 70, 2, 4],
+  ['三角洲★一吻定心', 12100, -4, 38, -6, 0],
+  ['三角洲★猫鼠姐妹', 9800, -2, 48, -3, 1],
+  ['三角洲★头号玩家', 8900, 1, 63, 0, 3],
+  ['三角洲★天天大红', 8100, 0, 61, 1, 2],
+];
+
+/* ═══════════════ 状态判定 ═══════════════ */
+function pctChange(arr) {
+  const a = arr[arr.length-2], b = arr[arr.length-1];
+  return a === 0 ? 0 : (b - a) / a * 100;
+}
+function ppChange(arr) { return arr[arr.length-1] - arr[arr.length-2]; }
+function healthOf(h) {
+  const ret = ppChange(h.retention), rev = pctChange(h.revenue);
+  const zeroNew = h.newTeams[6] === 0 && h.newTeams[5] === 0;
+  if (ret <= -10 || rev <= -20 || zeroNew) return 'red';
+  if (ret <= -5 || rev <= -10) return 'amber';
+  return 'green';
+}
+const HEALTH_TXT = { red:'需关注', amber:'有波动', green:'健康' };
+
+/* ═══════════════ 渲染：体检卡 ═══════════════ */
+let current = 0, gran = 'week', view = 'manager';
+const $ = id => document.getElementById(id);
+
+function sparkSVG(values, w=180, h=34) {
+  const min = Math.min(...values), max = Math.max(...values), span = max-min || 1;
+  const pts = values.map((v,i) => `${(i/(values.length-1)*w).toFixed(1)},${(h-3-(v-min)/span*(h-6)).toFixed(1)}`);
+  const trendUp = values[values.length-1] >= values[0];
+  const color = trendUp ? 'var(--up)' : 'var(--down)';
+  return `<svg class="spark" width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${w}" cy="${pts[pts.length-1].split(',')[1]}" r="2.4" fill="${color}"/>
+  </svg>`;
+}
+function chip(pct, suffix='%') {
+  const cls = pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat';
+  const arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '→';
+  return `<span class="chip ${cls}">${arrow} ${Math.abs(pct).toFixed(Math.abs(pct) < 10 && !Number.isInteger(pct) ? 1 : 0)}${suffix}</span>`;
+}
+function fmtMoney(v) { return v >= 10000 ? '¥' + (v/10000).toFixed(1) + 'w' : '¥' + v.toLocaleString(); }
+
+function renderHallCards() {
+  const order = HALLS.map((h,i)=>({h,i,s:healthOf(h)}))
+    .sort((a,b) => ({red:0,amber:1,green:2}[a.s] - {red:0,amber:1,green:2}[b.s]));
+  $('hall-grid').innerHTML = order.map(({h,i,s}) => {
+    const ret = ppChange(h.retention);
+    return `<div class="hall-card ${i===current?'active':''}" onclick="selectHall(${i})" tabindex="0"
+      onkeydown="if(event.key==='Enter')selectHall(${i})">
+      <div class="hall-top"><span class="dot ${s}"></span><span class="hall-name">${h.name}</span></div>
+      <div class="hall-metric">
+        <span class="hall-metric-label">留存率</span>
+        <span class="hall-metric-value num">${h.retention[6]}%</span>
+        ${chip(ret,'pp')}
+      </div>
+      ${sparkSVG(h.retention)}
+      <div class="hall-sub"><span>新团 ${h.newTeams[6]}</span><span>流水 ${fmtMoney(h.revenue[6])}</span><span style="margin-left:auto;color:var(--text-3)">${HEALTH_TXT[s]}</span></div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════ 渲染：预警横幅 ═══════════════ */
+function renderBanner() {
+  const bad = HALLS.map((h,i)=>({h,i,s:healthOf(h)})).filter(x => x.s === 'red');
+  if (!bad.length) { $('alert-banner').style.display = 'none'; return; }
+  const reason = h => {
+    const ret = ppChange(h.retention), rev = pctChange(h.revenue);
+    if (h.newTeams[6] === 0 && h.newTeams[5] === 0) return '连续2周新成团为 0';
+    if (ret <= -10) return `留存率环比 ${ret}pp`;
+    return `流水环比 ${rev.toFixed(0)}%`;
+  };
+  const msgs = bad.map(({h,i}) =>
+    `<a href="javascript:void(0)" onclick="selectHall(${i})">${h.name} ${reason(h)}</a>`
+  ).join('、');
+  $('alert-banner').innerHTML = `<span class="tag">需关注 ${bad.length}</span><span>${msgs}</span><a class="more" href="javascript:void(0)" onclick="selectHall(${bad[0].i})">查看 →</a>`;
+}
+
+/* ═══════════════ 渲染：KPI ═══════════════ */
+function renderKPI() {
+  const h = HALLS[current];
+  if (view === 'manager') $('kpi-title').textContent = '核心指标 · ' + h.name;
+  $('kpi-subtitle').textContent = '本周（08-10 ~ 08-16）vs 上周';
+  const heroes = [
+    { label:'留存率', v:h.retention[6]+'%', c:ppChange(h.retention), suf:'pp', note:'(周末-新团)/周始', spark:h.retention },
+    { label:'解散率', v:h.dissolution[6]+'%', c:-ppChange(h.dissolution), suf:'pp', note:'下降为好', spark:h.dissolution },
+    { label:'礼物奖励金额', v:fmtMoney(h.revenue[6]), c:pctChange(h.revenue), suf:'%', note:'本周累计', spark:h.revenue },
+  ];
+  $('kpi-hero').innerHTML = heroes.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value num">${k.v}</div>
+      <div class="kpi-foot">${chip(k.c, k.suf)}<span class="kpi-note">${k.note}</span></div>
+      ${sparkSVG(k.spark)}
+    </div>`).join('');
+  const subs = [
+    { label:'📦 新成团数', v:h.newTeams[6]+' 个', c:pctChange(h.newTeams.map(x=>x+0.01)), suf:'%' },
+    { label:'🔄 进行中姐妹团', v:h.active+' 个', c:2.1, suf:'%' },
+    { label:'⚠️ 主动解散占比', v:h.activeDiss+'%', c:-1.8, suf:'pp' },
+  ];
+  $('kpi-sub').innerHTML = subs.map(k => `
+    <div class="kpi-card small">
+      <span class="kpi-label">${k.label}</span>
+      <span class="kpi-value num">${k.v}</span>
+      ${chip(k.c, k.suf)}
+    </div>`).join('');
+}
+
+/* ═══════════════ 渲染：排行榜 ═══════════════ */
+function renderRank() {
+  const move = m => m > 0 ? `<span class="move up">↑${m}</span>` : m < 0 ? `<span class="move down">↓${-m}</span>` : '<span class="move same">—</span>';
+  $('rank-table').innerHTML = `
+    <tr><th>#</th><th>大厅</th><th>周流水</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>新成团</th></tr>
+    ${RANKS.map((r,idx) => `<tr>
+      <td class="rank-no ${idx<3?'top':''}">${idx+1}</td><td>${r[0]}</td>
+      <td class="num">${fmtMoney(r[1])}</td><td>${move(r[2])}</td>
+      <td class="num">${r[3]}%</td><td>${move(r[4])}</td>
+      <td class="num">${r[5]}</td></tr>`).join('')}`;
+}
+
+/* ═══════════════ 图表 ═══════════════ */
+let charts = {};
+function daySeries(weekly) {
+  const out = [];
+  for (let w = 0; w < weekly.length - 1; w++)
+    for (let d = 0; d < 7; d++)
+      out.push(Math.round((weekly[w] + (weekly[w+1]-weekly[w]) * d/7) * 10) / 10);
+  return out;
+}
+const DAY_LABELS = (() => {
+  const arr = [], base = new Date(2026, 5, 29);
+  for (let i = 0; i < 42; i++) { const d = new Date(base); d.setDate(base.getDate()+i); arr.push(`${d.getMonth()+1}-${d.getDate()}`); }
+  return arr;
+})();
+
+function chartOpt(labels, series) {
+  return {
+    tooltip: { trigger:'axis', textStyle:{fontSize:12} },
+    grid: { left:52, right:20, top:30, bottom:42 },
+    xAxis: { type:'category', data:labels, axisLabel:{ rotate: gran==='week'?0:45, fontSize:10, color:'#9CA3AF' }, axisLine:{lineStyle:{color:'#E5E7EB'}} },
+    yAxis: { type:'value', axisLabel:{fontSize:10, color:'#9CA3AF'}, splitLine:{lineStyle:{color:'#F0F1F4'}} },
+    series
+  };
+}
+function policyMark() {
+  return { silent:true, symbol:'none', data:[{ xAxis:'07-20',
+    label:{ formatter:'政策上线', fontSize:10, color:'#7C5CFF' },
+    lineStyle:{ color:'#7C5CFF', type:'dashed', width:1 } }] };
+}
+function renderCharts() {
+  const h = HALLS[current];
+  const daily = gran === 'day';
+  const labels = daily ? DAY_LABELS : WEEKS;
+  const pick = arr => daily ? daySeries(arr) : arr;
+  const mk = policyMark();
+  const defs = {
+    'c-retention': chartOpt(labels, [{ name:'留存率', type:'line', smooth:true, data:pick(h.retention),
+      lineStyle:{color:'#16A34A',width:2}, itemStyle:{color:'#16A34A'}, showSymbol:!daily,
+      areaStyle:{color:'rgba(22,163,74,.06)'}, markLine: daily?null:mk }]),
+    'c-dissolution': chartOpt(labels, [{ name:'解散率', type:'bar', data:pick(h.dissolution),
+      itemStyle:{color:'rgba(220,38,38,.55)', borderRadius:[3,3,0,0]}, barWidth: daily?'40%':'50%', markLine: daily?null:mk }]),
+    'c-revenue': chartOpt(labels, [{ name:'流水', type:'bar', data:pick(h.revenue),
+      itemStyle:{color:'#D97706', borderRadius:[3,3,0,0]}, barWidth: daily?'40%':'50%', markLine: daily?null:mk }]),
+    'c-activity': chartOpt(labels, [
+      { name:'开车', type:'bar', stack:'t', data:pick(h.newTeams.map((x,i)=>Math.round(h.active*2+x*3+i))), itemStyle:{color:'#7C5CFF'} },
+      { name:'陪档', type:'bar', stack:'t', data:pick(h.newTeams.map((x,i)=>Math.round(h.active*3+x*2))), itemStyle:{color:'#16A34A'} },
+      { name:'收送礼', type:'bar', stack:'t', data:pick(h.newTeams.map((x,i)=>Math.round(h.active*1.5+x))), itemStyle:{color:'#D97706'} },
+    ]),
+  };
+  defs['c-activity'].legend = { top:0, right:0, itemWidth:10, itemHeight:10, textStyle:{fontSize:10, color:'#6B7280'} };
+  for (const [id, opt] of Object.entries(defs)) {
+    if (charts[id]) charts[id].dispose();
+    charts[id] = echarts.init($(id));
+    charts[id].setOption(opt);
+  }
+}
+
+/* ═══════════════ 交互 ═══════════════ */
+function selectHall(i) {
+  current = i;
+  renderHallCards(); renderKPI(); renderCharts();
+  $('hall-select').selectedIndex = i;
+  if (view === 'admin') setView('manager');
+}
+function setView(v) {
+  view = v;
+  $('view-manager').classList.toggle('on', v==='manager');
+  $('view-admin').classList.toggle('on', v==='admin');
+  $('hall-wall').style.display = v==='manager' ? '' : 'none';
+  $('rank-board').style.display = v==='admin' ? '' : 'none';
+  $('alert-banner').style.display = v==='manager' ? '' : 'none';
+  $('kpi-title').textContent = v==='admin' ? '核心指标 · 全部大厅' : '核心指标 · ' + HALLS[current].name;
+}
+function setGran(g) {
+  gran = g;
+  $('gran-week').classList.toggle('on', g==='week');
+  $('gran-day').classList.toggle('on', g==='day');
+  renderCharts();
+}
+
+/* ═══════════════ 初始化 ═══════════════ */
+$('hall-select').innerHTML = HALLS.map(h => `<option>${h.name}</option>`).join('');
+$('hall-select').onchange = e => selectHall(e.target.selectedIndex);
+renderHallCards(); renderBanner(); renderKPI(); renderRank(); renderCharts();
+window.addEventListener('resize', () => Object.values(charts).forEach(c => c.resize()));
+</script>
+</body>
+</html>

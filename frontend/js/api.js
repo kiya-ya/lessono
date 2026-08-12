@@ -34,6 +34,13 @@ async function loadHalls() {
       select.value = halls[0];
       currentHall = halls[0];
     }
+
+    // 恢复上次选择的大厅（localStorage）
+    const savedHall = localStorage.getItem('wb_hall');
+    if (savedHall && [...select.options].some(o => o.value === savedHall)) {
+      select.value = savedHall;
+      currentHall = savedHall;
+    }
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
 async function loadWeeks() {
@@ -75,6 +82,13 @@ async function loadWeeks() {
       }
       select.appendChild(opt);
     });
+
+    // 恢复上次选择的周（localStorage）
+    const savedWeek = localStorage.getItem('wb_week');
+    if (savedWeek && [...select.options].some(o => o.value === savedWeek)) {
+      select.value = savedWeek;
+      currentWeek = savedWeek;
+    }
   } catch (e) { console.error('周列表加载失败:', e); }
 }
 async function loadAlerts() {
@@ -248,6 +262,16 @@ async function loadLastUpdate() {
     if (data.last_update) {
       el.textContent = '上次更新：' + data.last_update;
       el.style.color = data.status === 'success' ? '#52c41a' : data.status === 'failed' ? '#ff4d4f' : '';
+      // 数据新鲜度色点：>24h 黄、>48h 红
+      const wrap = el.closest('.fresh');
+      if (wrap) {
+        const t = new Date(String(data.last_update).replace(' ', 'T'));
+        if (!isNaN(t)) {
+          const hours = (Date.now() - t.getTime()) / 36e5;
+          wrap.classList.toggle('stale', hours > 24 && hours <= 48);
+          wrap.classList.toggle('dead', hours > 48);
+        }
+      }
     } else {
       el.textContent = '上次更新：--';
     }

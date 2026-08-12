@@ -211,6 +211,36 @@ def api_halls():
     return jsonify({'data': halls, 'role': role})
 
 
+@app.route('/api/hall-overview')
+@login_required
+def api_hall_overview():
+    """工作台：当前用户可见大厅的近N周周报数据（厅运营=管理的厅，管理员=全部厅）"""
+    user_uid = request.cookies.get('auth_uid')
+    weeks = int(request.args.get('weeks', 7))
+    conn = get_db_conn()
+    row = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,)).fetchone()
+    role = row['role'] if row else 'admin'
+    if role == 'admin':
+        halls = [r['hall_name'] for r in conn.execute(
+            "SELECT DISTINCT hall_name FROM weekly_report WHERE hall_name != 'all' ORDER BY hall_name"
+        ).fetchall()]
+    else:
+        halls = [r['hall_name'] for r in conn.execute(
+            'SELECT hall_name FROM hall_managers WHERE uid = ? ORDER BY hall_name', (user_uid,)
+        ).fetchall()]
+    data = []
+    for h in halls:
+        rows = conn.execute('''
+            SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
+                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate, total_reward
+            FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT ?
+        ''', (h, weeks)).fetchall()
+        if rows:
+            data.append({'hall_name': h, 'weeks': [dict(r) for r in reversed(rows)]})
+    conn.close()
+    return jsonify({'role': role, 'data': data})
+
+
 @app.route('/api/kpi')
 @login_required
 def api_kpi():
@@ -237,6 +267,21 @@ def api_kpi():
             FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?
         """, (hall, ws, we))
         this_row = cursor.fetchone()
+        if not this_row:
+            # 所选周无数据（如本周仍在收集中），回退到最新一周
+            latest = conn.execute(
+                "SELECT week_start, week_end FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT 1",
+                (hall,)
+            ).fetchone()
+            if latest:
+                ws, we = latest['week_start'], latest['week_end']
+                cursor = conn.execute("""
+                    SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
+                           dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
+                           total_reward, activity_index
+                    FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?
+                """, (hall, ws, we))
+                this_row = cursor.fetchone()
         if not this_row:
             conn.close()
             return jsonify({'error': '该周暂无数据'}), 404

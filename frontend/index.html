@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -37,55 +37,87 @@
 <body>
 
 <div class="header">
-  <div>
-    <h1>🐰 B+ 兔玩大数据 · 姐妹团数据统计报表</h1>
-    <div class="subtitle">运营团队数据看板 · 政策上线追踪</div>
-  </div>
-  <div class="header-right">
-    <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
-      <span class="cookie-dot unknown" id="cookie-dot-main"></span>
-      <span id="cookie-text-main">Cookie 管理</span>
-        </div>
-<span>📅 当前周期：<span id=current-period>--</span></span>
-    <span id="last-update">上次更新：--</span>
-    <a href="/logout" style="margin-left:8px;padding:4px 10px;border-radius:4px;background:rgba(255,255,255,0.15);color:white;font-size:12px;text-decoration:none;" title="点击退出当前账号">🚪 退出登录</a>
-    <span id="header-user-info"></span>
+  <div class="wb-wrap header-inner">
+    <div class="nav-brand">
+      <h1>B+ 兔玩大数据 · 姐妹团看板</h1>
+      <span class="sub">运营工作台</span>
+    </div>
+    <div class="header-right">
+      <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
+        <span class="cookie-dot unknown" id="cookie-dot-main"></span>
+        <span id="cookie-text-main">Cookie 管理</span>
+      </div>
+      <span class="fresh"><i id="fresh-dot"></i><span id="last-update">上次更新：--</span></span>
+      <span class="period">📅 <span id="current-period">--</span></span>
+      <span id="header-user-info"></span>
+      <a href="/logout" class="logout-link" title="点击退出当前账号">🚪 退出登录</a>
+    </div>
   </div>
 </div>
 
 <div class="toolbar">
-  <label>📅 时间:</label>
-  <select id="week-select" onchange="onWeekChange()"></select>
-  <label>🏠 大厅:</label>
-  <select id="hall-select" onchange="onHallChange()"></select>
-  <button onclick="refreshData()">🔄 刷新</button>
-  <button onclick="exportData()">📤 导出CSV</button>
-  <button onclick="exportPDF()">📄 导出PDF</button>
+  <div class="wb-wrap toolbar-inner">
+    <label>时间</label>
+    <select id="week-select" onchange="onWeekChange()"></select>
+    <label>大厅</label>
+    <select id="hall-select" onchange="onHallChange()"></select>
+    <button onclick="refreshData()">🔄 刷新</button>
+  </div>
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('overview')">📊 周报概览</div>
-  <div class="tab" onclick="switchTab('trends')">📈 核心趋势</div>
-  <div class="tab" onclick="switchTab('compare')">🔍 对比分析</div>
-  <div class="tab" onclick="switchTab('details')">📋 明细数据</div>
-  <div class="tab" onclick="switchTab('uid')">👤 UID查询</div>
+  <div class="wb-wrap tabs-inner">
+    <div class="tab active" onclick="switchTab('overview')">📊 工作台</div>
+    <div class="tab" onclick="switchTab('trends')">📈 核心趋势</div>
+    <div class="tab" onclick="switchTab('compare')">🔍 对比分析</div>
+    <div class="tab" onclick="switchTab('details')">📋 明细数据</div>
+    <div class="tab" onclick="switchTab('uid')">👤 UID查询</div>
+  </div>
 </div>
 
-<div class="content">
+<div class="content wb-wrap">
 
-  <!-- 概览 -->
+  <!-- 工作台 -->
   <div id="tab-overview" class="tab-panel active">
-    <div class="kpi-grid" id="kpi-grid">
-      <div class="kpi-card"><div class="kpi-label">📦 新成团数</div><div class="kpi-value" id="kpi-new">--</div><div class="kpi-change" id="kpi-new-change">--</div><div class="kpi-note">本周截至今天</div></div>
-      <div class="kpi-card"><div class="kpi-label">🔄 进行中姐妹团</div><div class="kpi-value" id="kpi-active">--</div><div class="kpi-change" id="kpi-active-change">--</div><div class="kpi-note">今天实时</div></div>
-      <div class="kpi-card"><div class="kpi-label">📊 留存率</div><div class="kpi-value" id="kpi-retention">--</div><div class="kpi-change" id="kpi-retention-change">--</div><div class="kpi-note">(周末-新团)/周始</div></div>
-      <div class="kpi-card"><div class="kpi-label">🚫 解散率</div><div class="kpi-value" id="kpi-dissolution">--</div><div class="kpi-change" id="kpi-dissolution-change">--</div><div class="kpi-note">解散数/周始</div></div>
-      <div class="kpi-card"><div class="kpi-label">💰 礼物奖励金额</div><div class="kpi-value" id="kpi-revenue">--</div><div class="kpi-change" id="kpi-revenue-change">--</div><div class="kpi-note">本周累计</div></div>
-      <div class="kpi-card"><div class="kpi-label">⚠️ 主动解散占比</div><div class="kpi-value" id="kpi-active-dissolved">--</div><div class="kpi-change" id="kpi-active-dissolved-change">--</div><div class="kpi-note">今天</div></div>
+    <div class="alert-banner" id="wb-alert-banner" style="display:none"></div>
+
+    <!-- 厅体检卡墙（厅运营） -->
+    <div id="wb-hall-wall" style="display:none">
+      <div class="section-head">
+        <h2 id="wb-wall-title">我的厅</h2>
+        <span class="hint">点击卡片联动下方全部数据</span>
+      </div>
+      <div class="hall-grid" id="wb-hall-grid"></div>
     </div>
-    <div class="alert-bar"><h3>⚠️ 本周预警</h3><div id="alert-list"></div></div>
-    <div class="chart-card"><h3>💯 留存率 &amp; 🚫 解散率趋势</h3><div class="chart-container" id="chart-overview-retention"></div></div>
-    <div class="chart-card"><h3>📈 新成团数趋势（近2周）</h3><div class="chart-container" id="chart-trend"></div></div>
+
+    <!-- 厅排行榜（管理员） -->
+    <div id="wb-rank-board" style="display:none">
+      <div class="section-head">
+        <h2>厅排行榜 · 本周</h2>
+        <span class="hint">位次为较上周变化</span>
+      </div>
+      <div class="rank-card"><div class="rank-scroll">
+        <table class="rank-table" id="wb-rank-table"></table>
+      </div></div>
+    </div>
+
+    <div class="section-head">
+      <h2 id="wb-kpi-title">核心指标</h2>
+      <span class="hint" id="wb-kpi-subtitle"></span>
+    </div>
+    <div class="kpi-hero" id="wb-kpi-hero"></div>
+    <div class="kpi-sub" id="wb-kpi-sub"></div>
+
+    <div class="section-head">
+      <h2>趋势</h2>
+      <span class="hint">虚线为政策上线（07-17）</span>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card"><h3>💯 留存率</h3><div class="chart-src">(周末进行中 - 本周新成团) / 周始进行中</div><div class="chart-box" id="wb-c-retention"></div></div>
+      <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周解散数 / 平均进行中</div><div class="chart-box" id="wb-c-dissolution"></div></div>
+      <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周 7 天流水累计</div><div class="chart-box" id="wb-c-revenue"></div></div>
+      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼任务次数</div><div class="chart-box" id="wb-c-activity"></div></div>
+    </div>
   </div>
 
   <!-- 趋势 -->
@@ -273,11 +305,12 @@
   </div>
 </div>
 
-<script src="js/config.js?v=3"></script>
-<script src="js/utils.js?v=3"></script>
-<script src="js/api.js?v=3"></script>
-<script src="js/auth.js?v=3"></script>
-<script src="js/render.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
+<script src="js/config.js?v=4"></script>
+<script src="js/utils.js?v=4"></script>
+<script src="js/api.js?v=4"></script>
+<script src="js/auth.js?v=4"></script>
+<script src="js/render.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/workbench.js?v=4"></script>
 </body>
 </html>

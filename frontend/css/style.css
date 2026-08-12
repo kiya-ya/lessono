@@ -227,3 +227,169 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   }
   .kpi-value { font-size: 26px; }
 }
+
+
+/* ══════════════════════════════════════════════════════
+   工作台（第一期改版）— 设计令牌 + 组件样式
+   ══════════════════════════════════════════════════════ */
+:root {
+  --wb-bg: #F6F7F9;
+  --wb-card: #FFFFFF;
+  --wb-nav: #1E2235;
+  --wb-text: #1A1D26;
+  --wb-text-2: #6B7280;
+  --wb-text-3: #9CA3AF;
+  --wb-up: #16A34A;
+  --wb-down: #DC2626;
+  --wb-warn: #D97706;
+  --wb-accent: #7C5CFF;
+  --wb-line: #ECEEF2;
+  --wb-radius: 10px;
+  --wb-shadow: 0 1px 2px rgba(26,29,38,.04), 0 4px 16px rgba(26,29,38,.05);
+  --wb-page: 1200px;
+  --wb-pad: 24px;
+}
+body { background: var(--wb-bg); }
+.wb-wrap { max-width: var(--wb-page); margin: 0 auto; padding: 0 var(--wb-pad); }
+
+/* 导航条（覆盖旧紫渐变） */
+.header { background: var(--wb-nav); padding: 0; }
+.header-inner { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; padding-bottom: 14px; gap: 12px; }
+.nav-brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.nav-brand h1 { font-size: 16px; font-weight: 600; letter-spacing: .01em; white-space: nowrap; }
+.nav-brand .sub { font-size: 11px; color: rgba(255,255,255,.45); white-space: nowrap; }
+.header-right { gap: 14px; font-size: 12px; color: rgba(255,255,255,.7); flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.header-right .period { white-space: nowrap; }
+.logout-link { padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,.12); color: #fff; font-size: 12px; text-decoration: none; white-space: nowrap; }
+.logout-link:hover { background: rgba(255,255,255,.22); }
+.fresh { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.fresh i { width: 7px; height: 7px; border-radius: 50%; background: var(--wb-up); display: inline-block; }
+.fresh.stale i { background: var(--wb-warn); }
+.fresh.dead i { background: var(--wb-down); }
+.cookie-status { cursor: pointer; white-space: nowrap; }
+
+/* 工具条 */
+.toolbar { padding: 0; }
+.toolbar-inner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+.toolbar label { font-size: 12px; color: var(--wb-text-2); }
+.toolbar select { border-radius: 6px; border-color: #DDE1E8; max-width: 100%; }
+.toolbar button { border-radius: 6px; background: var(--wb-accent); }
+.toolbar button:hover { background: #6a48f0; }
+
+/* 标签页 */
+.tabs { padding: 0; }
+.tabs-inner { display: flex; gap: 4px; }
+.tab.active { color: var(--wb-accent); border-bottom-color: var(--wb-accent); }
+.tab:hover { color: var(--wb-accent); }
+
+/* 内容区 */
+.content { padding-top: 4px; padding-bottom: 40px; }
+
+/* 预警横幅 */
+.alert-banner {
+  margin: 16px 0 0; background: #FEF2F2; border: 1px solid #FECACA;
+  border-left: 3px solid var(--wb-down); border-radius: 8px; padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px; font-size: 13px; flex-wrap: wrap;
+}
+.alert-banner .tag {
+  background: var(--wb-down); color: #fff; font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
+}
+.alert-banner a { color: var(--wb-down); font-weight: 600; text-decoration: none; font-size: 12px; }
+.alert-banner a:hover { text-decoration: underline; }
+
+/* 区块标题 */
+.section-head { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 12px; flex-wrap: wrap; }
+.section-head h2 { font-size: 15px; font-weight: 600; }
+.section-head .hint { font-size: 12px; color: var(--wb-text-3); }
+
+/* 厅体检卡 */
+.hall-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; }
+.hall-card {
+  background: var(--wb-card); border-radius: var(--wb-radius); box-shadow: var(--wb-shadow);
+  padding: 14px 16px; cursor: pointer; border: 1.5px solid transparent;
+  transition: border-color .15s, transform .15s;
+}
+.hall-card:hover { transform: translateY(-2px); }
+.hall-card.active { border-color: var(--wb-accent); }
+.hall-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.hall-top .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot.red { background: var(--wb-down); box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
+.dot.amber { background: var(--wb-warn); box-shadow: 0 0 0 3px rgba(217,119,6,.12); }
+.dot.green { background: var(--wb-up); box-shadow: 0 0 0 3px rgba(22,163,74,.12); }
+.hall-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hall-metric { display: flex; align-items: baseline; gap: 6px; }
+.hall-metric-label { font-size: 11px; color: var(--wb-text-3); }
+.hall-metric-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.chip.up { color: var(--wb-up); background: rgba(22,163,74,.08); }
+.chip.down { color: var(--wb-down); background: rgba(220,38,38,.08); }
+.chip.flat { color: var(--wb-text-3); background: rgba(107,114,128,.08); }
+.hall-sub { font-size: 11px; color: var(--wb-text-2); margin-top: 6px; display: flex; gap: 10px; }
+.spark { margin-top: 8px; display: block; }
+
+/* KPI */
+.kpi-hero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kpi-sub { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.kpi-hero .kpi-card, .kpi-sub .kpi-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); }
+.kpi-hero .kpi-card:hover, .kpi-sub .kpi-card:hover { transform: none; }
+.kpi-hero .kpi-label, .kpi-sub .kpi-label { font-size: 12px; color: var(--wb-text-2); }
+.kpi-hero .kpi-value { font-size: 34px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
+.kpi-sub .kpi-card { padding: 12px 20px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.kpi-sub .kpi-value { font-size: 20px; font-variant-numeric: tabular-nums; margin: 0; }
+.kpi-foot { display: flex; align-items: center; gap: 8px; }
+.kpi-note { font-size: 11px; color: var(--wb-text-3); margin-top: 0; }
+
+/* 趋势图 */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.chart-grid .chart-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); margin-bottom: 0; }
+.chart-src { font-size: 10px; color: var(--wb-text-3); margin-bottom: 8px; }
+.chart-box { width: 100%; height: 260px; }
+
+/* 排行榜（管理员） */
+.rank-card { background: var(--wb-card); border-radius: var(--wb-radius); box-shadow: var(--wb-shadow); padding: 8px 0 4px; }
+.rank-scroll { overflow-x: auto; }
+.rank-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; }
+.rank-table th {
+  text-align: left; font-size: 11px; font-weight: 500; color: var(--wb-text-3);
+  padding: 10px 16px; border-bottom: 1px solid var(--wb-line); white-space: nowrap;
+}
+.rank-table td { padding: 10px 16px; border-bottom: 1px solid #F4F5F8; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rank-table tr:last-child td { border-bottom: none; }
+.rank-table tr:hover { background: #FAFBFD; }
+.rank-no { font-weight: 700; color: var(--wb-text-3); width: 36px; }
+.rank-no.top { color: var(--wb-accent); }
+.move { font-size: 11px; font-weight: 600; }
+.move.up { color: var(--wb-up); }
+.move.down { color: var(--wb-down); }
+.move.same { color: var(--wb-text-3); }
+
+/* 平板 */
+@media (max-width: 960px) {
+  .chart-grid, .kpi-hero, .kpi-sub { grid-template-columns: 1fr; }
+}
+
+/* 手机 */
+@media (max-width: 720px) {
+  :root { --wb-pad: 12px; }
+  .header-inner { flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+  .nav-brand h1 { font-size: 14px; white-space: normal; }
+  .header-right { width: 100%; justify-content: flex-start; }
+  .header-right .period { display: none; }
+  .tabs-inner { overflow-x: auto; }
+  .tab { padding: 10px 14px; white-space: nowrap; }
+  .hall-grid { grid-template-columns: 1fr 1fr; }
+  .hall-card { padding: 12px; }
+  .hall-metric-value { font-size: 17px; }
+  .kpi-hero .kpi-value { font-size: 26px; }
+  .kpi-hero .kpi-card { padding: 14px 16px; }
+  .kpi-sub .kpi-card { padding: 10px 16px; }
+  .chart-box { height: 220px; }
+  .alert-banner { font-size: 12px; }
+}
+@media (max-width: 400px) {
+  .hall-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hall-card { transition: none; }
+}
