@@ -49,12 +49,11 @@
   /* 品牌区 */
   .brand { text-align: center; margin-bottom: 30px; animation: fadeDown .6s cubic-bezier(.16,1,.3,1) both; }
   .brand .logo {
-    width: 46px; height: 46px; margin: 0 auto 16px;
-    border-radius: 12px; background: #4F5BD5;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: #fff; letter-spacing: .02em;
+    width: 52px; height: 52px; margin: 0 auto 16px;
+    border-radius: 13px; overflow: hidden;
     box-shadow: 0 8px 28px rgba(79, 91, 213, 0.4);
   }
+  .brand .logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .brand h1 {
     color: rgba(255,255,255,0.94); font-size: 24px; font-weight: 600;
     letter-spacing: .06em;
@@ -156,7 +155,7 @@
 
 <div class="login-wrap">
   <div class="brand">
-    <div class="logo">B+</div>
+    <div class="logo"><img src="assets/logo-ddkh.png" alt="点点开黑"></div>
     <h1>兔玩大数据 · 姐妹团看板</h1>
     <div class="en">Sisters Data Console</div>
     <div class="rule"></div>
@@ -181,6 +180,8 @@
     <button class="btn-login" onclick="doLogin()">登 录</button>
     <div class="error-msg" id="login-error"></div>
     <div class="footer-hint">白名单登录 · 未授权请联系管理员添加 UID</div>
+    
+    <div class="footer-hint">Design by LuDeng</div>
   </div>
 </div>
 
