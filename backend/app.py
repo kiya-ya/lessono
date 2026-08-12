@@ -434,6 +434,116 @@ def api_trends():
     return jsonify({'dates': dates, 'values': values, 'metric': metric})
 
 
+@app.route('/api/daily-events')
+@login_required
+def api_daily_events():
+    """日级成团/解散事件数（基于 team_detail 最新快照的 form_date / dissolve_date）"""
+    hall = request.args.get('hall', 'all')
+    days = min(int(request.args.get('days', 14)), 60)
+    conn = get_db_conn()
+    sql = """SELECT form_date, dissolve_date FROM team_detail
+             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)"""
+    params = []
+    if hall != 'all':
+        sql += ' AND hall_name = ?'
+        params.append(hall)
+    rows = conn.execute(sql, params).fetchall()
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+    conn.close()
+    if not ref:
+        return jsonify({'dates': [], 'new_teams': [], 'dissolved': []})
+    ref_date = datetime.strptime(ref, '%Y-%m-%d').date()
+    new_map, diss_map = {}, {}
+    for r in rows:
+        fd = (r['form_date'] or '')[:10]
+        dd = (r['dissolve_date'] or '')[:10]
+        if fd:
+            new_map[fd] = new_map.get(fd, 0) + 1
+        if dd:
+            diss_map[dd] = diss_map.get(dd, 0) + 1
+    dates, new_teams, dissolved = [], [], []
+    for i in range(days - 1, -1, -1):
+        d = (ref_date - timedelta(days=i)).isoformat()
+        dates.append(d)
+        new_teams.append(new_map.get(d, 0))
+        dissolved.append(diss_map.get(d, 0))
+    return jsonify({'ref_date': ref, 'dates': dates, 'new_teams': new_teams, 'dissolved': dissolved})
+
+
+@app.route('/api/survival')
+@login_required
+def api_survival():
+    """姐妹团存活分析（最新快照）：进行中团天数分布 + 7/14/30日存活率 + 政策前后对比"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    sql = """SELECT form_date, dissolve_date, days_since_formed FROM team_detail
+             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)"""
+    params = []
+    if hall != 'all':
+        sql += ' AND hall_name = ?'
+        params.append(hall)
+    rows = conn.execute(sql, params).fetchall()
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+    conn.close()
+    if not rows or not ref:
+        return jsonify({'error': '暂无数据'}), 404
+    ref_date = datetime.strptime(ref, '%Y-%m-%d').date()
+    policy_date = datetime(2026, 7, 17).date()
+
+    def parse_d(s):
+        s = (s or '')[:10]
+        try:
+            return datetime.strptime(s, '%Y-%m-%d').date()
+        except Exception:
+            return None
+
+    # 进行中团的已成团天数分布
+    bins = [('0-3天', 0, 3), ('4-7天', 4, 7), ('8-14天', 8, 14), ('15-30天', 15, 30), ('30天以上', 31, 10 ** 9)]
+    hist = [0] * len(bins)
+    active = 0
+    for r in rows:
+        if not (r['dissolve_date'] or '').strip():
+            active += 1
+            d = r['days_since_formed'] or 0
+            for i, (_, lo, hi) in enumerate(bins):
+                if lo <= d <= hi:
+                    hist[i] += 1
+                    break
+
+    # T日存活率：成团已满T天的团中，存活达到T天的比例
+    def survival(t, formed_after=None, formed_before=None):
+        eligible = survived = 0
+        for r in rows:
+            fd = parse_d(r['form_date'])
+            if not fd:
+                continue
+            if formed_after and fd < formed_after:
+                continue
+            if formed_before and fd >= formed_before:
+                continue
+            if (ref_date - fd).days < t:
+                continue  # 尚未满T天，不纳入统计
+            eligible += 1
+            dd = parse_d(r['dissolve_date'])
+            if not dd or (dd - fd).days >= t:
+                survived += 1
+        return {'rate': round(survived / eligible * 100, 1) if eligible else None, 'total': eligible}
+
+    return jsonify({
+        'ref_date': ref,
+        'active_count': active,
+        'hist_labels': [b[0] for b in bins],
+        'hist_values': hist,
+        'survival': {
+            'd7': survival(7),
+            'd14': survival(14),
+            'd30': survival(30),
+            'policy_pre_d7': survival(7, formed_before=policy_date),
+            'policy_post_d7': survival(7, formed_after=policy_date),
+        },
+    })
+
+
 @app.route('/api/daily-retention')
 @login_required
 def api_daily_retention():

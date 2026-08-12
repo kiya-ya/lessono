@@ -8,6 +8,7 @@ let wbOverview = null;  // { role, data: [{ hall_name, weeks: [...(升序)] }] }
 let wbWeekly = [];      // 当前筛选大厅的周数据（升序，已按所选周截断）
 let wbKpi = null;
 let wbKpiMeta = { week: '', date: '' };
+let wbPlatformWeekly = null;  // 平台（hall=all）周数据缓存，用于均值参考线
 
 const WB_POLICY_DATE = '2026-07-17';
 const WB_HEALTH_TXT = { red: '需关注', amber: '有波动', green: '健康' };
@@ -202,14 +203,17 @@ function wbFilteredWeekly() {
 
 async function refreshWorkbench() {
   try {
-    const [kpiRes, weekRes] = await Promise.all([
+    const [kpiRes, weekRes, platRes] = await Promise.all([
       fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam()),
-      fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam())
+      fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam()),
+      // 平台均值参考线数据（仅取一次并缓存）
+      wbPlatformWeekly ? Promise.resolve(null) : fetch(API_BASE + '/api/weekly-report?limit=all&hall=all')
     ]);
     const kpiJson = await kpiRes.json();
     wbKpi = kpiJson.data || null;
     wbKpiMeta = { week: kpiJson.week || '', date: kpiJson.date || '' };
     wbWeekly = ((await weekRes.json()).data) || [];
+    if (platRes) wbPlatformWeekly = ((await platRes.json()).data) || [];
     wbRenderKPI();
     wbRenderCharts();
   } catch (e) { console.error('工作台刷新失败:', e); }
@@ -276,9 +280,27 @@ function wbRenderCharts() {
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
   };
+  // 选中具体厅时，叠加平台均值参考线（百分比类图表：留存率/解散率）
+  let platOf = null;
+  if (currentHall !== 'all' && wbPlatformWeekly && wbPlatformWeekly.length) {
+    const map = {};
+    wbPlatformWeekly.forEach(r => { map[r.week_start] = r; });
+    platOf = key => data.map(d => (map[d.week_start] && map[d.week_start][key] != null) ? Math.round(map[d.week_start][key] * 10) / 10 : null);
+  }
+  const platSeries = (key) => ({
+    name: '平台均值', type: 'line', data: platOf(key), symbol: 'none',
+    lineStyle: { color: '#9CA3AF', type: 'dashed', width: 1.5 }, itemStyle: { color: '#9CA3AF' }
+  });
+  const legendOpt = { top: 0, right: 0, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10, color: '#6B7280' } };
   const defs = {
-    'wb-retention': { ...base, series: [{ name: '留存率', type: 'line', smooth: true, data: data.map(d => Math.min(100, d.retention_rate || 0)), lineStyle: { color: '#16A34A', width: 2 }, itemStyle: { color: '#16A34A' }, areaStyle: { color: 'rgba(22,163,74,.06)' }, markLine: mark }] },
-    'wb-dissolution': { ...base, series: [{ name: '解散率', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(220,38,38,.55)', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark }] },
+    'wb-retention': { ...base,
+      legend: platOf ? legendOpt : undefined,
+      series: [{ name: '留存率', type: 'line', smooth: true, data: data.map(d => Math.min(100, d.retention_rate || 0)), lineStyle: { color: '#16A34A', width: 2 }, itemStyle: { color: '#16A34A' }, areaStyle: { color: 'rgba(22,163,74,.06)' }, markLine: mark },
+        ...(platOf ? [platSeries('retention_rate')] : [])] },
+    'wb-dissolution': { ...base,
+      legend: platOf ? legendOpt : undefined,
+      series: [{ name: '解散率', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(220,38,38,.55)', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark },
+        ...(platOf ? [platSeries('dissolution_rate')] : [])] },
     'wb-revenue': { ...base, series: [{ name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0), itemStyle: { color: '#D97706', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark }] },
     'wb-activity': {
       ...base,
@@ -309,4 +331,151 @@ function wbResizeCharts() {
 async function initWorkbench() {
   await loadWorkbenchOverview(true);
   await refreshWorkbench();
+}
+
+
+/* ═══════════════ 第二期：四象限 / 日级叠加 / 存活分析 ═══════════════ */
+
+/* ── 厅四象限散点图（对比分析页） ──
+   横轴本周流水、纵轴留存率，中位数分界：
+   🟢 明星厅（高流水高留存） 🔵 潜力厅（低流水高留存）
+   🟠 风险厅（高流水低留存） 🔴 衰退厅（低流水低留存） */
+async function initQuadrantChart() {
+  const el = document.getElementById('chart-quadrant');
+  if (!el) return;
+  if (!wbOverview) await loadWorkbenchOverview();
+  if (!wbOverview || !wbOverview.data) return;
+  const pts = wbOverview.data.map(d => {
+    const last = d.weeks[d.weeks.length - 1];
+    return { name: d.hall_name, rev: last.total_reward || 0, ret: Math.min(100, last.retention_rate || 0) };
+  });
+  if (!pts.length) return;
+  const median = arr => {
+    const s = [...arr].sort((a, b) => a - b), n = s.length;
+    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+  };
+  const medRev = median(pts.map(p => p.rev));
+  const medRet = median(pts.map(p => p.ret));
+  const quadOf = p => p.rev >= medRev
+    ? (p.ret >= medRet ? ['明星厅', '#16A34A'] : ['风险厅', '#D97706'])
+    : (p.ret >= medRet ? ['潜力厅', '#7C5CFF'] : ['衰退厅', '#DC2626']);
+  const groups = {};
+  pts.forEach(p => {
+    const [label, color] = quadOf(p);
+    (groups[label] = groups[label] || { color, data: [] }).data.push({ name: p.name, value: [p.rev, p.ret] });
+  });
+  const series = Object.entries(groups).map(([label, g]) => ({
+    name: label, type: 'scatter', symbolSize: 12,
+    itemStyle: { color: g.color, opacity: 0.85 },
+    data: g.data,
+  }));
+  // 象限底色 + 分界线
+  const maxRev = Math.max(...pts.map(p => p.rev)) * 1.08;
+  series.push({
+    name: 'quad-bg', type: 'scatter', silent: true, data: [],
+    markArea: {
+      silent: true, label: { fontSize: 11, color: '#9CA3AF' },
+      data: [
+        [{ name: '明星厅', coord: [medRev, medRet], itemStyle: { color: 'rgba(22,163,74,.05)' }, label: { position: 'insideTopRight', color: '#16A34A' } }, { coord: [maxRev, '100'] }],
+        [{ name: '潜力厅', coord: [0, medRet], itemStyle: { color: 'rgba(124,92,255,.05)' }, label: { position: 'insideTopLeft', color: '#7C5CFF' } }, { coord: [medRev, '100'] }],
+        [{ name: '风险厅', coord: [medRev, 0], itemStyle: { color: 'rgba(217,119,6,.06)' }, label: { position: 'insideBottomRight', color: '#D97706' } }, { coord: [maxRev, medRet] }],
+        [{ name: '衰退厅', coord: [0, 0], itemStyle: { color: 'rgba(220,38,38,.05)' }, label: { position: 'insideBottomLeft', color: '#DC2626' } }, { coord: [medRev, medRet] }],
+      ]
+    },
+    markLine: {
+      silent: true, symbol: 'none',
+      lineStyle: { color: '#C9CED6', type: 'dashed', width: 1 },
+      label: { fontSize: 10, color: '#9CA3AF' },
+      data: [
+        { xAxis: medRev, label: { formatter: '流水中位数 ' + wbFmtMoney(medRev), position: 'insideEndTop' } },
+        { yAxis: Math.round(medRet * 10) / 10, label: { formatter: '留存中位数 ' + medRet.toFixed(0) + '%', position: 'insideStartTop' } },
+      ]
+    }
+  });
+  if (charts['quadrant']) { charts['quadrant'].dispose(); }
+  charts['quadrant'] = echarts.init(el);
+  charts['quadrant'].setOption({
+    tooltip: {
+      textStyle: { fontSize: 12 },
+      formatter: p => p.seriesName === 'quad-bg' ? '' : `${p.data.name}<br/>周流水：${wbFmtMoney(p.value[0])}　留存率：${p.value[1].toFixed(1)}%<br/><span style="color:#9CA3AF">${p.seriesName} · 点击切换该厅</span>`
+    },
+    legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11, color: '#6B7280' }, data: ['明星厅', '潜力厅', '风险厅', '衰退厅'] },
+    grid: { left: 70, right: 30, top: 36, bottom: 46 },
+    xAxis: { type: 'value', name: '周流水', nameTextStyle: { fontSize: 11, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => v >= 10000 ? (v / 10000) + 'w' : v }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+    yAxis: { type: 'value', name: '留存率%', max: 100, nameTextStyle: { fontSize: 11, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+    series
+  });
+  charts['quadrant'].off('click');
+  charts['quadrant'].on('click', p => { if (p.data && p.data.name) wbSelectHall(p.data.name); });
+}
+
+/* ── 日级叠加：本周 vs 上周（核心趋势页） ── */
+async function loadDailyOverlay() {
+  const elNew = document.getElementById('chart-daily-new');
+  const elDiss = document.getElementById('chart-daily-diss');
+  if (!elNew || !elDiss) return;
+  try {
+    const res = await fetch(API_BASE + '/api/daily-events?days=14' + getHallParam());
+    const d = await res.json();
+    if (!d.dates || d.dates.length < 14) return;
+    const labels = d.dates.slice(7).map(s => '周' + '日一二三四五六'[new Date(s + 'T00:00:00').getDay()] + ' ' + s.slice(5));
+    const base = {
+      tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
+      legend: { top: 0, right: 0, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10, color: '#6B7280' } },
+      grid: { left: 46, right: 20, top: 30, bottom: 30 },
+      xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
+      yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+    };
+    const mk = (thisData, lastData, color) => ({
+      ...base,
+      series: [
+        { name: '本周', type: 'line', data: thisData, lineStyle: { color, width: 2 }, itemStyle: { color }, areaStyle: { color: color + '14' } },
+        { name: '上周', type: 'line', data: lastData, symbol: 'none', lineStyle: { color: '#9CA3AF', type: 'dashed', width: 1.5 }, itemStyle: { color: '#9CA3AF' } },
+      ]
+    });
+    if (charts['dailyNew']) charts['dailyNew'].dispose();
+    charts['dailyNew'] = echarts.init(elNew);
+    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#7C5CFF'));
+    if (charts['dailyDiss']) charts['dailyDiss'].dispose();
+    charts['dailyDiss'] = echarts.init(elDiss);
+    charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#DC2626'));
+  } catch (e) { console.error('日级叠加图加载失败:', e); }
+}
+
+/* ── 存活分析（明细数据页） ── */
+async function loadSurvival() {
+  const chipsEl = document.getElementById('survival-chips');
+  const el = document.getElementById('chart-survival');
+  if (!chipsEl || !el) return;
+  try {
+    const hallQ = getHallParam() ? '?' + getHallParam().substring(1) : '';
+    const res = await fetch(API_BASE + '/api/survival' + hallQ);
+    const d = await res.json();
+    if (d.error) { chipsEl.innerHTML = '<span class="survival-chip">暂无数据</span>'; return; }
+    const s = d.survival;
+    const fmt = o => o && o.rate !== null ? `<strong>${o.rate}%</strong><span style="color:var(--wb-text-3)">（${o.total}个团）</span>` : '<strong>--</strong>';
+    const pre = s.policy_pre_d7, post = s.policy_post_d7;
+    let policyHtml = '';
+    if (pre && pre.rate !== null && post && post.rate !== null) {
+      const diff = Math.round((post.rate - pre.rate) * 10) / 10;
+      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+      policyHtml = `<span class="survival-chip">政策前后7日存活：${pre.rate}% → ${post.rate}% <span class="chip ${cls}">${diff > 0 ? '↑' : diff < 0 ? '↓' : '→'} ${Math.abs(diff)}pp</span></span>`;
+    }
+    chipsEl.innerHTML = `
+      <span class="survival-chip">进行中 <strong>${d.active_count}</strong> 个团</span>
+      <span class="survival-chip">7日存活率 ${fmt(s.d7)}</span>
+      <span class="survival-chip">14日存活率 ${fmt(s.d14)}</span>
+      <span class="survival-chip">30日存活率 ${fmt(s.d30)}</span>
+      ${policyHtml}`;
+    document.getElementById('survival-src').textContent = `快照日期 ${d.ref_date} · 进行中团的已成团天数分布`;
+    if (charts['survival']) charts['survival'].dispose();
+    charts['survival'] = echarts.init(el);
+    charts['survival'].setOption({
+      tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
+      grid: { left: 46, right: 20, top: 16, bottom: 30 },
+      xAxis: { type: 'category', data: d.hist_labels, axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
+      yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+      series: [{ name: '进行中团数', type: 'bar', data: d.hist_values, barWidth: '45%', itemStyle: { color: '#16A34A', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
+    });
+  } catch (e) { console.error('存活分析加载失败:', e); }
 }

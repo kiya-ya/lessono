@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=4">
+<link rel="stylesheet" href="css/style.css?v=5">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -131,10 +131,19 @@
       <div class="chart-card"><h3>💰 礼物流水趋势</h3><div class="chart-container" id="chart-revenue"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 本周7天 reward_amount 累计</p></div>
       <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-container" id="chart-activity"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 公式：(开车+陪档+收送礼任务) / 周末进行中</p></div>
     </div>
+    <div class="chart-row">
+      <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-container" id="chart-daily-new"></div><p style="font-size:11px;color:#999;margin-top:4px;">按星期对齐叠加 · 数据来源：team_detail 最新快照 form_date 统计</p></div>
+      <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-container" id="chart-daily-diss"></div><p style="font-size:11px;color:#999;margin-top:4px;">按星期对齐叠加 · 数据来源：team_detail 最新快照 dissolve_date 统计</p></div>
+    </div>
   </div>
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
+    <div class="chart-card">
+      <h3>🧭 厅四象限分析</h3>
+      <div class="chart-src">横轴本周流水 · 纵轴留存率 · 分界线为中位数 · 点击散点切换该厅</div>
+      <div class="chart-container" id="chart-quadrant" style="height:420px;"></div>
+    </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span>🏠 各大厅数据对比</span>
@@ -166,6 +175,12 @@
 
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
+    <div class="chart-card" id="survival-card">
+      <h3>🌱 姐妹团存活分析</h3>
+      <div class="chart-src" id="survival-src">基于最新快照</div>
+      <div class="survival-chips" id="survival-chips"></div>
+      <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+    </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
         <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
@@ -305,12 +320,12 @@
   </div>
 </div>
 
-<script src="js/config.js?v=4"></script>
-<script src="js/utils.js?v=4"></script>
-<script src="js/api.js?v=4"></script>
-<script src="js/auth.js?v=4"></script>
-<script src="js/render.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
-<script src="js/workbench.js?v=4"></script>
+<script src="js/config.js?v=5"></script>
+<script src="js/utils.js?v=5"></script>
+<script src="js/api.js?v=5"></script>
+<script src="js/auth.js?v=5"></script>
+<script src="js/render.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
+<script src="js/workbench.js?v=5"></script>
 </body>
 </html>

@@ -18,8 +18,11 @@ function onWeekChange() {
   initTrendCharts();
   // 对比分析页刷新
   initCompareChart();
+  if (typeof initQuadrantChart === 'function') initQuadrantChart();
   // 明细数据刷新
   loadDetailTable();
+  if (typeof loadSurvival === 'function') loadSurvival();
+  if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
 }
 
 function switchTab(tabName) {
@@ -29,8 +32,9 @@ function switchTab(tabName) {
   if (clicked) clicked.classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
   if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
-  if (tabName === 'trends') setTimeout(initTrendCharts, 100);
-  if (tabName === 'compare') setTimeout(initCompareChart, 300);
+  if (tabName === 'trends') setTimeout(() => { initTrendCharts(); if (typeof loadDailyOverlay === 'function') loadDailyOverlay(); }, 100);
+  if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initQuadrantChart === 'function') initQuadrantChart(); }, 300);
+  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); }, 100);
 }
 
 function toggleSort(field) {
@@ -54,6 +58,9 @@ function refreshData() {
   // 工作台（KPI + 趋势图）
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
   loadDetailTable();
+  if (typeof loadSurvival === 'function') loadSurvival();
+  if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
+  if (typeof initQuadrantChart === 'function') initQuadrantChart();
   if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
   if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
   if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }

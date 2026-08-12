@@ -393,3 +393,11 @@ body { background: var(--wb-bg); }
 @media (prefers-reduced-motion: reduce) {
   .hall-card { transition: none; }
 }
+
+/* ── 存活分析（第二期） ── */
+.survival-chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+.survival-chip {
+  background: #F4F5F8; border-radius: 6px; padding: 6px 12px;
+  font-size: 12px; color: var(--wb-text-2); display: inline-flex; align-items: baseline; gap: 4px;
+}
+.survival-chip strong { color: var(--wb-text); font-size: 15px; font-variant-numeric: tabular-nums; }
