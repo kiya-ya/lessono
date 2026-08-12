@@ -474,12 +474,14 @@ async function loadSurvival() {
     document.getElementById('survival-src').textContent = `快照日期 ${d.ref_date} · 进行中团的已成团天数分布`;
     if (charts['survival']) charts['survival'].dispose();
     charts['survival'] = echarts.init(el);
+    // 过滤掉「30天以上」分段（功能上线未满30天，恒为0）
+    const histPairs = d.hist_labels.map((l, i) => [l, d.hist_values[i]]).filter(p => p[0] !== '30天以上');
     charts['survival'].setOption({
       tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
       grid: { left: 46, right: 20, top: 16, bottom: 30 },
-      xAxis: { type: 'category', data: d.hist_labels, axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
+      xAxis: { type: 'category', data: histPairs.map(p => p[0]), axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-      series: [{ name: '进行中团数', type: 'bar', data: d.hist_values, barWidth: '45%', itemStyle: { color: '#16A34A', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
+      series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: '#16A34A', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
     });
   } catch (e) { console.error('存活分析加载失败:', e); }
 }
