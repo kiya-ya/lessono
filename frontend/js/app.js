@@ -23,6 +23,8 @@ function onWeekChange() {
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
+  if (typeof loadCaptains === 'function') loadCaptains();
+  if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
 }
 
 function switchTab(tabName) {
@@ -35,6 +37,9 @@ function switchTab(tabName) {
   if (tabName === 'trends') setTimeout(() => { initTrendCharts(); if (typeof loadDailyOverlay === 'function') loadDailyOverlay(); }, 100);
   if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initQuadrantChart === 'function') initQuadrantChart(); }, 300);
   if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); }, 100);
+  if (tabName === 'policy') setTimeout(() => { if (typeof loadPolicyImpact === 'function') loadPolicyImpact(); }, 100);
+  if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); }, 100);
+  if (tabName === 'alerts') setTimeout(() => { if (typeof loadAlertsCenter === 'function') loadAlertsCenter(); }, 100);
 }
 
 function toggleSort(field) {
@@ -61,6 +66,8 @@ function refreshData() {
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
   if (typeof initQuadrantChart === 'function') initQuadrantChart();
+  if (typeof loadCaptains === 'function') loadCaptains();
+  if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
   if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
   if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
   if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }

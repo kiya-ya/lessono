@@ -401,3 +401,48 @@ body { background: var(--wb-bg); }
   font-size: 12px; color: var(--wb-text-2); display: inline-flex; align-items: baseline; gap: 4px;
 }
 .survival-chip strong { color: var(--wb-text); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+/* ── 第三期：政策评估 / 团长分析 / 预警中心 ── */
+.policy-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.policy-grid .kpi-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); }
+.policy-grid .kpi-card:hover { transform: none; }
+.policy-grid .kpi-label { font-size: 12px; color: var(--wb-text-2); }
+.policy-grid .kpi-value { font-size: 22px; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
+.policy-delta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--wb-text-3); }
+
+.dep-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+  border-radius: 6px; margin-bottom: 6px; font-size: 13px;
+}
+.dep-item.red { background: #FEF2F2; border-left: 3px solid var(--wb-down); }
+.dep-item.amber { background: #FFFBEB; border-left: 3px solid var(--wb-warn); }
+.dep-item .share { font-weight: 700; font-variant-numeric: tabular-nums; }
+.dep-item.red .share { color: var(--wb-down); }
+.dep-item.amber .share { color: var(--wb-warn); }
+.dep-item .meta { color: var(--wb-text-2); font-size: 12px; }
+.dep-empty { color: var(--wb-text-3); font-size: 13px; padding: 10px 4px; }
+
+.alert-row {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+  border-bottom: 1px solid #F4F5F8; font-size: 13px;
+}
+.alert-row:last-child { border-bottom: none; }
+.alert-row.resolved { opacity: .55; }
+.alert-sev { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 1px; }
+.alert-sev.high { color: var(--wb-down); background: rgba(220,38,38,.1); }
+.alert-sev.medium { color: var(--wb-warn); background: rgba(217,119,6,.1); }
+.alert-sev.low { color: var(--wb-up); background: rgba(22,163,74,.1); }
+.alert-body { flex: 1; min-width: 0; }
+.alert-body .t { font-weight: 600; margin-bottom: 2px; }
+.alert-body .d { color: var(--wb-text-2); font-size: 12px; }
+.alert-body .time { color: var(--wb-text-3); font-size: 11px; margin-top: 3px; }
+.alert-act { flex-shrink: 0; }
+.alert-empty { color: var(--wb-text-3); font-size: 13px; padding: 16px; text-align: center; }
+
+@media (max-width: 960px) {
+  .policy-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 720px) {
+  .policy-grid { grid-template-columns: 1fr; }
+  .alert-row { flex-wrap: wrap; }
+}

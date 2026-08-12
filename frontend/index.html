@@ -70,7 +70,10 @@
     <div class="tab active" onclick="switchTab('overview')">📊 工作台</div>
     <div class="tab" onclick="switchTab('trends')">📈 核心趋势</div>
     <div class="tab" onclick="switchTab('compare')">🔍 对比分析</div>
+    <div class="tab" onclick="switchTab('policy')">📐 政策评估</div>
+    <div class="tab" onclick="switchTab('captains')">👑 团长分析</div>
     <div class="tab" onclick="switchTab('details')">📋 明细数据</div>
+    <div class="tab" onclick="switchTab('alerts')">🔔 预警中心</div>
     <div class="tab" onclick="switchTab('uid')">👤 UID查询</div>
   </div>
 </div>
@@ -171,6 +174,41 @@
       
     </div>
     <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div></div>
+  </div>
+
+  <!-- 政策评估 -->
+  <div id="tab-policy" class="tab-panel">
+    <div class="section-head">
+      <h2>政策效果评估</h2>
+      <span class="hint" id="policy-hint">政策上线 2026-07-17 · 政策前4周 vs 政策后4周均值</span>
+    </div>
+    <div class="policy-grid" id="policy-cards"></div>
+    <div class="chart-card">
+      <h3>📶 分厅响应度（留存率变化）</h3>
+      <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
+      <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
+    </div>
+    <div class="chart-card">
+      <h3>📋 分厅政策响应明细</h3>
+      <div class="rank-scroll"><table class="rank-table" id="policy-table"></table></div>
+    </div>
+  </div>
+
+  <!-- 团长分析 -->
+  <div id="tab-captains" class="tab-panel">
+    <div class="section-head">
+      <h2>团长（姐姐）分析</h2>
+      <span class="hint">基于最新快照 · 随大厅筛选联动</span>
+    </div>
+    <div class="chart-card">
+      <h3>⚠️ 头牌依赖度警示</h3>
+      <div class="chart-src">各厅 TOP1 团长流水占比 · ≥40% 红色高危，30%~40% 黄色关注</div>
+      <div id="dep-list" style="margin-top:8px;"></div>
+    </div>
+    <div class="chart-card">
+      <h3>👑 团长排行榜（按累计流水）</h3>
+      <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
+    </div>
   </div>
 
   <!-- 明细 -->
@@ -278,6 +316,22 @@
         </div>
       </div>
   </div>
+  </div>
+
+  <!-- 预警中心 -->
+  <div id="tab-alerts" class="tab-panel">
+    <div class="section-head">
+      <h2>预警中心</h2>
+      <span class="hint">系统按规则自动生成 · 处理后可归档</span>
+      <div class="right">
+        <button class="mini-btn on" onclick="alertsFilter(this, '0')">未处理</button>
+        <button class="mini-btn" onclick="alertsFilter(this, '1')">已处理</button>
+        <button class="mini-btn" onclick="alertsFilter(this, 'all')">全部</button>
+      </div>
+    </div>
+    <div class="survival-chips" id="alerts-summary"></div>
+    <div class="chart-card"><div id="alerts-center-list"></div></div>
+  </div>
 </div>
 
 <!-- Cookie 管理弹窗 -->
@@ -327,5 +381,6 @@
 <script src="js/render.js?v=5"></script>
 <script src="js/app.js?v=5"></script>
 <script src="js/workbench.js?v=5"></script>
+<script src="js/insight.js?v=5"></script>
 </body>
 </html>

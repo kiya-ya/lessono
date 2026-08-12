@@ -544,6 +544,175 @@ def api_survival():
     })
 
 
+# 政策后第一个完整周（07-17 在政策周 07-13~07-19 内，从下一周起算）
+POLICY_WEEK_START = '2026-07-20'
+
+
+@app.route('/api/policy-impact')
+@login_required
+def api_policy_impact():
+    """政策效果评估：政策前4周 vs 政策后4周均值对比 + 分厅响应度排名"""
+    hall = request.args.get('hall', 'all')
+    user_uid = request.cookies.get('auth_uid')
+    conn = get_db_conn()
+    row = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,)).fetchone()
+    role = row['role'] if row else 'admin'
+
+    def agg(h, direction):
+        """direction: pre=政策前最近4周, post=政策后最早4周"""
+        op = '<' if direction == 'pre' else '>='
+        order = 'DESC' if direction == 'pre' else 'ASC'
+        return conn.execute(f"""
+            SELECT AVG(retention_rate) AS ret, AVG(dissolution_rate) AS dis,
+                   AVG(total_reward) AS rev, AVG(new_team_count) AS nt, COUNT(*) AS n
+            FROM (SELECT retention_rate, dissolution_rate, total_reward, new_team_count
+                  FROM weekly_report WHERE hall_name = ? AND week_start {op} ?
+                  ORDER BY week_start {order} LIMIT 4)
+        """, (h, POLICY_WEEK_START)).fetchone()
+
+    def pack(h):
+        pre, post = agg(h, 'pre'), agg(h, 'post')
+        if not pre['n'] or not post['n']:
+            return None
+        rev_delta_pct = round((post['rev'] - pre['rev']) / pre['rev'] * 100, 1) if pre['rev'] else None
+        nt_delta_pct = round((post['nt'] - pre['nt']) / pre['nt'] * 100, 1) if pre['nt'] else None
+        return {
+            'ret_pre': round(pre['ret'], 1), 'ret_post': round(post['ret'], 1),
+            'ret_delta': round(post['ret'] - pre['ret'], 1),
+            'dis_pre': round(pre['dis'], 1), 'dis_post': round(post['dis'], 1),
+            'dis_delta': round(post['dis'] - pre['dis'], 1),
+            'rev_pre': round(pre['rev'], 1), 'rev_post': round(post['rev'], 1),
+            'rev_delta_pct': rev_delta_pct,
+            'nt_pre': round(pre['nt'], 1), 'nt_post': round(post['nt'], 1),
+            'nt_delta_pct': nt_delta_pct,
+        }
+
+    # 当前筛选范围的总体对比
+    overall = pack(hall)
+
+    # 分厅响应度排名
+    if role == 'admin':
+        halls = [r['hall_name'] for r in conn.execute(
+            "SELECT DISTINCT hall_name FROM weekly_report WHERE hall_name != 'all'").fetchall()]
+    else:
+        halls = [r['hall_name'] for r in conn.execute(
+            'SELECT hall_name FROM hall_managers WHERE uid = ?', (user_uid,)).fetchall()]
+    ranking = []
+    for h in halls:
+        p = pack(h)
+        if p:
+            ranking.append({'hall_name': h, **p})
+    ranking.sort(key=lambda x: x['ret_delta'], reverse=True)
+    conn.close()
+
+    return jsonify({
+        'policy_week_start': POLICY_WEEK_START,
+        'hall': hall,
+        'overall': overall,
+        'ranking': ranking,
+    })
+
+
+@app.route('/api/captains')
+@login_required
+def api_captains():
+    """团长（姐姐）维度：带团数/流水/存活率排行 + 各厅头牌依赖度"""
+    hall = request.args.get('hall', 'all')
+    limit = min(int(request.args.get('limit', 50)), 200)
+    conn = get_db_conn()
+    sql = """SELECT sister_uid, MAX(sister_nickname) AS nickname,
+                    GROUP_CONCAT(DISTINCT hall_name) AS halls,
+                    COUNT(*) AS team_count,
+                    SUM(CASE WHEN dissolve_date = '' OR dissolve_date IS NULL THEN 1 ELSE 0 END) AS active_count,
+                    SUM(reward_amount) AS total_reward
+             FROM team_detail
+             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+               AND sister_uid IS NOT NULL AND sister_uid != ''"""
+    params = []
+    if hall != 'all':
+        sql += ' AND hall_name = ?'
+        params.append(hall)
+    sql += ' GROUP BY sister_uid ORDER BY total_reward DESC LIMIT ?'
+    params.append(limit)
+    rows = conn.execute(sql, params).fetchall()
+    captains = [{
+        'uid': r['sister_uid'],
+        'nickname': r['nickname'] or r['sister_uid'],
+        'halls': r['halls'] or '',
+        'team_count': r['team_count'],
+        'active_count': r['active_count'],
+        'survival_rate': round(r['active_count'] / r['team_count'] * 100, 1) if r['team_count'] else 0,
+        'total_reward': round(r['total_reward'] or 0, 1),
+    } for r in rows]
+
+    # 头牌依赖度：各厅 TOP1 团长流水占比
+    dep_rows = conn.execute("""
+        WITH per_captain AS (
+          SELECT hall_name, sister_uid, MAX(sister_nickname) AS nickname, SUM(reward_amount) AS rev
+          FROM team_detail
+          WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+            AND sister_uid IS NOT NULL AND sister_uid != ''
+          GROUP BY hall_name, sister_uid
+        ),
+        hall_total AS (
+          SELECT hall_name, SUM(rev) AS total_rev, MAX(rev) AS top_rev
+          FROM per_captain GROUP BY hall_name
+        )
+        SELECT p.hall_name, p.sister_uid, p.nickname, p.rev, h.total_rev
+        FROM per_captain p JOIN hall_total h ON p.hall_name = h.hall_name AND p.rev = h.top_rev
+        WHERE h.total_rev > 0
+        ORDER BY (p.rev * 1.0 / h.total_rev) DESC
+    """).fetchall()
+    dependency = [{
+        'hall_name': r['hall_name'],
+        'top_captain': r['nickname'] or r['sister_uid'],
+        'top_uid': r['sister_uid'],
+        'share': round(r['rev'] / r['total_rev'] * 100, 1),
+        'captain_rev': round(r['rev'], 1),
+        'hall_rev': round(r['total_rev'], 1),
+    } for r in dep_rows]
+    conn.close()
+
+    return jsonify({'data': captains, 'dependency': dependency})
+
+
+@app.route('/api/alerts-center')
+@login_required
+def api_alerts_center():
+    """预警中心：alerts 表历史记录（支持按严重级别/处理状态过滤）"""
+    severity = request.args.get('severity', 'all')
+    resolved = request.args.get('resolved', 'all')  # all / 0 / 1
+    limit = min(int(request.args.get('limit', 100)), 500)
+    conn = get_db_conn()
+    conditions, params = [], []
+    if severity != 'all':
+        conditions.append('severity = ?')
+        params.append(severity)
+    if resolved in ('0', '1'):
+        conditions.append('is_resolved = ?')
+        params.append(int(resolved))
+    where = ('WHERE ' + ' AND '.join(conditions)) if conditions else ''
+    rows = conn.execute(
+        f'SELECT * FROM alerts {where} ORDER BY created_at DESC, id DESC LIMIT ?', params + [limit]
+    ).fetchall()
+    unresolved = conn.execute('SELECT COUNT(*) AS c FROM alerts WHERE is_resolved = 0').fetchone()['c']
+    conn.close()
+    return jsonify({'data': [dict(r) for r in rows], 'unresolved': unresolved})
+
+
+@app.route('/api/alerts/<int:alert_id>/resolve', methods=['POST'])
+@login_required
+def api_alert_resolve(alert_id):
+    """标记预警为已处理/未处理"""
+    body = request.get_json(silent=True) or {}
+    resolved = 1 if body.get('resolved', True) else 0
+    conn = get_db_conn()
+    conn.execute('UPDATE alerts SET is_resolved = ? WHERE id = ?', (resolved, alert_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
 @app.route('/api/daily-retention')
 @login_required
 def api_daily_retention():
