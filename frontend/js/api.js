@@ -9,18 +9,17 @@ async function loadHalls() {
     const role = result.role || 'admin';
     const halls = result.data || [];
 
-    // 添加默认选项
     if (role === 'admin') {
       const opt = document.createElement('option');
       opt.value = 'all';
       opt.textContent = '全部大厅';
       select.appendChild(opt);
     } else {
-      // hall_manager: 添加"运营大厅"选项（代表所有管理的厅）
-      const opt = document.createElement('option');
-      opt.value = 'all';
-      opt.textContent = '运营大厅';
-      select.appendChild(opt);
+      // hall_manager: 添加「所有大厅」选项（可查看全平台155个厅）
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = '所有大厅';
+      select.appendChild(optAll);
     }
 
     halls.forEach(hall => {
@@ -30,7 +29,7 @@ async function loadHalls() {
       select.appendChild(opt);
     });
 
-    // 厅运营默认选中第一个具体厅（不是"全部大厅"/"运营大厅"）
+    // 厅运营默认选中第一个具体厅
     if (role === 'hall_manager' && halls.length > 0) {
       select.value = halls[0];
       currentHall = halls[0];

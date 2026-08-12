@@ -194,7 +194,8 @@ async function initCompareChart() {
       }).join('');
     }
     try {
-      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999');
+      const hallParam = currentHall === 'all' ? '&hall=all' : '';
+      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
       const hallResult = await hallRes.json();
       hallCompareData = hallResult.data || [];
       renderHallComparePage();

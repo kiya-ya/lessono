@@ -479,6 +479,51 @@ def api_detail_table():
 @login_required
 def api_hall_stats():
     limit = int(request.args.get('limit', 10))
+    hall = request.args.get('hall', '')
+    
+    user_uid = request.cookies.get('auth_uid')
+    conn = get_db_conn()
+    cursor = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,))
+    user = cursor.fetchone()
+    role = user['role'] if user else 'admin'
+    
+    if role == 'admin' or hall == 'all':
+        # 管理员或显式请求所有大厅
+        cursor = conn.execute(
+            "SELECT hall_name, team_count, active_count, dissolved_count, total_revenue "
+            "FROM hall_stats "
+            "WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM hall_stats) "
+            "ORDER BY team_count DESC LIMIT ?",
+            (limit,)
+        )
+    else:
+        # 厅运营：只返回管理的厅
+        managed = [r['hall_name'] for r in conn.execute(
+            'SELECT hall_name FROM hall_managers WHERE uid = ?', (user_uid,)
+        ).fetchall()]
+        if managed:
+            placeholders = ','.join('?' * len(managed))
+            cursor = conn.execute(
+                f"SELECT hall_name, team_count, active_count, dissolved_count, total_revenue "
+                f"FROM hall_stats "
+                f"WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM hall_stats) "
+                f"AND hall_name IN ({placeholders}) "
+                f"ORDER BY team_count DESC",
+                tuple(managed)
+            )
+        else:
+            cursor = conn.execute(
+                "SELECT hall_name, team_count, active_count, dissolved_count, total_revenue "
+                "FROM hall_stats WHERE 1=0"
+            )
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return jsonify({'data': rows})
+@login_required
+def api_hall_stats():
+    limit = int(request.args.get('limit', 10))
     
     conn = get_db_conn()
     cursor = conn.execute(
