@@ -1487,7 +1487,7 @@ def api_uid_query():
             if 'Cookie' in error_msg or '过期' in error_msg:
                 return jsonify({
                     'error': error_msg,
-                    'hint': '请更新 crawler/uid_crawler.py 顶部的 UID_COOKIE_STR，然后重启后端',
+                    'hint': '请在页面右上角「Cookie 管理」中更新 UID 查询 Cookie（保存后立即生效，无需重启）',
                     'suggest_mock': True
                 }), 503
             if '无法连接' in error_msg or 'ConnectionError' in error_msg:

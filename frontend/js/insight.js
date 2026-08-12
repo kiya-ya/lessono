@@ -1,4 +1,4 @@
-// insight.js - 第三期：政策评估 / 团长分析 / 预警中心
+// insight.js - 第三期：政策评估 / 姐姐分析 / 预警中心
 
 /* ═══════════════ 政策评估 ═══════════════ */
 
@@ -72,7 +72,7 @@ async function loadPolicyImpact() {
   } catch (e) { console.error('政策评估加载失败:', e); }
 }
 
-/* ═══════════════ 团长分析 ═══════════════ */
+/* ═══════════════ 姐姐分析 ═══════════════ */
 
 async function loadCaptains() {
   const tableEl = document.getElementById('captain-table');
@@ -94,7 +94,7 @@ async function loadCaptains() {
       : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
 
     tableEl.innerHTML = `
-      <tr><th>#</th><th>团长（姐姐）</th><th>所在大厅</th><th>带团数</th><th>进行中</th><th>团存活率</th><th>累计流水</th></tr>
+      <tr><th>#</th><th>姐姐</th><th>所在大厅</th><th>带团数</th><th>进行中</th><th>团存活率</th><th>累计流水</th></tr>
       ${(d.data || []).map((c, i) => `<tr>
         <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
         <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>

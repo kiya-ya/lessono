@@ -143,14 +143,15 @@ class UIDCrawler:
         self._build_headers()
 
     def _build_headers(self):
-        """构建请求头"""
+        """构建请求头（每次实例化时重新读取 cookie.json，前端更新 Cookie 后立即生效，无需重启）"""
+        cfg = _load_cookie_config()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.0',
-            'Cookie': UID_COOKIE_STR,
+            'Cookie': cfg['cookie_str'],
             'Referer': f'{UID_BASE_URL}/fly2013/play_user_newcaptian.php',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Authorization': f'Basic {UID_BASIC_AUTH}',
+            'Authorization': f"Basic {cfg['basic_auth']}",
         })
 
     def query(self, uid: str, captain_type: str = 'game',
@@ -202,7 +203,7 @@ class UIDCrawler:
             if '织梦内容管理系统' in text or 'login' in text.lower():
                 raise CookieExpiredError(
                     'Cookie已过期，请重新登录UID查询系统并更新Cookie。\n'
-                    '更新位置: crawler/uid_crawler.py 第44~66行'
+                    '更新位置: 页面右上角「Cookie 管理」→ UID 查询 Cookie'
                 )
 
             # 检查是否是错误消息
