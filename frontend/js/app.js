@@ -69,19 +69,6 @@ function toggleSidebar() {
   setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 260);
 }
 
-// 悬浮侧栏：桌面端点击主内容区自动收起（抽屉式交互）
-document.addEventListener('click', (e) => {
-  const layout = document.querySelector('.layout');
-  if (!layout || layout.classList.contains('side-collapsed')) return;
-  if (window.innerWidth <= 720) return;
-  if (e.target.closest('.sidebar') || e.target.closest('.side-expand-fab')) return;
-  if (e.target.closest('.main')) {
-    layout.classList.add('side-collapsed');
-    localStorage.setItem('wb_sidebar', 'collapsed');
-    setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 260);
-  }
-});
-
 function refreshData() {
   // 工作台（KPI + 趋势图）
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
