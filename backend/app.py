@@ -78,6 +78,28 @@ def init_auth_db():
         conn.execute('''
             INSERT OR IGNORE INTO users (uid, nickname, role) VALUES (?, ?, ?)
         ''', ('34315471', '管理员', 'admin'))
+
+        # users 表补充 hall_name 列（管理的厅名，从 hall_managers 同步，便于直接查看）
+        try:
+            conn.execute('ALTER TABLE users ADD COLUMN hall_name TEXT')
+        except Exception:
+            pass  # 列已存在
+        try:
+            conn.execute('''
+                UPDATE users SET hall_name = (
+                    SELECT GROUP_CONCAT(hm.hall_name, '、') FROM hall_managers hm WHERE hm.uid = users.uid
+                )
+            ''')
+        except Exception:
+            pass  # hall_managers 表尚未创建时跳过
+        # 中文身份视图：直接浏览数据库时只看 UID / 管理的厅名 / 身份
+        conn.execute('''
+            CREATE VIEW IF NOT EXISTS users_simple AS
+            SELECT uid AS 'UID',
+                   COALESCE(hall_name, '—') AS '管理的厅名',
+                   CASE WHEN role = 'admin' THEN '管理员' ELSE '运营' END AS '身份'
+            FROM users
+        ''')
         conn.commit()
         conn.close()
         print('[BOOT] 用户认证表初始化完成')

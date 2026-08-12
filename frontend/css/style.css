@@ -509,3 +509,47 @@ body { background: var(--wb-bg); }
   .main { margin-left: 0; }
   .topbar { position: static; }
 }
+
+/* ── 侧栏折叠 + 侧栏用户信息（2026-08 补充） ── */
+.side-brand { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.side-toggle {
+  border: none; background: transparent; color: rgba(255,255,255,.4);
+  font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 6px; line-height: 1;
+}
+.side-toggle:hover { color: #fff; background: rgba(255,255,255,.08); }
+.sidebar { transition: transform .22s ease; }
+.layout.side-collapsed .sidebar { transform: translateX(-100%); }
+.layout.side-collapsed .main { margin-left: 0; }
+.main { transition: margin-left .22s ease; }
+.side-expand-fab {
+  display: none; position: fixed; left: 14px; bottom: 14px; z-index: 30;
+  width: 38px; height: 38px; border-radius: 10px; border: none;
+  background: var(--wb-nav); color: #fff; font-size: 16px; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3); align-items: center; justify-content: center;
+}
+.layout.side-collapsed .side-expand-fab { display: flex; }
+
+/* 侧栏底部用户信息（简化版：UID + 身份 + 厅名 + 退出） */
+.side-user { display: flex; flex-direction: column; gap: 6px; }
+.side-user-uid { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9); display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.side-user-role {
+  font-size: 10px; font-weight: 500; color: rgba(255,255,255,.55);
+  background: rgba(255,255,255,.1); padding: 1px 7px; border-radius: 4px;
+}
+.side-halls {
+  font-size: 11px; color: rgba(255,255,255,.42); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.side-logout {
+  margin-top: 2px; align-self: flex-start;
+  border: 1px solid rgba(255,255,255,.16); background: transparent;
+  color: rgba(255,255,255,.7); font-size: 11px; padding: 4px 12px;
+  border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.side-logout:hover { background: rgba(255,255,255,.1); color: #fff; }
+
+@media (max-width: 720px) {
+  .side-toggle, .side-expand-fab { display: none !important; }
+  .layout.side-collapsed .sidebar { transform: none; }
+  .layout.side-collapsed .main { margin-left: 0; }
+}

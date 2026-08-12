@@ -37,6 +37,8 @@
     mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 30%, transparent 75%);
   }
+  /* 可交互粒子层（TRAE 风格：粒子连线 + 鼠标牵引） */
+  #bg-canvas { position: fixed; inset: 0; z-index: 0; }
 
   .login-wrap {
     position: relative; z-index: 1;
@@ -150,6 +152,7 @@
 </head>
 <body>
 <div class="bg"></div>
+<canvas id="bg-canvas"></canvas>
 
 <div class="login-wrap">
   <div class="brand">
@@ -161,7 +164,7 @@
 
   <div class="login-card">
     <div class="form-group">
-      <label>UID</label>
+      <label>厅运营UID</label>
       <input type="text" id="login-uid" placeholder="请输入您的 UID" autocomplete="off" inputmode="numeric">
     </div>
 
@@ -187,6 +190,99 @@ const API_BASE = '';
 // 页面加载时自动清除可能残留的 auth_uid Cookie
 (function clearAuthCookie() {
   document.cookie = 'auth_uid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+})();
+
+// ========== 可交互粒子背景（鼠标牵引 + 邻近连线） ==========
+(function initParticleBg() {
+  const canvas = document.getElementById('bg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    W = canvas.width = window.innerWidth * dpr;
+    H = canvas.height = window.innerHeight * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COUNT = Math.min(110, Math.floor((window.innerWidth * window.innerHeight) / 12000));
+  const LINK_DIST = 110;      // 粒子间连线距离
+  const MOUSE_DIST = 190;     // 鼠标影响半径
+  const particles = [];
+  for (let i = 0; i < COUNT; i++) {
+    particles.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - 0.5) * 0.45,
+      vy: (Math.random() - 0.5) * 0.45,
+      r: Math.random() * 1.6 + 1,
+    });
+  }
+
+  let mouse = { x: -9999, y: -9999 };
+  document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  document.addEventListener('touchmove', e => {
+    if (e.touches.length) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }
+  }, { passive: true });
+  document.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; });
+
+  function draw() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    for (const p of particles) {
+      // 鼠标牵引：靠近鼠标的粒子被轻轻吸附过去
+      const mdx = mouse.x - p.x, mdy = mouse.y - p.y;
+      const md = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (md < MOUSE_DIST && md > 0) {
+        const f = (1 - md / MOUSE_DIST) * 0.35;
+        p.vx += (mdx / md) * f;
+        p.vy += (mdy / md) * f;
+      }
+      p.vx *= 0.96; p.vy *= 0.96;  // 阻尼，防止越吸越快
+      // 保持最低漂移速度，粒子不会停死
+      if (Math.abs(p.vx) < 0.08) p.vx += (Math.random() - 0.5) * 0.05;
+      if (Math.abs(p.vy) < 0.08) p.vy += (Math.random() - 0.5) * 0.05;
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < -20) p.x = window.innerWidth + 20;
+      if (p.x > window.innerWidth + 20) p.x = -20;
+      if (p.y < -20) p.y = window.innerHeight + 20;
+      if (p.y > window.innerHeight + 20) p.y = -20;
+
+      const near = md < MOUSE_DIST ? (1 - md / MOUSE_DIST) : 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r + near * 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(139, 152, 236, ${0.45 + near * 0.5})`;
+      ctx.fill();
+    }
+
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < LINK_DIST) {
+          // 连线越靠近鼠标越亮
+          const mx = (particles[i].x + particles[j].x) / 2 - mouse.x;
+          const my = (particles[i].y + particles[j].y) / 2 - mouse.y;
+          const mdist = Math.sqrt(mx * mx + my * my);
+          const boost = mdist < MOUSE_DIST ? (1 - mdist / MOUSE_DIST) * 0.25 : 0;
+          const alpha = (1 - dist / LINK_DIST) * 0.16 + boost;
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(124, 140, 235, ${Math.min(alpha, 0.5)})`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        }
+      }
+    }
+    if (!reduced) requestAnimationFrame(draw);
+  }
+  draw();
 })();
 
 // ========== 验证码 ==========

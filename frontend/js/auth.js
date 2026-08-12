@@ -29,18 +29,33 @@
   }
 })();
 
-function renderUserInfo(user) {
+async function renderUserInfo(user) {
   const container = document.getElementById('header-user-info');
   if (!container) return;
+  const isAdmin = user.role === 'admin';
+  const roleName = isAdmin ? '管理员' : '运营';
+
+  // 厅运营显示管理的厅名（从 /api/halls 获取，按角色已过滤）
+  let hallsHtml = '';
+  if (!isAdmin) {
+    try {
+      const res = await fetch(API_BASE + '/api/halls', { credentials: 'same-origin' });
+      const d = await res.json();
+      if (d.data && d.data.length) {
+        const names = d.data.join('、');
+        hallsHtml = `<div class="side-halls" title="${names}">厅：${names}</div>`;
+      }
+    } catch (e) { /* 厅名获取失败不影响主信息展示 */ }
+  } else {
+    hallsHtml = '<div class="side-halls">全部大厅</div>';
+  }
+
   container.innerHTML = `
-    <span style="display:flex;align-items:center;gap:8px;">
-      <span style="width:28px;height:28px;border-radius:50%;background:#4F5BD5;color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">
-        ${(user.nickname || '管').charAt(0)}
-      </span>
-      <span style="color:rgba(255,255,255,0.84);font-size:13px;">${user.nickname || '管理员'}</span>
-      <span style="color:rgba(255,255,255,0.5);font-size:11px;background:rgba(255,255,255,0.1);padding:2px 8px;border-radius:4px;">${user.role || 'admin'}</span>
-      <button onclick="doLogout()" style="margin-left:4px;padding:4px 10px;border:none;border-radius:4px;background:rgba(255,255,255,0.15);color:white;font-size:12px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">退出登录</button>
-    </span>
+    <div class="side-user">
+      <div class="side-user-uid">${user.uid}<span class="side-user-role">${roleName}</span></div>
+      ${hallsHtml}
+      <button onclick="doLogout()" class="side-logout">退出登录</button>
+    </div>
   `;
 }
 

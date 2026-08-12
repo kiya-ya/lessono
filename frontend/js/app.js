@@ -59,6 +59,16 @@ function toggleSort(field) {
   loadDetailTable(1);
 }
 
+// 侧栏折叠/展开（状态存 localStorage）
+function toggleSidebar() {
+  const layout = document.querySelector('.layout');
+  if (!layout) return;
+  layout.classList.toggle('side-collapsed');
+  localStorage.setItem('wb_sidebar', layout.classList.contains('side-collapsed') ? 'collapsed' : 'expanded');
+  // 侧栏宽度变化后重绘图表
+  setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 260);
+}
+
 function refreshData() {
   // 工作台（KPI + 趋势图）
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
@@ -218,6 +228,11 @@ window.addEventListener('resize', () => {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
+  // 恢复侧栏折叠状态
+  if (localStorage.getItem('wb_sidebar') === 'collapsed') {
+    const layout = document.querySelector('.layout');
+    if (layout) layout.classList.add('side-collapsed');
+  }
   await loadHalls();
   await loadWeeks();
   loadLastUpdate();

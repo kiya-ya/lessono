@@ -38,10 +38,13 @@
 
 <div class="layout">
   <!-- 侧边栏 -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="side-brand">
-      <h1>B+ 兔玩大数据</h1>
-      <span>姐妹团看板</span>
+      <div class="side-brand-text">
+        <h1>B+ 兔玩大数据</h1>
+        <span>姐妹团看板</span>
+      </div>
+      <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
       <div class="tab active" onclick="switchTab('overview')">工作台</div>
@@ -61,6 +64,7 @@
       <span id="header-user-info"></span>
     </div>
   </aside>
+  <button class="side-expand-fab" id="side-expand-fab" onclick="toggleSidebar()" title="展开侧栏">☰</button>
 
   <!-- 主区域 -->
   <div class="main">
