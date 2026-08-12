@@ -553,6 +553,72 @@ class SistersCrawler:
         print(f'[DB] 已保存 {inserted} 条分厅统计数据')
 
 
+    def crawl_hall_daily_revenue(self) -> list:
+        """
+        抓取大厅日流水（/roomnew/indextest/4 大厅主题页）
+        该页展示最近一个完整天的全部大厅数据，含「厅总流水」字段
+        """
+        url = f'{self.BASE_URL}/roomnew/indextest/4'
+        print(f'[Crawl] 抓取大厅日流水: {url}')
+        try:
+            resp = self.session.get(url, timeout=90)
+            if self._check_login(resp.text):
+                raise Exception('Cookie已过期，需要重新登录')
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            tables = soup.find_all('table')
+            if not tables:
+                raise Exception('页面未找到数据表格')
+            table = tables[0]
+            rows = table.find_all('tr')
+            headers = [c.get_text(strip=True) for c in rows[0].find_all(['td', 'th'])]
+            col = {name: i for i, name in enumerate(headers)}
+            data = []
+            for row in rows[1:]:
+                cells = [c.get_text(strip=True) for c in row.find_all('td')]
+                if len(cells) < len(headers):
+                    continue
+                try:
+                    revenue = float(cells[col['厅总流水']].replace(',', '') or 0)
+                except (ValueError, KeyError):
+                    revenue = 0.0
+                data.append({
+                    'date': cells[col['日期']],
+                    'hall_id': cells[col['大厅ID']],
+                    'hall_name': cells[col['大厅名称']],
+                    'hall_revenue': revenue,
+                })
+            print(f'[Crawl] 大厅日流水抓取完成: {len(data)} 个厅, 日期 {data[0]["date"] if data else "-"}')
+            log_crawl('hall_revenue_daily', 'success', len(data))
+            return data
+        except Exception as e:
+            print(f'[ERROR] 大厅日流水抓取失败: {e}')
+            log_crawl('hall_revenue_daily', 'failed', error_message=str(e))
+            raise
+
+    def save_hall_daily_revenue(self, data: list):
+        conn = get_db()
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS hall_revenue_daily (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                hall_id TEXT,
+                hall_name TEXT,
+                hall_revenue REAL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(date, hall_id)
+            )
+        ''')
+        inserted = 0
+        for d in data:
+            conn.execute(
+                'INSERT OR REPLACE INTO hall_revenue_daily (date, hall_id, hall_name, hall_revenue) VALUES (?, ?, ?, ?)',
+                (d['date'], d['hall_id'], d['hall_name'], d['hall_revenue']))
+            inserted += 1
+        conn.commit()
+        conn.close()
+        print(f'[DB] 已保存 {inserted} 条大厅日流水')
+
+
 def run_all():
     print('=' * 50)
     print('姐妹团数据抓取开始')
@@ -573,9 +639,16 @@ def run_all():
     trend_data = crawler.crawl_trend(metric='new_team_count', date_type=1)
     crawler.save_trend(trend_data)
     
-    print('\n--- [4/4] 分厅统计聚合 ---')
+    print('\n--- [4/5] 分厅统计聚合 ---')
     hall_stats = crawler.aggregate_hall_stats()
     crawler.save_hall_stats(hall_stats)
+
+    print('\n--- [5/5] 大厅日流水 ---')
+    try:
+        hall_revenue = crawler.crawl_hall_daily_revenue()
+        crawler.save_hall_daily_revenue(hall_revenue)
+    except Exception as e:
+        print(f'[WARN] 大厅日流水抓取失败（不影响主流程）: {e}')
     
     print('\n' + '=' * 50)
     print('全部抓取完成')

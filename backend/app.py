@@ -229,6 +229,10 @@ def api_hall_overview():
             'SELECT hall_name FROM hall_managers WHERE uid = ? ORDER BY hall_name', (user_uid,)
         ).fetchall()]
     data = []
+    # hall_revenue_daily 表可能尚未建立（首次部署/未抓取时），先探测一次
+    has_hall_rev = conn.execute(
+        "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='hall_revenue_daily'"
+    ).fetchone()['c'] > 0
     for h in halls:
         rows = conn.execute('''
             SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
@@ -236,7 +240,19 @@ def api_hall_overview():
             FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT ?
         ''', (h, weeks)).fetchall()
         if rows:
-            data.append({'hall_name': h, 'weeks': [dict(r) for r in reversed(rows)]})
+            week_list = [dict(r) for r in reversed(rows)]
+            # 合并真实厅周流水（hall_revenue_daily 按周区间求和；无数据为 None）
+            for w in week_list:
+                w['hall_revenue'] = None
+                w['hall_revenue_days'] = 0
+                if has_hall_rev:
+                    rev = conn.execute(
+                        'SELECT SUM(hall_revenue) AS s, COUNT(*) AS n FROM hall_revenue_daily WHERE hall_name = ? AND date >= ? AND date <= ?',
+                        (h, w['week_start'], w['week_end'])).fetchone()
+                    if rev['n']:
+                        w['hall_revenue'] = round(rev['s'], 1)
+                        w['hall_revenue_days'] = rev['n']
+            data.append({'hall_name': h, 'weeks': week_list})
     conn.close()
     return jsonify({'role': role, 'data': data})
 
