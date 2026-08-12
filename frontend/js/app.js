@@ -55,6 +55,9 @@ function toggleSort(field) {
 function refreshData() {
   loadKPI();
   loadAlerts();
+  // 先销毁旧图表实例，否则 init 函数内部只会 resize 而不会拉取新数据
+  if (charts.trend) { charts.trend.dispose(); charts.trend = null; }
+  if (charts.overviewRetention) { charts.overviewRetention.dispose(); charts.overviewRetention = null; }
   initTrendChart();
   initOverviewRetentionChart();
   loadDetailTable();

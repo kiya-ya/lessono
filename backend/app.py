@@ -15,6 +15,14 @@ from flask import Flask, jsonify, request, send_from_directory, Response, sessio
 from flask_cors import CORS
 from PIL import Image, ImageDraw, ImageFont
 
+# Windows 控制台默认 GBK 编码，打印含 emoji/特殊符号的昵称（如 ❍）会抛
+# UnicodeEncodeError，导致 UID 查询等接口 500。改为容错模式，无法编码的字符替换输出。
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors='replace')
+    except Exception:
+        pass
+
 # 将crawler目录加入路径
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'crawler'))
 from db import get_db
@@ -210,24 +218,32 @@ def api_kpi():
     hall = request.args.get('hall', 'all')
     week = request.args.get('week', '')
     conn = get_db_conn()
-    
-    
+
+    # 指定大厅但未指定周时，默认取该厅最新一周
+    if not (week and '|' in week) and hall != 'all':
+        latest = conn.execute(
+            "SELECT week_start, week_end FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT 1",
+            (hall,)
+        ).fetchone()
+        if latest:
+            week = latest['week_start'] + '|' + latest['week_end']
+
     if week and '|' in week:
         ws, we = week.split('|')
         cursor = conn.execute("""
             SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
                    dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
                    total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
-        """, (ws, we))
+            FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?
+        """, (hall, ws, we))
         this_row = cursor.fetchone()
         if not this_row:
             conn.close()
             return jsonify({'error': '该周暂无数据'}), 404
         cursor = conn.execute("""
-            SELECT * FROM weekly_report WHERE hall_name = 'all' AND week_start < ?
+            SELECT * FROM weekly_report WHERE hall_name = ? AND week_start < ?
             ORDER BY week_start DESC LIMIT 1
-        """, (ws,))
+        """, (hall, ws))
         prev_row = cursor.fetchone()
         # 先不 close，还需要查询成就数据
         def calc_pct(curr, prev):
@@ -236,21 +252,23 @@ def api_kpi():
         def getv(row, key, default=0):
             return row[key] if row else default
         
-        # 从 stats_daily 聚合该周的成就数据
-        cursor = conn.execute("""
-            SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
-                   SUM(active_team_count) as active
-            FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
-        """, (ws, we))
-        achieve_row = cursor.fetchone()
-        achieve_total = (achieve_row['lvl'] or 0) + (achieve_row['rev'] or 0)
-        achieve_rate = round(achieve_total / achieve_row['active'] * 100, 1) if achieve_row['active'] else 0
-        
+        # 从 stats_daily 聚合该周的成就数据（仅有全平台数据，单厅无此维度）
+        achieve_rate = 0
+        if hall == 'all':
+            cursor = conn.execute("""
+                SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
+                       SUM(active_team_count) as active
+                FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
+            """, (ws, we))
+            achieve_row = cursor.fetchone()
+            achieve_total = (achieve_row['lvl'] or 0) + (achieve_row['rev'] or 0)
+            achieve_rate = round(achieve_total / achieve_row['active'] * 100, 1) if achieve_row['active'] else 0
+
         # 前一周成就（用于环比）
         pws = getv(prev_row, 'week_start', '')
         pwe = getv(prev_row, 'week_end', '')
         prev_achieve_rate = 0
-        if pws and pwe:
+        if hall == 'all' and pws and pwe:
             cursor = conn.execute("""
                 SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
                        SUM(active_team_count) as active
