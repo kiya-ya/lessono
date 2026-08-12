@@ -201,18 +201,6 @@ def api_halls():
     
     conn.close()
     return jsonify({'data': halls, 'role': role})
-@login_required
-def api_halls():
-    """返回所有大厅列表"""
-    conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT DISTINCT hall_name FROM team_detail
-        WHERE hall_name IS NOT NULL AND hall_name != ''
-        ORDER BY hall_name
-    ''')
-    rows = cursor.fetchall()
-    conn.close()
-    return jsonify({'data': [r['hall_name'] for r in rows]})
 
 
 @app.route('/api/kpi')
