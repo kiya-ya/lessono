@@ -61,7 +61,9 @@ check('hall-overview.厅集合', set(d['hall_name'] for d in ov['data']), manage
 # ── 4. /api/survival ──
 sv = api('/api/survival')
 ref = conn.execute('SELECT MAX(snapshot_date) AS r FROM team_detail').fetchone()['r']
-rows = conn.execute("SELECT form_date, dissolve_date, days_since_formed FROM team_detail WHERE snapshot_date=?", (ref,)).fetchall()
+DEDUP = """rowid IN (SELECT MAX(rowid) FROM team_detail
+           WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail) GROUP BY team_id)"""
+rows = conn.execute(f"SELECT form_date, dissolve_date, days_since_formed FROM team_detail WHERE {DEDUP}").fetchall()
 active_db = sum(1 for x in rows if not (x['dissolve_date'] or '').strip())
 check('survival.进行中团数', sv['active_count'], active_db)
 ref_d = datetime.strptime(ref, '%Y-%m-%d').date()
@@ -88,8 +90,8 @@ check('survival.7日样本数', sv['survival']['d7']['total'], elig)
 de = api('/api/daily-events?days=14')
 check('daily-events.ref_date', de['ref_date'], ref)
 for i, d in enumerate(de['dates']):
-    new_db = conn.execute("SELECT COUNT(*) AS c FROM team_detail WHERE snapshot_date=? AND substr(form_date,1,10)=?", (ref, d)).fetchone()['c']
-    diss_db = conn.execute("SELECT COUNT(*) AS c FROM team_detail WHERE snapshot_date=? AND substr(dissolve_date,1,10)=?", (ref, d)).fetchone()['c']
+    new_db = conn.execute(f"SELECT COUNT(*) AS c FROM team_detail WHERE {DEDUP} AND substr(form_date,1,10)=?", (d,)).fetchone()['c']
+    diss_db = conn.execute(f"SELECT COUNT(*) AS c FROM team_detail WHERE {DEDUP} AND substr(dissolve_date,1,10)=?", (d,)).fetchone()['c']
     check(f'daily-events.{d}.新成团', de['new_teams'][i], new_db)
     check(f'daily-events.{d}.解散', de['dissolved'][i], diss_db)
 
@@ -108,8 +110,8 @@ check('policy.流水后', pi['overall']['rev_post'], round(post['rev'], 1))
 
 # ── 7. /api/captains TOP1 ──
 cp = api('/api/captains?limit=1')
-top_db = conn.execute("""SELECT sister_uid, SUM(reward_amount) rev FROM team_detail
-    WHERE snapshot_date=? AND sister_uid != '' GROUP BY sister_uid ORDER BY rev DESC LIMIT 1""", (ref,)).fetchone()
+top_db = conn.execute(f"""SELECT sister_uid, SUM(reward_amount) rev FROM team_detail
+    WHERE {DEDUP} AND sister_uid != '' GROUP BY sister_uid ORDER BY rev DESC LIMIT 1""").fetchone()
 check('captains.TOP1.uid', cp['data'][0]['uid'], top_db['sister_uid'])
 check('captains.TOP1.流水', cp['data'][0]['total_reward'], round(top_db['rev'], 1))
 

@@ -80,6 +80,9 @@ async function loadCaptains() {
   try {
     const res = await fetch(API_BASE + '/api/captains?limit=50&' + getHallParam().substring(1));
     const d = await res.json();
+    if (d.ref_date) {
+      document.getElementById('captains-hint').textContent = `快照日期 ${d.ref_date} · 随大厅筛选联动`;
+    }
 
     // 头牌依赖度（选中具体厅时只显示该厅）
     const dep = (d.dependency || []).filter(x => currentHall === 'all' || x.hall_name === currentHall);
@@ -94,7 +97,7 @@ async function loadCaptains() {
       : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
 
     tableEl.innerHTML = `
-      <tr><th>#</th><th>姐姐</th><th>所在大厅</th><th>带团数</th><th>进行中</th><th>团存活率</th><th>累计流水</th></tr>
+      <tr><th>#</th><th>姐姐</th><th>所在大厅</th><th>带团数</th><th>进行中</th><th>团存活率</th><th>当日奖励</th></tr>
       ${(d.data || []).map((c, i) => `<tr>
         <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
         <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>

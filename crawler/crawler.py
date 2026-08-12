@@ -383,7 +383,13 @@ class SistersCrawler:
     def save_detail(self, data: list):
         conn = get_db()
         inserted = 0
-        
+
+        # 幂等：写入前先删除当天旧快照，避免一天多次抓取产生重复行
+        if data:
+            snap = data[0].get('snapshot_date')
+            if snap:
+                conn.execute('DELETE FROM team_detail WHERE snapshot_date = ?', (snap,))
+
         for row in data:
             try:
                 conn.execute('''
@@ -484,6 +490,7 @@ class SistersCrawler:
         
         try:
             # 按大厅聚合：统计各厅的团数、进行中数、解散数、总流水、总奖励
+            # 按 team_id 去重（防御历史快照中的重复行）
             cursor = conn.execute('''
                 SELECT 
                     hall_name,
@@ -493,7 +500,9 @@ class SistersCrawler:
                     SUM(sister_revenue) as total_revenue,
                     SUM(reward_amount) as total_reward
                 FROM team_detail
-                WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                                WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                                GROUP BY team_id)
                 GROUP BY hall_name
                 ORDER BY team_count DESC
             ''')

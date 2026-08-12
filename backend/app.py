@@ -442,7 +442,9 @@ def api_daily_events():
     days = min(int(request.args.get('days', 14)), 60)
     conn = get_db_conn()
     sql = """SELECT form_date, dissolve_date FROM team_detail
-             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)"""
+             WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                             GROUP BY team_id)"""
     params = []
     if hall != 'all':
         sql += ' AND hall_name = ?'
@@ -477,7 +479,9 @@ def api_survival():
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
     sql = """SELECT form_date, dissolve_date, days_since_formed FROM team_detail
-             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)"""
+             WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                             GROUP BY team_id)"""
     params = []
     if hall != 'all':
         sql += ' AND hall_name = ?'
@@ -616,17 +620,20 @@ def api_policy_impact():
 @app.route('/api/captains')
 @login_required
 def api_captains():
-    """团长（姐姐）维度：带团数/流水/存活率排行 + 各厅头牌依赖度"""
+    """姐姐（团长）维度：带团数/当日奖励/团存活率排行 + 各厅头牌依赖度"""
     hall = request.args.get('hall', 'all')
     limit = min(int(request.args.get('limit', 50)), 200)
     conn = get_db_conn()
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
     sql = """SELECT sister_uid, MAX(sister_nickname) AS nickname,
                     GROUP_CONCAT(DISTINCT hall_name) AS halls,
                     COUNT(*) AS team_count,
                     SUM(CASE WHEN dissolve_date = '' OR dissolve_date IS NULL THEN 1 ELSE 0 END) AS active_count,
                     SUM(reward_amount) AS total_reward
              FROM team_detail
-             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+             WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                             GROUP BY team_id)
                AND sister_uid IS NOT NULL AND sister_uid != ''"""
     params = []
     if hall != 'all':
@@ -645,12 +652,14 @@ def api_captains():
         'total_reward': round(r['total_reward'] or 0, 1),
     } for r in rows]
 
-    # 头牌依赖度：各厅 TOP1 团长流水占比
+    # 头牌依赖度：各厅 TOP1 姐姐当日奖励占比
     dep_rows = conn.execute("""
         WITH per_captain AS (
           SELECT hall_name, sister_uid, MAX(sister_nickname) AS nickname, SUM(reward_amount) AS rev
           FROM team_detail
-          WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+          WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                          WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                          GROUP BY team_id)
             AND sister_uid IS NOT NULL AND sister_uid != ''
           GROUP BY hall_name, sister_uid
         ),
@@ -673,7 +682,7 @@ def api_captains():
     } for r in dep_rows]
     conn.close()
 
-    return jsonify({'data': captains, 'dependency': dependency})
+    return jsonify({'data': captains, 'dependency': dependency, 'ref_date': ref, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
 
 
 @app.route('/api/alerts-center')
@@ -788,8 +797,9 @@ def api_detail_table():
     
     conditions = []
     params = []
-    # 只显示最新快照的数据，避免历史快照重复
-    conditions.append('snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)')
+    # 只显示最新快照的数据，避免历史快照重复；同一快照内按 team_id 去重（防御重复抓取）
+    conditions.append('''rowid IN (SELECT MAX(rowid) FROM team_detail
+        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail) GROUP BY team_id)''')
     if search:
         conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ?)')
         params = [f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%']
