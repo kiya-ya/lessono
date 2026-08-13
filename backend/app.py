@@ -283,8 +283,12 @@ def api_hall_overview():
         "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='team_sister_revenue'"
     ).fetchone()['c'] > 0
     latest_sw = None
+    prev_sw = None
     if has_sister_rev:
         latest_sw = conn.execute('SELECT MAX(week_start) AS w FROM team_sister_revenue').fetchone()['w']
+        prev_sw = conn.execute(
+            'SELECT MAX(week_start) AS w FROM team_sister_revenue WHERE week_start < ?', (latest_sw,)
+        ).fetchone()['w']
     for h in halls:
         rows = conn.execute('''
             SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
@@ -322,6 +326,7 @@ def api_hall_overview():
             # 姐妹团周/月流水（真·流水 = 姐姐+妹妹当周礼物总流水合计）
             sister_weekly = None
             sister_monthly = None
+            sister_prev_weekly = None
             if has_sister_rev:
                 if latest_sw:
                     sw = conn.execute(
@@ -329,13 +334,20 @@ def api_hall_overview():
                         (h, latest_sw)).fetchone()
                     if sw and sw['s'] is not None:
                         sister_weekly = round(sw['s'], 1)
+                if prev_sw:
+                    sp = conn.execute(
+                        'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
+                        (h, prev_sw)).fetchone()
+                    if sp and sp['s'] is not None:
+                        sister_prev_weekly = round(sp['s'], 1)
                 sm = conn.execute(
                     'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start >= ?',
                     (h, month_start)).fetchone()
                 if sm and sm['s'] is not None:
                     sister_monthly = round(sm['s'], 1)
             data.append({'hall_name': h, 'weeks': week_list, 'month': month,
-                         'sister_weekly_revenue': sister_weekly, 'sister_monthly_revenue': sister_monthly})
+                         'sister_weekly_revenue': sister_weekly, 'sister_monthly_revenue': sister_monthly,
+                         'sister_prev_weekly_revenue': sister_prev_weekly})
     conn.close()
     return jsonify({'role': role, 'data': data})
 

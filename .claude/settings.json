@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"import sqlite3; c=sqlite3.connect\\('data/stats.db'\\); c.row_factory=sqlite3.Row; rows=c.execute\\(\\\\\"SELECT week_label,week_start,dissolution_rate,dissolved_count,active_dissolved_count,retention_rate FROM weekly_report WHERE hall_name='all' ORDER BY week_start DESC LIMIT 8\\\\\"\\).fetchall\\(\\); [print\\(dict\\(r\\)\\) for r in rows]\")"
+    ]
+  }
+}
