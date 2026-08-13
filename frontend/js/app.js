@@ -35,6 +35,27 @@ function switchTab(tabName) {
   if (tabName === 'alerts') setTimeout(() => { if (typeof loadAlertsCenter === 'function') loadAlertsCenter(); }, 100);
 }
 
+// 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
+const DRILL_TARGETS = {
+  retention:   { tab: 'policy' },                       // 留存率 → 政策评估（前后对比 + 分厅响应度）
+  dissolution: { tab: 'details', status: 'dissolved' }, // 解散率 → 明细 · 已解散
+  revenue:     { tab: 'compare' },                      // 礼物奖励 → 对比分析（大厅流水对比）
+  activity:    { tab: 'compare' },                      // 任务活跃度 → 对比分析（指标对比表）
+  dailyNew:    { tab: 'details', status: 'active' },    // 日级新成团 → 明细 · 进行中
+  dailyDiss:   { tab: 'details', status: 'dissolved' }, // 日级解散 → 明细 · 已解散
+};
+
+function drillTo(key) {
+  const t = DRILL_TARGETS[key];
+  if (!t) return;
+  switchTab(t.tab);
+  if (t.status) {
+    const sel = document.getElementById('detail-status');
+    if (sel) sel.value = t.status;
+    if (typeof loadDetailTable === 'function') loadDetailTable(1);
+  }
+}
+
 function toggleSort(field) {
   if (detailSortField === field) {
     detailSortOrder = detailSortOrder === 'asc' ? 'desc' : 'asc';
@@ -249,4 +270,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (suggestBox) suggestBox.style.display = 'none';
     }
   });
+
+  // 趋势图下钻：点击工作台 6 张图跳转到对应详情（事件委托，图表重绘不重复绑定）
+  const grid = document.querySelector('.chart-grid');
+  if (grid) {
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('[data-drill]');
+      if (card) drillTo(card.getAttribute('data-drill'));
+    });
+  }
 });
