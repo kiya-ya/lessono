@@ -77,6 +77,10 @@ UID_BASIC_AUTH = _COOKIE_CFG['basic_auth']
 UID_BASE_URL = 'http://server1.tuwan.com:10010'
 UID_QUERY_URL = f'{UID_BASE_URL}/fly2013/play_user_newcaptian.php'
 
+# 调试模式：设置环境变量 UID_DEBUG=1 时，把 UID 查询的响应 HTML 保存到 tests/ 目录
+# 默认关闭，避免每次查询都在项目根目录生成 debug_uid_*.html 垃圾文件
+UID_DEBUG = os.environ.get('UID_DEBUG') == '1'
+
 # 类型分类映射 (前端key -> 表单type值)
 CAPTAIN_TYPE_VALUES = {
     'game': '0',      # 新队长-游戏
@@ -193,11 +197,12 @@ class UIDCrawler:
             resp.raise_for_status()
             text = resp.text.strip()
 
-            # 调试：保存HTML到文件
-            debug_file = os.path.join(os.path.dirname(__file__), '..', f'debug_uid_{uid}.html')
-            with open(debug_file, 'w', encoding='utf-8') as f:
-                f.write(text)
-            print(f'[UID-Crawl] 响应已保存: {debug_file}')
+            # 调试：保存HTML到文件（仅 UID_DEBUG=1 时，输出到 tests/ 目录）
+            if UID_DEBUG:
+                debug_file = os.path.join(os.path.dirname(__file__), '..', 'tests', f'debug_uid_{uid}.html')
+                with open(debug_file, 'w', encoding='utf-8') as f:
+                    f.write(text)
+                print(f'[UID-Crawl] 响应已保存: {debug_file}')
 
             # 检查是否是登录页
             if '织梦内容管理系统' in text or 'login' in text.lower():
