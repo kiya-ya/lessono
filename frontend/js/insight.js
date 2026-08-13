@@ -114,6 +114,15 @@ async function loadCaptains() {
 
 let alertsResolvedFilter = '0';
 
+// 预警规则中文说明（与 crawler/alerts_engine.py 的 RULES 配置对应）
+const ALERT_RULE_DESC = {
+  dissolution_spike: '全平台解散率环比上升 ≥20%',
+  revenue_decline: '全平台流水连续下降 ≥2 周',
+  new_team_drop: '全平台新成团数环比下降 ≥30%',
+  retention_drop: '全平台留存率环比下降 ≥10 个百分点',
+  hall_dissolution_high: '单厅解散率 ≥ 全平台平均的 1.5 倍，且解散率 ≥20%（团数 ≥5，取前 5 名）',
+};
+
 function alertsFilter(btn, status) {
   document.querySelectorAll('#tab-alerts .mini-btn').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -137,7 +146,7 @@ async function loadAlertsCenter() {
         <div class="alert-body">
           <div class="t">${a.title}</div>
           <div class="d">${a.description || ''}</div>
-          <div class="time">${a.week_label || ''} · ${(a.created_at || '').slice(0, 16)} · 规则：${a.alert_type}</div>
+          <div class="time">${a.week_label || ''} · ${(a.created_at || '').slice(0, 16)} · 规则：${ALERT_RULE_DESC[a.alert_type] || a.alert_type}</div>
         </div>
         <button class="mini-btn alert-act" onclick="toggleAlert(${a.id}, ${a.is_resolved ? 0 : 1})">${a.is_resolved ? '恢复' : '标记已处理'}</button>
       </div>`).join('')
