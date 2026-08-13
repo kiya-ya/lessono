@@ -7,7 +7,7 @@
 import sys
 from PIL import Image
 
-SRC = '点点开黑LOG.jpg'
+SRC = 'frontend/assets/点点开黑LOG.jpg'
 DST = 'frontend/assets/logo-ddkh.png'
 THEME = sys.argv[1] if len(sys.argv) > 1 else '#4F5BD5'
 SIZE = 256

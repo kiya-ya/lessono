@@ -8,25 +8,25 @@
 
 | 模块 | 功能 |
 |------|------|
-| 📊 工作台 | 厅体检卡墙（红黄绿健康度+迷你趋势线）、预警横幅（可点击直达问题厅）、KPI 大/小卡、4 张趋势图 |
-| 🏠 权限视角 | 厅运营只看自己管理的厅；管理员看厅排行榜（含位次变化）；按角色自动过滤 |
-| 📈 核心趋势 | 留存率折线、解散率叠加图、流水柱状图、任务堆叠图，支持时间截断 |
-| 🔍 对比分析 | 政策前后对比表、大厅排名 Top10、新成团vs解散双轴图 |
-| 📋 明细数据 | 搜索（ID/昵称/大厅）、状态筛选、分页导航、UID点击跳转、大厅切换 |
-| 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、姐妹团累计流水（姐姐+妹妹 server1 合计）、姐姐vs妹妹对比图、CSV导出 |
-| 🍪 Cookie管理 | 双Cookie分别管理（UID查询 / 数据抓取）|
-| 📤 数据导出 | 明细CSV、UID结果CSV（周报CSV/PDF接口保留，工具栏入口已移除）|
-| 📱 手机适配 | 工作台/图表/卡墙响应式布局，局域网手机可直接访问 |
-| 🧹 测试文件清理 | `clean_tests.bat` 一键清理临时调试文件 |
+| 📊 工作台 | 厅体检卡墙（红黄绿健康度+迷你趋势线）、预警横幅（可点击直达问题厅）、KPI 大/小卡、4 张趋势图（含平台均值参考线） |
+| 🏠 权限视角 | 厅运营只看自己管理的厅；管理员看厅排行榜（真实厅总流水口径+位次变化）；按角色自动过滤 |
+| 📈 核心趋势 | 留存率折线、解散率叠加图、流水柱状图、任务堆叠图、日级本周vs上周叠加 |
+| 🔍 对比分析 | 厅四象限散点图（流水×留存）、政策前后对比表、大厅排名、双轴图 |
+| 📐 政策评估 | 政策前4周vs后4周均值对比、分厅响应度发散条形图+明细表 |
+| 👑 姐姐分析 | 姐姐排行榜（当日奖励口径）、头牌依赖度警示 |
+| 🔔 预警中心 | 历史预警列表、未处理计数、标记已处理/恢复 |
+| 📋 明细数据 | 姐妹团存活分析（天数分布+7/14/30日存活率+政策前后）、搜索/排序/分页/状态筛选 |
+| 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、累计流水（server1 合计）、姐姐vs妹妹对比图、CSV导出 |
+| 🍪 Cookie管理 | 双Cookie分别管理，更新后立即生效（热加载） |
+| 📱 手机适配 | 侧栏折叠为顶部横条，全页面响应式 |
+| 🎨 界面 | 侧边栏布局（可折叠）、靛蓝单品牌色降饱和配色、粒子交互登录页 |
 
 ---
 
 ## 技术栈
 
 - **后端**: Python 3.11 + Flask + SQLite
-- **前端**: 纯 HTML + JavaScript + ECharts 5（模块化拆分：config / api / app / render）
-- **数据抓取**: requests + BeautifulSoup4
-- **部署**: Docker / Windows 本地
+- **前端**: 纯 HTML + JavaScript + ECharts 5（模块化：config / api / app / render / workbench / insight / auth）
 - **数据抓取**: requests + BeautifulSoup4
 - **部署**: Docker / Windows 本地
 
@@ -125,35 +125,40 @@ python setup_task.py
 ```
 姐妹团看板系统/
 ├── backend/
-│   └── app.py              # Flask API 主入口
+│   └── app.py              # Flask API 主入口（所有接口）
 ├── crawler/
-│   ├── crawler.py          # 数据抓取
+│   ├── crawler.py          # bigdata 数据抓取（含大厅日流水）
 │   ├── db.py               # 数据库操作
-│   ├── uid_crawler.py      # UID查询抓取
+│   ├── uid_crawler.py      # UID查询抓取（Cookie 热加载）
 │   ├── metrics.py          # 指标计算
-│   └── alerts.py           # 预警引擎
+│   ├── alerts.py           # 预警引擎
+│   └── hall_manager_crawler.py  # 厅运营UID抓取
 ├── data/
-│   ├── stats.db            # SQLite 数据库
-│   ├── schema.sql          # 表结构
+│   ├── stats.db            # SQLite 主数据库（唯一使用中的库）
 │   ├── cookie.json         # UID查询Cookie
 │   ├── cookie_bigdata.json # 数据抓取Cookie
 │   └── exports/            # 导出文件
 ├── frontend/
-│   └── index.html          # 前端单页应用
-├── Dockerfile              # Docker镜像构建
-├── docker-compose.yml      # Docker编排
-├── tests/                  # 临时调试文件存放目录
-│   ├── debug_uid_*.html    # UID爬虫调试页面
-│   ├── check_*.py          # 数据库检查脚本
-│   └── test_*.py           # 测试脚本
-├── clean_tests.bat         # 一键清理测试文件
+│   ├── index.html          # 主页面（侧边栏布局）
+│   ├── login.html          # 登录页（交互粒子背景）
+│   ├── assets/             # LOGO 等静态资源
+│   ├── css/style.css       # 样式（含设计令牌 --wb-*）
+│   ├── js/config.js        # 全局配置
+│   ├── js/api.js           # API 请求封装
+│   ├── js/app.js           # 页面交互（标签切换/侧栏/刷新）
+│   ├── js/render.js        # 核心趋势/对比分析图表
+│   ├── js/workbench.js     # 工作台（卡墙/排行榜/KPI/趋势/四象限/日级叠加/存活）
+│   ├── js/insight.js       # 政策评估/姐姐分析/预警中心
+│   └── js/auth.js          # 登录状态与侧栏用户信息
+├── docs/                   # PRD 及历史文档
+├── tests/                  # 实用脚本
+│   ├── verify_data_accuracy.py   # 数据准确性交叉验证（46项）
+│   ├── backfill_hall_revenue.py  # 厅流水历史回填（一次性）
+│   └── make_logo.py              # LOGO 主题色生成
+├── daily_crawl.py          # 定时抓取入口（含预警检测）
 ├── deploy.bat              # Windows一键部署
-├── start.bat               # 开发启动
 ├── requirements.txt        # Python依赖
-└── 需求文档.md              # PRD需求文档
-├── start.bat               # 开发启动
-├── requirements.txt        # Python依赖
-└── 需求文档.md              # PRD需求文档
+└── 项目上下文记忆.md        # 会话上下文与排障记录
 ```
 
 ---
@@ -187,6 +192,14 @@ python setup_task.py
 ---
 
 ## 版本历史
+
+### v1.4.1 (2026-08-13) — 交互细节与项目清理
+
+- ✅ 登录页：恢复可交互粒子背景（鼠标牵引+邻近连线高亮），LOGO 换成点点开黑吉祥物（背景色随主题，脚本 `tests/make_logo.py`）
+- ✅ 侧边栏：`«` 按钮折叠/展开，主内容动态居中（展开时在剩余区域居中，收起时窗口居中），状态记忆
+- ✅ 侧栏用户信息简化：UID + 中文身份徽章 + 管理的厅名 + 退出登录
+- ✅ 数据库：users 表启动时同步厅名（hall_name 列），新增 `users_simple` 视图（UID/管理的厅名/身份）
+- ✅ 项目清理：删除一次性修复脚本/调试文件/重复虚拟环境，历史文档移入 docs/，tests/ 仅保留 3 个实用脚本
 
 ### v1.4.0 (2026-08-12) — 视觉改版
 
@@ -307,4 +320,4 @@ A: 确保使用 `.venv\Scripts\python.exe` 运行，而不是系统 Python。虚
 ---
 
 > 项目路径: `D:\姐妹团看板系统`
-> Git标签: `v1.0.1`
+> 当前版本: `v1.4.x`（详见上方版本历史）
