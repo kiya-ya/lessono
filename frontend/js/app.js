@@ -29,7 +29,7 @@ function switchTab(tabName) {
   document.getElementById('tab-' + tabName).classList.add('active');
   if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
   if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
-  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); }, 100);
+  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
   if (tabName === 'policy') setTimeout(() => { if (typeof loadPolicyImpact === 'function') loadPolicyImpact(); }, 100);
   if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); }, 100);
   if (tabName === 'alerts') setTimeout(() => { if (typeof loadAlertsCenter === 'function') loadAlertsCenter(); }, 100);
@@ -88,6 +88,7 @@ function refreshData() {
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
+  if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
   if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
   if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();

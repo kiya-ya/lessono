@@ -572,3 +572,35 @@ async function loadSurvival() {
     });
   } catch (e) { console.error('存活分析加载失败:', e); }
 }
+
+/* ── 解散原因分布（明细数据页） ── */
+async function loadDissolveReasons() {
+  const el = document.getElementById('chart-dissolve-reasons');
+  if (!el) return;
+  const src = document.getElementById('dissolve-reasons-src');
+  try {
+    const hall = currentHall !== 'all' ? currentHall : '';
+    const res = await fetch(API_BASE + '/api/dissolve-reasons' + (hall ? '?hall=' + encodeURIComponent(hall) : ''));
+    const d = await res.json();
+    if (d.error || !d.reasons || !d.reasons.length) {
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">暂无解散数据</div>';
+      if (src) src.textContent = '暂无解散数据';
+      return;
+    }
+    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '满月自动解散': '#4F5BD5', '等级自动解散': '#8FA8C9', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
+    if (src) src.textContent = `快照日期 ${d.ref_date} · 累计解散 ${d.total} 个团${hall ? '（大厅：' + hall + '）' : ''}`;
+    if (charts['dissolveReasons']) charts['dissolveReasons'].dispose();
+    charts['dissolveReasons'] = echarts.init(el);
+    charts['dissolveReasons'].setOption({
+      tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
+      legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 11, color: '#6B7280' } },
+      series: [{
+        type: 'pie', radius: ['45%', '72%'], center: ['38%', '50%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}个', fontSize: 10, color: '#6B7280' },
+        data: d.reasons.map(r => ({ name: r.reason, value: r.count, itemStyle: { color: colors[r.reason] || '#C0C4CC' } })),
+      }]
+    });
+  } catch (e) { console.error('解散原因分布加载失败:', e); }
+}

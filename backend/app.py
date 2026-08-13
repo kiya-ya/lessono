@@ -958,6 +958,33 @@ def api_trend_insights():
     return jsonify({'week_start': ws, 'week_end': we, 'ref_date': ref, **out})
 
 
+@app.route('/api/dissolve-reasons')
+@login_required
+def api_dissolve_reasons():
+    """解散原因分布：已解散姐妹团按归一化原因统计（支持按大厅过滤）"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+    hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    latest_teams = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+    rows = conn.execute(f"""
+        SELECT {DISSOLVE_REASON_CASE} AS reason, COUNT(*) AS c
+        FROM team_detail
+        WHERE {latest_teams} AND dissolve_date IS NOT NULL AND dissolve_date != ''
+          {hall_cond}
+        GROUP BY reason ORDER BY c DESC
+    """, hp).fetchall()
+    total = sum(r['c'] for r in rows)
+    reasons = [{
+        'reason': r['reason'],
+        'count': r['c'],
+        'share': round(r['c'] / total * 100, 1) if total else 0,
+    } for r in rows]
+    conn.close()
+    return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons})
+
+
 @app.route('/api/alerts-center')
 @login_required
 def api_alerts_center():

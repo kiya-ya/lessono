@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="stylesheet" href="css/style.css?v=8">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -242,6 +242,11 @@
       <div class="survival-chips" id="survival-chips"></div>
       <div class="chart-container" id="chart-survival" style="height:220px;"></div>
     </div>
+    <div class="chart-card" id="dissolve-reasons-card">
+      <h3>💥 解散原因分布</h3>
+      <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
+      <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+    </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
         <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
@@ -402,13 +407,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=7"></script>
-<script src="js/utils.js?v=7"></script>
-<script src="js/api.js?v=7"></script>
-<script src="js/auth.js?v=7"></script>
-<script src="js/render.js?v=7"></script>
-<script src="js/app.js?v=7"></script>
-<script src="js/workbench.js?v=7"></script>
-<script src="js/insight.js?v=7"></script>
+<script src="js/config.js?v=8"></script>
+<script src="js/utils.js?v=8"></script>
+<script src="js/api.js?v=8"></script>
+<script src="js/auth.js?v=8"></script>
+<script src="js/render.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
+<script src="js/workbench.js?v=8"></script>
+<script src="js/insight.js?v=8"></script>
 </body>
 </html>
