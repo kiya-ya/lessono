@@ -126,6 +126,22 @@ CREATE TABLE IF NOT EXISTS hall_stats (
     UNIQUE(snapshot_date, hall_name)
 );
 
+-- 8. 姐妹团周流水表（姐姐+妹妹当周礼物总流水合计，来自 server1 UID 批量查询）
+CREATE TABLE IF NOT EXISTS team_sister_revenue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    team_id INTEGER NOT NULL,
+    week_start TEXT NOT NULL,
+    week_end TEXT NOT NULL,
+    hall_name TEXT,
+    sister_uid TEXT,
+    sister_revenue REAL DEFAULT 0.0,        -- 姐姐当周礼物总流水
+    sister_uid2 TEXT,
+    sister2_revenue REAL DEFAULT 0.0,       -- 妹妹当周礼物总流水
+    total_revenue REAL DEFAULT 0.0,         -- 合计
+    queried_at TEXT,
+    UNIQUE(team_id, week_start)
+);
+
 -- 索引优化
 CREATE TABLE IF NOT EXISTS crawl_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -278,6 +278,13 @@ def api_hall_overview():
     ).fetchone()['c'] > 0
     # 本月起始日期（用于厅排行榜「本周/本月」切换）
     month_start = datetime.now().date().replace(day=1).isoformat()
+    # 姐妹团周流水（姐姐+妹妹当周礼物总流水合计，来自 team_sister_revenue 批量查询）
+    has_sister_rev = conn.execute(
+        "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='team_sister_revenue'"
+    ).fetchone()['c'] > 0
+    latest_sw = None
+    if has_sister_rev:
+        latest_sw = conn.execute('SELECT MAX(week_start) AS w FROM team_sister_revenue').fetchone()['w']
     for h in halls:
         rows = conn.execute('''
             SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
@@ -312,7 +319,23 @@ def api_hall_overview():
                 month['sis_revenue'] = round(mwk['s'] or 0, 1)
             if mwk['n'] is not None:
                 month['new_teams'] = int(mwk['n'] or 0)
-            data.append({'hall_name': h, 'weeks': week_list, 'month': month})
+            # 姐妹团周/月流水（真·流水 = 姐姐+妹妹当周礼物总流水合计）
+            sister_weekly = None
+            sister_monthly = None
+            if has_sister_rev:
+                if latest_sw:
+                    sw = conn.execute(
+                        'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
+                        (h, latest_sw)).fetchone()
+                    if sw and sw['s'] is not None:
+                        sister_weekly = round(sw['s'], 1)
+                sm = conn.execute(
+                    'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start >= ?',
+                    (h, month_start)).fetchone()
+                if sm and sm['s'] is not None:
+                    sister_monthly = round(sm['s'], 1)
+            data.append({'hall_name': h, 'weeks': week_list, 'month': month,
+                         'sister_weekly_revenue': sister_weekly, 'sister_monthly_revenue': sister_monthly})
     conn.close()
     return jsonify({'role': role, 'data': data})
 

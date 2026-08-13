@@ -134,8 +134,8 @@ function setRankPeriod(p) {
   if (title) title.textContent = '厅排行榜 · ' + (p === 'week' ? '本周' : '本月');
   const hint = document.getElementById('wb-rank-hint');
   if (hint) hint.textContent = p === 'week'
-    ? '位次为较上周变化 · 厅周流水=全厅流水，姐妹团礼物奖励=本周发放的礼物奖励'
-    : '本月累计 · 厅月流水=全厅流水，姐妹团月礼物奖励=本月发放的礼物奖励';
+    ? '位次为较上周变化 · 姐妹团周流水=姐姐+妹妹当周礼物总流水，厅周流水=全厅流水'
+    : '本月累计 · 姐妹团月流水=姐姐+妹妹当月礼物总流水，厅月流水=全厅流水';
   wbRenderRank();
 }
 
@@ -151,7 +151,7 @@ function wbRenderRank() {
     return {
       name: d.hall_name,
       rev: month ? (m.revenue != null ? m.revenue : (m.sis_revenue || 0)) : revOf(last),
-      sisRev: month ? (m.sis_revenue || 0) : (last.total_reward || 0),
+      sisRev: month ? d.sister_monthly_revenue : d.sister_weekly_revenue,
       active: last.active_team_count_end || 0,
       ret: last.retention_rate || 0,
       newTeams: month ? (m.new_teams || 0) : (last.new_team_count || 0),
@@ -173,7 +173,7 @@ function wbRenderRank() {
     return m > 0 ? `<span class="move up">↑${m}</span>` : m < 0 ? `<span class="move down">↓${-m}</span>` : '<span class="move same">—</span>';
   };
   const top = items.sort((a, b) => b.rev - a.rev).slice(0, 20);
-  const sisLabel = month ? '姐妹团月礼物奖励' : '姐妹团礼物奖励';
+  const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
   const revLabel = month ? '厅月流水' : '厅周流水';
   const newLabel = month ? '月新成团' : '周新成团';
   document.getElementById('wb-rank-table').innerHTML = `
@@ -182,7 +182,7 @@ function wbRenderRank() {
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td>${it.name}</td>
       <td>${it.active}</td>
-      <td>${wbFmtMoney(it.sisRev)}</td>
+      <td>${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</td>
       <td>${wbFmtMoney(it.rev)}${!month && it.revDays > 0 && it.revDays < 7 ? `<span style="color:var(--wb-text-3);font-size:10px">（${it.revDays}天）</span>` : ''}</td>
       <td>${move(it.prevRev === null ? null : revPrevRank[it.name] - revRank[it.name])}</td>
       <td>${Math.round(it.ret)}%</td>
