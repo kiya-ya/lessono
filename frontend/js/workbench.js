@@ -604,3 +604,40 @@ async function loadDissolveReasons() {
     });
   } catch (e) { console.error('解散原因分布加载失败:', e); }
 }
+
+/* ── 躺平预警名单（明细数据页） ── */
+async function loadLyingFlat() {
+  const listEl = document.getElementById('lying-flat-list');
+  if (!listEl) return;
+  const src = document.getElementById('lying-flat-src');
+  try {
+    const hall = currentHall !== 'all' ? currentHall : '';
+    const res = await fetch(API_BASE + '/api/lying-flat' + (hall ? '?hall=' + encodeURIComponent(hall) : ''));
+    const d = await res.json();
+    if (d.error) return;
+    if (src) src.textContent = `快照 ${d.ref_date}（对比 ${d.prev_date}）· 连续零任务 ${d.total} 个团 · 任务数据覆盖率约 ${d.coverage}%`;
+    if (!d.list || !d.list.length) {
+      listEl.innerHTML = '<div style="color:var(--wb-text-3);font-size:12px;padding:12px;">暂无躺平/预警团 🎉</div>';
+      return;
+    }
+    const rows = d.list.map(t => {
+      const lv = t.level === 'lying'
+        ? `<span class="chip down">躺平${t.zero_streak}天</span>`
+        : `<span class="chip flat">预警</span>`;
+      return `<tr>
+        <td><a href="javascript:void(0)" onclick="jumpToUID('${t.sister_uid || ''}', '${t.team_id}')">${t.sister_nickname || '-'}</a></td>
+        <td>${t.hall_name || '-'}</td>
+        <td>${t.team_id}</td>
+        <td>${t.days_since_formed ?? '-'}天</td>
+        <td>${t.last_active || '从未'}</td>
+        <td>${lv}</td>
+      </tr>`;
+    }).join('');
+    listEl.innerHTML = `<div class="lying-note">⚠️ 任务数据未全覆盖，零任务可能含「未采集」而非真躺平，下发名单前请人工核对</div>
+      <div class="rank-scroll" style="max-height:380px;">
+      <table class="rank-table">
+        <thead><tr><th>姐姐</th><th>大厅</th><th>团ID</th><th>成团</th><th>最近有任务</th><th>状态</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+  } catch (e) { console.error('躺平名单加载失败:', e); }
+}

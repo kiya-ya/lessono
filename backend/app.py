@@ -985,6 +985,63 @@ def api_dissolve_reasons():
     return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons})
 
 
+@app.route('/api/lying-flat')
+@login_required
+def api_lying_flat():
+    """躺平预警名单：进行中团里连续多日零任务（三类任务全为0）的团，接近自动解散"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    dates = [r['snapshot_date'] for r in conn.execute('SELECT DISTINCT snapshot_date FROM team_detail ORDER BY snapshot_date').fetchall()]
+    if len(dates) < 2:
+        conn.close()
+        return jsonify({'ref_date': dates[-1] if dates else '', 'prev_date': '', 'total': 0, 'coverage': 0, 'list': []})
+    latest, prev = dates[-1], dates[-2]
+    hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    active_rows = conn.execute(f"""
+        SELECT team_id, hall_name, sister_nickname, sister_uid, days_since_formed
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+          AND (dissolve_date IS NULL OR dissolve_date = '')
+          {hall_cond}
+    """, hp).fetchall()
+    # 每个团在每个快照日是否做过任意任务（同日多行取 MAX）
+    tm = {}
+    for r in conn.execute("""
+            SELECT team_id, snapshot_date,
+                   MAX(drive_task_count > 0 OR accompany_task_count > 0 OR gift_task_count > 0) AS a
+            FROM team_detail GROUP BY team_id, snapshot_date
+        """).fetchall():
+        tm[(r['team_id'], r['snapshot_date'])] = r['a']
+    lst = []
+    for t in active_rows:
+        tid = t['team_id']
+        streak, i = 0, len(dates) - 1
+        while i >= 0 and not tm.get((tid, dates[i]), 0):
+            streak += 1
+            i -= 1
+        if streak < 1:
+            continue
+        lst.append({
+            'team_id': tid,
+            'hall_name': t['hall_name'],
+            'sister_nickname': t['sister_nickname'],
+            'sister_uid': t['sister_uid'],
+            'days_since_formed': t['days_since_formed'],
+            'zero_streak': streak,
+            'last_active': dates[i] if i >= 0 else None,
+            'level': 'lying' if streak >= 2 else 'warning',
+        })
+    lst.sort(key=lambda x: (-x['zero_streak'], x['days_since_formed'] or 0))
+    cov = conn.execute("""
+        SELECT COUNT(*) total, SUM(drive_task_count > 0 OR accompany_task_count > 0 OR gift_task_count > 0) a
+        FROM team_detail WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+    """).fetchone()
+    coverage = round(cov['a'] / cov['total'] * 100, 1) if cov['total'] else 0
+    conn.close()
+    return jsonify({'ref_date': latest, 'prev_date': prev, 'total': len(lst), 'coverage': coverage, 'list': lst})
+
+
 @app.route('/api/alerts-center')
 @login_required
 def api_alerts_center():
