@@ -91,26 +91,6 @@ async function loadWeeks() {
     }
   } catch (e) { console.error('周列表加载失败:', e); }
 }
-async function loadAlerts() {
-  try {
-    const res = await fetch(API_BASE + '/api/alerts?' + getWeekParam().substring(1));
-    const result = await res.json();
-    const list = document.getElementById('alert-list');
-    if (!result.data || result.data.length === 0) {
-      list.innerHTML = '<div style="color:#888; font-size:13px; padding:10px;">✅ 近期暂无异常预警</div>';
-      return;
-    }
-    list.innerHTML = result.data.map(a => `
-      <div class="alert-item ${a.severity}">
-        <span class="alert-icon">${a.severity === 'high' ? '🔴' : a.severity === 'medium' ? '🟡' : '🟢'}</span>
-        <strong>[${a.severity === 'high' ? '高' : a.severity === 'medium' ? '中' : '低'}]</strong>
-        ${a.title}：${a.message}
-        <span style="color:#999; font-size:11px; margin-left:auto;">${a.created_at ? a.created_at.split(' ')[0] : ''}</span>
-      </div>
-    `).join('');
-  } catch (e) { console.error('预警加载失败:', e); }
-}
-
 async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;

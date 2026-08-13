@@ -16,7 +16,7 @@ function onWeekChange() {
   // 明细数据刷新
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
-  if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
+  if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
 }
@@ -67,7 +67,7 @@ function refreshData() {
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
-  if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
+  if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
   if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
@@ -122,20 +122,6 @@ function onHallCompareSortChange() {
   hallCompareSortOrder = order;
   hallComparePage = 0;
   renderHallComparePage();
-}
-
-function jumpToUID(uid, teamId) {
-  loadKPI();
-  loadAlerts();
-  initTrendChart();
-  initOverviewRetentionChart();
-  loadDetailTable();
-  if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
-  if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
-  if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }
-  if (charts.activity) { charts.activity.dispose(); charts.activity = null; }
-  initTrendCharts();
-  initCompareChart();
 }
 
 function jumpToUID(uid, teamId) {

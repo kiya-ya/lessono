@@ -338,6 +338,7 @@ function wbResizeCharts() {
 async function initWorkbench() {
   await loadWorkbenchOverview(true);
   await refreshWorkbench();
+  if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
 }
 
 
@@ -408,14 +409,38 @@ async function loadDailyOverlay() {
   } catch (e) { console.error('日级叠加图加载失败:', e); }
 }
 
+/* ── 日级叠加懒加载：首次滚入视口才请求，避免拖慢工作台首屏 ── */
+let _dailyOverlaySeen = false;
+let _dailyOverlayObserver = null;
+
+function maybeLoadDailyOverlay() {
+  if (_dailyOverlaySeen) { loadDailyOverlay(); return; }
+  const el = document.getElementById('chart-daily-new');
+  if (!el || !('IntersectionObserver' in window)) {
+    _dailyOverlaySeen = true;
+    loadDailyOverlay();
+    return;
+  }
+  if (_dailyOverlayObserver) return;  // 已在等待滚入视口
+  _dailyOverlayObserver = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting)) {
+      _dailyOverlaySeen = true;
+      _dailyOverlayObserver.disconnect();
+      _dailyOverlayObserver = null;
+      loadDailyOverlay();
+    }
+  }, { rootMargin: '300px 0px' });
+  _dailyOverlayObserver.observe(el);
+}
+
 /* ── 存活分析（明细数据页） ── */
 async function loadSurvival() {
   const chipsEl = document.getElementById('survival-chips');
   const el = document.getElementById('chart-survival');
   if (!chipsEl || !el) return;
   try {
-    const hallQ = getHallParam() ? '?' + getHallParam().substring(1) : '';
-    const res = await fetch(API_BASE + '/api/survival' + hallQ);
+    const hall = currentHall !== 'all' ? currentHall : '';
+    const res = await fetch(API_BASE + '/api/survival' + (hall ? '?hall=' + encodeURIComponent(hall) : ''));
     const d = await res.json();
     if (d.error) { chipsEl.innerHTML = '<span class="survival-chip">暂无数据</span>'; return; }
     const s = d.survival;
