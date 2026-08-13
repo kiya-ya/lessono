@@ -47,7 +47,7 @@
       <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
-      <div class="tab active" onclick="switchTab('overview')">工作台</div>
+      <div class="tab active" onclick="switchTab('overview')">概览页</div>
       <div class="tab" onclick="switchTab('compare')">对比分析</div>
       <div class="tab" onclick="switchTab('policy')">政策评估</div>
       <div class="tab" onclick="switchTab('captains')">姐姐分析</div>
@@ -82,7 +82,7 @@
 
     <div class="content wb-wrap">
 
-  <!-- 工作台 -->
+  <!-- 概览页 -->
   <div id="tab-overview" class="tab-panel active">
     <div class="alert-banner" id="wb-alert-banner" style="display:none"></div>
 
@@ -113,7 +113,7 @@
           <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
           <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
         </div>
-        <span class="hint" id="wb-rank-hint">位次为较上周变化 · 厅周流水=全厅流水，姐妹团周流水=姐妹团礼物奖励</span>
+        <span class="hint" id="wb-rank-hint">位次为较上周变化 · 厅周流水=全厅流水，姐妹团礼物奖励=本周发放的礼物奖励</span>
       </div>
       <div class="rank-card"><div class="rank-scroll">
         <table class="rank-table" id="wb-rank-table"></table>
@@ -132,10 +132,10 @@
       <span class="hint">虚线为政策上线（07-17）</span>
     </div>
     <div class="chart-grid">
-      <div class="chart-card"><h3>💯 留存率</h3><div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div><div class="chart-box" id="wb-c-retention"></div></div>
-      <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周有多少团解散 · 越低越好</div><div class="chart-box" id="wb-c-dissolution"></div></div>
-      <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周发放的礼物奖励总额</div><div class="chart-box" id="wb-c-revenue"></div></div>
-      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼 任务次数</div><div class="chart-box" id="wb-c-activity"></div></div>
+      <div class="chart-card"><h3>💯 留存率</h3><div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div><div class="chart-box" id="wb-c-retention"></div><div class="chart-insight" id="wb-insight-retention"></div></div>
+      <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周有多少团解散 · 越低越好</div><div class="chart-box" id="wb-c-dissolution"></div><div class="chart-insight" id="wb-insight-dissolution"></div></div>
+      <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周发放的礼物奖励总额</div><div class="chart-box" id="wb-c-revenue"></div><div class="chart-insight" id="wb-insight-revenue"></div></div>
+      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼 任务次数</div><div class="chart-box" id="wb-c-activity"></div><div class="chart-insight" id="wb-insight-activity"></div></div>
       <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-src">每天新成团数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-new"></div></div>
       <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-src">每天解散数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-diss"></div></div>
     </div>

@@ -134,8 +134,8 @@ function setRankPeriod(p) {
   if (title) title.textContent = '厅排行榜 · ' + (p === 'week' ? '本周' : '本月');
   const hint = document.getElementById('wb-rank-hint');
   if (hint) hint.textContent = p === 'week'
-    ? '位次为较上周变化 · 厅周流水=全厅流水，姐妹团周流水=姐妹团礼物奖励'
-    : '本月累计 · 厅月流水=全厅流水，姐妹团月流水=姐妹团礼物奖励';
+    ? '位次为较上周变化 · 厅周流水=全厅流水，姐妹团礼物奖励=本周发放的礼物奖励'
+    : '本月累计 · 厅月流水=全厅流水，姐妹团月礼物奖励=本月发放的礼物奖励';
   wbRenderRank();
 }
 
@@ -173,7 +173,7 @@ function wbRenderRank() {
     return m > 0 ? `<span class="move up">↑${m}</span>` : m < 0 ? `<span class="move down">↓${-m}</span>` : '<span class="move same">—</span>';
   };
   const top = items.sort((a, b) => b.rev - a.rev).slice(0, 20);
-  const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
+  const sisLabel = month ? '姐妹团月礼物奖励' : '姐妹团礼物奖励';
   const revLabel = month ? '厅月流水' : '厅周流水';
   const newLabel = month ? '月新成团' : '周新成团';
   document.getElementById('wb-rank-table').innerHTML = `
@@ -294,6 +294,10 @@ function wbRenderCharts() {
       if (charts[k]) { charts[k].dispose(); charts[k] = null; }
       if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">该厅当前周期暂无数据</div>';
     });
+    ['wb-insight-retention', 'wb-insight-dissolution', 'wb-insight-revenue', 'wb-insight-activity'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
     return;
   }
   const labels = data.map(d => (d.week_start || '').slice(5));
@@ -348,6 +352,35 @@ function wbRenderCharts() {
     charts[key] = echarts.init(el);
     charts[key].setOption(opt);
   }
+  wbRenderInsights(data);
+}
+
+function wbRenderInsights(data) {
+  const last = data[data.length - 1];
+  const prev = data.length > 1 ? data[data.length - 2] : null;
+  const setInsight = (id, html) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  };
+  const dPct = (cur, pv) => Math.round((cur - pv) * 10) / 10;
+  // 留存率（越高越好）
+  const ret = last.retention_rate || 0, retP = prev ? (prev.retention_rate || 0) : ret;
+  const retD = dPct(ret, retP);
+  const retTag = ret >= 60 ? '🟢 健康' : ret >= 40 ? '🟡 一般' : '🔴 偏低';
+  setInsight('wb-insight-retention', `本周 <b>${Math.round(ret)}%</b>（较上周 ${retD >= 0 ? '+' : ''}${retD}pp）· ${retTag}`);
+  // 解散率（越低越好）
+  const dis = last.dissolution_rate || 0, disP = prev ? (prev.dissolution_rate || 0) : dis;
+  const disD = dPct(dis, disP);
+  const disTag = dis <= 20 ? '🟢 低位' : dis <= 30 ? '🟡 正常' : '🔴 偏高';
+  setInsight('wb-insight-dissolution', `本周 <b>${dis}%</b>（较上周 ${disD >= 0 ? '+' : ''}${disD}pp）· ${disTag}`);
+  // 礼物奖励金额（越高越好）
+  const rev = last.total_reward || 0, revP = prev ? (prev.total_reward || 0) : 0;
+  const revC = revP > 0 ? Math.round((rev - revP) / revP * 100) : 0;
+  setInsight('wb-insight-revenue', `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '📈 增长' : '📉 下降'}`);
+  // 任务活跃度
+  const act = last.activity_index || 0, actP = prev ? (prev.activity_index || 0) : act;
+  const actD = Math.round((act - actP) * 100) / 100;
+  setInsight('wb-insight-activity', `本周 <b>${act}</b>（较上周 ${actD >= 0 ? '+' : ''}${actD}）· ${actD >= 0 ? '📈 上升' : '📉 下降'}`);
 }
 
 function wbResizeCharts() {
