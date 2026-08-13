@@ -37,3 +37,4 @@ package-lock.json
 /data/last_update.json
 .playwright-mcp/
 data/exports/
+data/keepalive_status.json
