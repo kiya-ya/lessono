@@ -124,6 +124,13 @@ function wbRenderWall() {
 }
 
 let wbRankPeriod = 'week';  // week / month
+let wbRankSort = { key: 'sisRev', dir: 'desc' };  // 排行榜排序
+
+function wbSortRank(key) {
+  if (wbRankSort.key === key) wbRankSort.dir = wbRankSort.dir === 'desc' ? 'asc' : 'desc';
+  else { wbRankSort.key = key; wbRankSort.dir = 'desc'; }
+  wbRenderRank();
+}
 
 function setRankPeriod(p) {
   wbRankPeriod = p;
@@ -168,11 +175,18 @@ function wbRenderRank() {
     if (m === null || m === undefined) return '<span class="move same">—</span>';
     return m > 0 ? `<span class="move up">↑${m}</span>` : m < 0 ? `<span class="move down">↓${-m}</span>` : '<span class="move same">—</span>';
   };
-  const top = items.sort((a, b) => (b.sisRev ?? -1) - (a.sisRev ?? -1)).slice(0, 20);
+  const { key, dir } = wbRankSort;
+  const mul = dir === 'asc' ? 1 : -1;
+  const top = items.sort((a, b) => {
+    const va = a[key] ?? -Infinity, vb = b[key] ?? -Infinity;
+    return va === vb ? 0 : (va > vb ? 1 : -1) * mul;
+  }).slice(0, 20);
   const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
   const newLabel = month ? '月新成团' : '周新成团';
+  const sortArrow = k => wbRankSort.key === k ? `<span class="sort-arrow">${wbRankSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
+  const thSort = k => ` class="sortable" onclick="wbSortRank('${k}')"`;
   document.getElementById('wb-rank-table').innerHTML = `
-    <tr><th>#</th><th>大厅</th><th>进行中姐妹团</th><th>${sisLabel}</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>${newLabel}</th></tr>
+    <tr><th>#</th><th>大厅</th><th${thSort('active')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th>流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th>留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
     ${top.map((it, idx) => `<tr>
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td>${it.name}</td>
