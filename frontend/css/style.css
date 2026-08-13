@@ -553,3 +553,8 @@ body { background: var(--wb-bg); }
   .layout.side-collapsed .sidebar { transform: none; }
   .layout.side-collapsed .main { margin-left: 0; }
 }
+
+/* ── 分段选择器（姐姐分析周期切换等） ── */
+.seg { display: flex; border: 1px solid #DDE1E8; border-radius: 6px; overflow: hidden; }
+.seg button { padding: 5px 14px; border: none; background: #fff; font-size: 12px; color: var(--wb-text-2); cursor: pointer; }
+.seg button.on { background: var(--wb-nav); color: #fff; }

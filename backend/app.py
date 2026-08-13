@@ -684,23 +684,59 @@ def api_captains():
     limit = min(int(request.args.get('limit', 50)), 200)
     conn = get_db_conn()
     ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
-    sql = """SELECT sister_uid, MAX(sister_nickname) AS nickname,
-                    GROUP_CONCAT(DISTINCT hall_name) AS halls,
-                    COUNT(*) AS team_count,
-                    SUM(CASE WHEN dissolve_date = '' OR dissolve_date IS NULL THEN 1 ELSE 0 END) AS active_count,
-                    SUM(reward_amount) AS total_reward
-             FROM team_detail
-             WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
-                             WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
-                             GROUP BY team_id)
-               AND sister_uid IS NOT NULL AND sister_uid != ''"""
-    params = []
-    if hall != 'all':
-        sql += ' AND hall_name = ?'
-        params.append(hall)
-    sql += ' GROUP BY sister_uid ORDER BY total_reward DESC LIMIT ?'
-    params.append(limit)
-    rows = conn.execute(sql, params).fetchall()
+    period = request.args.get('period', 'day')  # day=快照当日 / week=本周累计 / month=本月累计
+
+    if period in ('week', 'month'):
+        # 周/月口径：跨快照按 (team_id, snapshot_date) 去重后累计奖励
+        ref_d = datetime.strptime(ref, '%Y-%m-%d').date()
+        start = (ref_d - timedelta(days=ref_d.weekday())) if period == 'week' else ref_d.replace(day=1)
+        hall_cond = "AND s.hall_name = ?" if hall != 'all' else ''
+        params = [start.isoformat(), ref]
+        if hall != 'all':
+            params.append(hall)
+        params.append(limit)
+        rows = conn.execute(f"""
+            WITH snap AS (
+              SELECT * FROM team_detail
+              WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id, snapshot_date)
+                AND snapshot_date >= ? AND snapshot_date <= ?
+            ),
+            latest AS (
+              SELECT * FROM team_detail
+              WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                              WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                              GROUP BY team_id)
+            )
+            SELECT s.sister_uid,
+                   MAX(s.sister_nickname) AS nickname,
+                   GROUP_CONCAT(DISTINCT s.hall_name) AS halls,
+                   COUNT(DISTINCT s.team_id) AS team_count,
+                   (SELECT COUNT(*) FROM latest l WHERE l.sister_uid = s.sister_uid
+                     AND (l.dissolve_date = '' OR l.dissolve_date IS NULL)) AS active_count,
+                   SUM(s.reward_amount) AS total_reward
+            FROM snap s
+            WHERE s.sister_uid IS NOT NULL AND s.sister_uid != '' {hall_cond}
+            GROUP BY s.sister_uid ORDER BY total_reward DESC LIMIT ?
+        """, params).fetchall()
+    else:
+        # 当日口径：最新快照
+        sql = """SELECT sister_uid, MAX(sister_nickname) AS nickname,
+                        GROUP_CONCAT(DISTINCT hall_name) AS halls,
+                        COUNT(*) AS team_count,
+                        SUM(CASE WHEN dissolve_date = '' OR dissolve_date IS NULL THEN 1 ELSE 0 END) AS active_count,
+                        SUM(reward_amount) AS total_reward
+                 FROM team_detail
+                 WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                                 WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                                 GROUP BY team_id)
+                   AND sister_uid IS NOT NULL AND sister_uid != ''"""
+        params = []
+        if hall != 'all':
+            sql += ' AND hall_name = ?'
+            params.append(hall)
+        sql += ' GROUP BY sister_uid ORDER BY total_reward DESC LIMIT ?'
+        params.append(limit)
+        rows = conn.execute(sql, params).fetchall()
     captains = [{
         'uid': r['sister_uid'],
         'nickname': r['nickname'] or r['sister_uid'],
@@ -741,7 +777,7 @@ def api_captains():
     } for r in dep_rows]
     conn.close()
 
-    return jsonify({'data': captains, 'dependency': dependency, 'ref_date': ref, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
+    return jsonify({'data': captains, 'dependency': dependency, 'ref_date': ref, 'period': period, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
 
 
 @app.route('/api/alerts-center')

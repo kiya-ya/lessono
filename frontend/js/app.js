@@ -10,15 +10,9 @@ function onWeekChange() {
   localStorage.setItem('wb_week', currentWeek);
   // 工作台刷新
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
-  // 核心趋势页图表刷新
-  if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
-  if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
-  if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }
-  if (charts.activity) { charts.activity.dispose(); charts.activity = null; }
-  initTrendCharts();
   // 对比分析页刷新
   initCompareChart();
-  if (typeof initQuadrantChart === 'function') initQuadrantChart();
+  if (typeof initRetentionDist === 'function') initRetentionDist();
   // 明细数据刷新
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
@@ -34,8 +28,7 @@ function switchTab(tabName) {
   if (clicked) clicked.classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
   if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
-  if (tabName === 'trends') setTimeout(() => { initTrendCharts(); if (typeof loadDailyOverlay === 'function') loadDailyOverlay(); }, 100);
-  if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initQuadrantChart === 'function') initQuadrantChart(); }, 300);
+  if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); }, 100);
   if (tabName === 'policy') setTimeout(() => { if (typeof loadPolicyImpact === 'function') loadPolicyImpact(); }, 100);
   if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); }, 100);
@@ -75,14 +68,9 @@ function refreshData() {
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDailyOverlay === 'function') loadDailyOverlay();
-  if (typeof initQuadrantChart === 'function') initQuadrantChart();
+  if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
-  if (charts.retention) { charts.retention.dispose(); charts.retention = null; }
-  if (charts.dissolution) { charts.dissolution.dispose(); charts.dissolution = null; }
-  if (charts.revenue) { charts.revenue.dispose(); charts.revenue = null; }
-  if (charts.activity) { charts.activity.dispose(); charts.activity = null; }
-  initTrendCharts();
   initCompareChart();
 }
 

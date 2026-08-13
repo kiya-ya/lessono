@@ -74,18 +74,69 @@ async function loadPolicyImpact() {
 
 /* ═══════════════ 姐姐分析 ═══════════════ */
 
+let captainPeriod = 'day';          // day / week / month
+let captainSortField = 'total_reward';
+let captainSortOrder = 'desc';
+let captainData = [];
+
+const CAPTAIN_PERIOD_LABEL = { day: '当日', week: '当周', month: '当月' };
+
+function setCaptainPeriod(p) {
+  captainPeriod = p;
+  ['day', 'week', 'month'].forEach(k => {
+    const b = document.getElementById('cap-' + k);
+    if (b) b.classList.toggle('on', k === p);
+  });
+  loadCaptains();
+}
+
+function sortCaptains(field) {
+  if (captainSortField === field) {
+    captainSortOrder = captainSortOrder === 'desc' ? 'asc' : 'desc';
+  } else {
+    captainSortField = field;
+    captainSortOrder = 'desc';
+  }
+  renderCaptainTable();
+}
+
+function renderCaptainTable() {
+  const tableEl = document.getElementById('captain-table');
+  if (!tableEl) return;
+  const sortArrow = f => captainSortField === f ? (captainSortOrder === 'desc' ? '▼' : '▲') : '▲▼';
+  const sorted = [...captainData].sort((a, b) => {
+    const av = a[captainSortField] || 0, bv = b[captainSortField] || 0;
+    return captainSortOrder === 'desc' ? bv - av : av - bv;
+  });
+  const th = (field, label) =>
+    `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
+  tableEl.innerHTML = `
+    <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('team_count', '带团数')}${th('active_count', '进行中')}${th('survival_rate', '团存活率')}${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
+    ${sorted.map((c, i) => `<tr>
+      <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
+      <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
+      <td>${c.team_count}</td>
+      <td>${c.active_count}</td>
+      <td>${c.survival_rate}%</td>
+      <td>${wbFmtMoney(c.total_reward)}</td>
+    </tr>`).join('')}`;
+}
+
 async function loadCaptains() {
   const tableEl = document.getElementById('captain-table');
   if (!tableEl) return;
   try {
-    const res = await fetch(API_BASE + '/api/captains?limit=50&' + getHallParam().substring(1));
+    const res = await fetch(API_BASE + `/api/captains?limit=100&period=${captainPeriod}&` + getHallParam().substring(1));
     const d = await res.json();
     if (d.ref_date) {
       document.getElementById('captains-hint').textContent = `快照日期 ${d.ref_date} · 随大厅筛选联动`;
     }
+    const titleEl = document.getElementById('captain-table-title');
+    if (titleEl) titleEl.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;
 
-    // 头牌依赖度（选中具体厅时只显示该厅）
-    const dep = (d.dependency || []).filter(x => currentHall === 'all' || x.hall_name === currentHall);
+    // 头牌依赖度（选中具体厅时只显示该厅；全厅当日奖励 <500 元的小厅不纳入，避免单人厅必然100%的噪音）
+    const dep = (d.dependency || []).filter(x => (currentHall === 'all' || x.hall_name === currentHall) && x.hall_rev >= 500);
     const flagged = dep.filter(x => x.share >= 30).slice(0, 12);
     const depEl = document.getElementById('dep-list');
     depEl.innerHTML = flagged.length
@@ -96,18 +147,9 @@ async function loadCaptains() {
         </div>`).join('')
       : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
 
-    tableEl.innerHTML = `
-      <tr><th>#</th><th>姐姐</th><th>所在大厅</th><th>带团数</th><th>进行中</th><th>团存活率</th><th>当日奖励</th></tr>
-      ${(d.data || []).map((c, i) => `<tr>
-        <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
-        <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
-        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
-        <td>${c.team_count}</td>
-        <td>${c.active_count}</td>
-        <td>${c.survival_rate}%</td>
-        <td>${wbFmtMoney(c.total_reward)}</td>
-      </tr>`).join('')}`;
-  } catch (e) { console.error('团长分析加载失败:', e); }
+    captainData = d.data || [];
+    renderCaptainTable();
+  } catch (e) { console.error('姐姐分析加载失败:', e); }
 }
 
 /* ═══════════════ 预警中心 ═══════════════ */

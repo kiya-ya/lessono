@@ -133,6 +133,8 @@ function wbRenderRank() {
     return {
       name: d.hall_name,
       rev: revOf(last),
+      sisRev: last.total_reward || 0,
+      active: last.active_team_count_end || 0,
       ret: last.retention_rate || 0,
       newTeams: last.new_team_count || 0,
       prevRev: prev ? revOf(prev) : null,
@@ -154,10 +156,12 @@ function wbRenderRank() {
   };
   const top = items.sort((a, b) => b.rev - a.rev).slice(0, 20);
   document.getElementById('wb-rank-table').innerHTML = `
-    <tr><th>#</th><th>大厅</th><th>厅周流水</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>新成团</th></tr>
+    <tr><th>#</th><th>大厅</th><th>进行中姐妹团</th><th>姐妹团周流水</th><th>厅周流水</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>新成团</th></tr>
     ${top.map((it, idx) => `<tr>
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td>${it.name}</td>
+      <td>${it.active}</td>
+      <td>${wbFmtMoney(it.sisRev)}</td>
       <td>${wbFmtMoney(it.rev)}${it.revDays > 0 && it.revDays < 7 ? `<span style="color:var(--wb-text-3);font-size:10px">（${it.revDays}天）</span>` : ''}</td>
       <td>${move(it.prevRev === null ? null : revPrevRank[it.name] - revRank[it.name])}</td>
       <td>${Math.round(it.ret)}%</td>
@@ -337,80 +341,38 @@ async function initWorkbench() {
 }
 
 
-/* ═══════════════ 第二期：四象限 / 日级叠加 / 存活分析 ═══════════════ */
+/* ═══════════════ 第二期：留存分布 / 日级叠加 / 存活分析 ═══════════════ */
 
-/* ── 厅四象限散点图（对比分析页） ──
-   横轴本周流水、纵轴留存率，中位数分界：
-   🟢 明星厅（高流水高留存） 🔵 潜力厅（低流水高留存）
-   🟠 风险厅（高流水低留存） 🔴 衰退厅（低流水低留存） */
-async function initQuadrantChart() {
-  const el = document.getElementById('chart-quadrant');
+/* ── 厅留存率分布直方图（对比分析页） ──
+   各厅本周留存率按分段计数，红→绿渐变，一眼看清整体水位 */
+async function initRetentionDist() {
+  const el = document.getElementById('chart-retention-dist');
   if (!el) return;
   if (!wbOverview) await loadWorkbenchOverview();
   if (!wbOverview || !wbOverview.data) return;
-  const pts = wbOverview.data.map(d => {
+  const bins = [['0-20%', 0, 20], ['20-40%', 20, 40], ['40-60%', 40, 60], ['60-80%', 60, 80], ['80-100%', 80, 101]];
+  const counts = bins.map(() => 0);
+  wbOverview.data.forEach(d => {
     const last = d.weeks[d.weeks.length - 1];
-    const rev = last.hall_revenue != null ? last.hall_revenue : (last.total_reward || 0);
-    return { name: d.hall_name, rev, ret: Math.min(100, last.retention_rate || 0) };
-  });
-  if (!pts.length) return;
-  const median = arr => {
-    const s = [...arr].sort((a, b) => a - b), n = s.length;
-    return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
-  };
-  const medRev = median(pts.map(p => p.rev));
-  const medRet = median(pts.map(p => p.ret));
-  const quadOf = p => p.rev >= medRev
-    ? (p.ret >= medRet ? ['明星厅', '#3D9A6C'] : ['风险厅', '#C98A2D'])
-    : (p.ret >= medRet ? ['潜力厅', '#4F5BD5'] : ['衰退厅', '#D56060']);
-  const groups = {};
-  pts.forEach(p => {
-    const [label, color] = quadOf(p);
-    (groups[label] = groups[label] || { color, data: [] }).data.push({ name: p.name, value: [p.rev, p.ret] });
-  });
-  const series = Object.entries(groups).map(([label, g]) => ({
-    name: label, type: 'scatter', symbolSize: 12,
-    itemStyle: { color: g.color, opacity: 0.85 },
-    data: g.data,
-  }));
-  // 象限底色 + 分界线
-  const maxRev = Math.max(...pts.map(p => p.rev)) * 1.08;
-  series.push({
-    name: 'quad-bg', type: 'scatter', silent: true, data: [],
-    markArea: {
-      silent: true, label: { fontSize: 11, color: '#9CA3AF' },
-      data: [
-        [{ name: '明星厅', coord: [medRev, medRet], itemStyle: { color: 'rgba(22,163,74,.05)' }, label: { position: 'insideTopRight', color: '#3D9A6C' } }, { coord: [maxRev, '100'] }],
-        [{ name: '潜力厅', coord: [0, medRet], itemStyle: { color: 'rgba(124,92,255,.05)' }, label: { position: 'insideTopLeft', color: '#4F5BD5' } }, { coord: [medRev, '100'] }],
-        [{ name: '风险厅', coord: [medRev, 0], itemStyle: { color: 'rgba(217,119,6,.06)' }, label: { position: 'insideBottomRight', color: '#C98A2D' } }, { coord: [maxRev, medRet] }],
-        [{ name: '衰退厅', coord: [0, 0], itemStyle: { color: 'rgba(220,38,38,.05)' }, label: { position: 'insideBottomLeft', color: '#D56060' } }, { coord: [medRev, medRet] }],
-      ]
-    },
-    markLine: {
-      silent: true, symbol: 'none',
-      lineStyle: { color: '#C9CED6', type: 'dashed', width: 1 },
-      label: { fontSize: 10, color: '#9CA3AF' },
-      data: [
-        { xAxis: medRev, label: { formatter: '流水中位数 ' + wbFmtMoney(medRev), position: 'insideEndTop' } },
-        { yAxis: Math.round(medRet * 10) / 10, label: { formatter: '留存中位数 ' + medRet.toFixed(0) + '%', position: 'insideStartTop' } },
-      ]
+    const ret = Math.min(100, Math.max(0, last.retention_rate || 0));
+    for (let i = 0; i < bins.length; i++) {
+      if (ret >= bins[i][1] && ret < bins[i][2]) { counts[i]++; break; }
     }
   });
-  if (charts['quadrant']) { charts['quadrant'].dispose(); }
-  charts['quadrant'] = echarts.init(el);
-  charts['quadrant'].setOption({
-    tooltip: {
-      textStyle: { fontSize: 12 },
-      formatter: p => p.seriesName === 'quad-bg' ? '' : `${p.data.name}<br/>厅周流水：${wbFmtMoney(p.value[0])}　留存率：${p.value[1].toFixed(1)}%<br/><span style="color:#9CA3AF">${p.seriesName} · 点击切换该厅</span>`
-    },
-    legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11, color: '#6B7280' }, data: ['明星厅', '潜力厅', '风险厅', '衰退厅'] },
-    grid: { left: 70, right: 30, top: 36, bottom: 46 },
-    xAxis: { type: 'value', name: '厅周流水', nameTextStyle: { fontSize: 11, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => v >= 10000 ? (v / 10000) + 'w' : v }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-    yAxis: { type: 'value', name: '留存率%', max: 100, nameTextStyle: { fontSize: 11, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-    series
+  const colors = ['#D56060', '#E08A5A', '#C98A2D', '#8FA8C9', '#3D9A6C'];
+  if (charts['retDist']) charts['retDist'].dispose();
+  charts['retDist'] = echarts.init(el);
+  charts['retDist'].setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: p => `${p[0].name}<br/>${p[0].value} 个厅` },
+    grid: { left: 50, right: 30, top: 30, bottom: 36 },
+    xAxis: { type: 'category', data: bins.map(b => b[0]), axisLabel: { fontSize: 12, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
+    yAxis: { type: 'value', name: '厅数', minInterval: 1, nameTextStyle: { fontSize: 11, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+    series: [{
+      type: 'bar', barWidth: '50%',
+      data: counts.map((c, i) => ({ value: c, itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] } })),
+      label: { show: true, position: 'top', fontSize: 12, color: '#6B7280' }
+    }]
   });
-  charts['quadrant'].off('click');
-  charts['quadrant'].on('click', p => { if (p.data && p.data.name) wbSelectHall(p.data.name); });
 }
 
 /* ── 日级叠加：本周 vs 上周（核心趋势页） ── */

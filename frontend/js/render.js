@@ -281,8 +281,18 @@ function renderHallComparePage() {
     if (!charts.hallCompare) {
       charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare'));
       charts.hallCompare.on('click', function(params) {
+        // 联动大厅筛选：明细表和存活分析都按点击的大厅过滤
+        const sel = document.getElementById('hall-select');
+        if (sel && [...sel.options].some(o => o.value === params.name)) {
+          sel.value = params.name;
+          currentHall = params.name;
+          localStorage.setItem('wb_hall', params.name);
+          document.getElementById('detail-search').value = '';
+        } else {
+          // 不在当前可选范围（如厅运营看全平台时），退回搜索框过滤
+          document.getElementById('detail-search').value = params.name;
+        }
         switchTab('details');
-        document.getElementById('detail-search').value = params.name;
         loadDetailTable(1);
       });
     }

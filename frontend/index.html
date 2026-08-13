@@ -48,7 +48,6 @@
     </div>
     <nav class="side-nav">
       <div class="tab active" onclick="switchTab('overview')">工作台</div>
-      <div class="tab" onclick="switchTab('trends')">核心趋势</div>
       <div class="tab" onclick="switchTab('compare')">对比分析</div>
       <div class="tab" onclick="switchTab('policy')">政策评估</div>
       <div class="tab" onclick="switchTab('captains')">姐姐分析</div>
@@ -100,7 +99,7 @@
     <div id="wb-rank-board" style="display:none">
       <div class="section-head">
         <h2>厅排行榜 · 本周</h2>
-        <span class="hint">位次为较上周变化 · 厅周流水为厅总流水口径（bigdata 大厅主题），不足7天会标注</span>
+        <span class="hint">位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径</span>
       </div>
       <div class="rank-card"><div class="rank-scroll">
         <table class="rank-table" id="wb-rank-table"></table>
@@ -123,32 +122,17 @@
       <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周解散数 / 平均进行中</div><div class="chart-box" id="wb-c-dissolution"></div></div>
       <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周 7 天流水累计</div><div class="chart-box" id="wb-c-revenue"></div></div>
       <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼任务次数</div><div class="chart-box" id="wb-c-activity"></div></div>
-    </div>
-  </div>
-
-  <!-- 趋势 -->
-  <div id="tab-trends" class="tab-panel">
-    <div class="policy-divider">📌 政策上线分界线：2026-07-17 ← 政策前 | 政策后 →</div>
-    <div class="chart-row">
-      <div class="chart-card"><h3>💯 留存率趋势</h3><div class="chart-container" id="chart-retention"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 公式：(周末进行中 - 本周新成团) / 周始进行中 × 100%</p></div>
-      <div class="chart-card"><h3>🚫 解散率趋势</h3><div class="chart-container" id="chart-dissolution"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 公式：本周解散数 / ((周始+周末进行中)/2) × 100%</p></div>
-    </div>
-    <div class="chart-row">
-      <div class="chart-card"><h3>💰 礼物流水趋势</h3><div class="chart-container" id="chart-revenue"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 本周7天 reward_amount 累计</p></div>
-      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-container" id="chart-activity"></div><p style="font-size:11px;color:#999;margin-top:4px;">数据来源：weekly_report 表 · 公式：(开车+陪档+收送礼任务) / 周末进行中</p></div>
-    </div>
-    <div class="chart-row">
-      <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-container" id="chart-daily-new"></div><p style="font-size:11px;color:#999;margin-top:4px;">按星期对齐叠加 · 数据来源：team_detail 最新快照 form_date 统计</p></div>
-      <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-container" id="chart-daily-diss"></div><p style="font-size:11px;color:#999;margin-top:4px;">按星期对齐叠加 · 数据来源：team_detail 最新快照 dissolve_date 统计</p></div>
+      <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-src">按星期对齐叠加 · team_detail 快照 form_date 统计</div><div class="chart-box" id="chart-daily-new"></div></div>
+      <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-src">按星期对齐叠加 · team_detail 快照 dissolve_date 统计</div><div class="chart-box" id="chart-daily-diss"></div></div>
     </div>
   </div>
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
     <div class="chart-card">
-      <h3>🧭 厅四象限分析</h3>
-      <div class="chart-src">横轴本周厅总流水 · 纵轴留存率 · 分界线为中位数 · 点击散点切换该厅</div>
-      <div class="chart-container" id="chart-quadrant" style="height:420px;"></div>
+      <h3>📊 厅留存率分布</h3>
+      <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
+      <div class="chart-container" id="chart-retention-dist" style="height:320px;"></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -209,8 +193,15 @@
       <div id="dep-list" style="margin-top:8px;"></div>
     </div>
     <div class="chart-card">
-      <h3>👑 姐姐排行榜（按当日奖励）</h3>
-      <div class="chart-src">reward_amount 为快照当日发放的礼物奖励金额；姐姐的累计总流水请在「UID查询」中查看</div>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span id="captain-table-title">👑 姐姐排行榜（按当日奖励）</span>
+        <div class="seg">
+          <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+          <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
+          <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
+        </div>
+      </h3>
+      <div class="chart-src">奖励为快照发放的礼物奖励金额；姐姐的累计总流水请在「UID查询」中查看 · 点击表头可排序</div>
       <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
     </div>
   </div>
