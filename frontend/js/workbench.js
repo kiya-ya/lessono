@@ -9,6 +9,7 @@ let wbWeekly = [];      // 当前筛选大厅的周数据（升序，已按所�
 let wbKpi = null;
 let wbKpiMeta = { week: '', date: '' };
 let wbPlatformWeekly = null;  // 平台（hall=all）周数据缓存，用于均值参考线
+let wbInsights = null;        // 趋势图点名式结论（/api/trend-insights）
 
 const WB_POLICY_DATE = '2026-07-17';
 const WB_HEALTH_TXT = { red: '需关注', amber: '有波动', green: '健康' };
@@ -239,17 +240,21 @@ function wbFilteredWeekly() {
 
 async function refreshWorkbench() {
   try {
-    const [kpiRes, weekRes, platRes] = await Promise.all([
+    const qs = (getHallParam() + getWeekParam()).replace(/^&/, '');
+    const [kpiRes, weekRes, platRes, insJson] = await Promise.all([
       fetch(API_BASE + '/api/kpi?' + getHallParam() + getWeekParam()),
       fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam()),
       // 平台均值参考线数据（仅取一次并缓存）
-      wbPlatformWeekly ? Promise.resolve(null) : fetch(API_BASE + '/api/weekly-report?limit=all&hall=all')
+      wbPlatformWeekly ? Promise.resolve(null) : fetch(API_BASE + '/api/weekly-report?limit=all&hall=all'),
+      // 点名式结论（失败不阻塞主流程）
+      fetch(API_BASE + '/api/trend-insights' + (qs ? '?' + qs : '')).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
     const kpiJson = await kpiRes.json();
     wbKpi = kpiJson.data || null;
     wbKpiMeta = { week: kpiJson.week || '', date: kpiJson.date || '' };
     wbWeekly = ((await weekRes.json()).data) || [];
     if (platRes) wbPlatformWeekly = ((await platRes.json()).data) || [];
+    wbInsights = insJson || null;
     wbRenderKPI();
     wbRenderCharts();
   } catch (e) { console.error('工作台刷新失败:', e); }
@@ -371,24 +376,46 @@ function wbRenderInsights(data) {
     if (el) el.innerHTML = html;
   };
   const dPct = (cur, pv) => Math.round((cur - pv) * 10) / 10;
+  const ins = wbInsights || {};
   // 留存率（越高越好）
   const ret = last.retention_rate || 0, retP = prev ? (prev.retention_rate || 0) : ret;
   const retD = dPct(ret, retP);
   const retTag = ret >= 60 ? '🟢 健康' : ret >= 40 ? '🟡 一般' : '🔴 偏低';
-  setInsight('wb-insight-retention', `本周 <b>${Math.round(ret)}%</b>（较上周 ${retD >= 0 ? '+' : ''}${retD}pp）· ${retTag}`);
+  let retHtml = `本周 <b>${Math.round(ret)}%</b>（较上周 ${retD >= 0 ? '+' : ''}${retD}pp）· ${retTag}`;
+  if (ins.retention) {
+    if (ins.retention.best_hall) {
+      retHtml += ` · 最高「${ins.retention.best_hall}」${ins.retention.best_rate}%，最低「${ins.retention.worst_hall}」${ins.retention.worst_rate}%`;
+    } else if (ins.retention.rate != null) {
+      retHtml += ` · 该厅 ${ins.retention.rate}%` + (ins.retention.avg != null ? `（平台均值 ${ins.retention.avg}%）` : '');
+    }
+  }
+  setInsight('wb-insight-retention', retHtml);
   // 解散率（越低越好）
   const dis = last.dissolution_rate || 0, disP = prev ? (prev.dissolution_rate || 0) : dis;
   const disD = dPct(dis, disP);
   const disTag = dis <= 20 ? '🟢 低位' : dis <= 30 ? '🟡 正常' : '🔴 偏高';
-  setInsight('wb-insight-dissolution', `本周 <b>${dis}%</b>（较上周 ${disD >= 0 ? '+' : ''}${disD}pp）· ${disTag}`);
+  let disHtml = `本周 <b>${dis}%</b>（较上周 ${disD >= 0 ? '+' : ''}${disD}pp）· ${disTag}`;
+  if (ins.dissolution && ins.dissolution.count) {
+    disHtml += ` · 解散 ${ins.dissolution.count} 个，主因「${ins.dissolution.top_reason}」${ins.dissolution.top_reason_count} 个`;
+    if (ins.dissolution.top_hall) disHtml += `，集中在「${ins.dissolution.top_hall}」`;
+  }
+  setInsight('wb-insight-dissolution', disHtml);
   // 礼物奖励金额（越高越好）
   const rev = last.total_reward || 0, revP = prev ? (prev.total_reward || 0) : 0;
   const revC = revP > 0 ? Math.round((rev - revP) / revP * 100) : 0;
-  setInsight('wb-insight-revenue', `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '📈 增长' : '📉 下降'}`);
+  let revHtml = `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '📈 增长' : '📉 下降'}`;
+  if (ins.revenue) {
+    revHtml += ` · 流水 TOP 姐姐「${ins.revenue.top_sister}」${wbFmtMoney(ins.revenue.top_sister_rev)}，占 ${ins.revenue.share}%`;
+  }
+  setInsight('wb-insight-revenue', revHtml);
   // 任务活跃度
   const act = last.activity_index || 0, actP = prev ? (prev.activity_index || 0) : act;
   const actD = Math.round((act - actP) * 100) / 100;
-  setInsight('wb-insight-activity', `本周 <b>${act}</b>（较上周 ${actD >= 0 ? '+' : ''}${actD}）· ${actD >= 0 ? '📈 上升' : '📉 下降'}`);
+  let actHtml = `本周 <b>${act}</b>（较上周 ${actD >= 0 ? '+' : ''}${actD}）· ${actD >= 0 ? '📈 上升' : '📉 下降'}`;
+  if (ins.activity) {
+    actHtml += ` · 任务最多「${ins.activity.top_sister}」${ins.activity.tasks} 次`;
+  }
+  setInsight('wb-insight-activity', actHtml);
 }
 
 function wbResizeCharts() {

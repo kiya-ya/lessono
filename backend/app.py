@@ -145,6 +145,20 @@ def get_db_conn():
     return conn
 
 
+# 解散原因归一化（供「解散原因分布」「趋势结论层」复用）
+DISSOLVE_REASON_CASE = """
+    CASE
+      WHEN dissolve_reason LIKE '%手动%' THEN '手动解散'
+      WHEN dissolve_reason LIKE '%未完成%' THEN '任务未完成自动解散'
+      WHEN dissolve_reason LIKE '%一个月%' THEN '满月自动解散'
+      WHEN dissolve_reason LIKE '%铜牌%' THEN '等级自动解散'
+      WHEN dissolve_reason LIKE '%注销%' THEN '注销'
+      WHEN dissolve_reason LIKE '%离职%' THEN '离职'
+      ELSE '其他'
+    END
+"""
+
+
 # ========== API路由 ==========
 
 @app.route('/api/search-suggest')
@@ -830,6 +844,118 @@ def api_captains():
     conn.close()
 
     return jsonify({'data': captains, 'dependency': dependency, 'ref_date': ref, 'period': period, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
+
+
+@app.route('/api/trend-insights')
+@login_required
+def api_trend_insights():
+    """趋势图结论层：为工作台4张周级趋势图提供点名式结论（哪个厅 / 什么原因 / 找谁）"""
+    hall = request.args.get('hall', 'all')
+    week_param = request.args.get('week', '')  # 'YYYY-MM-DD|YYYY-MM-DD'
+    conn = get_db_conn()
+
+    # 最新快照日期 + 所选周区间（缺省用最新快照所在周）
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+    ref_d = datetime.strptime(ref, '%Y-%m-%d').date()
+    if week_param and '|' in week_param:
+        ws, we = week_param.split('|')[0], week_param.split('|')[1]
+    else:
+        ws = (ref_d - timedelta(days=ref_d.weekday())).isoformat()
+        we = (ref_d - timedelta(days=ref_d.weekday() - 6)).isoformat()
+
+    hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    latest_teams = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+
+    out = {}
+
+    # ── 1) 解散：本周解散团数 + 主因 + 集中厅 ──
+    diss_count = conn.execute(
+        f"SELECT COUNT(*) AS c FROM team_detail WHERE {latest_teams} AND date(dissolve_date) BETWEEN ? AND ? {hall_cond}",
+        [ws, we] + hp).fetchone()['c']
+    reason_row = hall_row = None
+    if diss_count:
+        reason_row = conn.execute(
+            f"SELECT {DISSOLVE_REASON_CASE} AS reason, COUNT(*) AS c FROM team_detail WHERE {latest_teams} AND date(dissolve_date) BETWEEN ? AND ? {hall_cond} GROUP BY reason ORDER BY c DESC LIMIT 1",
+            [ws, we] + hp).fetchone()
+        hall_row = conn.execute(
+            f"SELECT hall_name, COUNT(*) AS c FROM team_detail WHERE {latest_teams} AND date(dissolve_date) BETWEEN ? AND ? {hall_cond} GROUP BY hall_name ORDER BY c DESC LIMIT 1",
+            [ws, we] + hp).fetchone()
+    out['dissolution'] = {
+        'count': diss_count,
+        'top_reason': reason_row['reason'] if reason_row else '',
+        'top_reason_count': reason_row['c'] if reason_row else 0,
+        'top_hall': hall_row['hall_name'] if hall_row else '',
+        'top_hall_count': hall_row['c'] if hall_row else 0,
+    }
+
+    # ── 2) 流水：本周 TOP 姐姐（team_sister_revenue 姐姐周流水，与厅排行榜口径一致） ──
+    out['revenue'] = None
+    sw = conn.execute('SELECT MAX(week_start) AS w FROM team_sister_revenue WHERE week_start <= ?', (we,)).fetchone()['w']
+    if sw and sw == ws:
+        r = conn.execute(f"""
+            SELECT sister_uid, SUM(sister_revenue) AS rev, GROUP_CONCAT(DISTINCT hall_name) AS halls
+            FROM team_sister_revenue
+            WHERE week_start = ? AND sister_revenue > 0 {hall_cond}
+            GROUP BY sister_uid ORDER BY rev DESC LIMIT 1
+        """, [sw] + hp).fetchone()
+        if r:
+            nick = conn.execute('SELECT MAX(sister_nickname) AS n FROM team_detail WHERE sister_uid = ?', (r['sister_uid'],)).fetchone()['n']
+            total = conn.execute(
+                f"SELECT SUM(total_revenue) AS t FROM team_sister_revenue WHERE week_start = ? {hall_cond}",
+                [sw] + hp).fetchone()['t'] or 0
+            out['revenue'] = {
+                'top_sister': nick or str(r['sister_uid']),
+                'top_sister_uid': r['sister_uid'],
+                'top_sister_rev': round(r['rev'] or 0, 1),
+                'share': round((r['rev'] or 0) / total * 100, 1) if total else 0,
+                'top_sister_hall': r['halls'],
+            }
+
+    # ── 3) 任务活跃度：TOP 姐姐（最新快照任务合计） ──
+    r = conn.execute(f"""
+        SELECT sister_uid, MAX(sister_nickname) AS nickname,
+               SUM(drive_task_count + accompany_task_count + gift_task_count) AS tasks
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
+                        WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+                        GROUP BY team_id)
+          AND sister_uid IS NOT NULL AND sister_uid != '' {hall_cond}
+        GROUP BY sister_uid ORDER BY tasks DESC LIMIT 1
+    """, hp).fetchone()
+    out['activity'] = {
+        'top_sister': r['nickname'] if r else None,
+        'tasks': round(r['tasks'] or 0) if r else 0,
+    } if r and r['tasks'] else None
+
+    # ── 4) 留存：最好/最差厅（或单厅 vs 平台均值） ──
+    if hall == 'all':
+        best = conn.execute(
+            "SELECT hall_name, retention_rate FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ? AND retention_rate IS NOT NULL ORDER BY retention_rate DESC LIMIT 1",
+            [ws, we]).fetchone()
+        worst = conn.execute(
+            "SELECT hall_name, retention_rate FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ? AND retention_rate IS NOT NULL ORDER BY retention_rate ASC LIMIT 1",
+            [ws, we]).fetchone()
+        out['retention'] = {
+            'best_hall': best['hall_name'] if best else '',
+            'best_rate': round(best['retention_rate'] or 0, 1) if best else None,
+            'worst_hall': worst['hall_name'] if worst else '',
+            'worst_rate': round(worst['retention_rate'] or 0, 1) if worst else None,
+        }
+    else:
+        own = conn.execute(
+            "SELECT retention_rate FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?",
+            [hall, ws, we]).fetchone()
+        avg = conn.execute(
+            "SELECT AVG(retention_rate) AS a FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ?",
+            [ws, we]).fetchone()['a']
+        out['retention'] = {
+            'rate': round(own['retention_rate'] or 0, 1) if own else None,
+            'avg': round(avg or 0, 1) if avg else None,
+        }
+
+    conn.close()
+    return jsonify({'week_start': ws, 'week_end': we, 'ref_date': ref, **out})
 
 
 @app.route('/api/alerts-center')
