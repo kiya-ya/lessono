@@ -214,6 +214,19 @@ async function updateCookiePanelStatus() {
       dot2.style.background = '#C98A2D'; status2.textContent = '⚠️ 状态：未知';
     }
   } catch (e) { console.log('抓取 panel 检测失败:', e); }
+
+  // Cookie 保活状态
+  try {
+    const resp = await fetch(API_BASE + '/api/keepalive-status');
+    const ka = await resp.json();
+    if (ka && ka.last_run) {
+      const fmt = (o) => o ? (o.ok ? `保活正常 · ${ka.last_run.slice(5, 16)}` : `⚠️ ${o.msg || '保活失败'}`) : '保活未运行';
+      const el1 = document.getElementById('panel-status-uid');
+      const el2 = document.getElementById('panel-status-bigdata');
+      if (el1) el1.innerHTML += `<div style="font-size:11px;color:#9AA0AB;margin-top:4px;">🫀 ${fmt(ka.uid)}</div>`;
+      if (el2) el2.innerHTML += `<div style="font-size:11px;color:#9AA0AB;margin-top:4px;">🫀 ${fmt(ka.bigdata)}</div>`;
+    }
+  } catch (e) { console.log('保活状态获取失败:', e); }
 }
 
 async function saveCookie(target) {

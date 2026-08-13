@@ -62,6 +62,13 @@ def main():
             run_alerts_check()
         except Exception as ae:
             print(f'[WARN] 预警检测运行失败: {ae}')
+
+        # Cookie 保活（保持双系统会话活跃）
+        try:
+            from cookie_keepalive import run_keepalive
+            run_keepalive()
+        except Exception as ke:
+            print(f'[WARN] Cookie保活运行失败: {ke}')
     except Exception as e:
         status = 'failed'
         msg = f'数据抓取失败: {e}'

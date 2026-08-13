@@ -111,6 +111,27 @@ def init_auth_db():
 init_auth_db()
 
 
+# Cookie 保活：启动 60 秒后先跑一次，之后每 30 分钟保活一次（防 session 因不活跃过期）
+def _start_keepalive():
+    import threading
+    import time
+
+    def loop():
+        time.sleep(60)
+        while True:
+            try:
+                from cookie_keepalive import run_keepalive
+                run_keepalive()
+            except Exception as e:
+                print(f'[Keepalive] 运行失败: {e}')
+            time.sleep(1800)
+
+    threading.Thread(target=loop, daemon=True).start()
+
+
+_start_keepalive()
+
+
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
@@ -1922,6 +1943,17 @@ def api_last_update():
         return jsonify(data)
     except Exception:
         return jsonify({'last_update': '从未更新', 'status': 'unknown'})
+
+
+@app.route('/api/keepalive-status')
+@login_required
+def api_keepalive_status():
+    """Cookie 保活状态（由后台保活线程每30分钟写入）"""
+    try:
+        with open(os.path.join(PROJECT_ROOT, 'data', 'keepalive_status.json'), 'r', encoding='utf-8') as f:
+            return jsonify(json.load(f))
+    except Exception:
+        return jsonify({'last_run': None, 'uid': None, 'bigdata': None})
 
 # ========== 静态文件服务 ==========
 
