@@ -150,7 +150,9 @@ python setup_task.py
 │   ├── js/workbench.js     # 工作台（卡墙/排行榜/KPI/趋势/四象限/日级叠加/存活）
 │   ├── js/insight.js       # 政策评估/姐姐分析/预警中心
 │   └── js/auth.js          # 登录状态与侧栏用户信息
-├── docs/                   # PRD 及历史文档
+├── docs/
+│   ├── README.md           # 文档导航（现行 vs 归档）
+│   └── archive/            # 历史设计文档（PRD/进度/完成度快照）
 ├── tests/                  # 实用脚本
 │   ├── verify_data_accuracy.py   # 数据准确性交叉验证（46项）
 │   ├── backfill_hall_revenue.py  # 厅流水历史回填（一次性）
