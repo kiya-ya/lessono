@@ -73,6 +73,39 @@ function setPolicyPerPage(v) {
   renderPolicyTable();
 }
 
+/* 政策归因：留存率变化按大厅存量规模加权，贡献(pp)加总=整体变化 */
+async function loadPolicyAttribution() {
+  const el = document.getElementById('chart-policy-attr');
+  if (!el) return;
+  try {
+    const res = await fetch(API_BASE + '/api/policy-attribution');
+    const d = await res.json();
+    const rows = d.attribution || [];
+    if (!rows.length) {
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">政策前后数据不足</div>';
+      return;
+    }
+    const best = rows.slice(0, 8);
+    const worst = rows.slice(-8).reverse();
+    const shown = [...best, ...worst];
+    if (charts['policyAttr']) charts['policyAttr'].dispose();
+    charts['policyAttr'] = echarts.init(el);
+    charts['policyAttr'].setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: 12 },
+        formatter: ps => { const p = ps[0]; const r = shown[p.dataIndex];
+          return `${r.hall_name}<br/>留存率：${r.ret_pre}% → ${r.ret_post}%（${r.ret_delta > 0 ? '+' : ''}${r.ret_delta}pp）<br/>存量规模：${r.scale} 团（占 ${r.share}%）<br/>贡献：${r.ret_contrib > 0 ? '+' : ''}${r.ret_contrib}pp`; } },
+      grid: { left: 10, right: 56, top: 10, bottom: 10, containLabel: true },
+      xAxis: { type: 'value', name: 'pp', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+      yAxis: { type: 'category', inverse: true, data: shown.map(x => x.hall_name), axisLabel: { fontSize: 11, color: '#6B7280' } },
+      series: [{
+        type: 'bar', data: shown.map(x => x.ret_contrib), barWidth: '55%',
+        itemStyle: { color: p => p.value >= 0 ? '#3D9A6C' : '#D56060', borderRadius: [3, 3, 3, 3] },
+        label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => (p.value > 0 ? '+' : '') + p.value + 'pp' }
+      }]
+    });
+  } catch (e) { console.error('政策归因加载失败:', e); }
+}
+
 function renderPolicyTable() {
   const total = policyRanking.length;
   const totalPages = Math.max(1, Math.ceil(total / policyPerPage));

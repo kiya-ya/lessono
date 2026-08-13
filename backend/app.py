@@ -742,6 +742,54 @@ def api_policy_impact():
     })
 
 
+@app.route('/api/policy-attribution')
+@login_required
+def api_policy_attribution():
+    """政策归因：政策前后留存率/解散率变化按大厅存量规模加权，贡献(pp)加总=整体变化"""
+    user_uid = request.cookies.get('auth_uid')
+    conn = get_db_conn()
+    role = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,)).fetchone()
+    role = role['role'] if role else 'admin'
+    if role == 'admin':
+        halls = [r['hall_name'] for r in conn.execute("SELECT DISTINCT hall_name FROM weekly_report WHERE hall_name != 'all'").fetchall()]
+    else:
+        halls = [r['hall_name'] for r in conn.execute('SELECT hall_name FROM hall_managers WHERE uid = ?', (user_uid,)).fetchall()]
+
+    def agg(h, op, order):
+        return conn.execute(f"""
+            SELECT AVG(retention_rate) ret, AVG(dissolution_rate) dis, AVG(active_team_count_start) act
+            FROM (SELECT retention_rate, dissolution_rate, active_team_count_start
+                  FROM weekly_report WHERE hall_name = ? AND week_start {op} ?
+                  ORDER BY week_start {order} LIMIT 4)
+        """, (h, POLICY_WEEK_START)).fetchone()
+
+    rows = []
+    for h in halls:
+        pre, post = agg(h, '<', 'DESC'), agg(h, '>=', 'ASC')
+        if pre['ret'] is None or post['ret'] is None:
+            continue
+        ret_delta = post['ret'] - pre['ret']
+        dis_delta = post['dis'] - pre['dis']
+        scale = ((post['act'] or 0) + (pre['act'] or 0)) / 2
+        rows.append({
+            'hall_name': h,
+            'ret_pre': round(pre['ret'], 1), 'ret_post': round(post['ret'], 1),
+            'ret_delta': round(ret_delta, 1),
+            'dis_delta': round(dis_delta, 1),
+            'scale': round(scale, 0),
+            '_ret_contrib': ret_delta * scale,
+            '_dis_contrib': dis_delta * scale,
+        })
+    total_scale = sum(r['scale'] for r in rows) or 1
+    for r in rows:
+        r['ret_contrib'] = round(r.pop('_ret_contrib') / total_scale, 2)
+        r['dis_contrib'] = round(r.pop('_dis_contrib') / total_scale, 2)
+        r['share'] = round(r['scale'] / total_scale * 100, 1)
+    rows.sort(key=lambda x: -x['ret_contrib'])
+    conn.close()
+    return jsonify({'policy_week_start': POLICY_WEEK_START, 'attribution': rows})
+
+
 @app.route('/api/captains')
 @login_required
 def api_captains():

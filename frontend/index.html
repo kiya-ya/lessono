@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -188,6 +188,11 @@
       <h3>📶 分厅响应度（留存率变化）</h3>
       <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
       <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
+    </div>
+    <div class="chart-card">
+      <h3>🎯 政策归因（加权贡献）</h3>
+      <div class="chart-src">留存率变化 × 大厅存量规模 · 贡献(pp)加总=整体变化 · 找出真正拉动/拖累整体留存的大厅（改善/恶化各 TOP8）</div>
+      <div class="chart-container" id="chart-policy-attr" style="height:400px;"></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -412,13 +417,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=9"></script>
-<script src="js/utils.js?v=9"></script>
-<script src="js/api.js?v=9"></script>
-<script src="js/auth.js?v=9"></script>
-<script src="js/render.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
-<script src="js/workbench.js?v=9"></script>
-<script src="js/insight.js?v=9"></script>
+<script src="js/config.js?v=10"></script>
+<script src="js/utils.js?v=10"></script>
+<script src="js/api.js?v=10"></script>
+<script src="js/auth.js?v=10"></script>
+<script src="js/render.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
+<script src="js/workbench.js?v=10"></script>
+<script src="js/insight.js?v=10"></script>
 </body>
 </html>
