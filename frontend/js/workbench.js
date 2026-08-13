@@ -316,7 +316,7 @@ function wbRenderCharts() {
   } : null;
   const base = {
     tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
-    grid: { left: 52, right: 20, top: 30, bottom: 42 },
+    grid: { left: 16, right: 16, top: 30, bottom: 42, containLabel: true },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
   };
@@ -462,7 +462,7 @@ async function loadDailyOverlay() {
     const base = {
       tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
       legend: { top: 0, right: 0, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10, color: '#6B7280' } },
-      grid: { left: 46, right: 20, top: 30, bottom: 30 },
+      grid: { left: 16, right: 16, top: 30, bottom: 30, containLabel: true },
       xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
     };
