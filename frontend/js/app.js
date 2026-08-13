@@ -200,6 +200,15 @@ window.addEventListener('resize', () => {
   if (typeof _partnerChart !== 'undefined' && _partnerChart) _partnerChart.resize();
 });
 
+// 一键回到顶部：滚动超过一屏后显示按钮
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('back-to-top');
+  if (btn) btn.classList.toggle('show', window.scrollY > 300);
+});
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
   // 恢复侧栏折叠状态

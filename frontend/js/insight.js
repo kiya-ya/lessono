@@ -11,6 +11,9 @@ async function loadPolicyImpact() {
     if (!d.overall) {
       cardsEl.innerHTML = '<div class="kpi-card"><span class="kpi-note">当前范围政策前或政策后数据不足，无法对比</span></div>';
       document.getElementById('policy-table').innerHTML = '';
+      const pp = document.getElementById('policy-pagination');
+      if (pp) pp.innerHTML = '';
+      policyRanking = [];
       return;
     }
     const o = d.overall;
@@ -57,19 +60,53 @@ async function loadPolicyImpact() {
       });
     }
 
-    // 明细表
-    document.getElementById('policy-table').innerHTML = `
-      <tr><th>#</th><th>大厅</th><th>留存率 前→后</th><th>变化</th><th>解散率 前→后</th><th>流水 前→后</th><th>流水变化</th></tr>
-      ${r.map((x, i) => `<tr>
-        <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
-        <td>${x.hall_name}</td>
-        <td>${x.ret_pre}% → ${x.ret_post}%</td>
-        <td>${arrow(x.ret_delta, false)}</td>
-        <td>${x.dis_pre}% → ${x.dis_post}%</td>
-        <td>${wbFmtMoney(x.rev_pre)} → ${wbFmtMoney(x.rev_post)}</td>
-        <td>${x.rev_delta_pct === null ? '—' : arrow(x.rev_delta_pct, false)}</td>
-      </tr>`).join('')}`;
+    // 明细表（分页）
+    policyRanking = r;
+    policyPage = 0;
+    renderPolicyTable();
   } catch (e) { console.error('政策评估加载失败:', e); }
+}
+
+function setPolicyPerPage(v) {
+  policyPerPage = parseInt(v) || 20;
+  policyPage = 0;
+  renderPolicyTable();
+}
+
+function renderPolicyTable() {
+  const total = policyRanking.length;
+  const totalPages = Math.max(1, Math.ceil(total / policyPerPage));
+  if (policyPage >= totalPages) policyPage = totalPages - 1;
+  if (policyPage < 0) policyPage = 0;
+  const start = policyPage * policyPerPage;
+  const pageData = policyRanking.slice(start, start + policyPerPage);
+  const arrow = (v, reverse) => {
+    const good = reverse ? v < 0 : v > 0;
+    const cls = v === 0 ? 'flat' : good ? 'up' : 'down';
+    const a = v > 0 ? '↑' : v < 0 ? '↓' : '→';
+    return `<span class="chip ${cls}">${a} ${Math.abs(v)}</span>`;
+  };
+  document.getElementById('policy-table').innerHTML = `
+    <tr><th>#</th><th>大厅</th><th>留存率 前→后</th><th>变化</th><th>解散率 前→后</th><th>流水 前→后</th><th>流水变化</th></tr>
+    ${pageData.map((x, i) => `<tr>
+      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
+      <td>${x.hall_name}</td>
+      <td>${x.ret_pre}% → ${x.ret_post}%</td>
+      <td>${arrow(x.ret_delta, false)}</td>
+      <td>${x.dis_pre}% → ${x.dis_post}%</td>
+      <td>${wbFmtMoney(x.rev_pre)} → ${wbFmtMoney(x.rev_post)}</td>
+      <td>${x.rev_delta_pct === null ? '—' : arrow(x.rev_delta_pct, false)}</td>
+    </tr>`).join('')}`;
+  const el = document.getElementById('policy-pagination');
+  if (el) {
+    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 个厅 · ${policyPage + 1}/${totalPages} 页</span>`;
+    if (policyPage > 0) html += `<button onclick="policyPage--;renderPolicyTable();">上一页</button>`;
+    for (let i = 0; i < totalPages; i++) {
+      html += `<button class="${i === policyPage ? 'active' : ''}" onclick="policyPage=${i};renderPolicyTable();">${i + 1}</button>`;
+    }
+    if (policyPage < totalPages - 1) html += `<button onclick="policyPage++;renderPolicyTable();">下一页</button>`;
+    el.innerHTML = html;
+  }
 }
 
 /* ═══════════════ 姐姐分析 ═══════════════ */
@@ -78,6 +115,11 @@ let captainPeriod = 'day';          // day / week / month
 let captainSortField = 'total_reward';
 let captainSortOrder = 'desc';
 let captainData = [];
+let captainPage = 0;
+let captainPerPage = 20;
+let policyRanking = [];
+let policyPage = 0;
+let policyPerPage = 20;
 
 const CAPTAIN_PERIOD_LABEL = { day: '当日', week: '当周', month: '当月' };
 
@@ -97,6 +139,13 @@ function sortCaptains(field) {
     captainSortField = field;
     captainSortOrder = 'desc';
   }
+  captainPage = 0;
+  renderCaptainTable();
+}
+
+function setCaptainPerPage(v) {
+  captainPerPage = parseInt(v) || 20;
+  captainPage = 0;
   renderCaptainTable();
 }
 
@@ -108,12 +157,18 @@ function renderCaptainTable() {
     const av = a[captainSortField] || 0, bv = b[captainSortField] || 0;
     return captainSortOrder === 'desc' ? bv - av : av - bv;
   });
+  const total = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(total / captainPerPage));
+  if (captainPage >= totalPages) captainPage = totalPages - 1;
+  if (captainPage < 0) captainPage = 0;
+  const start = captainPage * captainPerPage;
+  const pageData = sorted.slice(start, start + captainPerPage);
   const th = (field, label) =>
     `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
   tableEl.innerHTML = `
     <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('team_count', '带团数')}${th('active_count', '进行中')}${th('survival_rate', '团存活率')}${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
-    ${sorted.map((c, i) => `<tr>
-      <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
+    ${pageData.map((c, i) => `<tr>
+      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
       <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
       <td>${c.team_count}</td>
@@ -121,6 +176,16 @@ function renderCaptainTable() {
       <td>${c.survival_rate}%</td>
       <td>${wbFmtMoney(c.total_reward)}</td>
     </tr>`).join('')}`;
+  const el = document.getElementById('captain-pagination');
+  if (el) {
+    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${captainPage + 1}/${totalPages} 页</span>`;
+    if (captainPage > 0) html += `<button onclick="captainPage--;renderCaptainTable();">上一页</button>`;
+    for (let i = 0; i < totalPages; i++) {
+      html += `<button class="${i === captainPage ? 'active' : ''}" onclick="captainPage=${i};renderCaptainTable();">${i + 1}</button>`;
+    }
+    if (captainPage < totalPages - 1) html += `<button onclick="captainPage++;renderCaptainTable();">下一页</button>`;
+    el.innerHTML = html;
+  }
 }
 
 async function loadCaptains() {
@@ -148,6 +213,7 @@ async function loadCaptains() {
       : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
 
     captainData = d.data || [];
+    captainPage = 0;
     renderCaptainTable();
   } catch (e) { console.error('姐姐分析加载失败:', e); }
 }

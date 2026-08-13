@@ -276,6 +276,8 @@ def api_hall_overview():
     has_hall_rev = conn.execute(
         "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='hall_revenue_daily'"
     ).fetchone()['c'] > 0
+    # 本月起始日期（用于厅排行榜「本周/本月」切换）
+    month_start = datetime.now().date().replace(day=1).isoformat()
     for h in halls:
         rows = conn.execute('''
             SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
@@ -295,7 +297,22 @@ def api_hall_overview():
                     if rev['n']:
                         w['hall_revenue'] = round(rev['s'], 1)
                         w['hall_revenue_days'] = rev['n']
-            data.append({'hall_name': h, 'weeks': week_list})
+            # 本月汇总（厅月流水 / 姐妹团月流水 / 月新成团）
+            month = {'revenue': None, 'sis_revenue': None, 'new_teams': 0}
+            if has_hall_rev:
+                mrev = conn.execute(
+                    'SELECT SUM(hall_revenue) AS s, COUNT(*) AS n FROM hall_revenue_daily WHERE hall_name = ? AND date >= ?',
+                    (h, month_start)).fetchone()
+                if mrev['n']:
+                    month['revenue'] = round(mrev['s'], 1)
+            mwk = conn.execute(
+                'SELECT SUM(total_reward) AS s, SUM(new_team_count) AS n FROM weekly_report WHERE hall_name = ? AND week_start >= ?',
+                (h, month_start)).fetchone()
+            if mwk['s'] is not None:
+                month['sis_revenue'] = round(mwk['s'] or 0, 1)
+            if mwk['n'] is not None:
+                month['new_teams'] = int(mwk['n'] or 0)
+            data.append({'hall_name': h, 'weeks': week_list, 'month': month})
     conn.close()
     return jsonify({'role': role, 'data': data})
 

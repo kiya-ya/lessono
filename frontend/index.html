@@ -98,8 +98,12 @@
     <!-- 厅排行榜（管理员） -->
     <div id="wb-rank-board" style="display:none">
       <div class="section-head">
-        <h2>厅排行榜 · 本周</h2>
-        <span class="hint">位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径</span>
+        <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
+        <div class="seg">
+          <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
+          <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+        </div>
+        <span class="hint" id="wb-rank-hint">位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径</span>
       </div>
       <div class="rank-card"><div class="rank-scroll">
         <table class="rank-table" id="wb-rank-table"></table>
@@ -176,8 +180,15 @@
       <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
     </div>
     <div class="chart-card">
-      <h3>📋 分厅政策响应明细</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>📋 分厅政策响应明细</span>
+        <select id="policy-per-page" onchange="setPolicyPerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+          <option value="20" selected>20条/页</option>
+          <option value="30">30条/页</option>
+        </select>
+      </h3>
       <div class="rank-scroll"><table class="rank-table" id="policy-table"></table></div>
+      <div class="pagination" id="policy-pagination" style="margin-top:8px;justify-content:center;"></div>
     </div>
   </div>
 
@@ -195,14 +206,21 @@
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span id="captain-table-title">👑 姐姐排行榜（按当日奖励）</span>
-        <div class="seg">
-          <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
-          <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
-          <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="seg">
+            <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+            <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
+            <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
+          </div>
+          <select id="captain-per-page" onchange="setCaptainPerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+          </select>
         </div>
       </h3>
       <div class="chart-src">奖励为快照发放的礼物奖励金额；姐姐的累计总流水请在「UID查询」中查看 · 点击表头可排序</div>
       <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
+      <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
     </div>
   </div>
 
@@ -370,6 +388,9 @@
     </div>
   </div>
 </div>
+
+<!-- 一键回到顶部 -->
+<button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
 <script src="js/config.js?v=5"></script>
 <script src="js/utils.js?v=5"></script>

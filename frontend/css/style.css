@@ -558,3 +558,17 @@ body { background: var(--wb-bg); }
 .seg { display: flex; border: 1px solid #DDE1E8; border-radius: 6px; overflow: hidden; }
 .seg button { padding: 5px 14px; border: none; background: #fff; font-size: 12px; color: var(--wb-text-2); cursor: pointer; }
 .seg button.on { background: var(--wb-nav); color: #fff; }
+
+/* ── 一键回到顶部 ── */
+.back-to-top {
+  position: fixed; right: 28px; bottom: 32px;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: none; background: var(--wb-nav, #4F5BD5); color: #fff;
+  font-size: 20px; line-height: 1; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 91, 213, .35);
+  opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: opacity .25s, visibility .25s, transform .25s;
+  z-index: 999;
+}
+.back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+.back-to-top:hover { filter: brightness(1.08); }

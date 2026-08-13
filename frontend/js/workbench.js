@@ -123,23 +123,41 @@ function wbRenderWall() {
   }).join('');
 }
 
+let wbRankPeriod = 'week';  // week / month
+
+function setRankPeriod(p) {
+  wbRankPeriod = p;
+  const w = document.getElementById('rank-week'), m = document.getElementById('rank-month');
+  if (w) w.classList.toggle('on', p === 'week');
+  if (m) m.classList.toggle('on', p === 'month');
+  const title = document.getElementById('wb-rank-title');
+  if (title) title.textContent = '厅排行榜 · ' + (p === 'week' ? '本周' : '本月');
+  const hint = document.getElementById('wb-rank-hint');
+  if (hint) hint.textContent = p === 'week'
+    ? '位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径'
+    : '本月累计 · 厅月流水为厅总流水口径（bigdata），姐妹团月流水为礼物奖励口径';
+  wbRenderRank();
+}
+
 function wbRenderRank() {
-  // 按本周流水排名，并计算较上周位次变化
+  const month = wbRankPeriod === 'month';
+  // 按流水排名（本周/本月），并计算较上周期位次变化
   const items = wbOverview.data.filter(d => d.weeks.length >= 1).map(d => {
     const last = d.weeks[d.weeks.length - 1];
     const prev = d.weeks.length > 1 ? d.weeks[d.weeks.length - 2] : null;
     // 优先使用真实厅周流水（hall_revenue_daily），无数据时回退姐妹团奖励口径
     const revOf = w => (w.hall_revenue != null ? w.hall_revenue : (w.total_reward || 0));
+    const m = d.month || {};
     return {
       name: d.hall_name,
-      rev: revOf(last),
-      sisRev: last.total_reward || 0,
+      rev: month ? (m.revenue != null ? m.revenue : (m.sis_revenue || 0)) : revOf(last),
+      sisRev: month ? (m.sis_revenue || 0) : (last.total_reward || 0),
       active: last.active_team_count_end || 0,
       ret: last.retention_rate || 0,
-      newTeams: last.new_team_count || 0,
-      prevRev: prev ? revOf(prev) : null,
-      prevRet: prev ? (prev.retention_rate || 0) : null,
-      revDays: last.hall_revenue_days || 0,
+      newTeams: month ? (m.new_teams || 0) : (last.new_team_count || 0),
+      prevRev: month ? null : (prev ? revOf(prev) : null),
+      prevRet: month ? null : (prev ? (prev.retention_rate || 0) : null),
+      revDays: month ? 0 : (last.hall_revenue_days || 0),
     };
   });
   const rankOf = (key) => {
@@ -155,14 +173,17 @@ function wbRenderRank() {
     return m > 0 ? `<span class="move up">↑${m}</span>` : m < 0 ? `<span class="move down">↓${-m}</span>` : '<span class="move same">—</span>';
   };
   const top = items.sort((a, b) => b.rev - a.rev).slice(0, 20);
+  const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
+  const revLabel = month ? '厅月流水' : '厅周流水';
+  const newLabel = month ? '月新成团' : '周新成团';
   document.getElementById('wb-rank-table').innerHTML = `
-    <tr><th>#</th><th>大厅</th><th>进行中姐妹团</th><th>姐妹团周流水</th><th>厅周流水</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>新成团</th></tr>
+    <tr><th>#</th><th>大厅</th><th>进行中姐妹团</th><th>${sisLabel}</th><th>${revLabel}</th><th>流水位次</th><th>留存率</th><th>留存位次</th><th>${newLabel}</th></tr>
     ${top.map((it, idx) => `<tr>
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td>${it.name}</td>
       <td>${it.active}</td>
       <td>${wbFmtMoney(it.sisRev)}</td>
-      <td>${wbFmtMoney(it.rev)}${it.revDays > 0 && it.revDays < 7 ? `<span style="color:var(--wb-text-3);font-size:10px">（${it.revDays}天）</span>` : ''}</td>
+      <td>${wbFmtMoney(it.rev)}${!month && it.revDays > 0 && it.revDays < 7 ? `<span style="color:var(--wb-text-3);font-size:10px">（${it.revDays}天）</span>` : ''}</td>
       <td>${move(it.prevRev === null ? null : revPrevRank[it.name] - revRank[it.name])}</td>
       <td>${Math.round(it.ret)}%</td>
       <td>${move(it.prevRet === null ? null : retPrevRank[it.name] - retRank[it.name])}</td>
