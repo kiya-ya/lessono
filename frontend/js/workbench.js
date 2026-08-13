@@ -134,8 +134,8 @@ function setRankPeriod(p) {
   if (title) title.textContent = '厅排行榜 · ' + (p === 'week' ? '本周' : '本月');
   const hint = document.getElementById('wb-rank-hint');
   if (hint) hint.textContent = p === 'week'
-    ? '位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径'
-    : '本月累计 · 厅月流水为厅总流水口径（bigdata），姐妹团月流水为礼物奖励口径';
+    ? '位次为较上周变化 · 厅周流水=全厅流水，姐妹团周流水=姐妹团礼物奖励'
+    : '本月累计 · 厅月流水=全厅流水，姐妹团月流水=姐妹团礼物奖励';
   wbRenderRank();
 }
 
@@ -262,9 +262,9 @@ function wbRenderKPI() {
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const heroes = [
-    { label: '💯 留存率', v: wbKpi.retention.value + '%', c: wbKpi.retention.change, suf: 'pp', note: '(周末-新团)/周始', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
-    { label: '🚫 解散率', v: wbKpi.dissolution.value + '%', c: -wbKpi.dissolution.change, suf: 'pp', note: '下降为好', spark: sparkOf('dissolution_rate') },
-    { label: '💰 礼物奖励金额', v: wbFmtMoney(wbKpi.revenue.value), c: wbKpi.revenue.change, suf: '%', note: '本周累计', spark: sparkOf('total_reward') },
+    { label: '💯 留存率', v: wbKpi.retention.value + '%', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
+    { label: '🚫 解散率', v: wbKpi.dissolution.value + '%', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', spark: sparkOf('dissolution_rate') },
+    { label: '💰 礼物奖励金额', v: wbFmtMoney(wbKpi.revenue.value), c: wbKpi.revenue.change, suf: '%', note: '越高越好', spark: sparkOf('total_reward') },
   ];
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
     <div class="kpi-card">
@@ -357,9 +357,20 @@ function wbResizeCharts() {
 /* ─────────────── 初始化 ─────────────── */
 
 async function initWorkbench() {
+  // 看板导览：首次收起后记住，不再显示
+  if (localStorage.getItem('wb_guide_hidden') === '1') {
+    const g = document.getElementById('wb-guide');
+    if (g) g.style.display = 'none';
+  }
   await loadWorkbenchOverview(true);
   await refreshWorkbench();
   if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
+}
+
+function closeWbGuide() {
+  const g = document.getElementById('wb-guide');
+  if (g) g.style.display = 'none';
+  localStorage.setItem('wb_guide_hidden', '1');
 }
 
 

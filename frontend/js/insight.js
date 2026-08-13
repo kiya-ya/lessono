@@ -195,7 +195,7 @@ async function loadCaptains() {
     const res = await fetch(API_BASE + `/api/captains?limit=100&period=${captainPeriod}&` + getHallParam().substring(1));
     const d = await res.json();
     if (d.ref_date) {
-      document.getElementById('captains-hint').textContent = `快照日期 ${d.ref_date} · 随大厅筛选联动`;
+      document.getElementById('captains-hint').textContent = `数据日期 ${d.ref_date} · 会随所选大厅变化`;
     }
     const titleEl = document.getElementById('captain-table-title');
     if (titleEl) titleEl.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;

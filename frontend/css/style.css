@@ -572,3 +572,18 @@ body { background: var(--wb-bg); }
 }
 .back-to-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
 .back-to-top:hover { filter: brightness(1.08); }
+
+/* ── 看板导览条 ── */
+.wb-guide {
+  display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap;
+  background: #F5F7FF; border: 1px solid #E3E8F5; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 16px;
+  font-size: 12px; color: var(--wb-text-2, #5B6472); line-height: 1.5;
+}
+.wb-guide-tag { font-weight: 600; color: var(--wb-nav, #4F5BD5); white-space: nowrap; }
+.wb-guide-item b { color: var(--wb-text-1, #333); font-weight: 600; }
+.wb-guide-close {
+  margin-left: auto; border: none; background: none; cursor: pointer;
+  color: var(--wb-text-3, #9AA0AB); font-size: 14px; padding: 0 4px; line-height: 1;
+}
+.wb-guide-close:hover { color: var(--wb-nav, #4F5BD5); }

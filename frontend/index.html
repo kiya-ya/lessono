@@ -86,6 +86,16 @@
   <div id="tab-overview" class="tab-panel active">
     <div class="alert-banner" id="wb-alert-banner" style="display:none"></div>
 
+    <!-- 看板导览（可关闭） -->
+    <div class="wb-guide" id="wb-guide">
+      <span class="wb-guide-tag">📖 导览</span>
+      <span class="wb-guide-item">姐妹团 = 姐姐 + 妹妹 配对</span>
+      <span class="wb-guide-item">💯留存率：上周的团还剩多少（↑好） · 🚫解散率：本周解散占比（↓好）</span>
+      <span class="wb-guide-item">💰流水分两口径：姐妹团礼物奖励 / 厅总流水</span>
+      <span class="wb-guide-item">💡 顶部切时间·大厅，左侧切视角，点卡片/柱状图联动明细</span>
+      <button class="wb-guide-close" onclick="closeWbGuide()" title="收起">✕</button>
+    </div>
+
     <!-- 厅体检卡墙（厅运营） -->
     <div id="wb-hall-wall" style="display:none">
       <div class="section-head">
@@ -103,7 +113,7 @@
           <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
           <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
         </div>
-        <span class="hint" id="wb-rank-hint">位次为较上周变化 · 厅周流水为厅总流水口径（bigdata），姐妹团周流水为礼物奖励口径</span>
+        <span class="hint" id="wb-rank-hint">位次为较上周变化 · 厅周流水=全厅流水，姐妹团周流水=姐妹团礼物奖励</span>
       </div>
       <div class="rank-card"><div class="rank-scroll">
         <table class="rank-table" id="wb-rank-table"></table>
@@ -122,12 +132,12 @@
       <span class="hint">虚线为政策上线（07-17）</span>
     </div>
     <div class="chart-grid">
-      <div class="chart-card"><h3>💯 留存率</h3><div class="chart-src">(周末进行中 - 本周新成团) / 周始进行中</div><div class="chart-box" id="wb-c-retention"></div></div>
-      <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周解散数 / 平均进行中</div><div class="chart-box" id="wb-c-dissolution"></div></div>
-      <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周 7 天流水累计</div><div class="chart-box" id="wb-c-revenue"></div></div>
-      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼任务次数</div><div class="chart-box" id="wb-c-activity"></div></div>
-      <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-src">按星期对齐叠加 · team_detail 快照 form_date 统计</div><div class="chart-box" id="chart-daily-new"></div></div>
-      <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-src">按星期对齐叠加 · team_detail 快照 dissolve_date 统计</div><div class="chart-box" id="chart-daily-diss"></div></div>
+      <div class="chart-card"><h3>💯 留存率</h3><div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div><div class="chart-box" id="wb-c-retention"></div></div>
+      <div class="chart-card"><h3>🚫 解散率</h3><div class="chart-src">本周有多少团解散 · 越低越好</div><div class="chart-box" id="wb-c-dissolution"></div></div>
+      <div class="chart-card"><h3>💰 礼物奖励金额</h3><div class="chart-src">本周发放的礼物奖励总额</div><div class="chart-box" id="wb-c-revenue"></div></div>
+      <div class="chart-card"><h3>📊 任务活跃度</h3><div class="chart-src">开车 / 陪档 / 收送礼 任务次数</div><div class="chart-box" id="wb-c-activity"></div></div>
+      <div class="chart-card"><h3>🆕 日级新成团 · 本周 vs 上周</h3><div class="chart-src">每天新成团数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-new"></div></div>
+      <div class="chart-card"><h3>💥 日级解散 · 本周 vs 上周</h3><div class="chart-src">每天解散数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-diss"></div></div>
     </div>
   </div>
 
@@ -196,11 +206,11 @@
   <div id="tab-captains" class="tab-panel">
     <div class="section-head">
       <h2>姐姐分析</h2>
-      <span class="hint" id="captains-hint">基于最新快照 · 随大厅筛选联动</span>
+      <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div class="chart-card">
       <h3>⚠️ 头牌依赖度警示</h3>
-      <div class="chart-src">各厅 TOP1 姐姐当日奖励占比（快照口径）· ≥40% 红色高危，30%~40% 黄色关注</div>
+      <div class="chart-src">各厅第一名姐姐拿走的当日奖励占比 · ≥40% 红（太依赖），30%~40% 黄</div>
       <div id="dep-list" style="margin-top:8px;"></div>
     </div>
     <div class="chart-card">
@@ -218,7 +228,7 @@
           </select>
         </div>
       </h3>
-      <div class="chart-src">奖励为快照发放的礼物奖励金额；姐姐的累计总流水请在「UID查询」中查看 · 点击表头可排序</div>
+      <div class="chart-src">奖励为当日发放的礼物金额；累计总流水请在「UID查询」查看 · 点表头可排序</div>
       <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
       <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
     </div>
