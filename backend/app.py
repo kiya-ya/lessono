@@ -1036,6 +1036,11 @@ def api_sister_detail():
         GROUP BY snapshot_date ORDER BY snapshot_date
     """, [uid]).fetchall()
     weekly = conn.execute("SELECT week_start, SUM(sister_revenue) AS rev FROM team_sister_revenue WHERE CAST(sister_uid AS TEXT) = ? GROUP BY week_start ORDER BY week_start", [uid]).fetchall()
+    track_rows = conn.execute(f"""
+        SELECT snapshot_date, MAX({rank_sql}) AS r FROM team_detail
+        WHERE CAST(sister_uid AS TEXT) = ?
+        GROUP BY snapshot_date ORDER BY snapshot_date
+    """, [uid]).fetchall()
     conn.close()
 
     total = base['total_teams'] or 0
@@ -1049,6 +1054,7 @@ def api_sister_detail():
         'retention': round(active / total * 100, 1) if total else None,
         'avg_days': round(act['avg_days'], 1) if act['avg_days'] is not None else None,
         'presence_days': pres['presence_days'] or 0,
+        'level_track': [{'date': r['snapshot_date'], 'rank': r['r'] or 0, 'level': LEVEL_NAMES.get(r['r'] or 0, '无')} for r in track_rows],
         'teams': [{
             'team_id': t['team_id'], 'hall_name': t['hall_name'],
             'days_since_formed': t['days_since_formed'], 'reward_amount': t['reward_amount'],

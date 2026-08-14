@@ -471,7 +471,9 @@ async function openSisterDetail(uid) {
   document.getElementById('sd-table').innerHTML = '';
   document.getElementById('sd-chart-src').textContent = '每日礼物流水';
   const el = document.getElementById('sd-chart');
+  const lvEl = document.getElementById('sd-level-chart');
   if (charts['sdChart']) { charts['sdChart'].dispose(); charts['sdChart'] = null; }
+  if (charts['sdLevelChart']) { charts['sdLevelChart'].dispose(); charts['sdLevelChart'] = null; }
   try {
     const res = await fetch(API_BASE + '/api/sister-detail?uid=' + encodeURIComponent(uid));
     const d = await res.json();
@@ -483,6 +485,21 @@ async function openSisterDetail(uid) {
       <span class="survival-chip">存活率 ${d.retention == null ? '—' : '<strong>' + d.retention + '%</strong>'}</span>
       <span class="survival-chip">均成团 <strong>${d.avg_days ?? '—'}</strong>天</span>
       <span class="survival-chip">在榜 <strong>${d.presence_days}</strong>天</span>`;
+    // 等级轨迹折线图（姐姐当日等级会波动，用折线展示）
+    const track = d.level_track || [];
+    const lvNames = ['无', '初级铜牌', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
+    if (track.length >= 2) {
+      charts['sdLevelChart'] = echarts.init(lvEl);
+      charts['sdLevelChart'].setOption({
+        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>等级 ${lvNames[p.value] || '无'}`; } },
+        grid: { left: 60, right: 16, top: 16, bottom: 28 },
+        xAxis: { type: 'category', data: track.map(x => x.date), axisLabel: { fontSize: 10, color: '#6B7280' } },
+        yAxis: { type: 'category', data: lvNames, axisLabel: { fontSize: 11, color: '#374151' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        series: [{ name: '等级', type: 'line', data: track.map(x => x.rank), itemStyle: { color: '#3D9A6C' }, lineStyle: { color: '#3D9A6C', width: 2 }, symbolSize: 6 }]
+      });
+    } else {
+      lvEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">等级轨迹数据不足</div>';
+    }
     // 流水图：优先每日(15天曲线)，否则周流水
     const seriesData = (d.daily && d.daily.length) ? d.daily.map(x => ({ name: x.date, value: x.rev })) : [];
     if (seriesData.length) {
