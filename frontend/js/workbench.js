@@ -276,10 +276,10 @@ async function refreshWorkbench() {
 }
 
 // 数字滚动动画：从 ~55% 处缓动到目标值（ease-out cubic）
-function wbCountUp(el, to, fmt, dur = 700) {
+function wbCountUp(el, to, fmt, dur = 1000) {
   if (!el || typeof to !== 'number' || isNaN(to)) return;
   if (to <= 0 || !window.requestAnimationFrame) { el.textContent = fmt(to); return; }
-  const from = to * 0.55;
+  const from = 0;  // 从 0 滚起，滚动感更明显
   const start = performance.now();
   const step = now => {
     const p = Math.min(1, (now - start) / dur);
@@ -321,10 +321,19 @@ function wbRenderKPI() {
       <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
       ${wbSpark(k.spark)}
     </div>`).join('');
-  // 数字滚动（数形结合的动态感）
-  document.querySelectorAll('#wb-kpi-hero .kpi-value').forEach(el => {
+  // 数字滚动（数形结合的动态感）；KPI 卡在管理员视角下位于排行榜下方，滚入视口才播
+  const kpiCountUp = () => document.querySelectorAll('#wb-kpi-hero .kpi-value').forEach(el => {
     wbCountUp(el, parseFloat(el.getAttribute('data-count')), fmtOf(el.getAttribute('data-fmt')));
   });
+  const heroEl = document.getElementById('wb-kpi-hero');
+  if ('IntersectionObserver' in window && heroEl) {
+    const obs = new IntersectionObserver((entries, o) => {
+      if (entries.some(e => e.isIntersecting)) { kpiCountUp(); o.disconnect(); }
+    }, { threshold: 0.3 });
+    obs.observe(heroEl);
+  } else {
+    kpiCountUp();
+  }
   const subs = [
     { label: '📦 新成团数', v: wbKpi.new_team.value + ' 个', c: wbKpi.new_team.change, suf: '%' },
     { label: '🔄 进行中姐妹团', v: wbKpi.active_team.value + ' 个', c: wbKpi.active_team.change, suf: '%' },
@@ -359,11 +368,28 @@ function wbRenderCharts() {
     data: [{ xAxis: labels[policyIdx], label: { formatter: '政策上线', fontSize: 10, color: '#4F5BD5' }, lineStyle: { color: '#4F5BD5', type: 'dashed', width: 1 } }]
   } : null;
   const base = {
-    tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
-    grid: { left: 16, right: 16, top: 30, bottom: 42, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(26,29,38,.92)',
+      borderColor: 'rgba(26,29,38,.92)',
+      textStyle: { color: '#fff', fontSize: 12 },
+      padding: [8, 12],
+      axisPointer: { lineStyle: { color: '#C7CBD4' } },
+    },
+    grid: { left: 16, right: 16, top: 40, bottom: 42, containLabel: true },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
     yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
   };
+  // 渐变色助手：柱体自上而下、折线自左向右、面积自上而下
+  const barGrad = (top, bottom) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+    { offset: 0, color: top }, { offset: 1, color: bottom }
+  ]);
+  const lineGrad = (a, b) => new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+    { offset: 0, color: a }, { offset: 1, color: b }
+  ]);
+  const areaGrad = (r, g, b) => new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+    { offset: 0, color: `rgba(${r},${g},${b},.33)` }, { offset: 1, color: `rgba(${r},${g},${b},0)` }
+  ]);
   // 选中具体厅时，叠加平台均值参考线（百分比类图表：留存率/解散率）
   let platOf = null;
   if (currentHall !== 'all' && wbPlatformWeekly && wbPlatformWeekly.length) {
@@ -379,20 +405,43 @@ function wbRenderCharts() {
   const defs = {
     'wb-retention': { ...base,
       legend: platOf ? legendOpt : undefined,
-      series: [{ name: '留存率', type: 'line', smooth: true, data: data.map(d => Math.min(100, d.retention_rate || 0)), lineStyle: { color: '#3D9A6C', width: 2 }, itemStyle: { color: '#3D9A6C' }, areaStyle: { color: 'rgba(22,163,74,.06)' }, markLine: mark },
-        ...(platOf ? [platSeries('retention_rate')] : [])] },
+      series: [{
+        name: '留存率', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6,
+        data: data.map((d, i) => {
+          const v = Math.min(100, d.retention_rate || 0);
+          return i === data.length - 1
+            ? { value: v, symbolSize: 11, itemStyle: { color: '#3D9A6C', borderColor: '#fff', borderWidth: 2, shadowBlur: 8, shadowColor: 'rgba(61,154,108,.45)' } }
+            : v;
+        }),
+        lineStyle: { width: 3, color: lineGrad('#3D9A6C', '#6BC48E') },
+        itemStyle: { color: '#3D9A6C', borderColor: '#fff', borderWidth: 2 },
+        areaStyle: { color: areaGrad(61, 154, 108) },
+        markLine: mark,
+      },
+      ...(platOf ? [platSeries('retention_rate')] : [])] },
     'wb-dissolution': { ...base,
       legend: platOf ? legendOpt : undefined,
-      series: [{ name: '解散率', type: 'bar', data: data.map(d => d.dissolution_rate || 0), itemStyle: { color: 'rgba(220,38,38,.55)', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark },
-        ...(platOf ? [platSeries('dissolution_rate')] : [])] },
-    'wb-revenue': { ...base, series: [{ name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0), itemStyle: { color: '#C98A2D', borderRadius: [3, 3, 0, 0] }, barWidth: '50%', markLine: mark }] },
+      series: [{
+        name: '解散率', type: 'bar', data: data.map(d => d.dissolution_rate || 0),
+        itemStyle: { color: barGrad('#E06969', '#F7C2C2'), borderRadius: [4, 4, 0, 0] }, barWidth: '50%',
+        label: { show: true, position: 'top', color: '#D56060', fontSize: 10, formatter: '{c}%' },
+        markLine: mark,
+      },
+      ...(platOf ? [platSeries('dissolution_rate')] : [])] },
+    'wb-revenue': { ...base,
+      series: [{
+        name: '流水', type: 'bar', data: data.map(d => d.total_reward || 0),
+        itemStyle: { color: barGrad('#D9A13F', '#F0D79A'), borderRadius: [4, 4, 0, 0] }, barWidth: '50%',
+        label: { show: true, position: 'top', color: '#B07A1F', fontSize: 10, formatter: p => wbFmtMoney(p.value) },
+        markLine: mark,
+      }] },
     'wb-activity': {
       ...base,
       legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 10, color: '#6B7280' } },
       series: [
-        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: '#4F5BD5' } },
-        { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: '#3D9A6C' } },
-        { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: '#C98A2D' } },
+        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: barGrad('#5A67E0', '#8B96F2') } },
+        { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: barGrad('#3D9A6C', '#6BC08A') } },
+        { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: barGrad('#D9A13F', '#E5C87E') }, label: { show: true, position: 'top', color: '#6B7280', fontSize: 10, formatter: p => (data[p.dataIndex].total_drive_tasks || 0) + (data[p.dataIndex].total_accompany_tasks || 0) + (data[p.dataIndex].total_gift_tasks || 0) } },
       ],
     },
   };
@@ -564,19 +613,19 @@ async function loadDailyOverlay() {
       xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
     };
-    const mk = (thisData, lastData, color) => ({
+    const mk = (thisData, lastData, color, rgb) => ({
       ...base,
       series: [
-        { name: '本周', type: 'line', data: thisData, lineStyle: { color, width: 2 }, itemStyle: { color }, areaStyle: { color: color + '14' } },
+        { name: '本周', type: 'line', data: thisData, symbol: 'circle', symbolSize: 5, lineStyle: { color, width: 2.5 }, itemStyle: { color }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: `rgba(${rgb},.28)` }, { offset: 1, color: `rgba(${rgb},0)` }]) } },
         { name: '上周', type: 'line', data: lastData, symbol: 'none', lineStyle: { color: '#9CA3AF', type: 'dashed', width: 1.5 }, itemStyle: { color: '#9CA3AF' } },
       ]
     });
     if (charts['dailyNew']) charts['dailyNew'].dispose();
     charts['dailyNew'] = echarts.init(elNew);
-    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#4F5BD5'));
+    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#4F5BD5', '79,91,213'));
     if (charts['dailyDiss']) charts['dailyDiss'].dispose();
     charts['dailyDiss'] = echarts.init(elDiss);
-    charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#D56060'));
+    charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#D56060', '213,96,96'));
   } catch (e) { console.error('日级叠加图加载失败:', e); }
 }
 
