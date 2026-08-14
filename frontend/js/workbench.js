@@ -625,7 +625,7 @@ async function loadLyingFlat() {
         ? `<span class="chip down">躺平${t.zero_streak}天</span>`
         : `<span class="chip flat">预警</span>`;
       return `<tr>
-        <td><a href="javascript:void(0)" onclick="jumpToUID('${t.sister_uid || ''}', '${t.team_id}')">${t.sister_nickname || '-'}</a></td>
+        <td><a href="javascript:void(0)" onclick="openLyingDetail('${t.team_id}', '${t.sister_uid || ''}')">${t.sister_nickname || '-'}</a></td>
         <td>${t.hall_name || '-'}</td>
         <td>${t.team_id}</td>
         <td>${t.days_since_formed ?? '-'}天</td>
@@ -640,4 +640,51 @@ async function loadLyingFlat() {
         <tbody>${rows}</tbody>
       </table></div>`;
   } catch (e) { console.error('躺平名单加载失败:', e); }
+}
+
+/* ── 躺平下钻：逐日任务完成明细 ── */
+let lyingTeamId = '';
+let lyingSisterUid = '';
+
+async function openLyingDetail(teamId, sisterUid) {
+  lyingTeamId = teamId || '';
+  lyingSisterUid = sisterUid || '';
+  const modal = document.getElementById('lying-detail-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.getElementById('ld-name').textContent = '加载中...';
+  document.getElementById('ld-chips').innerHTML = '';
+  document.getElementById('ld-table').innerHTML = '';
+  try {
+    const res = await fetch(API_BASE + '/api/lying-detail?team_id=' + encodeURIComponent(teamId));
+    const d = await res.json();
+    if (d.error) { document.getElementById('ld-name').textContent = '未找到该团'; return; }
+    document.getElementById('ld-name').textContent = `${d.sister_nickname || '-'}（${d.hall_name || '-'} · 团 ${d.team_id}）`;
+    const daily = d.daily || [];
+    // 从最新快照往前数连续零任务天数（与名单判定口径一致）
+    let streak = 0;
+    for (let i = daily.length - 1; i >= 0; i--) { if (daily[i].total === 0) streak++; else break; }
+    const zeroDays = daily.filter(x => x.total === 0).length;
+    document.getElementById('ld-chips').innerHTML = `
+      <span class="survival-chip">成团 <strong>${d.days_since_formed ?? '-'}</strong>天</span>
+      <span class="survival-chip">快照 <strong>${daily.length}</strong>天</span>
+      <span class="survival-chip">零任务 <strong>${zeroDays}</strong>天</span>
+      <span class="survival-chip">连续零任务 <strong>${streak}</strong>天</span>`;
+    document.getElementById('ld-table').innerHTML = `
+      <tr><th>快照日</th><th>开车</th><th>陪档</th><th>收送礼</th><th>合计</th><th>状态</th></tr>
+      ${daily.map(x => {
+        const zero = x.total === 0;
+        const st = zero ? '<span class="chip warn">零任务</span>' : '<span class="chip up">有任务</span>';
+        return `<tr${zero ? ' style="background:rgba(217,119,6,.06);"' : ''}><td>${x.date}</td><td>${x.drive}</td><td>${x.accompany}</td><td>${x.gift}</td><td>${x.total}</td><td>${st}</td></tr>`;
+      }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--wb-text-3);padding:16px;">暂无任务记录</td></tr>'}`;
+  } catch (e) { console.error('躺平明细加载失败:', e); document.getElementById('ld-name').textContent = '加载失败'; }
+}
+
+function closeLyingDetail() {
+  const modal = document.getElementById('lying-detail-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function ldGoUID() {
+  if (lyingSisterUid) { closeLyingDetail(); jumpToUID(lyingSisterUid); }
 }

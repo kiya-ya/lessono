@@ -1300,6 +1300,49 @@ def api_lying_flat():
     return jsonify({'ref_date': latest, 'prev_date': prev, 'total': len(lst), 'coverage': coverage, 'list': lst})
 
 
+@app.route('/api/lying-detail')
+@login_required
+def api_lying_detail():
+    """躺平下钻：某团逐日任务完成明细（开车/陪档/收送礼），验证「连续零任务」判定"""
+    team_id = request.args.get('team_id', '')
+    if not team_id:
+        return jsonify({'error': '缺少 team_id'}), 400
+    conn = get_db_conn()
+    info = conn.execute("""
+        SELECT team_id, hall_name, sister_nickname, sister_uid, days_since_formed, dissolve_date
+        FROM team_detail WHERE CAST(team_id AS TEXT) = ? AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+    """, [team_id]).fetchone()
+    if not info:
+        conn.close()
+        return jsonify({'error': '未找到该团'}), 404
+    rows = conn.execute("""
+        SELECT snapshot_date,
+               SUM(drive_task_count) AS drive,
+               SUM(accompany_task_count) AS accompany,
+               SUM(gift_task_count) AS gift
+        FROM team_detail
+        WHERE CAST(team_id AS TEXT) = ? AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id, snapshot_date)
+        GROUP BY snapshot_date ORDER BY snapshot_date
+    """, [team_id]).fetchall()
+    conn.close()
+    daily = [{
+        'date': r['snapshot_date'],
+        'drive': r['drive'] or 0,
+        'accompany': r['accompany'] or 0,
+        'gift': r['gift'] or 0,
+        'total': (r['drive'] or 0) + (r['accompany'] or 0) + (r['gift'] or 0),
+    } for r in rows]
+    return jsonify({
+        'team_id': info['team_id'],
+        'hall_name': info['hall_name'],
+        'sister_nickname': info['sister_nickname'],
+        'sister_uid': info['sister_uid'],
+        'days_since_formed': info['days_since_formed'],
+        'status': 'active' if (not info['dissolve_date'] or info['dissolve_date'] == '') else 'dissolved',
+        'daily': daily,
+    })
+
+
 @app.route('/api/alerts-center')
 @login_required
 def api_alerts_center():
