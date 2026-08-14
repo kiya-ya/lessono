@@ -244,27 +244,6 @@ async function loadCaptains() {
     const titleEl = document.getElementById('captain-table-title');
     if (titleEl) titleEl.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;
 
-    // 头牌依赖度（选中具体厅时只显示该厅；全厅当日奖励 <500 元的小厅不纳入，避免单人厅必然100%的噪音）
-    const dep = (d.dependency || []).filter(x => (currentHall === 'all' || x.hall_name === currentHall) && x.hall_rev >= 500);
-    const flagged = dep.filter(x => x.share >= 30).slice(0, 12);
-    const depEl = document.getElementById('dep-list');
-    depEl.innerHTML = flagged.length
-      ? flagged.map(x => `<div class="dep-item ${x.share >= 40 ? 'red' : 'amber'}">
-          <span class="share">${x.share}%</span>
-          <span><strong>${x.hall_name}</strong></span>
-          <span class="meta">头牌：${x.top_captain}（${wbFmtMoney(x.captain_rev)} / 全厅 ${wbFmtMoney(x.hall_rev)}）</span>
-        </div>`).join('')
-      : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
-
-    const depIns = document.getElementById('dep-insight');
-    if (depIns) {
-      const red = flagged.filter(x => x.share >= 40).length;
-      const amber = flagged.filter(x => x.share >= 30 && x.share < 40).length;
-      depIns.innerHTML = red || amber
-        ? `≥40% 红灯依赖 <b>${red}</b> 个厅（头牌占比过高，单点风险），30~40% 黄灯 <b>${amber}</b> 个。`
-        : '当前范围内没有头牌依赖度超过 30% 的厅 ✅';
-    }
-
     captainData = d.data || [];
     captainPage = 0;
     renderCaptainTable();
@@ -645,16 +624,18 @@ let poolPerPage = 20;
 
 function switchCaptainView(view) {
   const main = document.getElementById('captains-main');
+  const promote = document.getElementById('captains-promote');
   const pool = document.getElementById('captains-pool');
-  const btnP = document.getElementById('cap-view-profile');
-  const btnC = document.getElementById('cap-view-pool');
   if (!main || !pool) return;
-  const isPool = view === 'pool';
-  main.style.display = isPool ? 'none' : '';
-  pool.style.display = isPool ? '' : 'none';
-  if (btnP) btnP.classList.toggle('on', !isPool);
-  if (btnC) btnC.classList.toggle('on', isPool);
-  if (isPool) { loadTalentPool(); loadTalentActions(); }
+  main.style.display = view === 'profile' ? '' : 'none';
+  if (promote) promote.style.display = view === 'promote' ? '' : 'none';
+  pool.style.display = view === 'pool' ? '' : 'none';
+  const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('on', on); };
+  set('cap-view-profile', view === 'profile');
+  set('cap-view-promote', view === 'promote');
+  set('cap-view-pool', view === 'pool');
+  if (view === 'promote') { loadSister2Profile(); }
+  if (view === 'pool') { loadTalentPool(); loadTalentActions(); }
 }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }

@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=14">
+<link rel="stylesheet" href="css/style.css?v=15">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -220,6 +220,7 @@
       <h2>姐姐分析</h2>
       <div class="seg" style="margin-left:auto;">
         <button id="cap-view-profile" class="on" onclick="switchCaptainView('profile')">画像</button>
+        <button id="cap-view-promote" onclick="switchCaptainView('promote')">晋升追踪</button>
         <button id="cap-view-pool" onclick="switchCaptainView('pool')">候选池</button>
       </div>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
@@ -249,33 +250,6 @@
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>🌱 妹妹晋升追踪</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <select id="sister2-sort" onchange="setSister2Sort(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
-            <option value="default" selected>晋升优先</option>
-            <option value="week_rev">本周流水 ↓</option>
-            <option value="presence_days">在榜天数 ↓</option>
-          </select>
-          <select id="sister2-per-page" onchange="setSister2PerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
-            <option value="20" selected>20条/页</option>
-            <option value="30">30条/页</option>
-          </select>
-        </div>
-      </h3>
-      <div class="chart-src">妹妹毕业可升姐姐 · 等级越高晋升率越高（王牌/大神已到毕业线）· 默认按晋升状态+流水排序</div>
-      <div class="survival-chips" id="sister2-sum"></div>
-      <div class="rank-scroll"><table class="rank-table" id="sister2-table"></table></div>
-      <div class="pagination" id="sister2-pagination" style="margin-top:8px;justify-content:center;"></div>
-      <div class="chart-insight" id="sister2-insight"></div>
-    </div>
-    <div class="chart-card">
-      <h3>⚠️ 头牌依赖度警示</h3>
-      <div class="chart-src">各厅第一名姐姐拿走的当日奖励占比 · ≥40% 红（太依赖），30%~40% 黄</div>
-      <div id="dep-list" style="margin-top:8px;"></div>
-      <div class="chart-insight" id="dep-insight"></div>
-    </div>
-    <div class="chart-card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span id="captain-table-title">👑 姐姐排行榜（按当日奖励）</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="seg">
@@ -295,6 +269,31 @@
       <div class="chart-insight" id="captain-insight"></div>
     </div>
     </div><!-- /captains-main -->
+
+    <!-- 晋升追踪：妹妹毕业升姐姐 -->
+    <div id="captains-promote" style="display:none;">
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>🌱 妹妹晋升追踪</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select id="sister2-sort" onchange="setSister2Sort(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+              <option value="default" selected>晋升优先</option>
+              <option value="week_rev">本周流水 ↓</option>
+              <option value="presence_days">在榜天数 ↓</option>
+            </select>
+            <select id="sister2-per-page" onchange="setSister2PerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+              <option value="20" selected>20条/页</option>
+              <option value="30">30条/页</option>
+            </select>
+          </div>
+        </h3>
+        <div class="chart-src">妹妹毕业可升姐姐 · 等级越高晋升率越高（王牌/大神已到毕业线）· 默认按晋升状态+流水排序</div>
+        <div class="survival-chips" id="sister2-sum"></div>
+        <div class="rank-scroll"><table class="rank-table" id="sister2-table"></table></div>
+        <div class="pagination" id="sister2-pagination" style="margin-top:8px;justify-content:center;"></div>
+        <div class="chart-insight" id="sister2-insight"></div>
+      </div>
+    </div><!-- /captains-promote -->
 
     <!-- 候选池（阶段B）：并列展示四因子证据 + 结果记录 -->
     <div id="captains-pool" style="display:none;">
@@ -635,13 +634,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=24"></script>
-<script src="js/utils.js?v=24"></script>
-<script src="js/api.js?v=24"></script>
-<script src="js/auth.js?v=24"></script>
-<script src="js/render.js?v=24"></script>
-<script src="js/app.js?v=24"></script>
-<script src="js/workbench.js?v=24"></script>
-<script src="js/insight.js?v=24"></script>
+<script src="js/config.js?v=25"></script>
+<script src="js/utils.js?v=25"></script>
+<script src="js/api.js?v=25"></script>
+<script src="js/auth.js?v=25"></script>
+<script src="js/render.js?v=25"></script>
+<script src="js/app.js?v=25"></script>
+<script src="js/workbench.js?v=25"></script>
+<script src="js/insight.js?v=25"></script>
 </body>
 </html>

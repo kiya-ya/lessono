@@ -435,18 +435,6 @@ body { background: var(--wb-bg); }
 .policy-grid .kpi-value { font-size: 22px; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
 .policy-delta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--wb-text-3); }
 
-.dep-item {
-  display: flex; align-items: center; gap: 10px; padding: 9px 14px;
-  border-radius: 6px; margin-bottom: 6px; font-size: 13px;
-}
-.dep-item.red { background: #FEF2F2; border-left: 3px solid var(--wb-down); }
-.dep-item.amber { background: #FFFBEB; border-left: 3px solid var(--wb-warn); }
-.dep-item .share { font-weight: 700; font-variant-numeric: tabular-nums; }
-.dep-item.red .share { color: var(--wb-down); }
-.dep-item.amber .share { color: var(--wb-warn); }
-.dep-item .meta { color: var(--wb-text-2); font-size: 12px; }
-.dep-empty { color: var(--wb-text-3); font-size: 13px; padding: 10px 4px; }
-
 .alert-row {
   display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
   border-bottom: 1px solid #F4F5F8; font-size: 13px;

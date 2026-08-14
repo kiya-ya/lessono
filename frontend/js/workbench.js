@@ -501,9 +501,19 @@ async function loadDailyOverlay() {
     const res = await fetch(API_BASE + '/api/daily-events?days=14' + getHallParam());
     const d = await res.json();
     if (!d.dates || d.dates.length < 14) return;
-    const labels = d.dates.slice(7).map(s => '周' + '日一二三四五六'[new Date(s + 'T00:00:00').getDay()] + ' ' + s.slice(5));
+    const days = d.dates.slice(7).map(s => '周' + '日一二三四五六'[new Date(s + 'T00:00:00').getDay()]);
+    const labels = d.dates.slice(7).map(s => s.slice(5));
     const base = {
-      tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
+      tooltip: {
+        trigger: 'axis',
+        textStyle: { fontSize: 12 },
+        formatter: (params) => {
+          const idx = params[0] && params[0].dataIndex;
+          const day = days[idx] || '';
+          return params.map(p => `${p.marker}${p.seriesName}：<b>${p.value}</b>`).join('<br>') +
+            `<br><span style="color:#9CA3AF;font-size:11px;">${day} ${labels[idx] || ''}</span>`;
+        }
+      },
       legend: { top: 0, right: 0, itemWidth: 14, itemHeight: 8, textStyle: { fontSize: 10, color: '#6B7280' } },
       grid: { left: 16, right: 16, top: 30, bottom: 30, containLabel: true },
       xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#9CA3AF' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
