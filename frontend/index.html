@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=15">
+<link rel="stylesheet" href="css/style.css?v=16">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -48,8 +48,7 @@
     </div>
     <nav class="side-nav">
       <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>核心指标 · 趋势</small></span></button>
-      <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>对比分析</b><small>厅 · 组对比</small></span></button>
-      <button class="tab" onclick="switchTab('policy')"><span class="ico">◫</span><span class="tab-txt"><b>政策评估</b><small>政策前后</small></span></button>
+      <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>对比分析</b><small>厅 · 组对比 · 政策</small></span></button>
       <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
       <button class="tab" onclick="switchTab('details')"><span class="ico">▤</span><span class="tab-txt"><b>明细数据</b><small>存活 · 解散</small></span></button>
       <button class="tab" onclick="switchTab('alerts')"><span class="ico">⚠</span><span class="tab-txt"><b>预警中心</b><small>风险预警</small></span></button>
@@ -143,6 +142,15 @@
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
+    <div class="section-head">
+      <h2>对比分析</h2>
+      <div class="seg" style="margin-left:auto;">
+        <button id="compare-view-hall" class="on" onclick="switchCompareView('hall')">厅对比</button>
+        <button id="compare-view-policy" onclick="switchCompareView('policy')">政策评估</button>
+      </div>
+      <span class="hint">厅·组对比 / 政策上线（07-17）前后 4 周均值</span>
+    </div>
+    <div id="compare-main">
     <div class="chart-grid">
       <div class="chart-card">
         <h3>📊 厅留存率分布</h3>
@@ -180,38 +188,23 @@
       <div class="chart-insight" id="compare-table-insight"></div>
 
     </div>
-  </div>
+    </div><!-- /compare-main -->
 
-  <!-- 政策评估 -->
-  <div id="tab-policy" class="tab-panel">
-    <div class="section-head">
-      <h2>政策效果评估</h2>
-      <span class="hint" id="policy-hint">政策上线 2026-07-17 · 政策前4周 vs 政策后4周均值</span>
-    </div>
-    <div class="policy-grid" id="policy-cards"></div>
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>📶 分厅响应度（留存率变化）</h3>
-        <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
-        <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
+    <div id="compare-policy" style="display:none;">
+      <div class="policy-grid" id="policy-cards"></div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <h3>📶 分厅响应度（留存率变化）</h3>
+          <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
+          <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
+        </div>
+        <div class="chart-card">
+          <h3>🎯 政策归因（加权贡献）</h3>
+          <div class="chart-src">留存率变化 × 大厅存量规模 · 贡献(pp)加总=整体变化 · 找出真正拉动/拖累整体留存的大厅（改善/恶化各 TOP8）</div>
+          <div class="chart-container" id="chart-policy-attr" style="height:400px;"></div>
+        </div>
       </div>
-      <div class="chart-card">
-        <h3>🎯 政策归因（加权贡献）</h3>
-        <div class="chart-src">留存率变化 × 大厅存量规模 · 贡献(pp)加总=整体变化 · 找出真正拉动/拖累整体留存的大厅（改善/恶化各 TOP8）</div>
-        <div class="chart-container" id="chart-policy-attr" style="height:400px;"></div>
-      </div>
-    </div>
-    <div class="chart-card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>📋 分厅政策响应明细</span>
-        <select id="policy-per-page" onchange="setPolicyPerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
-          <option value="20" selected>20条/页</option>
-          <option value="30">30条/页</option>
-        </select>
-      </h3>
-      <div class="rank-scroll"><table class="rank-table" id="policy-table"></table></div>
-      <div class="pagination" id="policy-pagination" style="margin-top:8px;justify-content:center;"></div>
-    </div>
+    </div><!-- /compare-policy -->
   </div>
 
   <!-- 姐姐分析 -->
@@ -634,13 +627,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=25"></script>
-<script src="js/utils.js?v=25"></script>
-<script src="js/api.js?v=25"></script>
-<script src="js/auth.js?v=25"></script>
-<script src="js/render.js?v=25"></script>
-<script src="js/app.js?v=25"></script>
-<script src="js/workbench.js?v=25"></script>
-<script src="js/insight.js?v=25"></script>
+<script src="js/config.js?v=26"></script>
+<script src="js/utils.js?v=26"></script>
+<script src="js/api.js?v=26"></script>
+<script src="js/auth.js?v=26"></script>
+<script src="js/render.js?v=26"></script>
+<script src="js/app.js?v=26"></script>
+<script src="js/workbench.js?v=26"></script>
+<script src="js/insight.js?v=26"></script>
 </body>
 </html>

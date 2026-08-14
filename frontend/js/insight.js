@@ -10,10 +10,6 @@ async function loadPolicyImpact() {
     const d = await res.json();
     if (!d.overall) {
       cardsEl.innerHTML = '<div class="kpi-card"><span class="kpi-note">当前范围政策前或政策后数据不足，无法对比</span></div>';
-      document.getElementById('policy-table').innerHTML = '';
-      const pp = document.getElementById('policy-pagination');
-      if (pp) pp.innerHTML = '';
-      policyRanking = [];
       return;
     }
     const o = d.overall;
@@ -42,7 +38,7 @@ async function loadPolicyImpact() {
     const worst = r.slice(-10).reverse();
     const shown = [...best, ...worst];
     const el = document.getElementById('chart-policy-bars');
-    if (shown.length && el) {
+    if (shown.length && el && el.offsetHeight > 0) {
       if (charts['policyBars']) charts['policyBars'].dispose();
       charts['policyBars'] = echarts.init(el);
       charts['policyBars'].setOption({
@@ -59,24 +55,29 @@ async function loadPolicyImpact() {
         }]
       });
     }
-
-    // 明细表（分页）
-    policyRanking = r;
-    policyPage = 0;
-    renderPolicyTable();
   } catch (e) { console.error('政策评估加载失败:', e); }
 }
 
-function setPolicyPerPage(v) {
-  policyPerPage = parseInt(v) || 20;
-  policyPage = 0;
-  renderPolicyTable();
+/* 对比分析子模块切换：厅对比 / 政策评估 */
+function switchCompareView(view) {
+  const main = document.getElementById('compare-main');
+  const policy = document.getElementById('compare-policy');
+  if (!main || !policy) return;
+  main.style.display = view === 'hall' ? '' : 'none';
+  policy.style.display = view === 'policy' ? '' : 'none';
+  const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('on', on); };
+  set('compare-view-hall', view === 'hall');
+  set('compare-view-policy', view === 'policy');
+  if (view === 'policy') {
+    if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
+    if (typeof loadPolicyAttribution === 'function') loadPolicyAttribution();
+  }
 }
 
 /* 政策归因：留存率变化按大厅存量规模加权，贡献(pp)加总=整体变化 */
 async function loadPolicyAttribution() {
   const el = document.getElementById('chart-policy-attr');
-  if (!el) return;
+  if (!el || !el.offsetHeight) return;
   try {
     const res = await fetch(API_BASE + '/api/policy-attribution');
     const d = await res.json();
@@ -106,44 +107,6 @@ async function loadPolicyAttribution() {
   } catch (e) { console.error('政策归因加载失败:', e); }
 }
 
-function renderPolicyTable() {
-  const total = policyRanking.length;
-  const totalPages = Math.max(1, Math.ceil(total / policyPerPage));
-  if (policyPage >= totalPages) policyPage = totalPages - 1;
-  if (policyPage < 0) policyPage = 0;
-  const start = policyPage * policyPerPage;
-  const pageData = policyRanking.slice(start, start + policyPerPage);
-  const arrow = (v, reverse) => {
-    const good = reverse ? v < 0 : v > 0;
-    const cls = v === 0 ? 'flat' : good ? 'up' : 'down';
-    const a = v > 0 ? '↑' : v < 0 ? '↓' : '→';
-    return `<span class="chip ${cls}">${a} ${Math.abs(v)}</span>`;
-  };
-  document.getElementById('policy-table').innerHTML = `
-    <tr><th>#</th><th>大厅</th><th>留存率 前→后</th><th>变化</th><th>解散率 前→后</th><th>流水 前→后</th><th>流水变化</th></tr>
-    ${pageData.map((x, i) => `<tr>
-      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-      <td>${x.hall_name}</td>
-      <td>${x.ret_pre}% → ${x.ret_post}%</td>
-      <td>${arrow(x.ret_delta, false)}</td>
-      <td>${x.dis_pre}% → ${x.dis_post}%</td>
-      <td>${wbFmtMoney(x.rev_pre)} → ${wbFmtMoney(x.rev_post)}</td>
-      <td>${x.rev_delta_pct === null ? '—' : arrow(x.rev_delta_pct, false)}</td>
-    </tr>`).join('')}`;
-  const el = document.getElementById('policy-pagination');
-  if (el) {
-    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 个厅 · ${policyPage + 1}/${totalPages} 页</span>`;
-    if (policyPage > 0) html += `<button onclick="policyPage--;renderPolicyTable();">上一页</button>`;
-    pagerRange(policyPage, totalPages).forEach(i => {
-      html += i === '...'
-        ? '<span class="pager-dots">…</span>'
-        : `<button class="${i === policyPage ? 'active' : ''}" onclick="policyPage=${i};renderPolicyTable();">${i + 1}</button>`;
-    });
-    if (policyPage < totalPages - 1) html += `<button onclick="policyPage++;renderPolicyTable();">下一页</button>`;
-    el.innerHTML = html;
-  }
-}
-
 /* ═══════════════ 姐姐分析 ═══════════════ */
 
 let captainPeriod = 'day';          // day / week / month
@@ -152,9 +115,6 @@ let captainSortOrder = 'desc';
 let captainData = [];
 let captainPage = 0;
 let captainPerPage = 20;
-let policyRanking = [];
-let policyPage = 0;
-let policyPerPage = 20;
 
 const CAPTAIN_PERIOD_LABEL = { day: '当日', week: '当周', month: '当月' };
 
