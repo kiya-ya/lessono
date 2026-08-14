@@ -641,6 +641,10 @@ async function loadDissolveReasons() {
       const top = d.reasons[0];
       insEl.innerHTML = `累计解散 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。`;
     }
+    charts['dissolveReasons'].off('click');
+    charts['dissolveReasons'].on('click', function (params) {
+      if (params.name && typeof drillToReason === 'function') drillToReason(params.name);
+    });
   } catch (e) { console.error('解散原因分布加载失败:', e); }
 }
 

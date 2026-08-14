@@ -98,12 +98,13 @@ async function loadDetailTable(page = 1) {
   const search = document.getElementById('detail-search').value;
   detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
   detailStatus = document.getElementById('detail-status').value;
+  const detailReason = document.getElementById('detail-reason') ? document.getElementById('detail-reason').value : '';
   try {
     let sortParam = '';
     if (detailSortField) {
       sortParam = `&sort_field=${detailSortField}&sort_order=${detailSortOrder}`;
     }
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}` + getHallParam() + sortParam);
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + getHallParam() + sortParam);
     const result = await res.json();
     document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
       const status = row.dissolve_date ? '已解散' : '进行中';
@@ -112,7 +113,7 @@ async function loadDetailTable(page = 1) {
       <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#4F5BD5; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
       <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#4F5BD5; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
       <td>${row.days_since_formed || 0}</td>
-      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td></tr>`;
+      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td></tr>`;
     }).join('');
     
     // 分页渲染

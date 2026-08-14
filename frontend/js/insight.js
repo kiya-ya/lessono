@@ -41,6 +41,10 @@ async function loadPolicyImpact() {
     if (shown.length && el && el.offsetHeight > 0) {
       if (charts['policyBars']) charts['policyBars'].dispose();
       charts['policyBars'] = echarts.init(el);
+      charts['policyBars'].on('click', function(params) {
+        const row = shown[params.dataIndex];
+        if (row && typeof drillToHall === 'function') drillToHall(row.hall_name);
+      });
       charts['policyBars'].setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: 12 },
           formatter: ps => { const p = ps[0]; const row = shown[p.dataIndex];
@@ -91,6 +95,10 @@ async function loadPolicyAttribution() {
     const shown = [...best, ...worst];
     if (charts['policyAttr']) charts['policyAttr'].dispose();
     charts['policyAttr'] = echarts.init(el);
+    charts['policyAttr'].on('click', function(params) {
+      const row = shown[params.dataIndex];
+      if (row && typeof drillToHall === 'function') drillToHall(row.hall_name);
+    });
     charts['policyAttr'].setOption({
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: 12 },
         formatter: ps => { const p = ps[0]; const r = shown[p.dataIndex];

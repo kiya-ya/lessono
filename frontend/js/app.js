@@ -78,6 +78,41 @@ function drillTo(key) {
   }
 }
 
+// 柱状图点击下钻：切到指定大厅并跳到明细
+function drillToHall(hall) {
+  if (!hall) return;
+  const sel = document.getElementById('hall-select');
+  if (sel && [...sel.options].some(o => o.value === hall)) {
+    sel.value = hall;
+    currentHall = hall;
+    localStorage.setItem('wb_hall', hall);
+    if (typeof updateFilterSummary === 'function') updateFilterSummary();
+    const ds = document.getElementById('detail-search');
+    if (ds) ds.value = '';
+  } else {
+    currentHall = hall;
+    const ds = document.getElementById('detail-search');
+    if (ds) ds.value = hall;
+  }
+  refreshData();
+  if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
+  switchTab('details');
+  loadDetailTable(1);
+}
+
+// 饼图点击下钻：按解散原因跳到明细（已解散 + 原因筛选）
+function drillToReason(reason) {
+  if (!reason) return;
+  switchTab('details');
+  const st = document.getElementById('detail-status');
+  if (st) st.value = 'dissolved';
+  const dr = document.getElementById('detail-reason');
+  if (dr && [...dr.options].some(o => o.value === reason)) dr.value = reason;
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = '';
+  loadDetailTable(1);
+}
+
 function toggleSort(field) {
   if (detailSortField === field) {
     detailSortOrder = detailSortOrder === 'asc' ? 'desc' : 'asc';

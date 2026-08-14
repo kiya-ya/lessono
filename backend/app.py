@@ -1694,6 +1694,7 @@ def api_detail_table():
     search = request.args.get('search', '')
     hall = request.args.get('hall', 'all')
     status = request.args.get('status', 'all')
+    reason = request.args.get('reason', '')
     sort_field = request.args.get('sort_field', 'team_id')
     sort_order = request.args.get('sort_order', 'asc')
     
@@ -1712,8 +1713,8 @@ def api_detail_table():
     conditions.append('''rowid IN (SELECT MAX(rowid) FROM team_detail
         WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail) GROUP BY team_id)''')
     if search:
-        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ?)')
-        params = [f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%']
+        conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ? OR dissolve_reason LIKE ?)')
+        params = [f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%', f'%{search}%']
     if hall != 'all':
         conditions.append('hall_name = ?')
         params.append(hall)
@@ -1721,6 +1722,9 @@ def api_detail_table():
         conditions.append("(dissolve_date = '' OR dissolve_date IS NULL)")
     elif status == 'dissolved':
         conditions.append("dissolve_date != '' AND dissolve_date IS NOT NULL")
+    if reason:
+        conditions.append(f'({DISSOLVE_REASON_CASE}) = ?')
+        params.append(reason)
     
     where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
     
