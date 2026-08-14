@@ -302,17 +302,20 @@ function wbRenderKPI() {
     document.getElementById('wb-kpi-sub').innerHTML = '';
     return;
   }
+  const weeks = wbFilteredWeekly();
+  const sparkOf = key => weeks.map(w => w[key] || 0);
+  const disPctSpark = weeks.map(w => (w.dissolved_count > 0 ? (w.active_dissolved_count || 0) / w.dissolved_count * 100 : 0));
   const heroes = [
-    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', target: 'wb-c-retention' },
-    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', target: 'wb-c-dissolution' },
-    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', target: 'wb-c-revenue' },
-    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet' },
-    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal' },
-    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber' },
+    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
+    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
+    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', metric: 'revenue', spark: sparkOf('total_reward') },
+    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', spark: sparkOf('new_team_count') },
+    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', spark: sparkOf('active_team_count_end') },
+    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', spark: disPctSpark },
   ];
   const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : f === 'int' ? v => Math.round(v) + ' 个' : v => Math.round(v) + '%';
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
-    <div class="kpi-card hero accent-${k.accent}"${k.target ? ` onclick="wbScrollTo('${k.target}')" title="点击查看趋势图"` : ''}>
+    <div class="kpi-card hero accent-${k.accent}"${k.metric ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : ''}>
       <div class="kpi-top">
         <span class="kpi-ico accent-${k.accent}">${k.ico}</span>
         <span class="kpi-label">${k.label}</span>
@@ -320,6 +323,7 @@ function wbRenderKPI() {
       </div>
       <div class="kpi-value" data-count="${k.num}" data-fmt="${k.fmt}">${fmtOf(k.fmt)(k.num)}</div>
       <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
+      ${wbSpark(k.spark)}
     </div>`).join('');
   document.getElementById('wb-kpi-sub').innerHTML = '';
   // 数字滚动（数形结合的动态感）；KPI 卡在管理员视角下位于排行榜下方，滚入视口才播
@@ -335,6 +339,57 @@ function wbRenderKPI() {
   } else {
     kpiCountUp();
   }
+}
+
+function wbToggleKpi(metric) {
+  const detail = document.getElementById('wb-kpi-detail');
+  if (!detail) return;
+  const target = detail.querySelector('.kpi-detail-card[data-metric="' + metric + '"]');
+  const wasOpen = target && target.classList.contains('open') && detail.classList.contains('open');
+  detail.querySelectorAll('.kpi-detail-card').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('#wb-kpi-hero .kpi-card.hero.expanded').forEach(c => c.classList.remove('expanded'));
+  if (wasOpen) { detail.classList.remove('open'); return; }
+  if (target) target.classList.add('open');
+  detail.classList.add('open');
+  const card = document.querySelector('#wb-kpi-hero .kpi-card.hero[data-metric="' + metric + '"]');
+  if (card) card.classList.add('expanded');
+  requestAnimationFrame(() => {
+    const ch = charts['wb-' + metric];
+    if (ch) ch.resize();
+    wbRenderKpiDetail(metric);
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+function wbCloseKpiDetail() {
+  const detail = document.getElementById('wb-kpi-detail');
+  if (!detail) return;
+  detail.classList.remove('open');
+  detail.querySelectorAll('.kpi-detail-card').forEach(c => c.classList.remove('open'));
+  document.querySelectorAll('#wb-kpi-hero .kpi-card.hero.expanded').forEach(c => c.classList.remove('expanded'));
+}
+
+function wbRenderKpiDetail(metric) {
+  const weeks = wbFilteredWeekly();
+  const el = document.getElementById('kpi-detail-table-' + metric);
+  if (!el) return;
+  const conf = {
+    retention:   { key: 'retention_rate',   fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
+    dissolution: { key: 'dissolution_rate', fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
+    revenue:     { key: 'total_reward',     fmt: v => wbFmtMoney(v),       diff: v => wbFmtMoney(v) },
+  }[metric];
+  if (!conf) { el.innerHTML = ''; return; }
+  if (!weeks.length) { el.innerHTML = '<div class="kpi-detail-empty">该厅当前周期暂无数据</div>'; return; }
+  const rows = weeks.slice(-8).map((w, i, arr) => {
+    const cur = w[conf.key] || 0;
+    const prev = i > 0 ? (arr[i - 1][conf.key] || 0) : null;
+    const d = prev == null ? null : cur - prev;
+    const diffHtml = d == null
+      ? '<span class="dt-na">—</span>'
+      : `<span class="dt-diff ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${conf.diff(d)}</span>`;
+    return `<tr><td>${(w.week_start || '').slice(5)}</td><td class="num">${conf.fmt(cur)}</td><td class="num">${diffHtml}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<table class="kpi-dt"><thead><tr><th>周</th><th class="num">本周值</th><th class="num">环比</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function wbRenderCharts() {

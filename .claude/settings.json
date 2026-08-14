@@ -18,7 +18,9 @@
       "Bash(sed -i 's/\\\\.js?v=31/.js?v=32/g; s/style.css?v=21/style.css?v=22/' frontend/index.html)",
       "Bash(node -c frontend/js/render.js)",
       "Bash(node -c frontend/js/insight.js)",
-      "Bash(node -c frontend/js/api.js)"
+      "Bash(node -c frontend/js/api.js)",
+      "Bash(sed -i 's/css\\\\/style.css?v=23/css\\\\/style.css?v=24/; s/?v=34/?v=35/g' index.html)",
+      "Bash(node -c js/workbench.js)"
     ]
   }
 }

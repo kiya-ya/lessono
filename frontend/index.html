@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=23">
+<link rel="stylesheet" href="css/style.css?v=24">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -129,14 +129,57 @@
     <div class="kpi-hero" id="wb-kpi-hero"></div>
     <div class="kpi-sub" id="wb-kpi-sub"></div>
 
+    <!-- KPI 卡点击展开的明细面板：留存/解散/金额三张趋势图并入此处 -->
+    <div class="kpi-detail" id="wb-kpi-detail">
+      <div class="kpi-detail-card" data-metric="retention">
+        <div class="kpi-detail-head">
+          <h3>💯 留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
+          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
+        </div>
+        <div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div>
+        <div class="kpi-detail-grid">
+          <div class="chart-box" id="wb-c-retention"></div>
+          <div class="kpi-detail-side">
+            <div class="chart-insight" id="wb-insight-retention"></div>
+            <div class="kpi-detail-table" id="kpi-detail-table-retention"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-detail-card" data-metric="dissolution">
+        <div class="kpi-detail-head">
+          <h3>🚫 解散率<span class="chart-kpi" id="chart-kpi-dissolution"></span></h3>
+          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
+        </div>
+        <div class="chart-src">本周有多少团解散 · 越低越好</div>
+        <div class="kpi-detail-grid">
+          <div class="chart-box" id="wb-c-dissolution"></div>
+          <div class="kpi-detail-side">
+            <div class="chart-insight" id="wb-insight-dissolution"></div>
+            <div class="kpi-detail-table" id="kpi-detail-table-dissolution"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-detail-card" data-metric="revenue">
+        <div class="kpi-detail-head">
+          <h3>💰 礼物奖励金额<span class="chart-kpi" id="chart-kpi-revenue"></span></h3>
+          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
+        </div>
+        <div class="chart-src">本周发放的礼物奖励总额</div>
+        <div class="kpi-detail-grid">
+          <div class="chart-box" id="wb-c-revenue"></div>
+          <div class="kpi-detail-side">
+            <div class="chart-insight" id="wb-insight-revenue"></div>
+            <div class="kpi-detail-table" id="kpi-detail-table-revenue"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-head">
       <h2>趋势</h2>
       <span class="hint">虚线为政策上线（07-17）· 点击图表下钻到明细</span>
     </div>
     <div class="chart-grid">
-      <div class="chart-card drillable" data-drill="retention"><h3>💯 留存率<span class="chart-kpi" id="chart-kpi-retention"></span><span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div><div class="chart-box" id="wb-c-retention"></div><div class="chart-insight" id="wb-insight-retention"></div></div>
-      <div class="chart-card drillable" data-drill="dissolution"><h3>🚫 解散率<span class="chart-kpi" id="chart-kpi-dissolution"></span><span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">本周有多少团解散 · 越低越好</div><div class="chart-box" id="wb-c-dissolution"></div><div class="chart-insight" id="wb-insight-dissolution"></div></div>
-      <div class="chart-card drillable" data-drill="revenue"><h3>💰 礼物奖励金额<span class="chart-kpi" id="chart-kpi-revenue"></span><span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">本周发放的礼物奖励总额</div><div class="chart-box" id="wb-c-revenue"></div><div class="chart-insight" id="wb-insight-revenue"></div></div>
       <div class="chart-card drillable" data-drill="activity"><h3>📊 任务活跃度<span class="chart-kpi" id="chart-kpi-activity"></span><span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">开车 / 陪档 / 收送礼 任务次数</div><div class="chart-box" id="wb-c-activity"></div><div class="chart-insight" id="wb-insight-activity"></div></div>
       <div class="chart-card drillable" data-drill="dailyNew"><h3>🆕 日级新成团 · 本周 vs 上周<span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">每天新成团数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-new"></div></div>
       <div class="chart-card drillable" data-drill="dailyDiss"><h3>💥 日级解散 · 本周 vs 上周<span class="drill-tag">点击下钻↘</span></h3><div class="chart-src">每天解散数 · 本周实线 vs 上周虚线</div><div class="chart-box" id="chart-daily-diss"></div></div>
@@ -655,13 +698,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=34"></script>
-<script src="js/utils.js?v=34"></script>
-<script src="js/api.js?v=34"></script>
-<script src="js/auth.js?v=34"></script>
-<script src="js/render.js?v=34"></script>
-<script src="js/app.js?v=34"></script>
-<script src="js/workbench.js?v=34"></script>
-<script src="js/insight.js?v=34"></script>
+<script src="js/config.js?v=35"></script>
+<script src="js/utils.js?v=35"></script>
+<script src="js/api.js?v=35"></script>
+<script src="js/auth.js?v=35"></script>
+<script src="js/render.js?v=35"></script>
+<script src="js/app.js?v=35"></script>
+<script src="js/workbench.js?v=35"></script>
+<script src="js/insight.js?v=35"></script>
 </body>
 </html>

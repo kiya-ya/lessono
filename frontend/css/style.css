@@ -670,6 +670,33 @@ body { background: var(--wb-bg); }
 .kpi-hero .kpi-note { margin-left: auto; font-size: 11px; color: var(--wb-text-3); }
 .kpi-foot-label { font-size: 11px; color: var(--wb-text-3); }
 
+/* KPI 卡点击展开的明细面板（留存/解散/金额三张趋势图并入此处） */
+.kpi-hero .kpi-card.hero.expanded { border-color: var(--wb-accent); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
+.kpi-detail { display: none; margin-bottom: 20px; }
+.kpi-detail.open { display: block; }
+.kpi-detail-card { display: none; background: #fff; border: 1px solid var(--wb-line); border-radius: var(--wb-radius); padding: 18px 20px; }
+.kpi-detail-card.open { display: block; animation: kpiDetailIn .22s ease; }
+@keyframes kpiDetailIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.kpi-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.kpi-detail-head h3 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px; }
+.kpi-detail-close { border: none; background: transparent; color: var(--wb-text-2); cursor: pointer; font-size: 15px; line-height: 1; padding: 5px 9px; border-radius: 8px; }
+.kpi-detail-close:hover { background: #F1EDFF; color: #7C5CFF; }
+.kpi-detail-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; margin-top: 10px; align-items: start; }
+.kpi-detail-side { display: flex; flex-direction: column; gap: 12px; }
+.kpi-detail-side .chart-insight { margin-top: 0; }
+.kpi-dt { width: 100%; border-collapse: collapse; }
+.kpi-dt th { text-align: left; font-size: 11px; color: var(--wb-text-2); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--wb-line); }
+.kpi-dt td { font-size: 12px; padding: 5px 8px; border-bottom: 1px solid #F3F4F6; color: var(--wb-text); }
+.kpi-dt tr:last-child td { border-bottom: none; }
+.kpi-dt td.num { text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace; }
+.dt-diff.up { color: #3D9A6C; }
+.dt-diff.down { color: #D56060; }
+.dt-na { color: var(--wb-text-3); }
+.kpi-detail-empty { font-size: 12px; color: var(--wb-text-3); }
+@media (max-width: 760px) {
+  .kpi-detail-grid { grid-template-columns: 1fr; }
+}
+
 /* 排行榜单元格可视化：流水迷你条 + 留存率进度条 */
 .rank-table tr.row-click { cursor: pointer; }
 .rank-table tr.row-click:hover { background: #F3F4FA; }
