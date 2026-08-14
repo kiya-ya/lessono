@@ -392,6 +392,8 @@ body { background: var(--wb-bg); }
 .move.up { color: var(--wb-up); }
 .move.down { color: var(--wb-down); }
 .move.same { color: var(--wb-text-3); }
+.rank-table th.center, .rank-table td.center { text-align: center; }
+.rank-note { margin-top: 8px; font-size: 11px; color: var(--wb-text-3); padding: 0 4px; }
 
 /* 平板 */
 @media (max-width: 960px) {

@@ -194,13 +194,16 @@ function wbRenderRank() {
   const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
   const newLabel = month ? '月新成团' : '周新成团';
   const sortArrow = k => wbRankSort.key === k ? `<span class="sort-arrow">${wbRankSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
-  const thSort = k => ` class="sortable" onclick="wbSortRank('${k}')"`;
+  const thSort = (k, extra) => ` class="sortable${extra ? ' ' + extra : ''}" onclick="wbSortRank('${k}')"`;
+  const moveTitle = month
+    ? '「本月」视图不计算位次变化，切换「本周」可查看排名较上周的升降'
+    : '该厅排名较上周的变化：↑ 上升 · ↓ 下降 · — 持平';
   document.getElementById('wb-rank-table').innerHTML = `
-    <tr><th>#</th><th>大厅</th><th${thSort('active')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th>流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th>留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
+    <tr><th>#</th><th>大厅</th><th${thSort('active', 'center')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th title="${moveTitle}">流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th title="${moveTitle}">留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
     ${top.map((it, idx) => `<tr class="row-click" onclick="wbSelectHall('${it.name.replace(/'/g, "\\'")}')" title="点击查看该厅">
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td class="rank-hall">${it.name}</td>
-      <td class="num">${it.active}</td>
+      <td class="num center">${it.active}</td>
       <td class="bar-cell">
         <span class="bar-track"><span class="bar-fill" style="width:${Math.round((it.sisRev || 0) / maxRev * 100)}%"></span></span>
         <span class="bar-val">${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</span>
@@ -213,6 +216,10 @@ function wbRenderRank() {
       <td>${move(it.prevRet === null ? null : retPrevRank[it.name] - retRank[it.name])}</td>
       <td class="num">${it.newTeams}</td>
     </tr>`).join('')}`;
+  const noteEl = document.getElementById('wb-rank-note');
+  if (noteEl) noteEl.textContent = month
+    ? '备注：流水位次 / 留存位次 仅在「本周」视图显示各厅排名较上周的变化。'
+    : '备注：流水位次 / 留存位次 = 该厅排名较上周的变化（↑ 上升 · ↓ 下降 · — 持平），不是当前排名。';
 }
 
 function wbRenderBanner() {
