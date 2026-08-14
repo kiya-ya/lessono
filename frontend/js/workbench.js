@@ -309,9 +309,9 @@ function wbRenderKPI() {
     { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
     { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
     { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', metric: 'revenue', spark: sparkOf('total_reward') },
-    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', spark: sparkOf('new_team_count') },
-    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', spark: sparkOf('active_team_count_end') },
-    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', spark: disPctSpark },
+    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
+    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
+    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', metric: 'activediss', spark: disPctSpark },
   ];
   const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : f === 'int' ? v => Math.round(v) + ' 个' : v => Math.round(v) + '%';
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
@@ -354,8 +354,17 @@ function wbToggleKpi(metric) {
   const card = document.querySelector('#wb-kpi-hero .kpi-card.hero[data-metric="' + metric + '"]');
   if (card) card.classList.add('expanded');
   requestAnimationFrame(() => {
-    const ch = charts['wb-' + metric];
-    if (ch) ch.resize();
+    if (metric === 'newteam' || metric === 'activediss') {
+      const key = metric === 'newteam' ? 'dailyNew' : 'dailyDiss';
+      const resize = () => charts[key] && charts[key].resize();
+      _dailyOverlaySeen = true;
+      if (_dailyOverlayObserver) { _dailyOverlayObserver.disconnect(); _dailyOverlayObserver = null; }
+      if (charts['dailyNew'] && charts['dailyDiss']) { resize(); }
+      else { loadDailyOverlay().then(resize); }
+    } else {
+      const ch = charts['wb-' + metric];
+      if (ch) ch.resize();
+    }
     wbRenderKpiDetail(metric);
     detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
@@ -374,19 +383,22 @@ function wbRenderKpiDetail(metric) {
   const el = document.getElementById('kpi-detail-table-' + metric);
   if (!el) return;
   const conf = {
-    retention:   { key: 'retention_rate',   fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
-    dissolution: { key: 'dissolution_rate', fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
-    revenue:     { key: 'total_reward',     fmt: v => wbFmtMoney(v),       diff: v => wbFmtMoney(v) },
+    retention:   { get: w => w.retention_rate,          fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
+    dissolution: { get: w => w.dissolution_rate,        fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
+    revenue:     { get: w => w.total_reward,            fmt: v => wbFmtMoney(v),       diff: v => wbFmtMoney(v) },
+    newteam:     { get: w => w.new_team_count,          fmt: v => Math.round(v) + ' 个', diff: v => Math.round(v) + ' 个' },
+    activeteam:  { get: w => w.active_team_count_end,   fmt: v => Math.round(v) + ' 个', diff: v => Math.round(v) + ' 个' },
+    activediss:  { get: w => (w.dissolved_count > 0 ? (w.active_dissolved_count || 0) / w.dissolved_count * 100 : 0), fmt: v => Math.round(v) + '%', diff: v => (Math.round(v * 10) / 10) + 'pp' },
   }[metric];
   if (!conf) { el.innerHTML = ''; return; }
   if (!weeks.length) { el.innerHTML = '<div class="kpi-detail-empty">该厅当前周期暂无数据</div>'; return; }
   const rows = weeks.slice(-8).map((w, i, arr) => {
-    const cur = w[conf.key] || 0;
-    const prev = i > 0 ? (arr[i - 1][conf.key] || 0) : null;
+    const cur = conf.get(w) || 0;
+    const prev = i > 0 ? (conf.get(arr[i - 1]) || 0) : null;
     const d = prev == null ? null : cur - prev;
     const diffHtml = d == null
       ? '<span class="dt-na">—</span>'
-      : `<span class="dt-diff ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${conf.diff(d)}</span>`;
+      : `<span class="dt-diff ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : '-'}${conf.diff(Math.abs(d))}</span>`;
     return `<tr><td>${(w.week_start || '').slice(5)}</td><td class="num">${conf.fmt(cur)}</td><td class="num">${diffHtml}</td></tr>`;
   }).join('');
   el.innerHTML = `<table class="kpi-dt"><thead><tr><th>周</th><th class="num">本周值</th><th class="num">环比</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -395,7 +407,7 @@ function wbRenderKpiDetail(metric) {
 function wbRenderCharts() {
   const data = wbFilteredWeekly();
   if (!data.length) {
-    ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity'].forEach(k => {
+    ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity', 'wb-activeteam'].forEach(k => {
       const el = document.getElementById('wb-c-' + k.slice(3));
       if (charts[k]) { charts[k].dispose(); charts[k] = null; }
       if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">该厅当前周期暂无数据</div>';
@@ -489,6 +501,13 @@ function wbRenderCharts() {
         { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: barGrad('#D9A13F', '#E5C87E') }, label: { show: true, position: 'top', color: '#6B7280', fontSize: 10, formatter: p => (data[p.dataIndex].total_drive_tasks || 0) + (data[p.dataIndex].total_accompany_tasks || 0) + (data[p.dataIndex].total_gift_tasks || 0) } },
       ],
     },
+    'wb-activeteam': { ...base,
+      series: [{
+        name: '在榜团数', type: 'bar', data: data.map(d => d.active_team_count_end || 0),
+        itemStyle: { color: barGrad('#0EA5A4', '#5ED9C6'), borderRadius: [4, 4, 0, 0] }, barWidth: '50%',
+        label: { show: true, position: 'top', color: '#0E8A88', fontSize: 10, formatter: '{c}' },
+        markLine: mark,
+      }] },
   };
   for (const [key, opt] of Object.entries(defs)) {
     const el = document.getElementById('wb-c-' + key.slice(3));
@@ -566,7 +585,7 @@ function wbRenderInsights(data) {
 }
 
 function wbResizeCharts() {
-  ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity'].forEach(k => charts[k] && charts[k].resize());
+  ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity', 'wb-activeteam'].forEach(k => charts[k] && charts[k].resize());
 }
 
 /* ─────────────── 初始化 ─────────────── */
