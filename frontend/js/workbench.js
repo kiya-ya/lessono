@@ -200,7 +200,7 @@ function wbRenderRank() {
     ${top.map((it, idx) => `<tr class="row-click" onclick="wbSelectHall('${it.name.replace(/'/g, "\\'")}')" title="点击查看该厅">
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td class="rank-hall">${it.name}</td>
-      <td>${it.active}</td>
+      <td class="num">${it.active}</td>
       <td class="bar-cell">
         <span class="bar-track"><span class="bar-fill" style="width:${Math.round((it.sisRev || 0) / maxRev * 100)}%"></span></span>
         <span class="bar-val">${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</span>
@@ -211,7 +211,7 @@ function wbRenderRank() {
         <span class="ret-track"><span class="ret-fill" style="width:${Math.min(100, it.ret || 0)}%"></span></span>
       </td>
       <td>${move(it.prevRet === null ? null : retPrevRank[it.name] - retRank[it.name])}</td>
-      <td>${it.newTeams}</td>
+      <td class="num">${it.newTeams}</td>
     </tr>`).join('')}`;
 }
 
@@ -365,7 +365,7 @@ function wbRenderCharts() {
   const policyIdx = data.findIndex(d => d.week_start >= WB_POLICY_DATE || d.week_end >= WB_POLICY_DATE);
   const mark = policyIdx >= 0 ? {
     silent: true, symbol: 'none',
-    data: [{ xAxis: labels[policyIdx], label: { formatter: '政策上线', fontSize: 10, color: '#4F5BD5' }, lineStyle: { color: '#4F5BD5', type: 'dashed', width: 1 } }]
+    data: [{ xAxis: labels[policyIdx], label: { formatter: '政策上线', fontSize: 10, color: '#7C5CFF' }, lineStyle: { color: '#7C5CFF', type: 'dashed', width: 1 } }]
   } : null;
   const base = {
     tooltip: {
@@ -439,7 +439,7 @@ function wbRenderCharts() {
       ...base,
       legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 10, color: '#6B7280' } },
       series: [
-        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: barGrad('#5A67E0', '#8B96F2') } },
+        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: barGrad('#7C5CFF', '#8F7BFF') } },
         { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: barGrad('#3D9A6C', '#6BC08A') } },
         { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: barGrad('#D9A13F', '#E5C87E') }, label: { show: true, position: 'top', color: '#6B7280', fontSize: 10, formatter: p => (data[p.dataIndex].total_drive_tasks || 0) + (data[p.dataIndex].total_accompany_tasks || 0) + (data[p.dataIndex].total_gift_tasks || 0) } },
       ],
@@ -622,7 +622,7 @@ async function loadDailyOverlay() {
     });
     if (charts['dailyNew']) charts['dailyNew'].dispose();
     charts['dailyNew'] = echarts.init(elNew);
-    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#4F5BD5', '79,91,213'));
+    charts['dailyNew'].setOption(mk(d.new_teams.slice(7), d.new_teams.slice(0, 7), '#7C5CFF', '124,92,255'));
     if (charts['dailyDiss']) charts['dailyDiss'].dispose();
     charts['dailyDiss'] = echarts.init(elDiss);
     charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#D56060', '213,96,96'));
@@ -715,7 +715,7 @@ async function loadDissolveReasons() {
       if (src) src.textContent = '暂无解散数据';
       return;
     }
-    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '满月自动解散': '#4F5BD5', '等级自动解散': '#8FA8C9', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
+    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '满月自动解散': '#7C5CFF', '等级自动解散': '#8FA8C9', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
     if (src) src.textContent = `快照日期 ${d.ref_date} · 累计解散 ${d.total} 个团${hall ? '（大厅：' + hall + '）' : ''}`;
     if (charts['dissolveReasons']) charts['dissolveReasons'].dispose();
     charts['dissolveReasons'] = echarts.init(el);

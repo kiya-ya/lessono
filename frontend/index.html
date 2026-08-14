@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=21">
+<link rel="stylesheet" href="css/style.css?v=22">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -161,7 +161,7 @@
         <div class="chart-container" id="chart-retention-dist" style="height:320px;"></div>
         <div class="chart-insight" id="retention-dist-insight"></div>
       </div>
-      <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
+      <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-src">每周新成团（柱）与解散（线）对照 · 净增 = 新成团 − 解散</div><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -180,13 +180,15 @@
           </select>
         </div>
       </h3>
+      <div class="chart-src">按所选指标排序（下拉/表头切换）· 点击柱子下钻到该厅明细</div>
       <div class="chart-container" id="chart-hall-compare"></div>
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="hall-compare-insight"></div>
     </div>
     <div class="chart-card">
       <h3>📊 本周 vs 上周 核心指标对比</h3>
-      <table class="data-table"><thead><tr><th>指标</th><th>上周</th><th>本周</th><th>变化幅度</th><th>趋势</th></tr></thead>
+      <div class="chart-src">本周 vs 上周逐项指标 · 绿色=向好的方向，红色=向差</div>
+      <table class="data-table"><thead><tr><th>指标</th><th class="num">上周</th><th class="num">本周</th><th class="num">变化幅度</th><th>趋势</th></tr></thead>
       <tbody id="compare-table-body"></tbody></table>
       <div class="chart-insight" id="compare-table-insight"></div>
 
@@ -653,13 +655,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=31"></script>
-<script src="js/utils.js?v=31"></script>
-<script src="js/api.js?v=31"></script>
-<script src="js/auth.js?v=31"></script>
-<script src="js/render.js?v=31"></script>
-<script src="js/app.js?v=31"></script>
-<script src="js/workbench.js?v=31"></script>
-<script src="js/insight.js?v=31"></script>
+<script src="js/config.js?v=32"></script>
+<script src="js/utils.js?v=32"></script>
+<script src="js/api.js?v=32"></script>
+<script src="js/auth.js?v=32"></script>
+<script src="js/render.js?v=32"></script>
+<script src="js/app.js?v=32"></script>
+<script src="js/workbench.js?v=32"></script>
+<script src="js/insight.js?v=32"></script>
 </body>
 </html>

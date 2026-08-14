@@ -43,7 +43,7 @@ async function initCompareChart() {
           if (m.unit === '元') return `¥${n.toFixed(0)}`;
           return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
         };
-        return `<tr><td>${m.name}</td><td>${fmt(b)}</td><td>${fmt(a)}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
+        return `<tr><td>${m.name}</td><td class="num">${fmt(b)}</td><td class="num">${fmt(a)}</td><td class="kpi-change num ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
       }).join('');
     }
     const insEl = document.getElementById('compare-table-insight');
@@ -84,12 +84,12 @@ async function initCompareChart() {
         grid: { left: 50, right: 50, top: 40, bottom: 50 },
         xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
         yAxis: [
-          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#4F5BD5' } } },
+          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#7C5CFF' } } },
           { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
         ],
         series: [
           { name: '新成团数', type: 'bar', data: newTeams, barWidth: '40%',
-            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#4F5BD5' }, { offset: 1, color: '#8B96F2' }]), borderRadius: [4,4,0,0] } },
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#7C5CFF' }, { offset: 1, color: '#8F7BFF' }]), borderRadius: [4,4,0,0] } },
           { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true,
             lineStyle: { color: '#D56060', width: 2.5 },
             itemStyle: { color: '#D56060' },
@@ -139,7 +139,7 @@ function renderHallComparePage() {
 
   // 指标配置：标签、单位、颜色
   const metricConfig = {
-    active_count:    { label: '进行中团数', unit: '个', color: '#4F5BD5', grad: '#8B96F2' },
+    active_count:    { label: '进行中团数', unit: '个', color: '#7C5CFF', grad: '#8F7BFF' },
     team_count:      { label: '总团数',     unit: '个', color: '#3D9A6C', grad: '#6BC48E' },
     dissolved_count: { label: '解散数',     unit: '个', color: '#D56060', grad: '#F0A0A0' },
     total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#C98A2D', grad: '#E5C87E' },
@@ -434,7 +434,7 @@ async function renderPartnerCompare(data) {
 
 function renderPartnerChartMulti(participants) {
   const chartDiv = document.getElementById('partner-compare-chart');
-  const colors = ['#4F5BD5', '#3D9A6C', '#C98A2D', '#D56060', '#13c2c2', '#722ed1'];
+  const colors = ['#7C5CFF', '#3D9A6C', '#C98A2D', '#D56060', '#13c2c2', '#722ed1'];
   const levelOrder = { '无': 0, '铜牌': 1, '初级银牌': 2, '银牌': 3, '金牌': 4, '王牌': 5, '大神': 6 };
   const levelLabels = ['无', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
 
