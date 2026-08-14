@@ -134,9 +134,11 @@ function renderPolicyTable() {
   if (el) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 个厅 · ${policyPage + 1}/${totalPages} 页</span>`;
     if (policyPage > 0) html += `<button onclick="policyPage--;renderPolicyTable();">上一页</button>`;
-    for (let i = 0; i < totalPages; i++) {
-      html += `<button class="${i === policyPage ? 'active' : ''}" onclick="policyPage=${i};renderPolicyTable();">${i + 1}</button>`;
-    }
+    pagerRange(policyPage, totalPages).forEach(i => {
+      html += i === '...'
+        ? '<span class="pager-dots">…</span>'
+        : `<button class="${i === policyPage ? 'active' : ''}" onclick="policyPage=${i};renderPolicyTable();">${i + 1}</button>`;
+    });
     if (policyPage < totalPages - 1) html += `<button onclick="policyPage++;renderPolicyTable();">下一页</button>`;
     el.innerHTML = html;
   }
@@ -213,9 +215,11 @@ function renderCaptainTable() {
   if (el) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${captainPage + 1}/${totalPages} 页</span>`;
     if (captainPage > 0) html += `<button onclick="captainPage--;renderCaptainTable();">上一页</button>`;
-    for (let i = 0; i < totalPages; i++) {
-      html += `<button class="${i === captainPage ? 'active' : ''}" onclick="captainPage=${i};renderCaptainTable();">${i + 1}</button>`;
-    }
+    pagerRange(captainPage, totalPages).forEach(i => {
+      html += i === '...'
+        ? '<span class="pager-dots">…</span>'
+        : `<button class="${i === captainPage ? 'active' : ''}" onclick="captainPage=${i};renderCaptainTable();">${i + 1}</button>`;
+    });
     if (captainPage < totalPages - 1) html += `<button onclick="captainPage++;renderCaptainTable();">下一页</button>`;
     el.innerHTML = html;
   }
@@ -316,7 +320,11 @@ function renderSisterProfile() {
   if (pg) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${sisterProfilePage + 1}/${totalPages} 页</span>`;
     if (sisterProfilePage > 0) html += `<button onclick="sisterProfilePage--;renderSisterProfile();">上一页</button>`;
-    for (let i = 0; i < totalPages; i++) html += `<button class="${i === sisterProfilePage ? 'active' : ''}" onclick="sisterProfilePage=${i};renderSisterProfile();">${i + 1}</button>`;
+    pagerRange(sisterProfilePage, totalPages).forEach(i => {
+      html += i === '...'
+        ? '<span class="pager-dots">…</span>'
+        : `<button class="${i === sisterProfilePage ? 'active' : ''}" onclick="sisterProfilePage=${i};renderSisterProfile();">${i + 1}</button>`;
+    });
     if (sisterProfilePage < totalPages - 1) html += `<button onclick="sisterProfilePage++;renderSisterProfile();">下一页</button>`;
     pg.innerHTML = html;
   }
@@ -375,7 +383,11 @@ function renderSister2Table() {
   if (pg) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${sister2Page + 1}/${totalPages} 页</span>`;
     if (sister2Page > 0) html += `<button onclick="sister2Page--;renderSister2Table();">上一页</button>`;
-    for (let i = 0; i < totalPages; i++) html += `<button class="${i === sister2Page ? 'active' : ''}" onclick="sister2Page=${i};renderSister2Table();">${i + 1}</button>`;
+    pagerRange(sister2Page, totalPages).forEach(i => {
+      html += i === '...'
+        ? '<span class="pager-dots">…</span>'
+        : `<button class="${i === sister2Page ? 'active' : ''}" onclick="sister2Page=${i};renderSister2Table();">${i + 1}</button>`;
+    });
     if (sister2Page < totalPages - 1) html += `<button onclick="sister2Page++;renderSister2Table();">下一页</button>`;
     pg.innerHTML = html;
   }

@@ -21,3 +21,18 @@ function hasValidCompareData(data) {
   return cmp.week_level !== undefined;
 }
 
+// 分页页码范围：始终显示首末页 + 当前页前后各2页，中间用 '...' 折叠
+// 返回 0-based 页码数组（元素为数字或 '...'），避免几十上百页全展开排布错乱
+function pagerRange(current, totalPages) {
+  totalPages = Math.max(1, totalPages);
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i);
+  const out = [0];
+  const left = Math.max(1, current - 2);
+  const right = Math.min(totalPages - 2, current + 2);
+  if (left > 1) out.push('...');
+  for (let i = left; i <= right; i++) out.push(i);
+  if (right < totalPages - 2) out.push('...');
+  out.push(totalPages - 1);
+  return out;
+}
+

@@ -165,9 +165,11 @@ function renderHallComparePage() {
 
   let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${total} 个大厅 · 第 ${hallComparePage + 1}/${totalPages || 1} 页</span>`;
   if (hallComparePage > 0) html += `<button onclick="hallComparePage--;renderHallComparePage();">上一页</button>`;
-  for (let i = 0; i < totalPages; i++) {
-    html += `<button class="${i === hallComparePage ? 'active' : ''}" onclick="hallComparePage=${i};renderHallComparePage();">${i + 1}</button>`;
-  }
+  pagerRange(hallComparePage, totalPages).forEach(i => {
+    html += i === '...'
+      ? '<span class="pager-dots">…</span>'
+      : `<button class="${i === hallComparePage ? 'active' : ''}" onclick="hallComparePage=${i};renderHallComparePage();">${i + 1}</button>`;
+  });
   if (hallComparePage < totalPages - 1) html += `<button onclick="hallComparePage++;renderHallComparePage();">下一页</button>`;
   document.getElementById('hall-compare-pagination').innerHTML = html;
 }

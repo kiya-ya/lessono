@@ -43,6 +43,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: white; border-radius: 4px; cursor: pointer; font-size: 13px; }
 .pagination button:hover { border-color: #667eea; color: #667eea; }
 .pagination button.active { background: #667eea; color: white; border-color: #667eea; }
+.pagination .pager-dots { padding: 6px 4px; color: #999; align-self: center; }
 .search-box { display: flex; gap: 8px; margin-bottom: 16px; }
 .search-box input { flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
 .policy-divider { text-align: center; padding: 8px; background: linear-gradient(90deg, transparent, #667eea, transparent); color: white; font-size: 12px; margin: 10px 0; border-radius: 4px; }
@@ -345,7 +346,8 @@ body { background: var(--wb-bg); }
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .chart-grid .chart-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); margin-bottom: 0; }
 .chart-grid .chart-card.drillable { cursor: pointer; transition: box-shadow .18s ease, transform .18s ease; }
-.chart-grid .chart-card.drillable:hover { box-shadow: 0 8px 24px rgba(79,91,213,.18); }
+.chart-grid .chart-card.drillable:hover { box-shadow: 0 10px 28px rgba(79,91,213,.22); transform: translateY(-3px) scale(1.02); z-index: 2; }
+.chart-grid .chart-card.drillable:hover .drill-tag { color: #4F5BD5; font-weight: 600; }
 .drill-tag { font-size: 10px; font-weight: normal; color: #9CA3AF; margin-left: 8px; letter-spacing: .3px; }
 .chart-src { font-size: 10px; color: var(--wb-text-3); margin-bottom: 8px; }
 .chart-box { width: 100%; height: 260px; }
