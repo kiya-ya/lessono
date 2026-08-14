@@ -3,6 +3,7 @@ async function initCompareChart() {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam());
     const result = await res.json();
     const data = result.data;
+    let lastWeek = null, thisWeek = null;
     if (data && data.length > 0) {
       const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
       // Filter by selected week if applicable
@@ -12,8 +13,8 @@ async function initCompareChart() {
         filteredData = validData.filter(d => d.week_end <= selectedEnd);
       }
       // Take last two records as 上周 and 本周
-      const lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
-      const thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
+      lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
+      thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
       const metrics = [
         { name: '📦 周新成团数', key: 'new_team_count', unit: '个' },
         { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
