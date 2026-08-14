@@ -1506,7 +1506,7 @@ def api_lying_flat():
     hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
     hp = [] if hall == 'all' else [hall]
     active_rows = conn.execute(f"""
-        SELECT team_id, hall_name, sister_nickname, sister_uid, days_since_formed
+        SELECT team_id, hall_name, sister_nickname, sister_uid, days_since_formed, form_date
         FROM team_detail
         WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
           AND (dissolve_date IS NULL OR dissolve_date = '')
@@ -1523,8 +1523,12 @@ def api_lying_flat():
     lst = []
     for t in active_rows:
         tid = t['team_id']
+        fd = t['form_date']
         streak, i = 0, len(dates) - 1
+        # 从最新快照日往前数连续零任务天数；成团日（form_date）之前的快照不计入，避免新团被误判为长期躺平
         while i >= 0 and not tm.get((tid, dates[i]), 0):
+            if fd and dates[i] < fd:
+                break
             streak += 1
             i -= 1
         if streak < 1:
@@ -1536,7 +1540,7 @@ def api_lying_flat():
             'sister_uid': t['sister_uid'],
             'days_since_formed': t['days_since_formed'],
             'zero_streak': streak,
-            'last_active': dates[i] if i >= 0 else None,
+            'last_active': dates[i] if (i >= 0 and tm.get((tid, dates[i]), 0)) else None,
             'level': 'lying' if streak >= 2 else 'warning',
         })
     lst.sort(key=lambda x: (-x['zero_streak'], x['days_since_formed'] or 0))
