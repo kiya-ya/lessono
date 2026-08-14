@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=16">
+<link rel="stylesheet" href="css/style.css?v=17">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -236,6 +236,12 @@
         </div>
       </h3>
       <div class="chart-src">产出=本周礼物流水 · 留存=带团存活率 · 稳定性=快照期在榜天数 · 头部/风险自动打标</div>
+      <div class="tag-legend">
+        <span class="tag-legend-item"><span class="chip up">头部</span>流水前20%且留存≥50%</span>
+        <span class="tag-legend-item"><span class="chip down">风险</span>流水环比↓≥50% 或 带团≥3但留存&lt;50%</span>
+        <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
+        <span class="tag-legend-item"><b>在榜天</b>=快照出现天数 · <b>留存率</b>=进行中÷带团总数</span>
+      </div>
       <div class="survival-chips" id="sister-profile-sum"></div>
       <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
       <div class="pagination" id="sister-profile-pagination" style="margin-top:8px;justify-content:center;"></div>
@@ -281,6 +287,12 @@
           </div>
         </h3>
         <div class="chart-src">妹妹毕业可升姐姐 · 等级越高晋升率越高（王牌/大神已到毕业线）· 默认按晋升状态+流水排序</div>
+        <div class="tag-legend">
+          <span class="tag-legend-item"><span class="chip up">已晋升</span>已升为姐姐（带团）</span>
+          <span class="tag-legend-item"><span class="chip warn">可晋升</span>等级达王牌/大神（毕业线）</span>
+          <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
+          <span class="tag-legend-item"><b>在榜天</b>=快照出现天数</span>
+        </div>
         <div class="survival-chips" id="sister2-sum"></div>
         <div class="rank-scroll"><table class="rank-table" id="sister2-table"></table></div>
         <div class="pagination" id="sister2-pagination" style="margin-top:8px;justify-content:center;"></div>
