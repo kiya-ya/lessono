@@ -143,11 +143,14 @@
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
-    <div class="chart-card">
-      <h3>📊 厅留存率分布</h3>
-      <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
-      <div class="chart-container" id="chart-retention-dist" style="height:320px;"></div>
-      <div class="chart-insight" id="retention-dist-insight"></div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>📊 厅留存率分布</h3>
+        <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
+        <div class="chart-container" id="chart-retention-dist" style="height:320px;"></div>
+        <div class="chart-insight" id="retention-dist-insight"></div>
+      </div>
+      <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -175,9 +178,8 @@
       <table class="data-table"><thead><tr><th>指标</th><th>上周</th><th>本周</th><th>变化幅度</th><th>趋势</th></tr></thead>
       <tbody id="compare-table-body"></tbody></table>
       <div class="chart-insight" id="compare-table-insight"></div>
-      
+
     </div>
-    <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
   </div>
 
   <!-- 政策评估 -->
@@ -187,15 +189,17 @@
       <span class="hint" id="policy-hint">政策上线 2026-07-17 · 政策前4周 vs 政策后4周均值</span>
     </div>
     <div class="policy-grid" id="policy-cards"></div>
-    <div class="chart-card">
-      <h3>📶 分厅响应度（留存率变化）</h3>
-      <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
-      <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
-    </div>
-    <div class="chart-card">
-      <h3>🎯 政策归因（加权贡献）</h3>
-      <div class="chart-src">留存率变化 × 大厅存量规模 · 贡献(pp)加总=整体变化 · 找出真正拉动/拖累整体留存的大厅（改善/恶化各 TOP8）</div>
-      <div class="chart-container" id="chart-policy-attr" style="height:400px;"></div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>📶 分厅响应度（留存率变化）</h3>
+        <div class="chart-src">政策后4周均值 - 政策前4周均值 · 改善/恶化各 TOP10</div>
+        <div class="chart-container" id="chart-policy-bars" style="height:400px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3>🎯 政策归因（加权贡献）</h3>
+        <div class="chart-src">留存率变化 × 大厅存量规模 · 贡献(pp)加总=整体变化 · 找出真正拉动/拖累整体留存的大厅（改善/恶化各 TOP8）</div>
+        <div class="chart-container" id="chart-policy-attr" style="height:400px;"></div>
+      </div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -289,18 +293,20 @@
 
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
-    <div class="chart-card" id="survival-card">
-      <h3>🌱 姐妹团存活分析</h3>
-      <div class="chart-src" id="survival-src">基于最新快照</div>
-      <div class="survival-chips" id="survival-chips"></div>
-      <div class="chart-container" id="chart-survival" style="height:220px;"></div>
-      <div class="chart-insight" id="survival-insight"></div>
-    </div>
-    <div class="chart-card" id="dissolve-reasons-card">
-      <h3>💥 解散原因分布</h3>
-      <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
-      <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
-      <div class="chart-insight" id="dissolve-reasons-insight"></div>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>🌱 姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
+      </div>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>💥 解散原因分布</h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+      </div>
     </div>
     <div class="chart-card" id="lying-flat-card">
       <h3>😴 躺平预警名单</h3>
@@ -525,13 +531,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=19"></script>
-<script src="js/utils.js?v=19"></script>
-<script src="js/api.js?v=19"></script>
-<script src="js/auth.js?v=19"></script>
-<script src="js/render.js?v=19"></script>
-<script src="js/app.js?v=19"></script>
-<script src="js/workbench.js?v=19"></script>
-<script src="js/insight.js?v=19"></script>
+<script src="js/config.js?v=20"></script>
+<script src="js/utils.js?v=20"></script>
+<script src="js/api.js?v=20"></script>
+<script src="js/auth.js?v=20"></script>
+<script src="js/render.js?v=20"></script>
+<script src="js/app.js?v=20"></script>
+<script src="js/workbench.js?v=20"></script>
+<script src="js/insight.js?v=20"></script>
 </body>
 </html>
