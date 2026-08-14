@@ -1,7 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.venv/Scripts/python.exe -c \"import sqlite3; c=sqlite3.connect\\('data/stats.db'\\); c.row_factory=sqlite3.Row; rows=c.execute\\(\\\\\"SELECT week_label,week_start,dissolution_rate,dissolved_count,active_dissolved_count,retention_rate FROM weekly_report WHERE hall_name='all' ORDER BY week_start DESC LIMIT 8\\\\\"\\).fetchall\\(\\); [print\\(dict\\(r\\)\\) for r in rows]\")"
+      "Bash(.venv/Scripts/python.exe -c \"import sqlite3; c=sqlite3.connect\\('data/stats.db'\\); c.row_factory=sqlite3.Row; rows=c.execute\\(\\\\\"SELECT week_label,week_start,dissolution_rate,dissolved_count,active_dissolved_count,retention_rate FROM weekly_report WHERE hall_name='all' ORDER BY week_start DESC LIMIT 8\\\\\"\\).fetchall\\(\\); [print\\(dict\\(r\\)\\) for r in rows]\")",
+      "Bash(node -c frontend/js/workbench.js)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(git commit -m 'feat: 工作台主题精致化 + 侧边栏导航升级 + KPI卡下钻 *)",
+      "Bash(curl -s -m 5 \"http://127.0.0.1:5000/api/weekly-report?limit=all&hall=all\" -o /tmp/wr.json -w \"HTTP %{http_code}, %{size_download} bytes\\\\n\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s -m 5 -b \"auth_uid=admin\" \"http://127.0.0.1:5000/api/weekly-report?limit=all\")",
+      "Bash(curl -s -m 5 -b \"auth_uid=admin\" \"http://127.0.0.1:5000/api/hall-stats?limit=999&hall=all\")",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(rm -f theme_shot.png)",
+      "Bash(git commit -m ' *)",
+      "Bash(sed -i 's/#4F5BD5/#7C5CFF/g; s/#8B96F2/#8F7BFF/g; s/#5A67E0/#7C5CFF/g; s/79,91,213/124,92,255/g' js/workbench.js js/render.js js/insight.js js/api.js)",
+      "Bash(sed -i 's/#4F5BD5/#7C5CFF/g; s/rgba\\(79,91,213,.22\\)/rgba\\(124,92,255,.22\\)/g; s/rgba\\(79, 91, 213, .35\\)/rgba\\(124, 92, 255, .35\\)/g' css/style.css)",
+      "Bash(sed -i 's/\\\\.js?v=31/.js?v=32/g; s/style.css?v=21/style.css?v=22/' frontend/index.html)",
+      "Bash(node -c frontend/js/render.js)",
+      "Bash(node -c frontend/js/insight.js)",
+      "Bash(node -c frontend/js/api.js)"
     ]
   }
 }

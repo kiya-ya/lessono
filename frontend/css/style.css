@@ -354,6 +354,7 @@ body { background: var(--wb-bg); }
 .kpi-hero .kpi-value { font-size: 34px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
 .kpi-sub .kpi-card { padding: 12px 20px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .kpi-sub .kpi-value { font-size: 20px; font-variant-numeric: tabular-nums; margin: 0; }
+.kpi-sub:empty { display: none; }
 .kpi-foot { display: flex; align-items: center; gap: 8px; }
 .kpi-note { font-size: 11px; color: var(--wb-text-3); margin-top: 0; }
 
@@ -651,6 +652,9 @@ body { background: var(--wb-bg); }
 .kpi-hero .kpi-card.hero.accent-green::before { background: linear-gradient(90deg, #3D9A6C, #7DD3A0); }
 .kpi-hero .kpi-card.hero.accent-red::before { background: linear-gradient(90deg, #D56060, #F0A3A3); }
 .kpi-hero .kpi-card.hero.accent-gold::before { background: linear-gradient(90deg, #C98A2D, #E5B968); }
+.kpi-hero .kpi-card.hero.accent-violet::before { background: linear-gradient(90deg, #7C5CFF, #A78BFA); }
+.kpi-hero .kpi-card.hero.accent-teal::before { background: linear-gradient(90deg, #0EA5A4, #5ED9C6); }
+.kpi-hero .kpi-card.hero.accent-amber::before { background: linear-gradient(90deg, #D97706, #F0B35B); }
 .kpi-top { display: flex; align-items: center; gap: 8px; }
 .kpi-top .kpi-label { margin-bottom: 0; }
 .kpi-ico {
@@ -660,6 +664,9 @@ body { background: var(--wb-bg); }
 .kpi-ico.accent-green { background: rgba(61,154,108,.13); }
 .kpi-ico.accent-red { background: rgba(213,96,96,.13); }
 .kpi-ico.accent-gold { background: rgba(201,138,45,.15); }
+.kpi-ico.accent-violet { background: rgba(124,92,255,.12); }
+.kpi-ico.accent-teal { background: rgba(14,165,164,.13); }
+.kpi-ico.accent-amber { background: rgba(217,119,6,.13); }
 .kpi-hero .kpi-note { margin-left: auto; font-size: 11px; color: var(--wb-text-3); }
 .kpi-foot-label { font-size: 11px; color: var(--wb-text-3); }
 
