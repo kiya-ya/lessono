@@ -405,7 +405,7 @@ function wbRenderInsights(data) {
   const revC = revP > 0 ? Math.round((rev - revP) / revP * 100) : 0;
   let revHtml = `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '📈 增长' : '📉 下降'}`;
   if (ins.revenue) {
-    revHtml += ` · 流水 TOP 姐姐「${ins.revenue.top_sister}」${wbFmtMoney(ins.revenue.top_sister_rev)}，占 ${ins.revenue.share}%`;
+    revHtml += ` · 流水 TOP 姐姐「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.revenue.top_sister_uid || ''}')">${ins.revenue.top_sister}</a>」${wbFmtMoney(ins.revenue.top_sister_rev)}，占 ${ins.revenue.share}%`;
   }
   setInsight('wb-insight-revenue', revHtml);
   // 任务活跃度
@@ -413,7 +413,7 @@ function wbRenderInsights(data) {
   const actD = Math.round((act - actP) * 100) / 100;
   let actHtml = `本周 <b>${act}</b>（较上周 ${actD >= 0 ? '+' : ''}${actD}）· ${actD >= 0 ? '📈 上升' : '📉 下降'}`;
   if (ins.activity) {
-    actHtml += ` · 任务最多「${ins.activity.top_sister}」${ins.activity.tasks} 次`;
+    actHtml += ` · 任务最多「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.activity.top_sister_uid || ''}')">${ins.activity.top_sister}</a>」${ins.activity.tasks} 次`;
   }
   setInsight('wb-insight-activity', actHtml);
 }

@@ -1182,6 +1182,7 @@ def api_trend_insights():
     """, hp).fetchone()
     out['activity'] = {
         'top_sister': r['nickname'] if r else None,
+        'top_sister_uid': str(r['sister_uid']) if r else None,
         'tasks': round(r['tasks'] or 0) if r else 0,
     } if r and r['tasks'] else None
 
