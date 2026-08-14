@@ -506,6 +506,7 @@ body { background: var(--wb-bg); }
   padding: 9px 12px; margin-bottom: 3px; border-radius: 10px;
   color: rgba(255,255,255,.55); font-size: 13px; border-bottom: none;
   text-align: left; width: 100%; cursor: pointer;
+  background: transparent; border: none; appearance: none; font-family: inherit;
   transition: background .15s, color .15s;
 }
 .side-nav .tab .ico { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; opacity: .85; }

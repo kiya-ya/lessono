@@ -70,8 +70,14 @@ async function initCompareChart() {
       });
       const newTeams = validData.map(d => d.new_team_count || 0);
       const dissolved = validData.map(d => d.dissolved_count || 0);
-      if (!charts.compareDual) { charts.compareDual = echarts.init(document.getElementById('chart-compare-dual')); }
-      charts.compareDual.setOption({
+      const dualEl = document.getElementById('chart-compare-dual');
+      const dualVisible = dualEl && dualEl.offsetHeight > 0;
+      if (!dualVisible) {
+        if (charts.compareDual) { charts.compareDual.dispose(); charts.compareDual = null; }
+      } else if (!charts.compareDual) {
+        charts.compareDual = echarts.init(dualEl);
+      }
+      if (charts.compareDual) charts.compareDual.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
         legend: { data: ['新成团数', '解散数'], top: 5 },
         grid: { left: 50, right: 50, top: 40, bottom: 50 },
@@ -141,8 +147,12 @@ function renderHallComparePage() {
     const maxVal = Math.max(...values);
     const xMax = Math.ceil(maxVal * 1.2) || 1;
 
-    if (!charts.hallCompare) {
-      charts.hallCompare = echarts.init(document.getElementById('chart-hall-compare'));
+    const hallEl = document.getElementById('chart-hall-compare');
+    const hallVisible = hallEl && hallEl.offsetHeight > 0;
+    if (!hallVisible) {
+      if (charts.hallCompare) { charts.hallCompare.dispose(); charts.hallCompare = null; }
+    } else if (!charts.hallCompare) {
+      charts.hallCompare = echarts.init(hallEl);
       charts.hallCompare.on('click', function(params) {
         // 联动大厅筛选：明细表和存活分析都按点击的大厅过滤
         const sel = document.getElementById('hall-select');
@@ -160,13 +170,15 @@ function renderHallComparePage() {
         loadDetailTable(1);
       });
     }
-    charts.hallCompare.setOption({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
-      grid: { left: 160, right: 30, top: 20, bottom: 30 },
-      xAxis: { type: 'value', max: xMax, minInterval: 1 },
-      yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
-      series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30, itemStyle: { color: cfg.color, borderRadius: [0,4,4,0] } }]
-    });
+    if (charts.hallCompare) {
+      charts.hallCompare.setOption({
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
+        grid: { left: 160, right: 30, top: 20, bottom: 30 },
+        xAxis: { type: 'value', max: xMax, minInterval: 1 },
+        yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
+        series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30, itemStyle: { color: cfg.color, borderRadius: [0,4,4,0] } }]
+      });
+    }
   } else {
     // 无数据时清空图表
     if (charts.hallCompare) {
