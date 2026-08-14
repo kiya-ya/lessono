@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -214,6 +214,27 @@
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div class="chart-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>👤 姐姐画像（周口径）</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select id="sister-profile-sort" onchange="setSisterProfileSort(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+            <option value="week_rev" selected>本周流水 ↓</option>
+            <option value="retention">存活率 ↓</option>
+            <option value="total_teams">带团数 ↓</option>
+            <option value="rev_wow">流水环比 ↓</option>
+          </select>
+          <select id="sister-profile-per-page" onchange="setSisterProfilePerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+          </select>
+        </div>
+      </h3>
+      <div class="chart-src">产出=本周礼物流水 · 留存=带团存活率 · 稳定性=快照期在榜天数 · 头部/风险自动打标</div>
+      <div class="survival-chips" id="sister-profile-sum"></div>
+      <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
+      <div class="pagination" id="sister-profile-pagination" style="margin-top:8px;justify-content:center;"></div>
+    </div>
+    <div class="chart-card">
       <h3>⚠️ 头牌依赖度警示</h3>
       <div class="chart-src">各厅第一名姐姐拿走的当日奖励占比 · ≥40% 红（太依赖），30%~40% 黄</div>
       <div id="dep-list" style="margin-top:8px;"></div>
@@ -417,13 +438,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=10"></script>
-<script src="js/utils.js?v=10"></script>
-<script src="js/api.js?v=10"></script>
-<script src="js/auth.js?v=10"></script>
-<script src="js/render.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
-<script src="js/workbench.js?v=10"></script>
-<script src="js/insight.js?v=10"></script>
+<script src="js/config.js?v=11"></script>
+<script src="js/utils.js?v=11"></script>
+<script src="js/api.js?v=11"></script>
+<script src="js/auth.js?v=11"></script>
+<script src="js/render.js?v=11"></script>
+<script src="js/app.js?v=11"></script>
+<script src="js/workbench.js?v=11"></script>
+<script src="js/insight.js?v=11"></script>
 </body>
 </html>

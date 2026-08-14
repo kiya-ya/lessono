@@ -251,6 +251,77 @@ async function loadCaptains() {
   } catch (e) { console.error('姐姐分析加载失败:', e); }
 }
 
+/* 姐姐画像（周口径）：产出/留存/稳定性 + 头部/风险打标 */
+let sisterProfileList = [];
+let sisterProfilePage = 0;
+let sisterProfilePerPage = 20;
+let sisterProfileSort = 'week_rev';
+
+async function loadSisterProfile() {
+  const sumEl = document.getElementById('sister-profile-sum');
+  const tableEl = document.getElementById('sister-profile-table');
+  if (!tableEl) return;
+  try {
+    const res = await fetch(API_BASE + '/api/sister-profile?' + getHallParam().substring(1));
+    const d = await res.json();
+    if (d.error) return;
+    sisterProfileList = d.list || [];
+    const s = d.summary || {};
+    sumEl.innerHTML = `
+      <span class="survival-chip">👤 姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
+      <span class="survival-chip">🏆 头部 <strong>${s.head_count}</strong> 位</span>
+      <span class="survival-chip">⚠️ 风险 <strong>${s.risk_count}</strong> 位</span>
+      <span class="survival-chip">💰 本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
+    renderSisterProfile();
+  } catch (e) { console.error('姐姐画像加载失败:', e); }
+}
+
+function setSisterProfileSort(v) { sisterProfileSort = v; sisterProfilePage = 0; renderSisterProfile(); }
+function setSisterProfilePerPage(v) { sisterProfilePerPage = parseInt(v) || 20; sisterProfilePage = 0; renderSisterProfile(); }
+
+function renderSisterProfile() {
+  const list = [...sisterProfileList];
+  const key = sisterProfileSort;
+  list.sort((a, b) => {
+    const va = a[key], vb = b[key];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return vb - va;
+  });
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / sisterProfilePerPage));
+  if (sisterProfilePage >= totalPages) sisterProfilePage = totalPages - 1;
+  if (sisterProfilePage < 0) sisterProfilePage = 0;
+  const start = sisterProfilePage * sisterProfilePerPage;
+  const page = list.slice(start, start + sisterProfilePerPage);
+  const tag = x => x === 'head' ? '<span class="chip up">头部</span>' : x === 'risk' ? '<span class="chip down">风险</span>' : '<span class="chip flat">普通</span>';
+  const wow = v => v == null ? '—' : `<span class="chip ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${v > 0 ? '+' : ''}${v}%</span>`;
+  document.getElementById('sister-profile-table').innerHTML = `
+    <tr><th>#</th><th>姐姐</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>存活率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
+    ${page.map((x, i) => `<tr>
+      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
+      <td><a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td>${x.sister_level ?? '-'}</td>
+      <td>${wbFmtMoney(x.week_rev)}</td>
+      <td>${wow(x.rev_wow)}</td>
+      <td>${x.total_teams}</td>
+      <td>${x.active_teams}</td>
+      <td>${x.retention == null ? '—' : x.retention + '%'}</td>
+      <td>${x.avg_days ?? '-'}</td>
+      <td>${x.presence_days}</td>
+      <td>${tag(x.tag)}</td>
+    </tr>`).join('')}`;
+  const pg = document.getElementById('sister-profile-pagination');
+  if (pg) {
+    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${sisterProfilePage + 1}/${totalPages} 页</span>`;
+    if (sisterProfilePage > 0) html += `<button onclick="sisterProfilePage--;renderSisterProfile();">上一页</button>`;
+    for (let i = 0; i < totalPages; i++) html += `<button class="${i === sisterProfilePage ? 'active' : ''}" onclick="sisterProfilePage=${i};renderSisterProfile();">${i + 1}</button>`;
+    if (sisterProfilePage < totalPages - 1) html += `<button onclick="sisterProfilePage++;renderSisterProfile();">下一页</button>`;
+    pg.innerHTML = html;
+  }
+}
+
 /* ═══════════════ 预警中心 ═══════════════ */
 
 let alertsResolvedFilter = '0';

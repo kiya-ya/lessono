@@ -790,6 +790,93 @@ def api_policy_attribution():
     return jsonify({'policy_week_start': POLICY_WEEK_START, 'attribution': rows})
 
 
+@app.route('/api/sister-profile')
+@login_required
+def api_sister_profile():
+    """姐姐画像（周口径）：产出(周流水+环比) / 留存(带团存活率+平均成团天数) / 稳定性(在榜天数)"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+
+    weeks = [r['week_start'] for r in conn.execute('SELECT DISTINCT week_start FROM team_sister_revenue ORDER BY week_start').fetchall()]
+    cur_week = weeks[-1] if weeks else None
+    prev_week = weeks[-2] if len(weeks) >= 2 else None
+
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    latest = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+
+    # 产出：本周/上周礼物流水（按姐姐聚合）
+    rev = {}
+    if cur_week:
+        wk = [w for w in (prev_week, cur_week) if w]
+        q = f"SELECT sister_uid, week_start, SUM(sister_revenue) AS rev FROM team_sister_revenue WHERE week_start IN ({','.join('?' * len(wk))}) {hc} GROUP BY sister_uid, week_start"
+        for r in conn.execute(q, wk + hp).fetchall():
+            rev.setdefault(r['sister_uid'], {})[r['week_start']] = r['rev'] or 0
+
+    # 基础信息（最新快照的昵称/等级）
+    base = {}
+    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, MAX(sister_nickname) AS nickname, MAX(sister_level) AS level FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
+        base[r['sister_uid']] = {'sister_uid': r['sister_uid'], 'sister_nickname': r['nickname'], 'sister_level': r['level']}
+
+    # 历史带团总数 + 在榜天数（全量快照）
+    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, COUNT(DISTINCT team_id) AS total_teams, COUNT(DISTINCT snapshot_date) AS presence_days, MAX(snapshot_date) AS last_seen FROM team_detail WHERE 1=1 {hc} GROUP BY sister_uid", hp).fetchall():
+        d = base.setdefault(r['sister_uid'], {'sister_uid': r['sister_uid'], 'sister_nickname': None, 'sister_level': None})
+        d.update(total_teams=r['total_teams'], presence_days=r['presence_days'], last_seen=r['last_seen'])
+
+    # 进行中团数 + 平均成团天数（最新快照）
+    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG(days_since_formed) AS avg_days FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
+        d = base.setdefault(r['sister_uid'], {'sister_uid': r['sister_uid'], 'sister_nickname': None, 'sister_level': None})
+        d.update(active_teams=r['active_teams'], avg_days=round(r['avg_days'], 1) if r['avg_days'] is not None else None)
+
+    list_out = []
+    for uid, s in base.items():
+        week_rev = (rev.get(uid, {}).get(cur_week, 0)) if cur_week else 0
+        prev_rev = (rev.get(uid, {}).get(prev_week, 0)) if prev_week else 0
+        total_teams = s.get('total_teams') or 0
+        active_teams = s.get('active_teams') or 0
+        retention = round(active_teams / total_teams * 100, 1) if total_teams else None
+        wow = round((week_rev - prev_rev) / prev_rev * 100, 1) if prev_rev and prev_rev > 0 else None
+        list_out.append({
+            'sister_uid': uid,
+            'sister_nickname': s.get('sister_nickname'),
+            'sister_level': s.get('sister_level'),
+            'week_rev': round(week_rev, 1),
+            'prev_rev': round(prev_rev, 1),
+            'rev_wow': wow,
+            'total_teams': total_teams,
+            'active_teams': active_teams,
+            'retention': retention,
+            'avg_days': s.get('avg_days'),
+            'presence_days': s.get('presence_days', 0),
+            'last_seen': s.get('last_seen'),
+        })
+
+    revs = sorted(x['week_rev'] for x in list_out if x['week_rev'] > 0)
+    p80 = revs[int(len(revs) * 0.8)] if revs else 0
+    for x in list_out:
+        r = x['retention']
+        head = x['week_rev'] > 0 and x['week_rev'] >= p80 and r is not None and r >= 50
+        risk = (x['rev_wow'] is not None and x['rev_wow'] <= -50 and x['prev_rev'] >= 1000) or (x['total_teams'] >= 3 and r is not None and r < 50)
+        x['tag'] = 'head' if head else ('risk' if risk else 'normal')
+
+    list_out.sort(key=lambda x: (-(x['week_rev'] or 0), -(x['retention'] or 0)))
+    conn.close()
+
+    head_count = sum(1 for x in list_out if x['tag'] == 'head')
+    risk_count = sum(1 for x in list_out if x['tag'] == 'risk')
+    top = list_out[0] if list_out else None
+    return jsonify({
+        'cur_week': cur_week, 'prev_week': prev_week,
+        'total': len(list_out),
+        'summary': {
+            'head_count': head_count, 'risk_count': risk_count,
+            'top_sister': top['sister_nickname'] if top else None,
+            'top_rev': top['week_rev'] if top else 0,
+        },
+        'list': list_out,
+    })
+
+
 @app.route('/api/captains')
 @login_required
 def api_captains():
