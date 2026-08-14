@@ -474,6 +474,14 @@ async function initRetentionDist() {
       label: { show: true, position: 'top', fontSize: 12, color: '#6B7280' }
     }]
   });
+  const insEl = document.getElementById('retention-dist-insight');
+  if (insEl) {
+    const totalHalls = counts.reduce((a, b) => a + b, 0);
+    const high = counts[3] + counts[4];
+    insEl.innerHTML = totalHalls
+      ? `共 <b>${totalHalls}</b> 个厅，留存率 ≥60% 的有 <b>${high}</b> 个（占 ${Math.round(high / totalHalls * 100)}%）。`
+      : '暂无厅留存数据。';
+  }
 }
 
 /* ── 日级叠加：本周 vs 上周（核心趋势页） ── */
@@ -570,6 +578,14 @@ async function loadSurvival() {
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
       series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: '#3D9A6C', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
     });
+    const insEl = document.getElementById('survival-insight');
+    if (insEl) {
+      const d7 = s.d7 && s.d7.rate != null ? s.d7.rate : null;
+      const d30 = s.d30 && s.d30.rate != null ? s.d30.rate : null;
+      insEl.innerHTML = (d7 != null && d30 != null)
+        ? `7日存活 <b>${d7}%</b>，30日存活 <b>${d30}%</b>——成团后 30 日内约流失 ${Math.max(0, d7 - d30)}pp。`
+        : '存活数据不足。';
+    }
   } catch (e) { console.error('存活分析加载失败:', e); }
 }
 
@@ -602,6 +618,11 @@ async function loadDissolveReasons() {
         data: d.reasons.map(r => ({ name: r.reason, value: r.count, itemStyle: { color: colors[r.reason] || '#C0C4CC' } })),
       }]
     });
+    const insEl = document.getElementById('dissolve-reasons-insight');
+    if (insEl) {
+      const top = d.reasons[0];
+      insEl.innerHTML = `累计解散 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。`;
+    }
   } catch (e) { console.error('解散原因分布加载失败:', e); }
 }
 
@@ -639,6 +660,11 @@ async function loadLyingFlat() {
         <thead><tr><th>姐姐</th><th>大厅</th><th>团ID</th><th>成团</th><th>最近有任务</th><th>状态</th></tr></thead>
         <tbody>${rows}</tbody>
       </table></div>`;
+    const insEl = document.getElementById('lying-flat-insight');
+    if (insEl) {
+      const lying = (d.list || []).filter(x => x.level === 'lying').length;
+      insEl.innerHTML = `共 <b>${d.total}</b> 个躺平/预警团，其中躺平（连续≥2天零任务）<b>${lying}</b> 个；任务覆盖率约 ${d.coverage}%，下发前请人工核对。`;
+    }
   } catch (e) { console.error('躺平名单加载失败:', e); }
 }
 

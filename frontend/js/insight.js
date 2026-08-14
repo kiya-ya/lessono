@@ -223,6 +223,13 @@ function renderCaptainTable() {
     if (captainPage < totalPages - 1) html += `<button onclick="captainPage++;renderCaptainTable();">下一页</button>`;
     el.innerHTML = html;
   }
+  const insEl = document.getElementById('captain-insight');
+  if (insEl) {
+    const top = sorted[0];
+    insEl.innerHTML = top
+      ? `TOP 姐姐「${top.nickname}」${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励 <b>${wbFmtMoney(top.total_reward)}</b>，带团 ${top.team_count} 个、存活率 ${top.survival_rate}%。`
+      : '暂无排行数据。';
+  }
 }
 
 async function loadCaptains() {
@@ -248,6 +255,15 @@ async function loadCaptains() {
           <span class="meta">头牌：${x.top_captain}（${wbFmtMoney(x.captain_rev)} / 全厅 ${wbFmtMoney(x.hall_rev)}）</span>
         </div>`).join('')
       : '<div class="dep-empty">✅ 当前范围内没有头牌依赖度超过 30% 的厅</div>';
+
+    const depIns = document.getElementById('dep-insight');
+    if (depIns) {
+      const red = flagged.filter(x => x.share >= 40).length;
+      const amber = flagged.filter(x => x.share >= 30 && x.share < 40).length;
+      depIns.innerHTML = red || amber
+        ? `≥40% 红灯依赖 <b>${red}</b> 个厅（头牌占比过高，单点风险），30~40% 黄灯 <b>${amber}</b> 个。`
+        : '当前范围内没有头牌依赖度超过 30% 的厅 ✅';
+    }
 
     captainData = d.data || [];
     captainPage = 0;
@@ -276,6 +292,10 @@ async function loadSisterProfile() {
       <span class="survival-chip">🏆 头部 <strong>${s.head_count}</strong> 位</span>
       <span class="survival-chip">⚠️ 风险 <strong>${s.risk_count}</strong> 位</span>
       <span class="survival-chip">💰 本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
+    const insEl = document.getElementById('sister-profile-insight');
+    if (insEl) {
+      insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且留存≥50%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多留存低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
+    }
     renderSisterProfile();
   } catch (e) { console.error('姐姐画像加载失败:', e); }
 }
@@ -350,6 +370,10 @@ async function loadSister2Profile() {
       <span class="survival-chip">🌱 妹妹 ${d.total} 位</span>
       <span class="survival-chip">🎓 已晋升 <strong>${s.promoted}</strong> 位</span>
       <span class="survival-chip">⭐ 可晋升（王牌/大神）<strong>${s.promotable}</strong> 位</span>`;
+    const insEl = document.getElementById('sister2-insight');
+    if (insEl) {
+      insEl.innerHTML = `已晋升 <b>${s.promoted}</b> 位；可晋升（王牌/大神）<b>${s.promotable}</b> 位是下一批姐姐储备，建议优先培养。`;
+    }
     renderSister2Table();
   } catch (e) { console.error('妹妹晋升追踪加载失败:', e); }
 }

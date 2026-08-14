@@ -130,6 +130,8 @@ async function loadDetailTable(page = 1) {
     if (page < totalPages) html += `<button onclick="loadDetailTable(${page+1})">下一页</button><button onclick="loadDetailTable(${totalPages})">末页</button>`;
     html += `<input type="number" id="goto-page" min="1" max="${totalPages}" placeholder="跳转到" style="width:60px;padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;margin-left:8px;"><button onclick="const gp=parseInt(document.getElementById('goto-page').value);if(gp>=1&&gp<=${totalPages})loadDetailTable(gp);" style="margin-left:4px;">GO</button>`;
     document.getElementById('detail-pagination').innerHTML = html;
+    const insEl = document.getElementById('detail-insight');
+    if (insEl) insEl.innerHTML = `当前筛选共 <b>${result.total}</b> 条姐妹团记录。`;
   } catch (e) { console.error('明细加载失败:', e); }
 }
 

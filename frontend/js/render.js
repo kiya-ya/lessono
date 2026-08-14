@@ -45,6 +45,11 @@ async function initCompareChart() {
         return `<tr><td>${m.name}</td><td>${fmt(b)}</td><td>${fmt(a)}</td><td class="kpi-change ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
       }).join('');
     }
+    const insEl = document.getElementById('compare-table-insight');
+    if (insEl && thisWeek) {
+      const retD = Math.round(((thisWeek.retention_rate || 0) - (lastWeek ? (lastWeek.retention_rate || 0) : 0)) * 10) / 10;
+      insEl.innerHTML = `本周留存率 <b>${thisWeek.retention_rate ?? '—'}%</b>（上周 ${lastWeek ? lastWeek.retention_rate ?? '—' : '—'}%），新成团 ${thisWeek.new_team_count ?? 0} 个、解散 ${thisWeek.dissolved_count ?? 0} 个。`;
+    }
     try {
       const hallParam = currentHall === 'all' ? '&hall=all' : '';
       const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
@@ -80,6 +85,12 @@ async function initCompareChart() {
           { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#D56060', width: 2 }, itemStyle: { color: '#D56060' } }
         ]
       }, true);
+      const insEl = document.getElementById('compare-dual-insight');
+      if (insEl && newTeams.length) {
+        const n = newTeams[newTeams.length - 1];
+        const dd = dissolved[dissolved.length - 1];
+        insEl.innerHTML = `最新一周新成团 <b>${n}</b> 个 vs 解散 <b>${dd}</b> 个，净${n >= dd ? '增' : '减'} <b>${Math.abs(n - dd)}</b> 个。`;
+      }
     } catch (e) { console.error('双轴图加载失败:', e); }
     setTimeout(() => {
       if (charts.hallCompare) charts.hallCompare.resize();
@@ -172,6 +183,12 @@ function renderHallComparePage() {
   });
   if (hallComparePage < totalPages - 1) html += `<button onclick="hallComparePage++;renderHallComparePage();">下一页</button>`;
   document.getElementById('hall-compare-pagination').innerHTML = html;
+  const insEl = document.getElementById('hall-compare-insight');
+  if (insEl && hallCompareData.length) {
+    const byRev = [...hallCompareData].sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0))[0];
+    const byAct = [...hallCompareData].sort((a, b) => (b.active_count || 0) - (a.active_count || 0))[0];
+    insEl.innerHTML = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
+  }
 }
 
 function renderUIDResult(data) {

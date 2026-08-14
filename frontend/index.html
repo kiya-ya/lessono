@@ -147,6 +147,7 @@
       <h3>📊 厅留存率分布</h3>
       <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
       <div class="chart-container" id="chart-retention-dist" style="height:320px;"></div>
+      <div class="chart-insight" id="retention-dist-insight"></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -167,14 +168,16 @@
       </h3>
       <div class="chart-container" id="chart-hall-compare"></div>
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="hall-compare-insight"></div>
     </div>
     <div class="chart-card">
       <h3>📊 本周 vs 上周 核心指标对比</h3>
       <table class="data-table"><thead><tr><th>指标</th><th>上周</th><th>本周</th><th>变化幅度</th><th>趋势</th></tr></thead>
       <tbody id="compare-table-body"></tbody></table>
+      <div class="chart-insight" id="compare-table-insight"></div>
       
     </div>
-    <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div></div>
+    <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
   </div>
 
   <!-- 政策评估 -->
@@ -233,6 +236,7 @@
       <div class="survival-chips" id="sister-profile-sum"></div>
       <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
       <div class="pagination" id="sister-profile-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="sister-profile-insight"></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -253,11 +257,13 @@
       <div class="survival-chips" id="sister2-sum"></div>
       <div class="rank-scroll"><table class="rank-table" id="sister2-table"></table></div>
       <div class="pagination" id="sister2-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="sister2-insight"></div>
     </div>
     <div class="chart-card">
       <h3>⚠️ 头牌依赖度警示</h3>
       <div class="chart-src">各厅第一名姐姐拿走的当日奖励占比 · ≥40% 红（太依赖），30%~40% 黄</div>
       <div id="dep-list" style="margin-top:8px;"></div>
+      <div class="chart-insight" id="dep-insight"></div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -277,6 +283,7 @@
       <div class="chart-src">奖励为当日发放的礼物金额；累计总流水请在「UID查询」查看 · 点表头可排序</div>
       <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
       <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="captain-insight"></div>
     </div>
   </div>
 
@@ -287,16 +294,19 @@
       <div class="chart-src" id="survival-src">基于最新快照</div>
       <div class="survival-chips" id="survival-chips"></div>
       <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+      <div class="chart-insight" id="survival-insight"></div>
     </div>
     <div class="chart-card" id="dissolve-reasons-card">
       <h3>💥 解散原因分布</h3>
       <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
       <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+      <div class="chart-insight" id="dissolve-reasons-insight"></div>
     </div>
     <div class="chart-card" id="lying-flat-card">
       <h3>😴 躺平预警名单</h3>
       <div class="chart-src" id="lying-flat-src">连续多个快照日零任务（开车/陪档/收送礼全为0）· 接近自动解散的团</div>
       <div id="lying-flat-list"></div>
+      <div class="chart-insight" id="lying-flat-insight"></div>
     </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
@@ -333,6 +343,7 @@
         <tbody id="detail-table-body"></tbody>
       </table>
       <div class="pagination" id="detail-pagination"></div>
+      <div class="chart-insight" id="detail-insight"></div>
     </div>
   </div>
 
@@ -514,13 +525,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=18"></script>
-<script src="js/utils.js?v=18"></script>
-<script src="js/api.js?v=18"></script>
-<script src="js/auth.js?v=18"></script>
-<script src="js/render.js?v=18"></script>
-<script src="js/app.js?v=18"></script>
-<script src="js/workbench.js?v=18"></script>
-<script src="js/insight.js?v=18"></script>
+<script src="js/config.js?v=19"></script>
+<script src="js/utils.js?v=19"></script>
+<script src="js/api.js?v=19"></script>
+<script src="js/auth.js?v=19"></script>
+<script src="js/render.js?v=19"></script>
+<script src="js/app.js?v=19"></script>
+<script src="js/workbench.js?v=19"></script>
+<script src="js/insight.js?v=19"></script>
 </body>
 </html>
