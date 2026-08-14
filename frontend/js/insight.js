@@ -762,23 +762,76 @@ async function saveTalentAction() {
   } catch (e) { console.error('保存记录失败:', e); alert('保存失败'); }
 }
 
+let talentActionsList = [];
+
 async function loadTalentActions() {
   const tableEl = document.getElementById('talent-actions-table');
   if (!tableEl) return;
   try {
     const res = await fetch(API_BASE + '/api/talent-actions');
     const d = await res.json();
-    const rows = d.list || [];
+    talentActionsList = d.list || [];
     const typeName = t => t === 'send_sister' ? '<span class="chip up">输送妹妹</span>' : '<span class="chip warn">提拔管理</span>';
+    const resultName = s => s === 'good' ? '<span class="chip up">效果佳</span>' : s === 'mixed' ? '<span class="chip warn">一般</span>' : s === 'bad' ? '<span class="chip down">效果差</span>' : '<span class="chip flat">待回填</span>';
     tableEl.innerHTML = `
-      <tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>备注</th><th>记录时间</th></tr>
-      ${rows.map(r => `<tr>
+      <tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr>
+      ${talentActionsList.map(r => `<tr>
         <td>${r.action_date}</td>
         <td>${r.sister_nickname || r.sister_uid}</td>
         <td>${r.hall_name || '—'}</td>
         <td>${typeName(r.action_type)}</td>
-        <td>${r.note || '—'}</td>
+        <td>${resultName(r.result_status)}</td>
+        <td>${r.result_note || r.note || '—'}</td>
         <td>${(r.created_at || '').slice(0, 16)}</td>
-      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:16px;">暂无结果记录</td></tr>'}`;
+        <td><button class="mini-btn" onclick="openTalentResultModal(${r.id})">${r.result_status && r.result_status !== 'pending' ? '改结果' : '补填结果'}</button></td>
+      </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#9CA3AF;padding:16px;">暂无结果记录</td></tr>'}`;
   } catch (e) { console.error('结果记录加载失败:', e); }
+}
+
+/* 结果回填：补填某次倾斜动作的后续效果 */
+let trId = null;
+
+function openTalentResultModal(id) {
+  const row = talentActionsList.find(r => r.id === id);
+  if (!row) return;
+  trId = id;
+  const modal = document.getElementById('talent-result-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  const typeName = row.action_type === 'send_sister' ? '输送妹妹' : '提拔管理';
+  document.getElementById('tr-info').textContent = `${row.sister_nickname || row.sister_uid} · ${typeName}（${row.action_date}）`;
+  document.getElementById('tr-sister-promoted').checked = !!row.result_sister_promoted;
+  document.getElementById('tr-team-alive').checked = !!row.result_team_alive;
+  document.getElementById('tr-revenue-up').checked = !!row.result_revenue_up;
+  document.getElementById('tr-status').value = (row.result_status && row.result_status !== 'pending') ? row.result_status : 'good';
+  document.getElementById('tr-note').value = row.result_note || '';
+  document.getElementById('tr-date').value = row.result_date || new Date().toISOString().slice(0, 10);
+}
+
+function closeTalentResultModal() {
+  const modal = document.getElementById('talent-result-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function saveTalentResult() {
+  if (trId == null) return;
+  const date = document.getElementById('tr-date').value;
+  if (!date) { alert('请选择回填日期'); return; }
+  const body = {
+    result_sister_promoted: document.getElementById('tr-sister-promoted').checked ? 1 : 0,
+    result_team_alive: document.getElementById('tr-team-alive').checked ? 1 : 0,
+    result_revenue_up: document.getElementById('tr-revenue-up').checked ? 1 : 0,
+    result_status: document.getElementById('tr-status').value,
+    result_note: document.getElementById('tr-note').value.trim(),
+    result_date: date
+  };
+  try {
+    const res = await fetch(API_BASE + '/api/talent-actions/' + trId + '/result', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await res.json();
+    if (d.success) { closeTalentResultModal(); loadTalentActions(); }
+    else { alert(d.error || '保存失败'); }
+  } catch (e) { console.error('保存结果失败:', e); alert('保存失败'); }
 }

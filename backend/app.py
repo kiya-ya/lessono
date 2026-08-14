@@ -108,7 +108,7 @@ def init_auth_db():
 
 
 def init_talent_db():
-    """创建培养力结果记录表（候选池阶段 B：记录「输送妹妹/提拔管理」动作）"""
+    """创建培养力结果记录表（候选池阶段 B：记录「输送妹妹/提拔管理」动作及其结果）"""
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.execute('''
@@ -120,9 +120,30 @@ def init_talent_db():
                 action_type TEXT NOT NULL,
                 action_date TEXT NOT NULL,
                 note TEXT,
+                result_sister_promoted INTEGER,
+                result_team_alive INTEGER,
+                result_revenue_up INTEGER,
+                result_status TEXT DEFAULT 'pending',
+                result_note TEXT,
+                result_date TEXT,
+                result_updated_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        # 兼容旧表：结果字段可能尚未创建，逐列补齐（列已存在则跳过）
+        for _col, _ddl in (
+            ('result_sister_promoted', 'INTEGER'),
+            ('result_team_alive', 'INTEGER'),
+            ('result_revenue_up', 'INTEGER'),
+            ('result_status', "TEXT DEFAULT 'pending'"),
+            ('result_note', 'TEXT'),
+            ('result_date', 'TEXT'),
+            ('result_updated_at', 'TIMESTAMP'),
+        ):
+            try:
+                conn.execute(f'ALTER TABLE talent_actions ADD COLUMN {_col} {_ddl}')
+            except Exception:
+                pass  # 列已存在
         conn.commit()
         conn.close()
         print('[BOOT] 培养力结果记录表初始化完成')
@@ -1083,6 +1104,29 @@ def api_talent_actions():
     rows = conn.execute('SELECT * FROM talent_actions ORDER BY action_date DESC, id DESC').fetchall()
     conn.close()
     return jsonify({'list': rows})
+
+
+@app.route('/api/talent-actions/<int:aid>/result', methods=['POST'])
+@login_required
+def api_talent_action_result(aid):
+    """补填某次倾斜动作的结果（动作→结果 配对，用于学习培养力权重）"""
+    data = request.get_json(silent=True) or {}
+    result_status = data.get('result_status', 'pending')
+    if result_status not in ('pending', 'good', 'mixed', 'bad'):
+        result_status = 'pending'
+    conn = get_db_conn()
+    cur = conn.execute(
+        'UPDATE talent_actions SET result_sister_promoted=?, result_team_alive=?, result_revenue_up=?, '
+        'result_status=?, result_note=?, result_date=?, result_updated_at=CURRENT_TIMESTAMP WHERE id=?',
+        (data.get('result_sister_promoted'), data.get('result_team_alive'), data.get('result_revenue_up'),
+         result_status, data.get('result_note', ''), data.get('result_date', ''), aid)
+    )
+    conn.commit()
+    if cur.rowcount == 0:
+        conn.close()
+        return jsonify({'success': False, 'error': '记录不存在'}), 404
+    conn.close()
+    return jsonify({'success': True})
 
 
 @app.route('/api/sister2-detail')

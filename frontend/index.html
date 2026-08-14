@@ -593,16 +593,55 @@
   </div>
 </div>
 
+<!-- 培养力结果回填弹窗 -->
+<div class="cookie-modal" id="talent-result-modal">
+  <div class="cookie-modal-content" style="width:520px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>📈 补填结果 · <span id="tr-info">—</span></span>
+      <button onclick="closeTalentResultModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">回填这次倾斜动作的后续效果，用于攒成功案例、学习培养力权重</div>
+    <div style="margin:14px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:8px;">结果勾选（可多选）</label>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="font-size:14px;"><input type="checkbox" id="tr-sister-promoted"> 妹妹已毕业/升级</label>
+        <label style="font-size:14px;"><input type="checkbox" id="tr-team-alive"> 团仍存活</label>
+        <label style="font-size:14px;"><input type="checkbox" id="tr-revenue-up"> 流水有增长</label>
+      </div>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">总体判断</label>
+      <select id="tr-status" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+        <option value="good">效果佳</option>
+        <option value="mixed">一般</option>
+        <option value="bad">效果差</option>
+      </select>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">结果说明</label>
+      <input type="text" id="tr-note" placeholder="如：妹妹从铜牌升到银牌，团满30天正常解锁" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">回填日期</label>
+      <input type="date" id="tr-date" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="saveTalentResult()">保存结果</button>
+      <button class="btn-cancel" onclick="closeTalentResultModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=21"></script>
-<script src="js/utils.js?v=21"></script>
-<script src="js/api.js?v=21"></script>
-<script src="js/auth.js?v=21"></script>
-<script src="js/render.js?v=21"></script>
-<script src="js/app.js?v=21"></script>
-<script src="js/workbench.js?v=21"></script>
-<script src="js/insight.js?v=21"></script>
+<script src="js/config.js?v=22"></script>
+<script src="js/utils.js?v=22"></script>
+<script src="js/api.js?v=22"></script>
+<script src="js/auth.js?v=22"></script>
+<script src="js/render.js?v=22"></script>
+<script src="js/app.js?v=22"></script>
+<script src="js/workbench.js?v=22"></script>
+<script src="js/insight.js?v=22"></script>
 </body>
 </html>
