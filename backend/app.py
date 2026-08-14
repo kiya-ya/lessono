@@ -947,6 +947,58 @@ def api_sister2_profile():
     })
 
 
+@app.route('/api/sister-detail')
+@login_required
+def api_sister_detail():
+    """姐姐下钻：基本画像 + 带团明细 + 每日/周流水趋势"""
+    uid = request.args.get('uid', '')
+    if not uid:
+        return jsonify({'error': '缺少 uid'}), 400
+    conn = get_db_conn()
+    latest = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+    rank_sql = _level_rank_sql('sister_level')
+
+    base = conn.execute(f"SELECT MAX(sister_nickname) AS nickname, MAX({rank_sql}) AS rank, COUNT(DISTINCT team_id) AS total_teams FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}", [uid]).fetchone()
+    if not base or base['total_teams'] is None:
+        conn.close()
+        return jsonify({'error': '未找到该姐姐'}), 404
+    act = conn.execute(f"SELECT SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG(days_since_formed) AS avg_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}", [uid]).fetchone()
+    pres = conn.execute("SELECT COUNT(DISTINCT snapshot_date) AS presence_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ?", [uid]).fetchone()
+    teams = conn.execute(f"""
+        SELECT team_id, hall_name, days_since_formed, reward_amount, dissolve_date, sister_nickname2
+        FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}
+        ORDER BY CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 0 ELSE 1 END, days_since_formed DESC
+    """, [uid]).fetchall()
+    daily = conn.execute("""
+        SELECT snapshot_date, SUM(sister_revenue) AS rev FROM team_detail
+        WHERE CAST(sister_uid AS TEXT) = ? AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id, snapshot_date)
+        GROUP BY snapshot_date ORDER BY snapshot_date
+    """, [uid]).fetchall()
+    weekly = conn.execute("SELECT week_start, SUM(sister_revenue) AS rev FROM team_sister_revenue WHERE CAST(sister_uid AS TEXT) = ? GROUP BY week_start ORDER BY week_start", [uid]).fetchall()
+    conn.close()
+
+    total = base['total_teams'] or 0
+    active = act['active_teams'] or 0
+    return jsonify({
+        'uid': uid,
+        'nickname': base['nickname'],
+        'level': LEVEL_NAMES.get(base['rank'], '无'),
+        'total_teams': total,
+        'active_teams': active,
+        'retention': round(active / total * 100, 1) if total else None,
+        'avg_days': round(act['avg_days'], 1) if act['avg_days'] is not None else None,
+        'presence_days': pres['presence_days'] or 0,
+        'teams': [{
+            'team_id': t['team_id'], 'hall_name': t['hall_name'],
+            'days_since_formed': t['days_since_formed'], 'reward_amount': t['reward_amount'],
+            'status': 'active' if (not t['dissolve_date'] or t['dissolve_date'] == '') else 'dissolved',
+            'sister2': t['sister_nickname2'],
+        } for t in teams],
+        'daily': [{'date': d['snapshot_date'], 'rev': d['rev'] or 0} for d in daily],
+        'weekly': [{'week': w['week_start'], 'rev': w['rev'] or 0} for w in weekly],
+    })
+
+
 @app.route('/api/captains')
 @login_required
 def api_captains():

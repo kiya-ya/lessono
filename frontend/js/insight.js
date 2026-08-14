@@ -301,7 +301,7 @@ function renderSisterProfile() {
     <tr><th>#</th><th>姐姐</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>存活率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-      <td><a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
       <td>${x.sister_level ?? '-'}</td>
       <td>${wbFmtMoney(x.week_rev)}</td>
       <td>${wow(x.rev_wow)}</td>
@@ -379,6 +379,78 @@ function renderSister2Table() {
     if (sister2Page < totalPages - 1) html += `<button onclick="sister2Page++;renderSister2Table();">下一页</button>`;
     pg.innerHTML = html;
   }
+}
+
+/* 姐姐下钻：带团明细 + 流水曲线 */
+let sdUid = '';
+
+async function openSisterDetail(uid) {
+  sdUid = uid || '';
+  const modal = document.getElementById('sister-detail-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.getElementById('sd-name').textContent = '加载中...';
+  document.getElementById('sd-chips').innerHTML = '';
+  document.getElementById('sd-table').innerHTML = '';
+  document.getElementById('sd-chart-src').textContent = '每日礼物流水';
+  const el = document.getElementById('sd-chart');
+  if (charts['sdChart']) { charts['sdChart'].dispose(); charts['sdChart'] = null; }
+  try {
+    const res = await fetch(API_BASE + '/api/sister-detail?uid=' + encodeURIComponent(uid));
+    const d = await res.json();
+    if (d.error) { document.getElementById('sd-name').textContent = '未找到该姐姐的画像'; return; }
+    document.getElementById('sd-name').textContent = `${d.nickname || uid}（${d.level || '未知'}）`;
+    document.getElementById('sd-chips').innerHTML = `
+      <span class="survival-chip">带团 <strong>${d.total_teams}</strong></span>
+      <span class="survival-chip">进行中 <strong>${d.active_teams}</strong></span>
+      <span class="survival-chip">存活率 ${d.retention == null ? '—' : '<strong>' + d.retention + '%</strong>'}</span>
+      <span class="survival-chip">均成团 <strong>${d.avg_days ?? '—'}</strong>天</span>
+      <span class="survival-chip">在榜 <strong>${d.presence_days}</strong>天</span>`;
+    // 流水图：优先每日(15天曲线)，否则周流水
+    const seriesData = (d.daily && d.daily.length) ? d.daily.map(x => ({ name: x.date, value: x.rev })) : [];
+    if (seriesData.length) {
+      document.getElementById('sd-chart-src').textContent = '每日礼物流水（快照日）';
+      charts['sdChart'] = echarts.init(el);
+      charts['sdChart'].setOption({
+        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>流水 ${wbFmtMoney(p.value)}`; } },
+        grid: { left: 70, right: 20, top: 16, bottom: 28 },
+        xAxis: { type: 'category', data: seriesData.map(x => x.name), axisLabel: { fontSize: 10, color: '#6B7280' } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => wbFmtMoney(v) }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        series: [{ name: '流水', type: 'bar', data: seriesData.map(x => x.value), barWidth: '50%', itemStyle: { color: '#4F5BD5', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280', formatter: p => wbFmtMoney(p.value) } }]
+      });
+    } else if (d.weekly && d.weekly.length) {
+      document.getElementById('sd-chart-src').textContent = '周礼物流水';
+      charts['sdChart'] = echarts.init(el);
+      charts['sdChart'].setOption({
+        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>流水 ${wbFmtMoney(p.value)}`; } },
+        grid: { left: 70, right: 20, top: 16, bottom: 28 },
+        xAxis: { type: 'category', data: d.weekly.map(x => x.week), axisLabel: { fontSize: 11, color: '#6B7280' } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => wbFmtMoney(v) }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        series: [{ name: '周流水', type: 'bar', data: d.weekly.map(x => x.rev), barWidth: '45%', itemStyle: { color: '#4F5BD5', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280', formatter: p => wbFmtMoney(p.value) } }]
+      });
+    } else {
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">暂无流水数据</div>';
+    }
+    document.getElementById('sd-table').innerHTML = `
+      <tr><th>团ID</th><th>大厅</th><th>成团天</th><th>状态</th><th>妹妹</th><th>奖励</th></tr>
+      ${(d.teams || []).map(t => `<tr>
+        <td>${t.team_id}</td>
+        <td>${t.hall_name || '-'}</td>
+        <td>${t.days_since_formed ?? '-'}天</td>
+        <td>${t.status === 'active' ? '<span class="chip up">进行中</span>' : '<span class="chip flat">已解散</span>'}</td>
+        <td>${t.sister2 || '-'}</td>
+        <td>${wbFmtMoney(t.reward_amount)}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:16px;">暂无带团记录</td></tr>'}`;
+  } catch (e) { console.error('姐姐下钻失败:', e); document.getElementById('sd-name').textContent = '加载失败'; }
+}
+
+function closeSisterDetail() {
+  const modal = document.getElementById('sister-detail-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function sdGoUID() {
+  if (sdUid) { closeSisterDetail(); jumpToUID(sdUid); }
 }
 
 /* ═══════════════ 预警中心 ═══════════════ */

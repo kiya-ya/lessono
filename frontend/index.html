@@ -455,16 +455,34 @@
   </div>
 </div>
 
+<!-- 姐姐下钻弹窗 -->
+<div class="cookie-modal" id="sister-detail-modal">
+  <div class="cookie-modal-content" style="width:860px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>👤 <span id="sd-name">姐姐详情</span></span>
+      <button onclick="closeSisterDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="survival-chips" id="sd-chips"></div>
+    <div class="chart-src" id="sd-chart-src">每日礼物流水</div>
+    <div id="sd-chart" style="height:200px;margin:4px 0 8px;"></div>
+    <div class="rank-scroll" style="max-height:340px;"><table class="rank-table" id="sd-table"></table></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="sdGoUID()">在 UID 查询中查看完整资料 →</button>
+      <button class="btn-cancel" onclick="closeSisterDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=12"></script>
-<script src="js/utils.js?v=12"></script>
-<script src="js/api.js?v=12"></script>
-<script src="js/auth.js?v=12"></script>
-<script src="js/render.js?v=12"></script>
-<script src="js/app.js?v=12"></script>
-<script src="js/workbench.js?v=12"></script>
-<script src="js/insight.js?v=12"></script>
+<script src="js/config.js?v=13"></script>
+<script src="js/utils.js?v=13"></script>
+<script src="js/api.js?v=13"></script>
+<script src="js/auth.js?v=13"></script>
+<script src="js/render.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
+<script src="js/workbench.js?v=13"></script>
+<script src="js/insight.js?v=13"></script>
 </body>
 </html>
