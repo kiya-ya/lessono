@@ -322,6 +322,65 @@ function renderSisterProfile() {
   }
 }
 
+/* 妹妹→姐姐晋升追踪 */
+let sister2List = [];
+let sister2Page = 0;
+let sister2PerPage = 20;
+let sister2Sort = 'default';
+
+async function loadSister2Profile() {
+  const sumEl = document.getElementById('sister2-sum');
+  const tableEl = document.getElementById('sister2-table');
+  if (!tableEl) return;
+  try {
+    const res = await fetch(API_BASE + '/api/sister2-profile?' + getHallParam().substring(1));
+    const d = await res.json();
+    if (d.error) return;
+    sister2List = d.list || [];
+    const s = d.summary || {};
+    sumEl.innerHTML = `
+      <span class="survival-chip">🌱 妹妹 ${d.total} 位</span>
+      <span class="survival-chip">🎓 已晋升 <strong>${s.promoted}</strong> 位</span>
+      <span class="survival-chip">⭐ 可晋升（王牌/大神）<strong>${s.promotable}</strong> 位</span>`;
+    renderSister2Table();
+  } catch (e) { console.error('妹妹晋升追踪加载失败:', e); }
+}
+
+function setSister2Sort(v) { sister2Sort = v; sister2Page = 0; renderSister2Table(); }
+function setSister2PerPage(v) { sister2PerPage = parseInt(v) || 20; sister2Page = 0; renderSister2Table(); }
+
+function renderSister2Table() {
+  const list = [...sister2List];
+  if (sister2Sort === 'week_rev') list.sort((a, b) => (b.week_rev || 0) - (a.week_rev || 0));
+  else if (sister2Sort === 'presence_days') list.sort((a, b) => (b.presence_days || 0) - (a.presence_days || 0));
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / sister2PerPage));
+  if (sister2Page >= totalPages) sister2Page = totalPages - 1;
+  if (sister2Page < 0) sister2Page = 0;
+  const start = sister2Page * sister2PerPage;
+  const page = list.slice(start, start + sister2PerPage);
+  const tag = x => x === 'promoted' ? '<span class="chip up">已晋升</span>' : x === 'promotable' ? '<span class="chip warn">可晋升</span>' : '<span class="chip flat">普通</span>';
+  document.getElementById('sister2-table').innerHTML = `
+    <tr><th>#</th><th>妹妹</th><th>等级</th><th>本周流水</th><th>在榜天</th><th>带团</th><th>晋升状态</th></tr>
+    ${page.map((x, i) => `<tr>
+      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
+      <td><a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td>${x.level ?? '-'}</td>
+      <td>${wbFmtMoney(x.week_rev)}</td>
+      <td>${x.presence_days}</td>
+      <td>${x.team_count}</td>
+      <td>${tag(x.tag)}</td>
+    </tr>`).join('')}`;
+  const pg = document.getElementById('sister2-pagination');
+  if (pg) {
+    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${sister2Page + 1}/${totalPages} 页</span>`;
+    if (sister2Page > 0) html += `<button onclick="sister2Page--;renderSister2Table();">上一页</button>`;
+    for (let i = 0; i < totalPages; i++) html += `<button class="${i === sister2Page ? 'active' : ''}" onclick="sister2Page=${i};renderSister2Table();">${i + 1}</button>`;
+    if (sister2Page < totalPages - 1) html += `<button onclick="sister2Page++;renderSister2Table();">下一页</button>`;
+    pg.innerHTML = html;
+  }
+}
+
 /* ═══════════════ 预警中心 ═══════════════ */
 
 let alertsResolvedFilter = '0';

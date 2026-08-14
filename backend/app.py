@@ -158,6 +158,15 @@ DISSOLVE_REASON_CASE = """
     END
 """
 
+# 姐妹团等级 → 数字秩（中文等级名不能按字典序 MAX，需映射后取最大秩）
+LEVEL_NAMES = {7: '大神', 6: '王牌', 5: '金牌', 4: '银牌', 3: '初级银牌', 2: '铜牌', 1: '初级铜牌', 0: '无'}
+
+
+def _level_rank_sql(col):
+    return (f"CASE {col} WHEN '大神' THEN 7 WHEN '王牌' THEN 6 WHEN '金牌' THEN 5 "
+            f"WHEN '银牌' THEN 4 WHEN '初级银牌' THEN 3 WHEN '铜牌' THEN 2 "
+            f"WHEN '初级铜牌' THEN 1 ELSE 0 END")
+
 
 # ========== API路由 ==========
 
@@ -815,8 +824,9 @@ def api_sister_profile():
 
     # 基础信息（最新快照的昵称/等级）
     base = {}
-    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, MAX(sister_nickname) AS nickname, MAX(sister_level) AS level FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
-        base[r['sister_uid']] = {'sister_uid': r['sister_uid'], 'sister_nickname': r['nickname'], 'sister_level': r['level']}
+    rank_sql = _level_rank_sql('sister_level')
+    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, MAX(sister_nickname) AS nickname, MAX({rank_sql}) AS rank FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
+        base[r['sister_uid']] = {'sister_uid': r['sister_uid'], 'sister_nickname': r['nickname'], 'sister_level': LEVEL_NAMES.get(r['rank'], '无')}
 
     # 历史带团总数 + 在榜天数（全量快照）
     for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, COUNT(DISTINCT team_id) AS total_teams, COUNT(DISTINCT snapshot_date) AS presence_days, MAX(snapshot_date) AS last_seen FROM team_detail WHERE 1=1 {hc} GROUP BY sister_uid", hp).fetchall():
@@ -872,6 +882,66 @@ def api_sister_profile():
             'head_count': head_count, 'risk_count': risk_count,
             'top_sister': top['sister_nickname'] if top else None,
             'top_rev': top['week_rev'] if top else 0,
+        },
+        'list': list_out,
+    })
+
+
+@app.route('/api/sister2-profile')
+@login_required
+def api_sister2_profile():
+    """妹妹→姐姐晋升追踪：妹妹产出/等级/活跃 + 晋升状态(是否已当姐姐)"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    promoted_set = {r['su'] for r in conn.execute('SELECT DISTINCT CAST(sister_uid AS TEXT) AS su FROM team_detail').fetchall()}
+
+    # 妹妹基础 + 活跃（作为妹妹出现在哪些团/快照）
+    base = {}
+    rank_sql = _level_rank_sql('sister_max_level2')
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid2 AS TEXT) AS su, MAX(sister_nickname2) AS nickname, MAX({rank_sql}) AS rank,
+               COUNT(DISTINCT team_id) AS team_count, COUNT(DISTINCT snapshot_date) AS presence_days
+        FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc} GROUP BY su
+    """, hp).fetchall():
+        base[r['su']] = {
+            'sister_uid': r['su'], 'sister_nickname': r['nickname'], 'level': LEVEL_NAMES.get(r['rank'], '无'),
+            'level_rank': r['rank'],
+            'team_count': r['team_count'], 'presence_days': r['presence_days'],
+            'promoted': r['su'] in promoted_set,
+        }
+
+    # 妹妹本周产出（sister2_revenue）
+    cur = conn.execute('SELECT MAX(week_start) AS w FROM team_sister_revenue').fetchone()['w']
+    if cur:
+        for r in conn.execute(f"""
+            SELECT CAST(sister_uid2 AS TEXT) AS su, SUM(sister2_revenue) AS rev
+            FROM team_sister_revenue WHERE week_start = ? AND sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc} GROUP BY su
+        """, [cur] + hp).fetchall():
+            if r['su'] in base:
+                base[r['su']]['week_rev'] = round(r['rev'] or 0, 1)
+    for s in base.values():
+        s.setdefault('week_rev', 0)
+
+    list_out = list(base.values())
+    for x in list_out:
+        if x['promoted']:
+            x['tag'] = 'promoted'
+        elif x['level_rank'] >= 6:  # 王牌/大神已到毕业线
+            x['tag'] = 'promotable'
+        else:
+            x['tag'] = 'normal'
+
+    order = {'promoted': 0, 'promotable': 1, 'normal': 2}
+    list_out.sort(key=lambda x: (order[x['tag']], -(x['week_rev'] or 0)))
+    conn.close()
+
+    return jsonify({
+        'total': len(list_out),
+        'summary': {
+            'promoted': sum(1 for x in list_out if x['tag'] == 'promoted'),
+            'promotable': sum(1 for x in list_out if x['tag'] == 'promotable'),
         },
         'list': list_out,
     })
