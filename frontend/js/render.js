@@ -79,7 +79,7 @@ async function initCompareChart() {
         charts.compareDual = echarts.init(dualEl);
       }
       if (charts.compareDual) charts.compareDual.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
         legend: { data: ['新成团数', '解散数'], top: 5 },
         grid: { left: 50, right: 50, top: 40, bottom: 50 },
         xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
@@ -88,8 +88,12 @@ async function initCompareChart() {
           { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
         ],
         series: [
-          { name: '新成团数', type: 'bar', data: newTeams, itemStyle: { color: '#4F5BD5', borderRadius: [4,4,0,0] }, barWidth: '40%' },
-          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true, lineStyle: { color: '#D56060', width: 2 }, itemStyle: { color: '#D56060' } }
+          { name: '新成团数', type: 'bar', data: newTeams, barWidth: '40%',
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#4F5BD5' }, { offset: 1, color: '#8B96F2' }]), borderRadius: [4,4,0,0] } },
+          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true,
+            lineStyle: { color: '#D56060', width: 2.5 },
+            itemStyle: { color: '#D56060' },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(213,96,96,.24)' }, { offset: 1, color: 'rgba(213,96,96,0)' }]) } }
         ]
       }, true);
       const insEl = document.getElementById('compare-dual-insight');
@@ -135,10 +139,10 @@ function renderHallComparePage() {
 
   // 指标配置：标签、单位、颜色
   const metricConfig = {
-    active_count:    { label: '进行中团数', unit: '个', color: '#4F5BD5' },
-    team_count:      { label: '总团数',     unit: '个', color: '#3D9A6C' },
-    dissolved_count: { label: '解散数',     unit: '个', color: '#D56060' },
-    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#C98A2D' },
+    active_count:    { label: '进行中团数', unit: '个', color: '#4F5BD5', grad: '#8B96F2' },
+    team_count:      { label: '总团数',     unit: '个', color: '#3D9A6C', grad: '#6BC48E' },
+    dissolved_count: { label: '解散数',     unit: '个', color: '#D56060', grad: '#F0A0A0' },
+    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#C98A2D', grad: '#E5C87E' },
   };
   const cfg = metricConfig[hallCompareSortField] || metricConfig.active_count;
 
@@ -173,11 +177,14 @@ function renderHallComparePage() {
     }
     if (charts.hallCompare) {
       charts.hallCompare.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
-        grid: { left: 160, right: 30, top: 20, bottom: 30 },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
+        grid: { left: 160, right: 40, top: 20, bottom: 30 },
         xAxis: { type: 'value', max: xMax, minInterval: 1 },
         yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
-        series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30, itemStyle: { color: cfg.color, borderRadius: [0,4,4,0] } }]
+        series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30,
+          itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: cfg.color }, { offset: 1, color: cfg.grad }]), borderRadius: [0,4,4,0] },
+          label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => cfg.unit === '元' ? wbFmtMoney(p.value) : p.value + cfg.unit }
+        }]
       });
     }
   } else {

@@ -46,7 +46,7 @@ async function loadPolicyImpact() {
         if (row && typeof drillToHall === 'function') drillToHall(row.hall_name);
       });
       charts['policyBars'].setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: 12 },
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { fontSize: 12, color: '#fff' },
           formatter: ps => { const p = ps[0]; const row = shown[p.dataIndex];
             return `${row.hall_name}<br/>留存率：${row.ret_pre}% → ${row.ret_post}%（${row.ret_delta > 0 ? '+' : ''}${row.ret_delta}pp）<br/>流水：${wbFmtMoney(row.rev_pre)} → ${wbFmtMoney(row.rev_post)}`; } },
         grid: { left: 10, right: 60, top: 10, bottom: 10, containLabel: true },
@@ -54,7 +54,9 @@ async function loadPolicyImpact() {
         yAxis: { type: 'category', inverse: true, data: shown.map(x => x.hall_name), axisLabel: { fontSize: 11, color: '#6B7280' } },
         series: [{
           type: 'bar', data: shown.map(x => x.ret_delta), barWidth: '55%',
-          itemStyle: { color: p => p.value >= 0 ? '#3D9A6C' : '#D56060', borderRadius: [3, 3, 3, 3] },
+          itemStyle: { borderRadius: [3, 3, 3, 3], color: p => p.value >= 0
+            ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#2F7D56' }, { offset: 1, color: '#5FB98A' }])
+            : new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#E89A9A' }, { offset: 1, color: '#C44F4F' }]) },
           label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => (p.value > 0 ? '+' : '') + p.value + 'pp' }
         }]
       });
@@ -100,7 +102,7 @@ async function loadPolicyAttribution() {
       if (row && typeof drillToHall === 'function') drillToHall(row.hall_name);
     });
     charts['policyAttr'].setOption({
-      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, textStyle: { fontSize: 12 },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { fontSize: 12, color: '#fff' },
         formatter: ps => { const p = ps[0]; const r = shown[p.dataIndex];
           return `${r.hall_name}<br/>留存率：${r.ret_pre}% → ${r.ret_post}%（${r.ret_delta > 0 ? '+' : ''}${r.ret_delta}pp）<br/>存量规模：${r.scale} 团（占 ${r.share}%）<br/>贡献：${r.ret_contrib > 0 ? '+' : ''}${r.ret_contrib}pp`; } },
       grid: { left: 10, right: 56, top: 10, bottom: 10, containLabel: true },
@@ -108,7 +110,9 @@ async function loadPolicyAttribution() {
       yAxis: { type: 'category', inverse: true, data: shown.map(x => x.hall_name), axisLabel: { fontSize: 11, color: '#6B7280' } },
       series: [{
         type: 'bar', data: shown.map(x => x.ret_contrib), barWidth: '55%',
-        itemStyle: { color: p => p.value >= 0 ? '#3D9A6C' : '#D56060', borderRadius: [3, 3, 3, 3] },
+        itemStyle: { borderRadius: [3, 3, 3, 3], color: p => p.value >= 0
+          ? new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#2F7D56' }, { offset: 1, color: '#5FB98A' }])
+          : new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#E89A9A' }, { offset: 1, color: '#C44F4F' }]) },
         label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => (p.value > 0 ? '+' : '') + p.value + 'pp' }
       }]
     });

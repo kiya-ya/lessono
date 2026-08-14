@@ -684,11 +684,11 @@ async function loadSurvival() {
     // 过滤掉「30天以上」分段（功能上线未满30天，恒为0）
     const histPairs = d.hist_labels.map((l, i) => [l, d.hist_values[i]]).filter(p => p[0] !== '30天以上');
     charts['survival'].setOption({
-      tooltip: { trigger: 'axis', textStyle: { fontSize: 12 } },
+      tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { fontSize: 12, color: '#fff' } },
       grid: { left: 46, right: 20, top: 16, bottom: 30 },
       xAxis: { type: 'category', data: histPairs.map(p => p[0]), axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-      series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: '#3D9A6C', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
+      series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3D9A6C' }, { offset: 1, color: '#7CC89B' }]), borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
     });
     const insEl = document.getElementById('survival-insight');
     if (insEl) {
