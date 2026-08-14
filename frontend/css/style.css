@@ -635,3 +635,54 @@ body { background: var(--wb-bg); }
 /* ── 趋势图解析文本（数形结合） ── */
 .chart-insight { margin-top: 10px; font-size: 12px; color: var(--wb-text-2, #5B6472); line-height: 1.5; }
 .chart-insight b { color: var(--wb-text-1, #333); }
+
+/* ══════════════════════════════════════════════════════
+   概览页打样：KPI 英雄卡重构 + 排行榜可视化 + 图表大数字徽标
+   ══════════════════════════════════════════════════════ */
+
+/* KPI 英雄卡：渐变图标 + 颜色 accent 顶条 */
+.kpi-hero .kpi-card.hero {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.kpi-hero .kpi-card.hero::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.kpi-hero .kpi-card.hero.accent-green::before { background: linear-gradient(90deg, #3D9A6C, #7DD3A0); }
+.kpi-hero .kpi-card.hero.accent-red::before { background: linear-gradient(90deg, #D56060, #F0A3A3); }
+.kpi-hero .kpi-card.hero.accent-gold::before { background: linear-gradient(90deg, #C98A2D, #E5B968); }
+.kpi-top { display: flex; align-items: center; gap: 8px; }
+.kpi-top .kpi-label { margin-bottom: 0; }
+.kpi-ico {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+}
+.kpi-ico.accent-green { background: rgba(61,154,108,.13); }
+.kpi-ico.accent-red { background: rgba(213,96,96,.13); }
+.kpi-ico.accent-gold { background: rgba(201,138,45,.15); }
+.kpi-hero .kpi-note { margin-left: auto; font-size: 11px; color: var(--wb-text-3); }
+.kpi-foot-label { font-size: 11px; color: var(--wb-text-3); }
+
+/* 排行榜单元格可视化：流水迷你条 + 留存率进度条 */
+.rank-table tr.row-click { cursor: pointer; }
+.rank-table tr.row-click:hover { background: #F3F4FA; }
+.rank-hall { font-weight: 600; }
+.bar-cell { min-width: 150px; }
+.bar-cell .bar-track {
+  display: block; height: 6px; border-radius: 3px; background: #F0F1F4;
+  margin-bottom: 3px; overflow: hidden; width: 90px;
+}
+.bar-cell .bar-fill { display: block; height: 100%; border-radius: 3px; background: var(--wb-grad); }
+.bar-cell .bar-val { font-variant-numeric: tabular-nums; }
+.ret-cell { min-width: 130px; }
+.ret-val { font-variant-numeric: tabular-nums; margin-right: 6px; }
+.ret-track { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: #F0F1F4; vertical-align: middle; overflow: hidden; }
+.ret-fill { display: block; height: 100%; border-radius: 3px; background: #3D9A6C; }
+
+/* 图表头部大数字徽标（数形结合） */
+.chart-grid .chart-card h3 { display: flex; align-items: center; gap: 8px; }
+.chart-kpi { display: inline-flex; align-items: baseline; gap: 6px; margin-left: auto; }
+.chart-kpi .ck-val { font-size: 16px; font-weight: 700; color: var(--wb-text); font-variant-numeric: tabular-nums; }
+.chart-kpi .ck-delta { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ck-delta.up { color: var(--wb-up); }
+.ck-delta.down { color: var(--wb-down); }

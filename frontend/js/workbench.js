@@ -190,19 +190,26 @@ function wbRenderRank() {
     const va = a[key] ?? -Infinity, vb = b[key] ?? -Infinity;
     return va === vb ? 0 : (va > vb ? 1 : -1) * mul;
   }).slice(0, 20);
+  const maxRev = Math.max(1, ...top.map(it => it.sisRev || 0));
   const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
   const newLabel = month ? '月新成团' : '周新成团';
   const sortArrow = k => wbRankSort.key === k ? `<span class="sort-arrow">${wbRankSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
   const thSort = k => ` class="sortable" onclick="wbSortRank('${k}')"`;
   document.getElementById('wb-rank-table').innerHTML = `
     <tr><th>#</th><th>大厅</th><th${thSort('active')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th>流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th>留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
-    ${top.map((it, idx) => `<tr>
+    ${top.map((it, idx) => `<tr class="row-click" onclick="wbSelectHall('${it.name.replace(/'/g, "\\'")}')" title="点击查看该厅">
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
-      <td>${it.name}</td>
+      <td class="rank-hall">${it.name}</td>
       <td>${it.active}</td>
-      <td>${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</td>
+      <td class="bar-cell">
+        <span class="bar-track"><span class="bar-fill" style="width:${Math.round((it.sisRev || 0) / maxRev * 100)}%"></span></span>
+        <span class="bar-val">${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</span>
+      </td>
       <td>${month || it.sisPrev == null ? '<span class="move same">—</span>' : move(sisPrevRank[it.name] - sisRank[it.name])}</td>
-      <td>${Math.round(it.ret)}%</td>
+      <td class="ret-cell">
+        <span class="ret-val">${Math.round(it.ret)}%</span>
+        <span class="ret-track"><span class="ret-fill" style="width:${Math.min(100, it.ret || 0)}%"></span></span>
+      </td>
       <td>${move(it.prevRet === null ? null : retPrevRank[it.name] - retRank[it.name])}</td>
       <td>${it.newTeams}</td>
     </tr>`).join('')}`;
@@ -268,6 +275,21 @@ async function refreshWorkbench() {
   } catch (e) { console.error('工作台刷新失败:', e); }
 }
 
+// 数字滚动动画：从 ~55% 处缓动到目标值（ease-out cubic）
+function wbCountUp(el, to, fmt, dur = 700) {
+  if (!el || typeof to !== 'number' || isNaN(to)) return;
+  if (to <= 0 || !window.requestAnimationFrame) { el.textContent = fmt(to); return; }
+  const from = to * 0.55;
+  const start = performance.now();
+  const step = now => {
+    const p = Math.min(1, (now - start) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(from + (to - from) * e);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
 function wbRenderKPI() {
   const hallLabel = currentHall === 'all' ? '全部大厅' : currentHall;
   document.getElementById('wb-kpi-title').textContent = '核心指标 · ' + hallLabel;
@@ -283,17 +305,26 @@ function wbRenderKPI() {
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const heroes = [
-    { label: '💯 留存率', v: wbKpi.retention.value + '%', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', spark: sparkOf('retention_rate').map(x => Math.min(100, x)), target: 'wb-c-retention' },
-    { label: '🚫 解散率', v: wbKpi.dissolution.value + '%', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', spark: sparkOf('dissolution_rate'), target: 'wb-c-dissolution' },
-    { label: '💰 礼物奖励金额', v: wbFmtMoney(wbKpi.revenue.value), c: wbKpi.revenue.change, suf: '%', note: '越高越好', spark: sparkOf('total_reward'), target: 'wb-c-revenue' },
+    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', spark: sparkOf('retention_rate').map(x => Math.min(100, x)), target: 'wb-c-retention' },
+    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', spark: sparkOf('dissolution_rate'), target: 'wb-c-dissolution' },
+    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', spark: sparkOf('total_reward'), target: 'wb-c-revenue' },
   ];
+  const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : v => Math.round(v) + '%';
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
-    <div class="kpi-card" onclick="wbScrollTo('${k.target}')" title="点击查看趋势图">
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value">${k.v}</div>
-      <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-note">${k.note}</span></div>
+    <div class="kpi-card hero accent-${k.accent}" onclick="wbScrollTo('${k.target}')" title="点击查看趋势图">
+      <div class="kpi-top">
+        <span class="kpi-ico accent-${k.accent}">${k.ico}</span>
+        <span class="kpi-label">${k.label}</span>
+        <span class="kpi-note">${k.note}</span>
+      </div>
+      <div class="kpi-value" data-count="${k.num}" data-fmt="${k.fmt}">${fmtOf(k.fmt)(k.num)}</div>
+      <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
       ${wbSpark(k.spark)}
     </div>`).join('');
+  // 数字滚动（数形结合的动态感）
+  document.querySelectorAll('#wb-kpi-hero .kpi-value').forEach(el => {
+    wbCountUp(el, parseFloat(el.getAttribute('data-count')), fmtOf(el.getAttribute('data-fmt')));
+  });
   const subs = [
     { label: '📦 新成团数', v: wbKpi.new_team.value + ' 个', c: wbKpi.new_team.change, suf: '%' },
     { label: '🔄 进行中姐妹团', v: wbKpi.active_team.value + ' 个', c: wbKpi.active_team.change, suf: '%' },
@@ -424,6 +455,20 @@ function wbRenderInsights(data) {
     actHtml += ` · 任务最多「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.activity.top_sister_uid || ''}')">${ins.activity.top_sister}</a>」${ins.activity.tasks} 次`;
   }
   setInsight('wb-insight-activity', actHtml);
+
+  // 图表头部大数字徽标（数形结合：当前值 + 涨跌方向）
+  const setChartKpi = (id, val, delta, betterUp = true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!delta) { el.innerHTML = `<span class="ck-val">${val}</span>`; return; }
+    const good = (delta > 0) === betterUp;
+    const arrow = delta > 0 ? '↑' : '↓';
+    el.innerHTML = `<span class="ck-val">${val}</span><span class="ck-delta ${good ? 'up' : 'down'}">${arrow}${Math.abs(delta)}</span>`;
+  };
+  setChartKpi('chart-kpi-retention', Math.round(ret) + '%', retD, true);
+  setChartKpi('chart-kpi-dissolution', (Math.round(dis * 10) / 10) + '%', disD, false);
+  setChartKpi('chart-kpi-revenue', wbFmtMoney(rev), revC, true);
+  setChartKpi('chart-kpi-activity', Math.round(act * 10) / 10, actD, true);
 }
 
 function wbResizeCharts() {
