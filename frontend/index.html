@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=12">
+<link rel="stylesheet" href="css/style.css?v=13">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -218,8 +218,13 @@
   <div id="tab-captains" class="tab-panel">
     <div class="section-head">
       <h2>姐姐分析</h2>
+      <div class="seg" style="margin-left:auto;">
+        <button id="cap-view-profile" class="on" onclick="switchCaptainView('profile')">画像</button>
+        <button id="cap-view-pool" onclick="switchCaptainView('pool')">候选池</button>
+      </div>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
+    <div id="captains-main">
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span>👤 姐姐画像（周口径）</span>
@@ -288,6 +293,36 @@
       <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
       <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="captain-insight"></div>
+    </div>
+    </div><!-- /captains-main -->
+
+    <!-- 候选池（阶段B）：并列展示四因子证据 + 结果记录 -->
+    <div id="captains-pool" style="display:none;">
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>🎯 培养力候选池</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="hint">并列展示，不做权威排序</span>
+            <select id="pool-per-page" onchange="setPoolPerPage(this.value)" style="padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:12px;">
+              <option value="20" selected>20条/页</option>
+              <option value="30">30条/页</option>
+            </select>
+          </div>
+        </h3>
+        <div class="chart-src">四因子证据：留存（存活率≥50%）· 妹妹成长（月升级数&gt;0）· 共同成长 · 牌子等级（铜牌起）</div>
+        <div class="survival-chips" id="pool-sum"></div>
+        <div class="rank-scroll"><table class="rank-table" id="pool-table"></table></div>
+        <div class="pagination" id="pool-pagination" style="margin-top:8px;justify-content:center;"></div>
+        <div class="chart-insight" id="pool-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>📝 结果记录（输送妹妹 / 提拔管理）</span>
+          <button class="btn-save" onclick="loadTalentActions()" style="padding:4px 12px;">刷新</button>
+        </h3>
+        <div class="chart-src">记录每次倾斜动作，攒成功案例后据此学习培养力权重（动作发生在点点开黑平台，需人工回填）</div>
+        <div class="rank-scroll"><table class="rank-table" id="talent-actions-table"></table></div>
+      </div>
     </div>
   </div>
 
@@ -528,16 +563,46 @@
   </div>
 </div>
 
+<!-- 培养力结果记录弹窗 -->
+<div class="cookie-modal" id="talent-action-modal">
+  <div class="cookie-modal-content" style="width:520px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>📝 记录倾斜动作 · <span id="ta-info">—</span></span>
+      <button onclick="closeTalentActionModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">动作发生在点点开黑平台，此处仅回填记录，用于后续学习培养力权重</div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">动作类型</label>
+      <select id="ta-type" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+        <option value="send_sister">输送妹妹</option>
+        <option value="promote">提拔管理</option>
+      </select>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">动作日期</label>
+      <input type="date" id="ta-date" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">备注（可选）</label>
+      <input type="text" id="ta-note" placeholder="如：输送妹妹到 XX 厅" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="saveTalentAction()">保存记录</button>
+      <button class="btn-cancel" onclick="closeTalentActionModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=20"></script>
-<script src="js/utils.js?v=20"></script>
-<script src="js/api.js?v=20"></script>
-<script src="js/auth.js?v=20"></script>
-<script src="js/render.js?v=20"></script>
-<script src="js/app.js?v=20"></script>
-<script src="js/workbench.js?v=20"></script>
-<script src="js/insight.js?v=20"></script>
+<script src="js/config.js?v=21"></script>
+<script src="js/utils.js?v=21"></script>
+<script src="js/api.js?v=21"></script>
+<script src="js/auth.js?v=21"></script>
+<script src="js/render.js?v=21"></script>
+<script src="js/app.js?v=21"></script>
+<script src="js/workbench.js?v=21"></script>
+<script src="js/insight.js?v=21"></script>
 </body>
 </html>

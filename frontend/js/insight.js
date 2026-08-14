@@ -636,3 +636,149 @@ async function toggleAlert(id, resolved) {
     loadAlertsCenter();
   } catch (e) { console.error('预警状态更新失败:', e); }
 }
+
+/* ═══════════════ 候选池（阶段B）：并列展示四因子证据 + 结果记录 ═══════════════ */
+
+let poolList = [];
+let poolPage = 0;
+let poolPerPage = 20;
+
+function switchCaptainView(view) {
+  const main = document.getElementById('captains-main');
+  const pool = document.getElementById('captains-pool');
+  const btnP = document.getElementById('cap-view-profile');
+  const btnC = document.getElementById('cap-view-pool');
+  if (!main || !pool) return;
+  const isPool = view === 'pool';
+  main.style.display = isPool ? 'none' : '';
+  pool.style.display = isPool ? '' : 'none';
+  if (btnP) btnP.classList.toggle('on', !isPool);
+  if (btnC) btnC.classList.toggle('on', isPool);
+  if (isPool) { loadTalentPool(); loadTalentActions(); }
+}
+
+function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }
+
+async function loadTalentPool() {
+  const sumEl = document.getElementById('pool-sum');
+  const tableEl = document.getElementById('pool-table');
+  if (!tableEl) return;
+  try {
+    const res = await fetch(API_BASE + '/api/talent-pool?' + getHallParam().substring(1));
+    const d = await res.json();
+    if (d.error) return;
+    poolList = d.list || [];
+    if (sumEl) sumEl.innerHTML = `
+      <span class="survival-chip">👤 姐姐 <strong>${d.total}</strong> 位</span>
+      <span class="survival-chip">🎯 候选 <strong>${d.candidate_count}</strong> 位</span>
+      <span class="survival-chip">并列展示 · 不做权威排序</span>`;
+    const insEl = document.getElementById('pool-insight');
+    if (insEl) {
+      insEl.innerHTML = `候选 <b>${d.candidate_count}</b> 位满足「存活率≥50% 且 妹妹有成长 且 牌子≥铜牌」。四因子权重暂为「留存 = 妹妹成长 &gt; 共同成长 &gt; 牌子等级（门槛）」，在攒出成功案例前不做权威排序——请结合四列证据自行判断倾斜给谁，并把动作记到下方「结果记录」。`;
+    }
+    renderTalentPool();
+  } catch (e) { console.error('候选池加载失败:', e); }
+}
+
+function renderTalentPool() {
+  const list = poolList; // 后端已按「候选优先 + 牌子等级」并列分组
+  const total = list.length;
+  const totalPages = Math.max(1, Math.ceil(total / poolPerPage));
+  if (poolPage >= totalPages) poolPage = totalPages - 1;
+  if (poolPage < 0) poolPage = 0;
+  const start = poolPage * poolPerPage;
+  const page = list.slice(start, start + poolPerPage);
+  const cand = c => c ? '<span class="chip up">候选</span>' : '<span class="chip flat">待观察</span>';
+  document.getElementById('pool-table').innerHTML = `
+    <tr><th>#</th><th>姐姐</th><th>牌子等级</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>状态</th><th>操作</th></tr>
+    ${page.map((x, i) => `<tr>
+      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
+      <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td>${x.level ?? '-'}</td>
+      <td>${x.total_teams} / ${x.active_teams}</td>
+      <td>${x.retention == null ? '—' : x.retention + '%'}</td>
+      <td>${x.sister_growth}</td>
+      <td>${x.joint_growth}%</td>
+      <td>${cand(x.candidate)}</td>
+      <td><button class="mini-btn" onclick="openTalentActionModal('${x.sister_uid || ''}')">记录</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9CA3AF;padding:16px;">暂无数据</td></tr>'}`;
+  const pg = document.getElementById('pool-pagination');
+  if (pg) {
+    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${poolPage + 1}/${totalPages} 页</span>`;
+    if (poolPage > 0) html += `<button onclick="poolPage--;renderTalentPool();">上一页</button>`;
+    pagerRange(poolPage, totalPages).forEach(i => {
+      html += i === '...'
+        ? '<span class="pager-dots">…</span>'
+        : `<button class="${i === poolPage ? 'active' : ''}" onclick="poolPage=${i};renderTalentPool();">${i + 1}</button>`;
+    });
+    if (poolPage < totalPages - 1) html += `<button onclick="poolPage++;renderTalentPool();">下一页</button>`;
+    pg.innerHTML = html;
+  }
+}
+
+/* 结果记录：回填「输送妹妹 / 提拔管理」动作 */
+let taUid = '';
+let taNickname = '';
+
+function openTalentActionModal(uid) {
+  taUid = uid || '';
+  const item = poolList.find(x => x.sister_uid === taUid);
+  taNickname = item ? item.sister_nickname : '';
+  const modal = document.getElementById('talent-action-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.getElementById('ta-info').textContent = `${taNickname || taUid}（UID ${taUid}）`;
+  document.getElementById('ta-type').value = 'send_sister';
+  document.getElementById('ta-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('ta-note').value = '';
+}
+
+function closeTalentActionModal() {
+  const modal = document.getElementById('talent-action-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+async function saveTalentAction() {
+  const type = document.getElementById('ta-type').value;
+  const date = document.getElementById('ta-date').value;
+  const note = document.getElementById('ta-note').value.trim();
+  if (!taUid) return;
+  if (!date) { alert('请选择动作日期'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/talent-actions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sister_uid: taUid,
+        sister_nickname: taNickname,
+        hall_name: currentHall === 'all' ? '' : currentHall,
+        action_type: type,
+        action_date: date,
+        note: note
+      })
+    });
+    const d = await res.json();
+    if (d.success) { closeTalentActionModal(); loadTalentActions(); }
+    else { alert(d.error || '保存失败'); }
+  } catch (e) { console.error('保存记录失败:', e); alert('保存失败'); }
+}
+
+async function loadTalentActions() {
+  const tableEl = document.getElementById('talent-actions-table');
+  if (!tableEl) return;
+  try {
+    const res = await fetch(API_BASE + '/api/talent-actions');
+    const d = await res.json();
+    const rows = d.list || [];
+    const typeName = t => t === 'send_sister' ? '<span class="chip up">输送妹妹</span>' : '<span class="chip warn">提拔管理</span>';
+    tableEl.innerHTML = `
+      <tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>备注</th><th>记录时间</th></tr>
+      ${rows.map(r => `<tr>
+        <td>${r.action_date}</td>
+        <td>${r.sister_nickname || r.sister_uid}</td>
+        <td>${r.hall_name || '—'}</td>
+        <td>${typeName(r.action_type)}</td>
+        <td>${r.note || '—'}</td>
+        <td>${(r.created_at || '').slice(0, 16)}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:16px;">暂无结果记录</td></tr>'}`;
+  } catch (e) { console.error('结果记录加载失败:', e); }
+}

@@ -569,6 +569,11 @@ body { background: var(--wb-bg); }
 .seg button { padding: 5px 14px; border: none; background: #fff; font-size: 12px; color: var(--wb-text-2); cursor: pointer; }
 .seg button.on { background: var(--wb-nav); color: #fff; }
 
+/* 小号操作按钮（预警筛选、候选池「记录」等） */
+.mini-btn { border: 1px solid #DDE1E8; background: #fff; border-radius: 5px; font-size: 11px; color: var(--wb-text-2); padding: 3px 10px; cursor: pointer; }
+.mini-btn:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
+.mini-btn.on { border-color: var(--wb-accent); color: var(--wb-accent); }
+
 /* ── 一键回到顶部 ── */
 .back-to-top {
   position: fixed; right: 28px; bottom: 32px;

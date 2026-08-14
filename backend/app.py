@@ -107,8 +107,32 @@ def init_auth_db():
         print(f'[WARN] 用户认证表初始化失败: {e}')
 
 
+def init_talent_db():
+    """创建培养力结果记录表（候选池阶段 B：记录「输送妹妹/提拔管理」动作）"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS talent_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sister_uid TEXT NOT NULL,
+                sister_nickname TEXT,
+                hall_name TEXT,
+                action_type TEXT NOT NULL,
+                action_date TEXT NOT NULL,
+                note TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+        print('[BOOT] 培养力结果记录表初始化完成')
+    except Exception as e:
+        print(f'[WARN] 培养力结果记录表初始化失败: {e}')
+
+
 # 启动时执行
 init_auth_db()
+init_talent_db()
 
 
 # Cookie 保活：启动 60 秒后先跑一次，之后每 30 分钟保活一次（防 session 因不活跃过期）
@@ -945,6 +969,120 @@ def api_sister2_profile():
         },
         'list': list_out,
     })
+
+
+@app.route('/api/talent-pool')
+@login_required
+def api_talent_pool():
+    """培养力候选池（阶段B）：并列展示姐姐的留存/妹妹成长/共同成长/牌子等级，不排序"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    latest = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+    rank_sql = _level_rank_sql('sister_level')
+    rank2_sql = _level_rank_sql('sister_max_level2')
+
+    # 基础：昵称 + 牌子等级（最新快照）
+    base = {}
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su, MAX(sister_nickname) AS nickname, MAX({rank_sql}) AS lv
+        FROM team_detail WHERE {latest} AND sister_uid IS NOT NULL AND sister_uid != '' {hc} GROUP BY su
+    """, hp).fetchall():
+        base[r['su']] = {'sister_uid': r['su'], 'sister_nickname': r['nickname'],
+                         'level': LEVEL_NAMES.get(r['lv'], '无'), 'level_rank': r['lv'] or 0}
+
+    # 留存：历史带团总数 + 进行中团数（最新快照）
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su, COUNT(DISTINCT team_id) AS total_teams
+        FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != '' {hc} GROUP BY su
+    """, hp).fetchall():
+        d = base.setdefault(r['su'], {'sister_uid': r['su'], 'sister_nickname': None, 'level': None, 'level_rank': 0})
+        d['total_teams'] = r['total_teams']
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su,
+               SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams
+        FROM team_detail WHERE {latest} {hc} GROUP BY su
+    """, hp).fetchall():
+        d = base.setdefault(r['su'], {'sister_uid': r['su'], 'sister_nickname': None, 'level': None, 'level_rank': 0})
+        d['active_teams'] = r['active_teams'] or 0
+
+    # 妹妹成长（按团：妹妹最高等级 Δrank / 团龄）+ 共同成长（妹妹有成长且团存活的团占比）
+    growth = {}
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su,
+               MAX({rank2_sql}) - MIN({rank2_sql}) AS gr,
+               MAX(days_since_formed) AS days,
+               MAX(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS alive
+        FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc}
+        GROUP BY team_id
+    """, hp).fetchall():
+        su = r['su']
+        g = growth.setdefault(su, {'teams': 0, 'grew': 0, 'joint': 0, 'gr_sum': 0.0})
+        g['teams'] += 1
+        gr = r['gr'] or 0
+        days = r['days'] or 1
+        if gr > 0:
+            g['grew'] += 1
+            g['gr_sum'] += gr / days
+            if r['alive']:
+                g['joint'] += 1
+
+    for su, g in growth.items():
+        d = base.setdefault(su, {'sister_uid': su, 'sister_nickname': None, 'level': None, 'level_rank': 0})
+        d['grew_teams'] = g['grew']
+        d['sister_growth'] = round(g['gr_sum'] / g['teams'] * 30, 2) if g['teams'] else 0  # 每月升级数
+        d['joint_growth'] = round(g['joint'] / g['teams'] * 100, 1) if g['teams'] else 0
+
+    list_out = []
+    for su, s in base.items():
+        total_teams = s.get('total_teams') or 0
+        active_teams = s.get('active_teams') or 0
+        retention = round(active_teams / total_teams * 100, 1) if total_teams else None
+        s.setdefault('sister_growth', 0)
+        s.setdefault('joint_growth', 0)
+        s.setdefault('grew_teams', 0)
+        s['retention'] = retention
+        s['active_teams'] = active_teams
+        s['candidate'] = (retention is not None and retention >= 50) and s['sister_growth'] > 0 and s['level_rank'] >= 2
+        list_out.append(s)
+
+    # 并列展示：候选优先分组，再按牌子等级，非权威排序
+    list_out.sort(key=lambda x: (not x['candidate'], -(x['level_rank'] or 0), x['sister_nickname'] or ''))
+    conn.close()
+
+    candidate_count = sum(1 for x in list_out if x['candidate'])
+    return jsonify({
+        'total': len(list_out),
+        'candidate_count': candidate_count,
+        'list': list_out,
+    })
+
+
+@app.route('/api/talent-actions', methods=['GET', 'POST'])
+@login_required
+def api_talent_actions():
+    """结果记录：POST 记录一次倾斜动作；GET 列出已记录动作"""
+    conn = get_db_conn()
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        sister_uid = str(data.get('sister_uid', '')).strip()
+        action_type = data.get('action_type', '').strip()
+        action_date = data.get('action_date', '').strip()
+        if not sister_uid or action_type not in ('send_sister', 'promote') or not action_date:
+            conn.close()
+            return jsonify({'success': False, 'error': '参数不完整'}), 400
+        conn.execute(
+            'INSERT INTO talent_actions (sister_uid, sister_nickname, hall_name, action_type, action_date, note) VALUES (?,?,?,?,?,?)',
+            (sister_uid, data.get('sister_nickname', ''), data.get('hall_name', ''), action_type, action_date, data.get('note', ''))
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    rows = conn.execute('SELECT * FROM talent_actions ORDER BY action_date DESC, id DESC').fetchall()
+    conn.close()
+    return jsonify({'list': rows})
 
 
 @app.route('/api/sister2-detail')
