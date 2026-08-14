@@ -407,12 +407,12 @@ function wbRenderKpiDetail(metric) {
 function wbRenderCharts() {
   const data = wbFilteredWeekly();
   if (!data.length) {
-    ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity', 'wb-activeteam'].forEach(k => {
+    ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activeteam'].forEach(k => {
       const el = document.getElementById('wb-c-' + k.slice(3));
       if (charts[k]) { charts[k].dispose(); charts[k] = null; }
       if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">该厅当前周期暂无数据</div>';
     });
-    ['wb-insight-retention', 'wb-insight-dissolution', 'wb-insight-revenue', 'wb-insight-activity'].forEach(id => {
+    ['wb-insight-retention', 'wb-insight-dissolution', 'wb-insight-revenue', 'wb-insight-newteam', 'wb-insight-activeteam', 'wb-insight-activediss'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = '';
     });
@@ -492,15 +492,6 @@ function wbRenderCharts() {
         label: { show: true, position: 'top', color: '#B07A1F', fontSize: 10, formatter: p => wbFmtMoney(p.value) },
         markLine: mark,
       }] },
-    'wb-activity': {
-      ...base,
-      legend: { top: 0, right: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 10, color: '#6B7280' } },
-      series: [
-        { name: '开车', type: 'bar', stack: 't', data: data.map(d => d.total_drive_tasks || 0), itemStyle: { color: barGrad('#7C5CFF', '#8F7BFF') } },
-        { name: '陪档', type: 'bar', stack: 't', data: data.map(d => d.total_accompany_tasks || 0), itemStyle: { color: barGrad('#3D9A6C', '#6BC08A') } },
-        { name: '收送礼', type: 'bar', stack: 't', data: data.map(d => d.total_gift_tasks || 0), itemStyle: { color: barGrad('#D9A13F', '#E5C87E') }, label: { show: true, position: 'top', color: '#6B7280', fontSize: 10, formatter: p => (data[p.dataIndex].total_drive_tasks || 0) + (data[p.dataIndex].total_accompany_tasks || 0) + (data[p.dataIndex].total_gift_tasks || 0) } },
-      ],
-    },
     'wb-activeteam': { ...base,
       series: [{
         name: '在榜团数', type: 'bar', data: data.map(d => d.active_team_count_end || 0),
@@ -560,14 +551,28 @@ function wbRenderInsights(data) {
     revHtml += ` · 流水 TOP 姐姐「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.revenue.top_sister_uid || ''}')">${ins.revenue.top_sister}</a>」${wbFmtMoney(ins.revenue.top_sister_rev)}，占 ${ins.revenue.share}%`;
   }
   setInsight('wb-insight-revenue', revHtml);
-  // 任务活跃度
-  const act = last.activity_index || 0, actP = prev ? (prev.activity_index || 0) : act;
-  const actD = Math.round((act - actP) * 100) / 100;
-  let actHtml = `本周 <b>${act}</b>（较上周 ${actD >= 0 ? '+' : ''}${actD}）· ${actD >= 0 ? '📈 上升' : '📉 下降'}`;
-  if (ins.activity) {
-    actHtml += ` · 任务最多「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.activity.top_sister_uid || ''}')">${ins.activity.top_sister}</a>」${ins.activity.tasks} 次`;
-  }
-  setInsight('wb-insight-activity', actHtml);
+  // 新成团数（越高越好）
+  const nt = last.new_team_count || 0, ntP = prev ? (prev.new_team_count || 0) : 0;
+  const ntC = ntP > 0 ? Math.round((nt - ntP) / ntP * 100) : 0;
+  let ntHtml = `本周 <b>${nt} 个</b>（环比 ${ntC >= 0 ? '+' : ''}${ntC}%）· ${ntC >= 0 ? '📈 增长' : '📉 下降'}`;
+  ntHtml += ` · 日均 ${(nt / 7).toFixed(1)} 个`;
+  setInsight('wb-insight-newteam', ntHtml);
+  // 进行中姐妹团（越高越好）
+  const at = last.active_team_count_end || 0, atP = prev ? (prev.active_team_count_end || 0) : 0;
+  const atC = atP > 0 ? Math.round((at - atP) / atP * 100) : 0;
+  const atS = last.active_team_count_start || 0;
+  let atHtml = `本周 <b>${at} 个</b>（环比 ${atC >= 0 ? '+' : ''}${atC}%）· ${atC >= 0 ? '📈 增长' : '📉 下降'}`;
+  atHtml += ` · 周初 ${atS} → 周末 ${at}`;
+  setInsight('wb-insight-activeteam', atHtml);
+  // 主动解散占比（越低越好）
+  const adD = last.dissolved_count || 0;
+  const adA = last.active_dissolved_count || 0;
+  const adPct = adD > 0 ? adA / adD * 100 : 0;
+  const adDp = prev && prev.dissolved_count > 0 ? (prev.active_dissolved_count || 0) / prev.dissolved_count * 100 : adPct;
+  const adDiff = Math.round((adPct - adDp) * 10) / 10;
+  let adHtml = `本周 <b>${Math.round(adPct)}%</b>（较上周 ${adDiff >= 0 ? '+' : ''}${adDiff}pp）· ${adDiff <= 0 ? '📉 改善' : '📈 恶化'}`;
+  adHtml += ` · 解散 ${adD} 个，其中主动 ${adA} 个`;
+  setInsight('wb-insight-activediss', adHtml);
 
   // 图表头部大数字徽标（数形结合：当前值 + 涨跌方向）
   const setChartKpi = (id, val, delta, betterUp = true) => {
@@ -581,11 +586,10 @@ function wbRenderInsights(data) {
   setChartKpi('chart-kpi-retention', Math.round(ret) + '%', retD, true);
   setChartKpi('chart-kpi-dissolution', (Math.round(dis * 10) / 10) + '%', disD, false);
   setChartKpi('chart-kpi-revenue', wbFmtMoney(rev), revC, true);
-  setChartKpi('chart-kpi-activity', Math.round(act * 10) / 10, actD, true);
 }
 
 function wbResizeCharts() {
-  ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activity', 'wb-activeteam'].forEach(k => charts[k] && charts[k].resize());
+  ['wb-retention', 'wb-dissolution', 'wb-revenue', 'wb-activeteam'].forEach(k => charts[k] && charts[k].resize());
 }
 
 /* ─────────────── 初始化 ─────────────── */
