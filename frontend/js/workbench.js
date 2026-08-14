@@ -302,16 +302,13 @@ function wbRenderKPI() {
     document.getElementById('wb-kpi-sub').innerHTML = '';
     return;
   }
-  const weeks = wbFilteredWeekly();
-  const sparkOf = key => weeks.map(w => w[key] || 0);
-  const disPctSpark = weeks.map(w => (w.dissolved_count > 0 ? (w.active_dissolved_count || 0) / w.dissolved_count * 100 : 0));
   const heroes = [
-    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', spark: sparkOf('retention_rate').map(x => Math.min(100, x)), target: 'wb-c-retention' },
-    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', spark: sparkOf('dissolution_rate'), target: 'wb-c-dissolution' },
-    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', spark: sparkOf('total_reward'), target: 'wb-c-revenue' },
-    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', spark: sparkOf('new_team_count') },
-    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', spark: sparkOf('active_team_count_end') },
-    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', spark: disPctSpark },
+    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', target: 'wb-c-retention' },
+    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', target: 'wb-c-dissolution' },
+    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', target: 'wb-c-revenue' },
+    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet' },
+    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal' },
+    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber' },
   ];
   const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : f === 'int' ? v => Math.round(v) + ' 个' : v => Math.round(v) + '%';
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
@@ -323,7 +320,6 @@ function wbRenderKPI() {
       </div>
       <div class="kpi-value" data-count="${k.num}" data-fmt="${k.fmt}">${fmtOf(k.fmt)(k.num)}</div>
       <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
-      ${wbSpark(k.spark)}
     </div>`).join('');
   document.getElementById('wb-kpi-sub').innerHTML = '';
   // 数字滚动（数形结合的动态感）；KPI 卡在管理员视角下位于排行榜下方，滚入视口才播
