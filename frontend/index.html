@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=13">
+<link rel="stylesheet" href="css/style.css?v=14">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -47,13 +47,13 @@
       <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
-      <div class="tab active" onclick="switchTab('overview')">概览页</div>
-      <div class="tab" onclick="switchTab('compare')">对比分析</div>
-      <div class="tab" onclick="switchTab('policy')">政策评估</div>
-      <div class="tab" onclick="switchTab('captains')">姐姐分析</div>
-      <div class="tab" onclick="switchTab('details')">明细数据</div>
-      <div class="tab" onclick="switchTab('alerts')">预警中心</div>
-      <div class="tab" onclick="switchTab('uid')">UID查询</div>
+      <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>核心指标 · 趋势</small></span></button>
+      <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>对比分析</b><small>厅 · 组对比</small></span></button>
+      <button class="tab" onclick="switchTab('policy')"><span class="ico">◫</span><span class="tab-txt"><b>政策评估</b><small>政策前后</small></span></button>
+      <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
+      <button class="tab" onclick="switchTab('details')"><span class="ico">▤</span><span class="tab-txt"><b>明细数据</b><small>存活 · 解散</small></span></button>
+      <button class="tab" onclick="switchTab('alerts')"><span class="ico">⚠</span><span class="tab-txt"><b>预警中心</b><small>风险预警</small></span></button>
+      <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
     <div class="side-foot">
       <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
@@ -635,13 +635,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=22"></script>
-<script src="js/utils.js?v=22"></script>
-<script src="js/api.js?v=22"></script>
-<script src="js/auth.js?v=22"></script>
-<script src="js/render.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
-<script src="js/workbench.js?v=22"></script>
-<script src="js/insight.js?v=22"></script>
+<script src="js/config.js?v=23"></script>
+<script src="js/utils.js?v=23"></script>
+<script src="js/api.js?v=23"></script>
+<script src="js/auth.js?v=23"></script>
+<script src="js/render.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
+<script src="js/workbench.js?v=23"></script>
+<script src="js/insight.js?v=23"></script>
 </body>
 </html>

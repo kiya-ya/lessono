@@ -40,6 +40,14 @@ function wbFmtMoney(v) {
   return v >= 10000 ? '¥' + (v / 10000).toFixed(1) + 'w' : '¥' + Math.round(v).toLocaleString();
 }
 
+function wbScrollTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  el.style.animation = 'none';
+  requestAnimationFrame(() => { el.style.animation = ''; });
+}
+
 /* ─────────────── 健康度判定 ───────────────
    🔴 留存环比 ≤ -10pp，或流水环比 ≤ -20%，或连续2周新成团=0
    🟡 留存环比 -5~-10pp，或流水环比 -10%~-20%
@@ -275,12 +283,12 @@ function wbRenderKPI() {
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const heroes = [
-    { label: '💯 留存率', v: wbKpi.retention.value + '%', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
-    { label: '🚫 解散率', v: wbKpi.dissolution.value + '%', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', spark: sparkOf('dissolution_rate') },
-    { label: '💰 礼物奖励金额', v: wbFmtMoney(wbKpi.revenue.value), c: wbKpi.revenue.change, suf: '%', note: '越高越好', spark: sparkOf('total_reward') },
+    { label: '💯 留存率', v: wbKpi.retention.value + '%', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', spark: sparkOf('retention_rate').map(x => Math.min(100, x)), target: 'wb-c-retention' },
+    { label: '🚫 解散率', v: wbKpi.dissolution.value + '%', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', spark: sparkOf('dissolution_rate'), target: 'wb-c-dissolution' },
+    { label: '💰 礼物奖励金额', v: wbFmtMoney(wbKpi.revenue.value), c: wbKpi.revenue.change, suf: '%', note: '越高越好', spark: sparkOf('total_reward'), target: 'wb-c-revenue' },
   ];
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
-    <div class="kpi-card">
+    <div class="kpi-card" onclick="wbScrollTo('${k.target}')" title="点击查看趋势图">
       <div class="kpi-label">${k.label}</div>
       <div class="kpi-value">${k.v}</div>
       <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-note">${k.note}</span></div>
