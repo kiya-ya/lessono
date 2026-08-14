@@ -686,3 +686,65 @@ body { background: var(--wb-bg); }
 .chart-kpi .ck-delta { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .ck-delta.up { color: var(--wb-up); }
 .ck-delta.down { color: var(--wb-down); }
+
+/* ══════════════════════════════════════════════════════
+   浅色 shadcn 主题升级（2026-08-14）— 白底 + 浅紫侧栏 + 描边卡
+   ══════════════════════════════════════════════════════ */
+:root {
+  --wb-bg: #FFFFFF;              /* 白底 */
+  --wb-sidebar: #F7F5FF;         /* 浅紫侧栏 */
+  --wb-nav: #7C5CFF;             /* 品牌紫：FAB/分段/回到顶部/导览标签 */
+  --wb-accent: #7C5CFF;          /* 统一主色紫 */
+  --wb-text: #1A1D26;
+  --wb-text-1: #1A1D26;
+  --wb-text-2: #5C5C66;          /* 加深次要灰字，对比度优于 #666 */
+  --wb-line: #E9EBF0;
+  --wb-shadow: 0 1px 2px rgba(26,29,38,.03);  /* 描边优先，弱化投影 */
+  --wb-grad: linear-gradient(135deg, #8F7BFF 0%, #7C5CFF 100%);
+  --wb-grad-hover: linear-gradient(135deg, #7C5CFF 0%, #6A48F0 100%);
+}
+
+/* 所有卡片描边优先 + 统一圆角（补上原本只靠投影的卡片） */
+.chart-card, .kpi-card, .rank-card, .hall-card, .policy-grid .kpi-card {
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+}
+
+/* 侧边栏转浅紫底（覆盖深色底的白色文字假设） */
+.sidebar { background: var(--wb-sidebar); color: var(--wb-text); }
+.side-brand { border-bottom: 1px solid #ECE9F7; }
+.side-brand h1 { color: var(--wb-text); }
+.side-brand span { color: var(--wb-text-3); }
+.side-nav .tab { color: var(--wb-text-2); }
+.side-nav .tab .tab-txt small { color: var(--wb-text-3); }
+.side-nav .tab:hover { color: var(--wb-text); background: rgba(124,92,255,.08); }
+.side-nav .tab:hover .tab-txt small { color: #6B7280; }
+.side-nav .tab.active::before { background: #7C5CFF; }
+.side-foot { border-top: 1px solid #ECE9F7; color: #6B7280; }
+.side-toggle { color: var(--wb-text-3); }
+.side-toggle:hover { color: var(--wb-text); background: rgba(124,92,255,.08); }
+.side-user-uid { color: var(--wb-text); }
+.side-user-role { color: #7C5CFF; background: rgba(124,92,255,.1); }
+.side-halls { color: var(--wb-text-3); }
+.side-logout { border-color: #DCD6F0; color: #6B7280; }
+.side-logout:hover { background: rgba(124,92,255,.08); color: #7C5CFF; }
+
+/* 描述行：chart-src 复用为 shadcn 风格 desc（13px 可读性） */
+.chart-src { font-size: 13px; color: var(--wb-text-2); margin-bottom: 12px; line-height: 1.55; }
+
+/* 表格统一：粘性表头 + 斑马纹 + 数字列等宽右对齐 + 统一 hover 浅紫 */
+.data-table th, .compare-table th, .rank-table th {
+  position: sticky; top: 0; background: #FAFAFB; z-index: 1;
+  color: var(--wb-text-2);
+}
+.data-table tbody tr:nth-child(even) { background: #FAFBFC; }
+.compare-table tbody tr:nth-child(even) { background: #FAFBFC; }
+.rank-table tbody tr:nth-child(even) { background: #FAFBFC; }
+.data-table tbody tr:hover { background: #F5F3FF; }
+.compare-table tbody tr:hover { background: #F5F3FF; }
+.rank-table tbody tr:hover { background: #F5F3FF; }
+.rank-table tr.row-click:hover { background: #F1EDFF; }
+td.num, th.num {
+  text-align: right; font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
+}
