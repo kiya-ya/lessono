@@ -364,7 +364,7 @@ function renderSister2Table() {
     <tr><th>#</th><th>妹妹</th><th>等级</th><th>本周流水</th><th>在榜天</th><th>带团</th><th>晋升状态</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-      <td><a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td><a href="javascript:void(0)" onclick="openSister2Detail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
       <td>${x.level ?? '-'}</td>
       <td>${wbFmtMoney(x.week_rev)}</td>
       <td>${x.presence_days}</td>
@@ -379,6 +379,83 @@ function renderSister2Table() {
     if (sister2Page < totalPages - 1) html += `<button onclick="sister2Page++;renderSister2Table();">下一页</button>`;
     pg.innerHTML = html;
   }
+}
+
+/* 妹妹活动追踪下钻：等级成长轨迹 + 产出 + 参与团 */
+let s2Uid = '';
+
+async function openSister2Detail(uid) {
+  s2Uid = uid || '';
+  const modal = document.getElementById('sister2-detail-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  document.getElementById('s2-name').textContent = '加载中...';
+  document.getElementById('s2-chips').innerHTML = '';
+  document.getElementById('s2-table').innerHTML = '';
+  const lvEl = document.getElementById('s2-level-chart');
+  const revEl = document.getElementById('s2-rev-chart');
+  if (charts['s2LevelChart']) { charts['s2LevelChart'].dispose(); charts['s2LevelChart'] = null; }
+  if (charts['s2RevChart']) { charts['s2RevChart'].dispose(); charts['s2RevChart'] = null; }
+  try {
+    const res = await fetch(API_BASE + '/api/sister2-detail?uid=' + encodeURIComponent(uid));
+    const d = await res.json();
+    if (d.error) { document.getElementById('s2-name').textContent = '未找到该妹妹'; return; }
+    const ptag = d.promoted ? '<span class="chip up">已晋升姐姐</span>' : '<span class="chip flat">仍是妹妹</span>';
+    document.getElementById('s2-name').textContent = `${d.nickname || uid}`;
+    document.getElementById('s2-chips').innerHTML = `
+      <span class="survival-chip">等级 <strong>${d.level}</strong></span>
+      <span class="survival-chip">最高 <strong>${d.max_level}</strong></span>
+      <span class="survival-chip">带团 <strong>${d.team_count}</strong></span>
+      <span class="survival-chip">在榜 <strong>${d.presence_days}</strong>天</span>
+      <span class="survival-chip">${ptag}</span>`;
+    // 等级成长阶梯图（历史最高等级随快照日）
+    const track = d.level_track || [];
+    const lvNames = ['无', '初级铜牌', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
+    if (track.length >= 2) {
+      charts['s2LevelChart'] = echarts.init(lvEl);
+      charts['s2LevelChart'].setOption({
+        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>最高等级 ${lvNames[p.value] || '无'}`; } },
+        grid: { left: 60, right: 16, top: 16, bottom: 28 },
+        xAxis: { type: 'category', data: track.map(x => x.date), axisLabel: { fontSize: 10, color: '#6B7280' } },
+        yAxis: { type: 'category', data: lvNames, axisLabel: { fontSize: 11, color: '#374151' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        series: [{ name: '最高等级', type: 'line', step: 'end', data: track.map(x => x.rank), itemStyle: { color: '#C98A2D' }, lineStyle: { color: '#C98A2D', width: 2 }, symbolSize: 6 }]
+      });
+    } else {
+      lvEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">等级轨迹数据不足</div>';
+    }
+    // 周产出柱状图
+    if (d.weekly && d.weekly.length) {
+      charts['s2RevChart'] = echarts.init(revEl);
+      charts['s2RevChart'].setOption({
+        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>产出 ${wbFmtMoney(p.value)}`; } },
+        grid: { left: 70, right: 20, top: 16, bottom:28 },
+        xAxis: { type: 'category', data: d.weekly.map(x => x.week), axisLabel: { fontSize: 10, color: '#6B7280' } },
+        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => wbFmtMoney(v) }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        series: [{ name: '妹妹产出', type: 'bar', data: d.weekly.map(x => x.rev), barWidth: '45%', itemStyle: { color: '#4F5BD5', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280', formatter: p => wbFmtMoney(p.value) } }]
+      });
+    } else {
+      revEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">暂无周产出数据</div>';
+    }
+    // 参与团列表
+    document.getElementById('s2-table').innerHTML = `
+      <tr><th>团ID</th><th>大厅</th><th>姐姐</th><th>妹妹等级</th><th>状态</th></tr>
+      ${(d.teams || []).map(t => `<tr>
+        <td>${t.team_id}</td>
+        <td>${t.hall_name || '-'}</td>
+        <td>${t.captain || '-'}</td>
+        <td>${t.level || '-'}</td>
+        <td>${t.status === 'active' ? '<span class="chip up">进行中</span>' : '<span class="chip flat">已解散</span>'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:16px;">暂无参与团记录</td></tr>'}`;
+  } catch (e) { console.error('妹妹活动下钻失败:', e); document.getElementById('s2-name').textContent = '加载失败'; }
+}
+
+function closeSister2Detail() {
+  const modal = document.getElementById('sister2-detail-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function s2GoUID() {
+  if (s2Uid) { closeSister2Detail(); jumpToUID(s2Uid); }
 }
 
 /* 姐姐下钻：带团明细 + 流水曲线 */

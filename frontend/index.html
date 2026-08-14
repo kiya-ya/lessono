@@ -489,16 +489,36 @@
   </div>
 </div>
 
+<!-- 妹妹活动追踪弹窗 -->
+<div class="cookie-modal" id="sister2-detail-modal">
+  <div class="cookie-modal-content" style="width:860px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>🌱 <span id="s2-name">妹妹活动</span></span>
+      <button onclick="closeSister2Detail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="survival-chips" id="s2-chips"></div>
+    <div class="chart-src">等级成长轨迹（历史最高等级随快照日）</div>
+    <div id="s2-level-chart" style="height:180px;margin:4px 0 8px;"></div>
+    <div class="chart-src">妹妹周产出</div>
+    <div id="s2-rev-chart" style="height:160px;margin:4px 0 8px;"></div>
+    <div class="rank-scroll" style="max-height:240px;"><table class="rank-table" id="s2-table"></table></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="s2GoUID()">在 UID 查询中查看 →</button>
+      <button class="btn-cancel" onclick="closeSister2Detail()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=15"></script>
-<script src="js/utils.js?v=15"></script>
-<script src="js/api.js?v=15"></script>
-<script src="js/auth.js?v=15"></script>
-<script src="js/render.js?v=15"></script>
-<script src="js/app.js?v=15"></script>
-<script src="js/workbench.js?v=15"></script>
-<script src="js/insight.js?v=15"></script>
+<script src="js/config.js?v=16"></script>
+<script src="js/utils.js?v=16"></script>
+<script src="js/api.js?v=16"></script>
+<script src="js/auth.js?v=16"></script>
+<script src="js/render.js?v=16"></script>
+<script src="js/app.js?v=16"></script>
+<script src="js/workbench.js?v=16"></script>
+<script src="js/insight.js?v=16"></script>
 </body>
 </html>

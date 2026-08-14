@@ -947,6 +947,67 @@ def api_sister2_profile():
     })
 
 
+@app.route('/api/sister2-detail')
+@login_required
+def api_sister2_detail():
+    """妹妹活动追踪下钻：等级成长轨迹 + 周产出 + 参与团"""
+    uid = request.args.get('uid', '')
+    if not uid:
+        return jsonify({'error': '缺少 uid'}), 400
+    conn = get_db_conn()
+    promoted_set = {r['su'] for r in conn.execute('SELECT DISTINCT CAST(sister_uid AS TEXT) AS su FROM team_detail').fetchall()}
+    rank_sql = _level_rank_sql('sister_max_level2')
+    cur_rank_sql = _level_rank_sql('sister_level2')
+
+    base = conn.execute(f"""
+        SELECT MAX(sister_nickname2) AS nickname, MAX({rank_sql}) AS max_rank,
+               COUNT(DISTINCT team_id) AS team_count, COUNT(DISTINCT snapshot_date) AS presence_days
+        FROM team_detail WHERE CAST(sister_uid2 AS TEXT) = ? AND sister_uid2 IS NOT NULL AND sister_uid2 != ''
+    """, [uid]).fetchone()
+    if not base or base['team_count'] is None:
+        conn.close()
+        return jsonify({'error': '未找到该妹妹'}), 404
+
+    track_rows = conn.execute(f"""
+        SELECT snapshot_date, MAX({rank_sql}) AS r FROM team_detail
+        WHERE CAST(sister_uid2 AS TEXT) = ?
+        GROUP BY snapshot_date ORDER BY snapshot_date
+    """, [uid]).fetchall()
+    level_track = [{'date': r['snapshot_date'], 'rank': r['r'] or 0, 'level': LEVEL_NAMES.get(r['r'] or 0, '无')} for r in track_rows]
+
+    cur = conn.execute(f"""
+        SELECT {cur_rank_sql} AS r FROM team_detail
+        WHERE CAST(sister_uid2 AS TEXT) = ? AND snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
+        ORDER BY rowid DESC LIMIT 1
+    """, [uid]).fetchone()
+
+    weekly = conn.execute("SELECT week_start, SUM(sister2_revenue) AS rev FROM team_sister_revenue WHERE CAST(sister_uid2 AS TEXT) = ? GROUP BY week_start ORDER BY week_start", [uid]).fetchall()
+
+    teams = conn.execute(f"""
+        SELECT team_id, hall_name, sister_nickname, sister_level2, dissolve_date
+        FROM team_detail WHERE CAST(sister_uid2 AS TEXT) = ? AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+        ORDER BY CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 0 ELSE 1 END, team_id DESC
+    """, [uid]).fetchall()
+
+    conn.close()
+    return jsonify({
+        'uid': uid,
+        'nickname': base['nickname'],
+        'level': LEVEL_NAMES.get(cur['r'], '无') if cur else '无',
+        'max_level': LEVEL_NAMES.get(base['max_rank'], '无'),
+        'promoted': uid in promoted_set,
+        'team_count': base['team_count'],
+        'presence_days': base['presence_days'],
+        'level_track': level_track,
+        'weekly': [{'week': w['week_start'], 'rev': w['rev'] or 0} for w in weekly],
+        'teams': [{
+            'team_id': t['team_id'], 'hall_name': t['hall_name'],
+            'captain': t['sister_nickname'], 'level': t['sister_level2'],
+            'status': 'active' if (not t['dissolve_date'] or t['dissolve_date'] == '') else 'dissolved',
+        } for t in teams],
+    })
+
+
 @app.route('/api/sister-detail')
 @login_required
 def api_sister_detail():
