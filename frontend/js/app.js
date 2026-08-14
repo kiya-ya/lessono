@@ -1,6 +1,27 @@
+function toggleFilterBar() {
+  const bar = document.getElementById('filter-bar');
+  const btn = document.getElementById('filter-toggle');
+  if (!bar) return;
+  const show = bar.style.display === 'none';
+  bar.style.display = show ? 'flex' : 'none';
+  if (btn) btn.classList.toggle('on', show);
+}
+
+function updateFilterSummary() {
+  const el = document.getElementById('filter-summary');
+  if (!el) return;
+  const hall = document.getElementById('hall-select');
+  const week = document.getElementById('week-select');
+  const parts = [];
+  if (hall && hall.selectedOptions && hall.selectedOptions[0]) parts.push(hall.selectedOptions[0].textContent);
+  if (week && week.selectedOptions && week.selectedOptions[0]) parts.push(week.selectedOptions[0].textContent.replace(/（本周.*）/, '').trim());
+  el.textContent = parts.length ? ' · ' + parts.join(' · ') : '';
+}
+
 function onHallChange() {
   currentHall = document.getElementById('hall-select').value;
   localStorage.setItem('wb_hall', currentHall);
+  updateFilterSummary();
   refreshData();
   if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
 }
@@ -8,6 +29,7 @@ function onHallChange() {
 function onWeekChange() {
   currentWeek = document.getElementById('week-select').value;
   localStorage.setItem('wb_week', currentWeek);
+  updateFilterSummary();
   // 工作台刷新
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
   // 对比分析页刷新

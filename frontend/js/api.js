@@ -41,6 +41,7 @@ async function loadHalls() {
       select.value = savedHall;
       currentHall = savedHall;
     }
+    if (typeof updateFilterSummary === 'function') updateFilterSummary();
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
 async function loadWeeks() {
@@ -89,6 +90,7 @@ async function loadWeeks() {
       select.value = savedWeek;
       currentWeek = savedWeek;
     }
+    if (typeof updateFilterSummary === 'function') updateFilterSummary();
   } catch (e) { console.error('周列表加载失败:', e); }
 }
 async function loadDetailTable(page = 1) {

@@ -530,6 +530,11 @@ body { background: var(--wb-bg); }
 .topbar-inner button { padding: 6px 16px; border: none; border-radius: 8px; background: var(--wb-grad); color: #fff; font-size: 12px; cursor: pointer; transition: box-shadow .15s; }
 .topbar-inner button:hover { background: var(--wb-grad-hover); box-shadow: 0 3px 10px rgba(124,92,255,.35); }
 .topbar .fresh, .topbar .period { color: var(--wb-text-2); font-size: 12px; white-space: nowrap; }
+.topbar-inner .filter-toggle { padding: 6px 12px; border: 1px solid #DDE1E8; border-radius: 8px; background: #fff; color: var(--wb-text); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.topbar-inner .filter-toggle:hover { background: #fff; box-shadow: none; border-color: #7C5CFF; color: #7C5CFF; }
+.topbar-inner .filter-toggle.on { border-color: #7C5CFF; color: #7C5CFF; background: rgba(124,92,255,.06); }
+.filter-toggle #filter-summary { color: var(--wb-text-2); font-size: 11px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 /* 手机端：侧栏折叠为顶部横条 */
 @media (max-width: 720px) {
