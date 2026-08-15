@@ -103,6 +103,7 @@ async function loadCaptains() {
 /* 姐姐画像（周口径）：产出/留存/稳定性 + 头部/风险打标 */
 let sisterProfileList = [];
 let sisterProfileSummary = {};
+let sisterProfileGraduates = [];
 let sisterProfilePage = 0;
 let sisterProfilePerPage = 20;
 let sisterProfileSort = 'week_rev';
@@ -117,6 +118,7 @@ async function loadSisterProfile() {
     if (d.error) return;
     sisterProfileList = d.list || [];
     sisterProfileSummary = d.summary || {};
+    sisterProfileGraduates = d.recent_graduates || [];
     const s = d.summary || {};
     sumEl.innerHTML = `
       <span class="survival-chip">👤 姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
@@ -129,7 +131,30 @@ async function loadSisterProfile() {
     }
     renderSisterProfile();
     renderSisterCharts();
+    renderRecentGraduates();
   } catch (e) { console.error('姐姐画像加载失败:', e); }
+}
+
+/* 最近一周毕业的妹妹（满30天自动毕业） */
+function renderRecentGraduates() {
+  const el = document.getElementById('recent-grad-list');
+  if (!el) return;
+  const list = sisterProfileGraduates || [];
+  if (!list.length) {
+    el.innerHTML = '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">近一周暂无毕业的妹妹。</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="rank-scroll" style="max-height:320px;">
+      <table class="rank-table">
+        <thead><tr><th>妹妹</th><th>大厅</th><th>毕业日期</th></tr></thead>
+        <tbody>${list.map((g, i) => `<tr>
+          <td>${g.nickname || g.sister_uid2 || '-'}</td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.hall_name || '-'}</td>
+          <td>${g.dissolve_date || '-'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
 }
 
 /* 画像主视图顶部两张图：打标分布环形 + 流水×留存散点 */
@@ -237,150 +262,6 @@ function renderSisterProfile() {
   }
 }
 
-/* 妹妹→姐姐晋升追踪 */
-let sister2List = [];
-let sister2Page = 0;
-let sister2PerPage = 20;
-let sister2Sort = 'default';
-
-async function loadSister2Profile() {
-  const sumEl = document.getElementById('sister2-sum');
-  const tableEl = document.getElementById('sister2-table');
-  if (!tableEl) return;
-  try {
-    const res = await fetch(API_BASE + '/api/sister2-profile?' + getHallParam().substring(1));
-    const d = await res.json();
-    if (d.error) return;
-    sister2List = d.list || [];
-    const s = d.summary || {};
-    sumEl.innerHTML = `
-      <span class="survival-chip">🌱 妹妹 ${d.total} 位</span>
-      <span class="survival-chip">🎓 已晋升 <strong>${s.promoted}</strong> 位</span>
-      <span class="survival-chip">⭐ 可晋升（王牌/大神）<strong>${s.promotable}</strong> 位</span>`;
-    const insEl = document.getElementById('sister2-insight');
-    if (insEl) {
-      insEl.innerHTML = `已晋升 <b>${s.promoted}</b> 位；可晋升（王牌/大神）<b>${s.promotable}</b> 位是下一批姐姐储备，建议优先培养。`;
-    }
-    renderSister2Table();
-  } catch (e) { console.error('妹妹晋升追踪加载失败:', e); }
-}
-
-function setSister2Sort(v) { sister2Sort = v; sister2Page = 0; renderSister2Table(); }
-function setSister2PerPage(v) { sister2PerPage = parseInt(v) || 20; sister2Page = 0; renderSister2Table(); }
-
-function renderSister2Table() {
-  const list = [...sister2List];
-  if (sister2Sort === 'week_rev') list.sort((a, b) => (b.week_rev || 0) - (a.week_rev || 0));
-  else if (sister2Sort === 'presence_days') list.sort((a, b) => (b.presence_days || 0) - (a.presence_days || 0));
-  const total = list.length;
-  const totalPages = Math.max(1, Math.ceil(total / sister2PerPage));
-  if (sister2Page >= totalPages) sister2Page = totalPages - 1;
-  if (sister2Page < 0) sister2Page = 0;
-  const start = sister2Page * sister2PerPage;
-  const page = list.slice(start, start + sister2PerPage);
-  const tag = x => x === 'promoted' ? '<span class="chip up">已晋升</span>' : x === 'promotable' ? '<span class="chip warn">可晋升</span>' : '<span class="chip flat">普通</span>';
-  document.getElementById('sister2-table').innerHTML = `
-    <tr><th>#</th><th>妹妹</th><th>等级</th><th>本周流水</th><th>在榜天</th><th>带团</th><th>晋升状态</th></tr>
-    ${page.map((x, i) => `<tr>
-      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-      <td><a href="javascript:void(0)" onclick="openSister2Detail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
-      <td>${x.level ?? '-'}</td>
-      <td>${wbFmtMoney(x.week_rev)}</td>
-      <td>${x.presence_days}</td>
-      <td>${x.team_count}</td>
-      <td>${tag(x.tag)}</td>
-    </tr>`).join('')}`;
-  const pg = document.getElementById('sister2-pagination');
-  if (pg) {
-    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${sister2Page + 1}/${totalPages} 页</span>`;
-    if (sister2Page > 0) html += `<button onclick="sister2Page--;renderSister2Table();">上一页</button>`;
-    pagerRange(sister2Page, totalPages).forEach(i => {
-      html += i === '...'
-        ? '<span class="pager-dots">…</span>'
-        : `<button class="${i === sister2Page ? 'active' : ''}" onclick="sister2Page=${i};renderSister2Table();">${i + 1}</button>`;
-    });
-    if (sister2Page < totalPages - 1) html += `<button onclick="sister2Page++;renderSister2Table();">下一页</button>`;
-    pg.innerHTML = html;
-  }
-}
-
-/* 妹妹活动追踪下钻：等级成长轨迹 + 产出 + 参与团 */
-let s2Uid = '';
-
-async function openSister2Detail(uid) {
-  s2Uid = uid || '';
-  const modal = document.getElementById('sister2-detail-modal');
-  if (!modal) return;
-  modal.classList.add('active');
-  document.getElementById('s2-name').textContent = '加载中...';
-  document.getElementById('s2-chips').innerHTML = '';
-  document.getElementById('s2-table').innerHTML = '';
-  const lvEl = document.getElementById('s2-level-chart');
-  const revEl = document.getElementById('s2-rev-chart');
-  if (charts['s2LevelChart']) { charts['s2LevelChart'].dispose(); charts['s2LevelChart'] = null; }
-  if (charts['s2RevChart']) { charts['s2RevChart'].dispose(); charts['s2RevChart'] = null; }
-  try {
-    const res = await fetch(API_BASE + '/api/sister2-detail?uid=' + encodeURIComponent(uid));
-    const d = await res.json();
-    if (d.error) { document.getElementById('s2-name').textContent = '未找到该妹妹'; return; }
-    const ptag = d.promoted ? '<span class="chip up">已晋升姐姐</span>' : '<span class="chip flat">仍是妹妹</span>';
-    document.getElementById('s2-name').textContent = `${d.nickname || uid}`;
-    document.getElementById('s2-chips').innerHTML = `
-      <span class="survival-chip">等级 <strong>${d.level}</strong></span>
-      <span class="survival-chip">最高 <strong>${d.max_level}</strong></span>
-      <span class="survival-chip">带团 <strong>${d.team_count}</strong></span>
-      <span class="survival-chip">在榜 <strong>${d.presence_days}</strong>天</span>
-      <span class="survival-chip">${ptag}</span>`;
-    // 等级成长阶梯图（历史最高等级随快照日）
-    const track = d.level_track || [];
-    const lvNames = ['无', '初级铜牌', '铜牌', '初级银牌', '银牌', '金牌', '王牌', '大神'];
-    if (track.length >= 2) {
-      charts['s2LevelChart'] = echarts.init(lvEl);
-      charts['s2LevelChart'].setOption({
-        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>最高等级 ${lvNames[p.value] || '无'}`; } },
-        grid: { left: 60, right: 16, top: 16, bottom: 28 },
-        xAxis: { type: 'category', data: track.map(x => x.date), axisLabel: { fontSize: 10, color: '#6B7280' } },
-        yAxis: { type: 'category', data: lvNames, axisLabel: { fontSize: 11, color: '#374151' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-        series: [{ name: '最高等级', type: 'line', step: 'end', data: track.map(x => x.rank), itemStyle: { color: '#C98A2D' }, lineStyle: { color: '#C98A2D', width: 2 }, symbolSize: 6 }]
-      });
-    } else {
-      lvEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">等级轨迹数据不足</div>';
-    }
-    // 周产出柱状图
-    if (d.weekly && d.weekly.length) {
-      charts['s2RevChart'] = echarts.init(revEl);
-      charts['s2RevChart'].setOption({
-        tooltip: { trigger: 'axis', textStyle: { fontSize: 12 }, formatter: ps => { const p = ps[0]; return `${p.name}<br/>产出 ${wbFmtMoney(p.value)}`; } },
-        grid: { left: 70, right: 20, top: 16, bottom:28 },
-        xAxis: { type: 'category', data: d.weekly.map(x => x.week), axisLabel: { fontSize: 10, color: '#6B7280' } },
-        yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => wbFmtMoney(v) }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-        series: [{ name: '妹妹产出', type: 'bar', data: d.weekly.map(x => x.rev), barWidth: '45%', itemStyle: { color: '#7C5CFF', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280', formatter: p => wbFmtMoney(p.value) } }]
-      });
-    } else {
-      revEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">暂无周产出数据</div>';
-    }
-    // 参与团列表
-    document.getElementById('s2-table').innerHTML = `
-      <tr><th>团ID</th><th>大厅</th><th>姐姐</th><th>妹妹等级</th><th>状态</th></tr>
-      ${(d.teams || []).map(t => `<tr>
-        <td>${t.team_id}</td>
-        <td>${t.hall_name || '-'}</td>
-        <td>${t.captain || '-'}</td>
-        <td>${t.level || '-'}</td>
-        <td>${t.status === 'active' ? '<span class="chip up">进行中</span>' : '<span class="chip flat">已解散</span>'}</td>
-      </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:16px;">暂无参与团记录</td></tr>'}`;
-  } catch (e) { console.error('妹妹活动下钻失败:', e); document.getElementById('s2-name').textContent = '加载失败'; }
-}
-
-function closeSister2Detail() {
-  const modal = document.getElementById('sister2-detail-modal');
-  if (modal) modal.classList.remove('active');
-}
-
-function s2GoUID() {
-  if (s2Uid) { closeSister2Detail(); jumpToUID(s2Uid); }
-}
-
 /* 姐姐下钻：带团明细 + 流水曲线 */
 let sdUid = '';
 
@@ -478,17 +359,13 @@ let poolPerPage = 20;
 
 function switchCaptainView(view) {
   const main = document.getElementById('captains-main');
-  const promote = document.getElementById('captains-promote');
   const pool = document.getElementById('captains-pool');
   if (!main || !pool) return;
   main.style.display = view === 'profile' ? '' : 'none';
-  if (promote) promote.style.display = view === 'promote' ? '' : 'none';
   pool.style.display = view === 'pool' ? '' : 'none';
   const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('on', on); };
   set('cap-view-profile', view === 'profile');
-  set('cap-view-promote', view === 'promote');
   set('cap-view-pool', view === 'pool');
-  if (view === 'promote') { loadSister2Profile(); }
   if (view === 'pool') { loadTalentPool(); loadTalentActions(); }
   if (view === 'profile') {
     setTimeout(() => { if (charts['sisterTag']) charts['sisterTag'].resize(); if (charts['sisterRet']) charts['sisterRet'].resize(); }, 60);

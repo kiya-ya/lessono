@@ -51,7 +51,7 @@ function switchTab(tabName) {
   if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
   if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
-  if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); if (typeof loadSister2Profile === 'function') loadSister2Profile(); }, 100);
+  if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
 }
 
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
@@ -180,7 +180,6 @@ function refreshData() {
   if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
-  if (typeof loadSister2Profile === 'function') loadSister2Profile();
   initCompareChart();
 }
 

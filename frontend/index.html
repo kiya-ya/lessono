@@ -318,7 +318,6 @@
       <h2>姐姐分析</h2>
       <div class="seg" style="margin-left:auto;">
         <button id="cap-view-profile" class="on" onclick="switchCaptainView('profile')">画像</button>
-        <button id="cap-view-promote" onclick="switchCaptainView('promote')">晋升追踪</button>
         <button id="cap-view-pool" onclick="switchCaptainView('pool')">候选池</button>
       </div>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
@@ -384,38 +383,12 @@
       <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="captain-insight"></div>
     </div>
+    <div class="chart-card">
+      <h3>🎓 最近一周毕业的妹妹</h3>
+      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 近 7 天毕业</div>
+      <div id="recent-grad-list"></div>
+    </div>
     </div><!-- /captains-main -->
-
-    <!-- 晋升追踪：妹妹毕业升姐姐 -->
-    <div id="captains-promote" style="display:none;">
-      <div class="chart-card">
-        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <span>🌱 妹妹晋升追踪</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <select id="sister2-sort" onchange="setSister2Sort(this.value)" class="wb-select">
-              <option value="default" selected>晋升优先</option>
-              <option value="week_rev">本周流水 ↓</option>
-              <option value="presence_days">在榜天数 ↓</option>
-            </select>
-            <select id="sister2-per-page" onchange="setSister2PerPage(this.value)" class="wb-select">
-              <option value="20" selected>20条/页</option>
-              <option value="30">30条/页</option>
-            </select>
-          </div>
-        </h3>
-        <div class="chart-src">妹妹毕业可升姐姐 · 等级越高晋升率越高（王牌/大神已到毕业线）· 默认按晋升状态+流水排序</div>
-        <div class="tag-legend">
-          <span class="tag-legend-item"><span class="chip up">已晋升</span>已升为姐姐（带团）</span>
-          <span class="tag-legend-item"><span class="chip warn">可晋升</span>等级达王牌/大神（毕业线）</span>
-          <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
-          <span class="tag-legend-item"><b>在榜天</b>=快照出现天数</span>
-        </div>
-        <div class="survival-chips" id="sister2-sum"></div>
-        <div class="rank-scroll"><table class="rank-table" id="sister2-table"></table></div>
-        <div class="pagination" id="sister2-pagination" style="margin-top:8px;justify-content:center;"></div>
-        <div class="chart-insight" id="sister2-insight"></div>
-      </div>
-    </div><!-- /captains-promote -->
 
     <!-- 候选池（阶段B）：并列展示四因子证据 + 结果记录 -->
     <div id="captains-pool" style="display:none;">
@@ -662,26 +635,6 @@
   </div>
 </div>
 
-<!-- 妹妹活动追踪弹窗 -->
-<div class="cookie-modal" id="sister2-detail-modal">
-  <div class="cookie-modal-content" style="width:860px; max-width:95%;">
-    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>🌱 <span id="s2-name">妹妹活动</span></span>
-      <button onclick="closeSister2Detail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
-    </h3>
-    <div class="survival-chips" id="s2-chips"></div>
-    <div class="chart-src">等级成长轨迹（历史最高等级随快照日）</div>
-    <div id="s2-level-chart" style="height:180px;margin:4px 0 8px;"></div>
-    <div class="chart-src">妹妹周产出</div>
-    <div id="s2-rev-chart" style="height:160px;margin:4px 0 8px;"></div>
-    <div class="rank-scroll" style="max-height:240px;"><table class="rank-table" id="s2-table"></table></div>
-    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
-      <button class="btn-save" onclick="s2GoUID()">在 UID 查询中查看 →</button>
-      <button class="btn-cancel" onclick="closeSister2Detail()">关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- 培养力结果记录弹窗 -->
 <div class="cookie-modal" id="talent-action-modal">
   <div class="cookie-modal-content" style="width:520px; max-width:95%;">
@@ -759,8 +712,8 @@
 <script src="js/api.js?v=48"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=49"></script>
-<script src="js/app.js?v=47"></script>
+<script src="js/app.js?v=48"></script>
 <script src="js/workbench.js?v=48"></script>
-<script src="js/insight.js?v=47"></script>
+<script src="js/insight.js?v=48"></script>
 </body>
 </html>

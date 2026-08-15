@@ -915,6 +915,15 @@ def api_sister_profile():
         x['tag'] = 'head' if head else ('risk' if risk else 'normal')
 
     list_out.sort(key=lambda x: (-(x['week_rev'] or 0), -(x['retention'] or 0)))
+
+    # 最近一周毕业的妹妹（满30天毕业 = dissolve_reason='毕业'）
+    recent_grad = conn.execute(f'''
+        SELECT CAST(sister_uid2 AS TEXT) AS sister_uid2, MAX(sister_nickname2) AS nickname,
+               MAX(hall_name) AS hall_name, MAX(dissolve_date) AS dissolve_date
+        FROM team_detail
+        WHERE dissolve_reason = '毕业' AND date(dissolve_date) >= date('now', '-7 day') {hc}
+        GROUP BY sister_uid2 ORDER BY dissolve_date DESC LIMIT 15
+    ''', hp).fetchall()
     conn.close()
 
     head_count = sum(1 for x in list_out if x['tag'] == 'head')
@@ -928,6 +937,7 @@ def api_sister_profile():
             'top_sister': top['sister_nickname'] if top else None,
             'top_rev': top['week_rev'] if top else 0,
         },
+        'recent_graduates': recent_grad,
         'list': list_out,
     })
 
