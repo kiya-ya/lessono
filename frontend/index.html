@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=30">
+<link rel="stylesheet" href="css/style.css?v=31">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -258,32 +258,19 @@
         <div class="chart-card" style="grid-column:1/-1;"><h3>💰 流水趋势</h3><div class="chart-box" id="cmp-chart-rev" style="height:300px;"></div></div>
       </div>
     </div>
-    <!-- 折叠小图：交互对象行（点开才揭示） -->
-    <div class="cmp-chips">
-      <button class="cmp-chip" data-mini="retdist" onclick="showMini('retdist')">📊 厅留存分布</button>
-      <button class="cmp-chip" data-mini="dual" onclick="showMini('dual')">📈 新成团 vs 解散</button>
-      <button class="cmp-chip" data-mini="weekcmp" onclick="showMini('weekcmp')">📋 本周 vs 上周</button>
-    </div>
-    <!-- 小图揭示区：一次只显示一个 -->
-    <div class="chart-card mini-reveal" id="mini-reveal" style="display:none;">
-      <div id="mini-retdist">
+    <!-- 概览小图：厅留存分布 + 新成团 vs 解散（常驻展示，不再藏按钮里） -->
+    <div class="chart-grid">
+      <div class="chart-card">
         <h3>📊 厅留存率分布</h3>
         <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
         <div class="chart-container" id="chart-retention-dist"></div>
         <div class="chart-insight" id="retention-dist-insight"></div>
       </div>
-      <div id="mini-dual" style="display:none;">
+      <div class="chart-card">
         <h3>📈 新成团 vs 解散联动（双轴图）</h3>
         <div class="chart-src">每周新成团（柱）与解散（线）对照 · 净增 = 新成团 − 解散</div>
         <div class="chart-container" id="chart-compare-dual"></div>
         <div class="chart-insight" id="compare-dual-insight"></div>
-      </div>
-      <div id="mini-weekcmp" style="display:none;">
-        <h3>📊 本周 vs 上周 核心指标对比</h3>
-        <div class="chart-src">本周 vs 上周逐项指标 · 绿色=向好的方向，红色=向差</div>
-        <table class="data-table"><thead><tr><th>指标</th><th class="num">上周</th><th class="num">本周</th><th class="num">变化幅度</th><th>趋势</th></tr></thead>
-        <tbody id="compare-table-body"></tbody></table>
-        <div class="chart-insight" id="compare-table-insight"></div>
       </div>
     </div>
     <!-- 常驻导航：各大厅数据对比 -->
@@ -304,18 +291,11 @@
           </select>
         </div>
       </h3>
-      <div class="chart-src">点柱子 → 展开该厅分析并填入对比 A；Shift+点击 → 多选/取消选厅，选满 2 个后可点「对比选中」做聚合对比</div>
+      <div class="chart-src">点柱子 → 展开该厅分析并填入对比 A 厅</div>
       <div class="chart-container" id="chart-hall-compare"></div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-        <button id="btn-hall-sel" class="btn-save" onclick="runHallSelCompare()" disabled>对比选中</button>
-        <button id="btn-hall-clear" class="mini-btn" onclick="clearHallSel()">清除</button>
-        <span id="hall-sel-hint" style="font-size:12px;color:var(--wb-text-3);"></span>
-      </div>
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="hall-compare-insight"></div>
     </div>
-    <!-- 多选对比揭示面板：Shift+点击多选后「对比选中」触发 -->
-    <div class="chart-card hall-focus" id="brush-panel" style="display:none;margin-top:12px;"></div>
     <!-- 厅分析揭示面板：点击大厅后展开 -->
     <div class="chart-card hall-focus" id="hall-focus" style="display:none;">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -799,7 +779,7 @@
 <script src="js/utils.js?v=42"></script>
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=43"></script>
+<script src="js/render.js?v=44"></script>
 <script src="js/app.js?v=42"></script>
 <script src="js/workbench.js?v=42"></script>
 <script src="js/insight.js?v=42"></script>

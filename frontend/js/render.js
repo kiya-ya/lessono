@@ -5,7 +5,6 @@ async function initCompareChart() {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam());
     const result = await res.json();
     compareWeeklyData = result.data || [];
-    renderCompareTable();
     renderCompareDual();
   } catch (e) { console.error('对比分析加载失败:', e); }
   try {
@@ -18,59 +17,7 @@ async function initCompareChart() {
   } catch (e) { console.error('大厅排名加载失败:', e); }
 }
 
-/* 本周 vs 上周 核心指标对比表（chips「本周 vs 上周」揭示时渲染） */
-function renderCompareTable() {
-  const tbody = document.getElementById('compare-table-body');
-  if (!tbody) return;
-  const data = compareWeeklyData;
-  let lastWeek = null, thisWeek = null;
-  if (data && data.length > 0) {
-    const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
-    let filteredData = validData;
-    if (currentWeek && currentWeek.includes('|')) {
-      const selectedEnd = currentWeek.split('|')[1];
-      filteredData = validData.filter(d => d.week_end <= selectedEnd);
-    }
-    lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
-    thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
-    const metrics = [
-      { name: '📦 周新成团数', key: 'new_team_count', unit: '个' },
-      { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
-      { name: '💯 留存率', key: 'retention_rate', unit: '%', cap: 100 },
-      { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
-      { name: '💰 周礼物奖励金额', key: 'total_reward', unit: '元' },
-      { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
-    ];
-    tbody.innerHTML = metrics.map(m => {
-      const getVal = (weekData) => {
-        if (!weekData) return 0;
-        if (m.calc) return m.calc(weekData);
-        let v = weekData[m.key] || 0;
-        if (m.cap) v = Math.min(m.cap, v);
-        return v;
-      };
-      const b = getVal(lastWeek);
-      const a = getVal(thisWeek);
-      let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
-      if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
-      const fmt = (v) => {
-        if (v === null || v === undefined || Number.isNaN(v)) return '—';
-        const n = Number(v);
-        if (!Number.isFinite(n)) return '—';
-        if (m.unit === '元') return `¥${n.toFixed(0)}`;
-        return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
-      };
-      return `<tr><td>${m.name}</td><td class="num">${fmt(b)}</td><td class="num">${fmt(a)}</td><td class="kpi-change num ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
-    }).join('');
-  }
-  const insEl = document.getElementById('compare-table-insight');
-  if (insEl && thisWeek) {
-    const retD = Math.round(((thisWeek.retention_rate || 0) - (lastWeek ? (lastWeek.retention_rate || 0) : 0)) * 10) / 10;
-    insEl.innerHTML = `本周留存率 <b>${thisWeek.retention_rate ?? '—'}%</b>（上周 ${lastWeek ? lastWeek.retention_rate ?? '—' : '—'}%），新成团 ${thisWeek.new_team_count ?? 0} 个、解散 ${thisWeek.dissolved_count ?? 0} 个。`;
-  }
-}
-
-/* 新成团 vs 解散 双轴图（chips「新成团 vs 解散」揭示时渲染） */
+/* 新成团 vs 解散 双轴图（常驻展示） */
 function renderCompareDual() {
   const dualEl = document.getElementById('chart-compare-dual');
   const dualVisible = dualEl && dualEl.offsetHeight > 0;
@@ -121,7 +68,6 @@ let detailPerPage = 20;
 let hallComparePage = 0;
 let hallCompareData = [];
 let detailStatus = 'all';
-let _hallSel = [];   // Shift+点击多选的大厅，供「对比选中」聚合
 
 function renderHallComparePage() {
   // 搜索过滤
@@ -163,18 +109,14 @@ function renderHallComparePage() {
     const globalMax = Math.max(...filtered.map(d => d[hallCompareSortField] || 0));
     const isMoney = cfg.unit === '元';
     const dataObjs = values.map((v, i) => {
-      const sel = _hallSel.includes(pageData[i].hall_name);
       const isTop = v === globalMax;
       const base = isTop
         ? { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#C98A2D' }, { offset: 1, color: '#E5B968' }]) }
         : { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: cfg.color }, { offset: 1, color: cfg.grad }]) };
-      if (sel) Object.assign(base, { borderColor: '#7C5CFF', borderWidth: 2, shadowBlur: 8, shadowColor: 'rgba(124,92,255,.45)' });
       base.borderRadius = [0, 4, 4, 0];
       const o = { value: v, itemStyle: base };
       if (isTop) {
         o.label = { show: true, position: 'right', fontSize: 11, color: '#B07A1F', fontWeight: 'bold', formatter: '👑 ' + (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
-      } else if (sel) {
-        o.label = { show: true, position: 'right', fontSize: 10, color: '#7C5CFF', fontWeight: 'bold', formatter: '✓ ' + (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
       }
       return o;
     });
@@ -187,11 +129,7 @@ function renderHallComparePage() {
       charts.hallCompare = echarts.init(hallEl);
       charts.hallCompare.on('click', function(params) {
         if (!params.name) return;
-        // Shift+点击 → 多选该厅（聚合对比）；普通点击 → 展开该厅分析并填入对比 A
-        if (params.event && params.event.event && params.event.event.shiftKey) {
-          toggleHallSel(params.name);
-          return;
-        }
+        // 普通点击 → 展开该厅分析并填入对比 A
         openHallFocus(params.name); setCmpHallA(params.name);
       });
     }
@@ -214,7 +152,6 @@ function renderHallComparePage() {
       charts.hallCompare.setOption({ yAxis: { data: [] }, series: [{ data: [] }] });
     }
   }
-  updateHallSelUi();
 
   let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${total} 个大厅 · 第 ${hallComparePage + 1}/${totalPages || 1} 页</span>`;
   if (hallComparePage > 0) html += `<button onclick="hallComparePage--;renderHallComparePage();">上一页</button>`;
@@ -231,60 +168,6 @@ function renderHallComparePage() {
     const byAct = [...hallCompareData].sort((a, b) => (b.active_count || 0) - (a.active_count || 0))[0];
     insEl.innerHTML = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
   }
-}
-
-/* ═══════════════ 多选对比：Shift+点击选厅 → 「对比选中」聚合 ═══════════════ */
-function toggleHallSel(name) {
-  const i = _hallSel.indexOf(name);
-  if (i >= 0) _hallSel.splice(i, 1); else _hallSel.push(name);
-  renderHallComparePage();
-  updateHallSelUi();
-}
-
-function updateHallSelUi() {
-  const btn = document.getElementById('btn-hall-sel');
-  const n = _hallSel.length;
-  if (btn) {
-    btn.disabled = n < 2;
-    btn.textContent = n > 0 ? `对比选中（${n}）` : '对比选中';
-  }
-  const hint = document.getElementById('hall-sel-hint');
-  if (hint) hint.textContent = n > 0 ? `已选 ${n} 个厅：${_hallSel.join('、')}` : '';
-}
-
-function clearHallSel() {
-  _hallSel = [];
-  renderHallComparePage();
-  updateHallSelUi();
-  const panel = document.getElementById('brush-panel');
-  if (panel) panel.style.display = 'none';
-}
-
-function runHallSelCompare() {
-  if (_hallSel.length < 2) return;
-  if (typeof renderBrushPanel === 'function') renderBrushPanel(_hallSel.slice());
-}
-
-/* ═══════════════ 交互揭示：chips 折叠小图 + 厅分析面板 ═══════════════ */
-let _activeMini = null;
-
-function showMini(key) {
-  const reveal = document.getElementById('mini-reveal');
-  if (!reveal) return;
-  _activeMini = (_activeMini === key) ? null : key;   // 再点一次收起
-  document.querySelectorAll('.cmp-chip').forEach(b => b.classList.toggle('on', b.dataset.mini === _activeMini));
-  const ids = { retdist: 'mini-retdist', dual: 'mini-dual', weekcmp: 'mini-weekcmp' };
-  reveal.style.display = _activeMini ? '' : 'none';
-  Object.keys(ids).forEach(k => {
-    document.getElementById(ids[k]).style.display = (k === _activeMini) ? '' : 'none';
-  });
-  if (_activeMini === 'retdist' && typeof initRetentionDist === 'function') initRetentionDist();
-  else if (_activeMini === 'dual') renderCompareDual();
-  else if (_activeMini === 'weekcmp') renderCompareTable();
-  setTimeout(() => {
-    if (_activeMini === 'retdist' && charts['retDist']) charts['retDist'].resize();
-    else if (_activeMini === 'dual' && charts.compareDual) charts.compareDual.resize();
-  }, 80);
 }
 
 /* 厅分析揭示：点击大厅 → 该厅 KPI + 趋势 + 本周vs上周 */
@@ -452,51 +335,6 @@ function renderHfWeekTable(trend) {
     }
     return `<tr><td>${m.name}</td><td class="num">${fmt(bv, m)}</td><td class="num">${fmt(av, m)}</td><td class="num dt-diff ${cls}">${diff}</td><td>${trendIcon}</td></tr>`;
   }).join('');
-}
-
-/* 拖拽框选多厅 → 框内聚合对比概览（brush 框选时触发） */
-function renderBrushPanel(hallNames) {
-  const panel = document.getElementById('brush-panel');
-  if (!panel) return;
-  const halls = hallNames
-    .map(n => hallCompareData.find(h => h.hall_name === n))
-    .filter(Boolean);
-  if (!halls.length) { panel.style.display = 'none'; return; }
-  const sum = halls.reduce((acc, h) => {
-    acc.active_count += h.active_count || 0;
-    acc.team_count += h.team_count || 0;
-    acc.dissolved_count += h.dissolved_count || 0;
-    acc.total_revenue += h.total_revenue || 0;
-    return acc;
-  }, { active_count: 0, team_count: 0, dissolved_count: 0, total_revenue: 0 });
-  const n = halls.length;
-  const sumCards = [
-    { label: '🏠 进行中团数合计', v: sum.active_count, unit: ' 个', accent: 'acc-green' },
-    { label: '🧱 总团数合计', v: sum.team_count, unit: ' 个', accent: 'acc-violet' },
-    { label: '💥 解散数合计', v: sum.dissolved_count, unit: ' 个', accent: 'acc-red' },
-    { label: '💰 礼物流水合计', v: '¥' + Number(sum.total_revenue).toFixed(0), accent: 'acc-gold' },
-    { label: '🪜 平均进行中团数', v: (sum.active_count / n).toFixed(1), unit: ' 个', accent: 'acc-green' },
-    { label: '🪙 平均礼物流水', v: '¥' + (sum.total_revenue / n).toFixed(0), accent: 'acc-gold' },
-  ];
-  const miniRows = halls.slice().sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0))
-    .map((h, i) => {
-      const w = Math.round((h.total_revenue || 0) / Math.max(1, sum.total_revenue) * 100);
-      return `<tr><td>${i + 1}</td><td>${h.hall_name}</td><td class="num">${h.active_count || 0}</td><td class="num">${h.dissolved_count || 0}</td><td class="num">¥${Number(h.total_revenue || 0).toFixed(0)}</td><td style="width:26%;"><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:linear-gradient(90deg,#C98A2D,#E5B968);"></div></div></td></tr>`;
-    }).join('');
-  panel.style.display = '';
-  panel.innerHTML = `
-    <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-      <span>🔲 多选对比：选中 ${n} 个厅</span>
-      <span style="font-size:12px;font-weight:400;color:var(--wb-text-3);">继续 Shift+点击可增删；「清除」重置选择</span>
-    </h3>
-    <div class="policy-grid" style="margin:8px 0 10px;">${sumCards.map(m => `
-      <div class="kpi-card ${m.accent}">
-        <div class="kpi-label">${m.label}</div>
-        <div class="kpi-value hf-val">${m.v}${m.unit || ''}</div>
-        <div class="policy-delta"></div>
-      </div>`).join('')}
-    </div>
-    <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>位次</th><th>大厅</th><th class="num">进行中</th><th class="num">解散</th><th class="num">礼物流水</th><th>流水占比</th></tr></thead><tbody>${miniRows}</tbody></table></div>`;
 }
 
 function renderUIDResult(data) {
