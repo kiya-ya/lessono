@@ -442,29 +442,11 @@ body { background: var(--wb-bg); }
 .policy-grid .kpi-value { font-size: 22px; font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
 .policy-delta { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--wb-text-3); }
 
-.alert-row {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
-  border-bottom: 1px solid #F4F5F8; font-size: 13px;
-}
-.alert-row:last-child { border-bottom: none; }
-.alert-row.resolved { opacity: .55; }
-.alert-sev { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-top: 1px; }
-.alert-sev.high { color: var(--wb-down); background: rgba(220,38,38,.1); }
-.alert-sev.medium { color: var(--wb-warn); background: rgba(217,119,6,.1); }
-.alert-sev.low { color: var(--wb-up); background: rgba(22,163,74,.1); }
-.alert-body { flex: 1; min-width: 0; }
-.alert-body .t { font-weight: 600; margin-bottom: 2px; }
-.alert-body .d { color: var(--wb-text-2); font-size: 12px; }
-.alert-body .time { color: var(--wb-text-3); font-size: 11px; margin-top: 3px; }
-.alert-act { flex-shrink: 0; }
-.alert-empty { color: var(--wb-text-3); font-size: 13px; padding: 16px; text-align: center; }
-
 @media (max-width: 960px) {
   .policy-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 720px) {
   .policy-grid { grid-template-columns: 1fr; }
-  .alert-row { flex-wrap: wrap; }
 }
 
 
@@ -671,6 +653,7 @@ body { background: var(--wb-bg); }
 .kpi-ico.accent-teal { background: rgba(14,165,164,.13); }
 .kpi-ico.accent-amber { background: rgba(217,119,6,.13); }
 .kpi-hero .kpi-note { margin-left: auto; font-size: 11px; color: var(--wb-text-3); }
+.kpi-alert { font-size: 14px; cursor: help; }
 .kpi-foot-label { font-size: 11px; color: var(--wb-text-3); }
 
 /* KPI 卡点击展开的明细面板（留存/解散/金额三张趋势图并入此处） */

@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=34">
+<link rel="stylesheet" href="css/style.css?v=35">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -51,7 +51,6 @@
       <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>对比分析</b><small>厅 · 组对比</small></span></button>
       <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
       <button class="tab" onclick="switchTab('details')"><span class="ico">▤</span><span class="tab-txt"><b>明细数据</b><small>存活 · 解散</small></span></button>
-      <button class="tab" onclick="switchTab('alerts')"><span class="ico">⚠</span><span class="tab-txt"><b>预警中心</b><small>风险预警</small></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
     <div class="side-foot">
@@ -570,20 +569,6 @@
   </div>
   </div>
 
-  <!-- 预警中心 -->
-  <div id="tab-alerts" class="tab-panel">
-    <div class="section-head">
-      <h2>预警中心</h2>
-      <span class="hint">系统按规则自动生成 · 处理后可归档</span>
-      <div class="right">
-        <button class="mini-btn on" onclick="alertsFilter(this, '0')">未处理</button>
-        <button class="mini-btn" onclick="alertsFilter(this, '1')">已处理</button>
-        <button class="mini-btn" onclick="alertsFilter(this, 'all')">全部</button>
-      </div>
-    </div>
-    <div class="survival-chips" id="alerts-summary"></div>
-    <div class="chart-card"><div id="alerts-center-list"></div></div>
-  </div>
     </div><!-- /.content -->
   </div><!-- /.main -->
 </div><!-- /.layout -->
@@ -760,9 +745,9 @@
 <script src="js/utils.js?v=42"></script>
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=48"></script>
-<script src="js/app.js?v=43"></script>
-<script src="js/workbench.js?v=43"></script>
-<script src="js/insight.js?v=43"></script>
+<script src="js/render.js?v=49"></script>
+<script src="js/app.js?v=44"></script>
+<script src="js/workbench.js?v=44"></script>
+<script src="js/insight.js?v=44"></script>
 </body>
 </html>

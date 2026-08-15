@@ -52,7 +52,6 @@ function switchTab(tabName) {
   if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); if (typeof loadLyingFlat === 'function') loadLyingFlat(); }, 100);
   if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); if (typeof loadSister2Profile === 'function') loadSister2Profile(); }, 100);
-  if (tabName === 'alerts') setTimeout(() => { if (typeof loadAlertsCenter === 'function') loadAlertsCenter(); }, 100);
 }
 
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）

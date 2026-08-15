@@ -235,6 +235,53 @@ function wbRenderBanner() {
   banner.style.display = '';
 }
 
+/* ─────────────── 就地预警（预警中心已撤，散到各模块） ─────────────── */
+
+let _inlineAlerts = { kpi: { retention: [], dissolution: [], newteam: [], revenue: [] }, hall: [] };
+
+const ALERT_KPI_MAP = {
+  retention_drop:    { metric: 'retention' },
+  dissolution_spike: { metric: 'dissolution' },
+  new_team_drop:     { metric: 'newteam' },
+  revenue_decline:   { metric: 'revenue' },
+};
+
+async function loadInlineAlerts() {
+  try {
+    const res = await fetch(API_BASE + '/api/alerts-center?resolved=0&limit=100');
+    const d = await res.json();
+    const kpi = { retention: [], dissolution: [], newteam: [], revenue: [] };
+    const hall = [];
+    (d.data || []).forEach(a => {
+      const m = ALERT_KPI_MAP[a.alert_type];
+      if (m) kpi[m.metric].push(a);
+      else if (a.alert_type === 'hall_dissolution_high') hall.push(a);
+    });
+    _inlineAlerts = { kpi, hall };
+    applyKpiAlertBadges();
+    // 大厅对比注记（若大厅数据已加载则重绘）
+    if (typeof renderHallComparePage === 'function' && typeof hallCompareData !== 'undefined' && hallCompareData.length) renderHallComparePage();
+  } catch (e) { console.error('就地预警加载失败:', e); }
+}
+
+function applyKpiAlertBadges() {
+  ['retention', 'dissolution', 'newteam', 'revenue'].forEach(metric => {
+    const card = document.querySelector(`#wb-kpi-hero .kpi-card.hero[data-metric="${metric}"]`);
+    if (!card) return;
+    card.querySelectorAll('.kpi-alert').forEach(x => x.remove());
+    const alerts = _inlineAlerts.kpi[metric] || [];
+    if (alerts.length) {
+      const a = alerts[0];
+      const badge = document.createElement('span');
+      badge.className = 'kpi-alert';
+      badge.title = `${a.title || ''}${a.description ? '：' + a.description : ''}（${a.week_label || ''}）`;
+      badge.textContent = '⚠️';
+      const top = card.querySelector('.kpi-top');
+      if (top) top.appendChild(badge);
+    }
+  });
+}
+
 /* ─────────────── 联动 ─────────────── */
 
 function wbSelectHall(hall) {
@@ -279,6 +326,7 @@ async function refreshWorkbench() {
     wbInsights = insJson || null;
     wbRenderKPI();
     wbRenderCharts();
+    if (typeof loadInlineAlerts === 'function') loadInlineAlerts();
   } catch (e) { console.error('工作台刷新失败:', e); }
 }
 
@@ -346,6 +394,7 @@ function wbRenderKPI() {
   } else {
     kpiCountUp();
   }
+  if (typeof applyKpiAlertBadges === 'function') applyKpiAlertBadges();
 }
 
 function wbToggleKpi(metric) {

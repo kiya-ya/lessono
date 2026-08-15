@@ -126,7 +126,22 @@ function renderHallComparePage() {
   if (insEl && hallCompareData.length) {
     const byRev = [...hallCompareData].sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0))[0];
     const byAct = [...hallCompareData].sort((a, b) => (b.active_count || 0) - (a.active_count || 0))[0];
-    insEl.innerHTML = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
+    let html = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
+    // 就地预警：单厅解散率异常（从 _inlineAlerts 里按厅名匹配）
+    const hallAlerts = (typeof _inlineAlerts !== 'undefined' && _inlineAlerts && _inlineAlerts.hall) || [];
+    if (hallAlerts.length) {
+      const names = new Set();
+      hallAlerts.forEach(a => {
+        const txt = (a.description || '') + (a.title || '');
+        hallCompareData.forEach(h => { if (h.hall_name && txt.includes(h.hall_name)) names.add(h.hall_name); });
+      });
+      if (names.size) {
+        const arr = [...names];
+        const shown = arr.slice(0, 5).join('、') + (arr.length > 5 ? ` 等 ${arr.length} 个厅` : '');
+        html = `<span style="color:#D56060;">⚠️ 近期解散率异常：${shown}</span><br>` + html;
+      }
+    }
+    insEl.innerHTML = html;
   }
 }
 

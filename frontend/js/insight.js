@@ -415,60 +415,6 @@ function sdGoUID() {
   if (sdUid) { closeSisterDetail(); jumpToUID(sdUid); }
 }
 
-/* ═══════════════ 预警中心 ═══════════════ */
-
-let alertsResolvedFilter = '0';
-
-// 预警规则中文说明（与 crawler/alerts_engine.py 的 RULES 配置对应）
-const ALERT_RULE_DESC = {
-  dissolution_spike: '全平台解散率环比上升 ≥20%',
-  revenue_decline: '全平台流水连续下降 ≥2 周',
-  new_team_drop: '全平台新成团数环比下降 ≥30%',
-  retention_drop: '全平台留存率环比下降 ≥10 个百分点',
-  hall_dissolution_high: '单厅解散率 ≥ 全平台平均的 1.5 倍，且解散率 ≥20%（团数 ≥5，取前 5 名）',
-};
-
-function alertsFilter(btn, status) {
-  document.querySelectorAll('#tab-alerts .mini-btn').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  alertsResolvedFilter = status;
-  loadAlertsCenter();
-}
-
-async function loadAlertsCenter() {
-  const listEl = document.getElementById('alerts-center-list');
-  if (!listEl) return;
-  try {
-    const res = await fetch(API_BASE + '/api/alerts-center?limit=100&resolved=' + alertsResolvedFilter);
-    const d = await res.json();
-    const sevName = { high: '高', medium: '中', low: '低' };
-    document.getElementById('alerts-summary').innerHTML =
-      `<span class="survival-chip">未处理 <strong>${d.unresolved}</strong> 条</span>`;
-    const rows = d.data || [];
-    listEl.innerHTML = rows.length ? rows.map(a => `
-      <div class="alert-row ${a.is_resolved ? 'resolved' : ''}">
-        <span class="alert-sev ${a.severity}">${sevName[a.severity] || a.severity}</span>
-        <div class="alert-body">
-          <div class="t">${a.title}</div>
-          <div class="d">${a.description || ''}</div>
-          <div class="time">${a.week_label || ''} · ${(a.created_at || '').slice(0, 16)} · 规则：${ALERT_RULE_DESC[a.alert_type] || a.alert_type}</div>
-        </div>
-        <button class="mini-btn alert-act" onclick="toggleAlert(${a.id}, ${a.is_resolved ? 0 : 1})">${a.is_resolved ? '恢复' : '标记已处理'}</button>
-      </div>`).join('')
-      : `<div class="alert-empty">${alertsResolvedFilter === '0' ? '✅ 没有未处理的预警' : '暂无预警记录'}</div>`;
-  } catch (e) { console.error('预警中心加载失败:', e); }
-}
-
-async function toggleAlert(id, resolved) {
-  try {
-    await fetch(API_BASE + `/api/alerts/${id}/resolve`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resolved: !!resolved })
-    });
-    loadAlertsCenter();
-  } catch (e) { console.error('预警状态更新失败:', e); }
-}
-
 /* ═══════════════ 候选池（阶段B）：并列展示四因子证据 + 结果记录 ═══════════════ */
 
 let poolList = [];
