@@ -32,20 +32,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .alert-icon { font-size: 16px; }
 .chart-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .chart-card h3 { font-size: 14px; margin-bottom: 16px; color: #333; }
-.chart-container { width: 100%; height: 320px; }
+.chart-container { width: 100%; height: var(--wb-chart-h, 320px); }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 900px) { .chart-row { grid-template-columns: 1fr; } }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.data-table th { background: #fafafa; padding: 12px; text-align: left; font-weight: 500; color: #666; border-bottom: 1px solid #e8e8e8; }
-.data-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; }
-.data-table tr:hover { background: #fafafa; }
+.data-table th { background: #FAFAFB; padding: 12px; text-align: left; font-weight: 600; color: var(--wb-text-2); border-bottom: 1px solid var(--wb-line); }
+.data-table td { padding: 12px; border-bottom: 1px solid #F3F4F6; }
+.data-table tr:hover { background: #F5F3FF; }
 .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
 .pagination button { padding: 6px 12px; border: 1px solid #d9d9d9; background: white; border-radius: 4px; cursor: pointer; font-size: 13px; }
-.pagination button:hover { border-color: #667eea; color: #667eea; }
-.pagination button.active { background: #667eea; color: white; border-color: #667eea; }
+.pagination button:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
+.pagination button.active { background: var(--wb-grad); color: white; border-color: transparent; }
 .pagination .pager-dots { padding: 6px 4px; color: #999; align-self: center; }
 .search-box { display: flex; gap: 8px; margin-bottom: 16px; }
-.search-box input { flex: 1; padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
+.search-box input { flex: 1; padding: 8px 12px; border: 1px solid var(--wb-line); border-radius: 8px; font-size: 13px; }
 .policy-divider { text-align: center; padding: 8px; background: linear-gradient(90deg, transparent, #667eea, transparent); color: white; font-size: 12px; margin: 10px 0; border-radius: 4px; }
 
 /* UID查询 */
@@ -66,9 +66,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .uid-result-card .user-info strong { color: #333; }
 
 .compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.compare-table th { background: #f8f9fa; padding: 12px; text-align: left; font-weight: 500; color: #555; border-bottom: 2px solid #e8e8e8; }
-.compare-table td { padding: 12px; border-bottom: 1px solid #f0f0f0; }
-.compare-table tr:hover { background: #fafafa; }
+.compare-table th { background: #FAFAFB; padding: 12px; text-align: left; font-weight: 600; color: var(--wb-text-2); border-bottom: 1px solid var(--wb-line); }
+.compare-table td { padding: 12px; border-bottom: 1px solid #F3F4F6; }
+.compare-table tr:hover { background: #F5F3FF; }
 .compare-table .col-metric { font-weight: 500; color: #333; }
 .compare-table .col-this { color: #1890ff; font-weight: 500; }
 .compare-table .col-last { color: #888; }
@@ -737,6 +737,7 @@ body { background: var(--wb-bg); }
   --wb-text-2: #5C5C66;          /* 加深次要灰字，对比度优于 #666 */
   --wb-line: #E9EBF0;
   --wb-shadow: 0 1px 2px rgba(26,29,38,.03);  /* 描边优先，弱化投影 */
+  --wb-chart-h: 320px;
   --wb-grad: linear-gradient(135deg, #8F7BFF 0%, #7C5CFF 100%);
   --wb-grad-hover: linear-gradient(135deg, #7C5CFF 0%, #6A48F0 100%);
 }
@@ -785,3 +786,28 @@ td.num, th.num {
   text-align: right; font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace;
 }
+
+/* 政策评估 KPI 卡：accent 顶条对齐英雄卡 */
+.policy-grid .kpi-card { position: relative; overflow: hidden; }
+.policy-grid .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.policy-grid .kpi-card.acc-green::before { background: linear-gradient(90deg, #3D9A6C, #7DD3A0); }
+.policy-grid .kpi-card.acc-red::before { background: linear-gradient(90deg, #D56060, #F0A3A3); }
+.policy-grid .kpi-card.acc-gold::before { background: linear-gradient(90deg, #C98A2D, #E5B968); }
+.policy-grid .kpi-card.acc-violet::before { background: linear-gradient(90deg, #7C5CFF, #A78BFA); }
+
+/* 统一表单控件：搜索框 / 下拉（替代散落的内联 #d9d9d9 样式） */
+.wb-select, .wb-input {
+  padding: 6px 10px;
+  border: 1px solid var(--wb-line);
+  border-radius: 8px;
+  font-size: 12px;
+  background: #fff;
+  color: var(--wb-text);
+  font-family: inherit;
+}
+.wb-select:focus, .wb-input:focus {
+  outline: none; border-color: var(--wb-accent);
+  box-shadow: 0 0 0 3px rgba(124,92,255,.12);
+}
+.wb-input.wb-search { width: 150px; }
+.search-box .wb-select { padding: 8px 12px; font-size: 13px; }
