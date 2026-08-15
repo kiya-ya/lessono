@@ -627,6 +627,21 @@
   </div>
 </div>
 
+<!-- 姐妹团详情弹窗（明细表整行点击） -->
+<div class="cookie-modal" id="team-detail-modal">
+  <div class="cookie-modal-content" style="width:680px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>👭 姐妹团 <span id="td-team-id"></span></span>
+      <button onclick="closeTeamDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div id="td-body"></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="tdGoUID()">在 UID 查询中查看姐姐 →</button>
+      <button class="btn-cancel" onclick="closeTeamDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 妹妹活动追踪弹窗 -->
 <div class="cookie-modal" id="sister2-detail-modal">
   <div class="cookie-modal-content" style="width:860px; max-width:95%;">
@@ -721,7 +736,7 @@
 
 <script src="js/config.js?v=42"></script>
 <script src="js/utils.js?v=42"></script>
-<script src="js/api.js?v=42"></script>
+<script src="js/api.js?v=46"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=49"></script>
 <script src="js/app.js?v=45"></script>

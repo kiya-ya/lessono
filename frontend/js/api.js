@@ -106,12 +106,13 @@ async function loadDetailTable(page = 1) {
     }
     const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + getHallParam() + sortParam);
     const result = await res.json();
-    document.getElementById('detail-table-body').innerHTML = result.data.map(row => {
+    _detailRows = result.data;
+    document.getElementById('detail-table-body').innerHTML = result.data.map((row, i) => {
       const status = row.dissolve_date ? '已解散' : '进行中';
       const statusStyle = row.dissolve_date ? 'color:#D56060;' : 'color:#3D9A6C;';
-      return `<tr><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
-      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
-      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
+      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
+      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
+      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
       <td>${row.days_since_formed || 0}</td>
       <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td></tr>`;
     }).join('');
@@ -136,6 +137,44 @@ async function loadDetailTable(page = 1) {
     const insEl = document.getElementById('detail-insight');
     if (insEl) insEl.innerHTML = `当前筛选共 <b>${result.total}</b> 条姐妹团记录。`;
   } catch (e) { console.error('明细加载失败:', e); }
+}
+
+/* ── 姐妹团详情弹窗（明细表整行点击） ── */
+let _detailRows = [];
+let _tdSisterUid = '';
+let _tdTeamId = '';
+
+function openTeamDetail(idx) {
+  const row = _detailRows && _detailRows[idx];
+  if (!row) return;
+  _tdSisterUid = row.sister_uid || '';
+  _tdTeamId = row.team_id || '';
+  document.getElementById('td-team-id').textContent = '#' + (row.team_id || '-');
+  const status = row.dissolve_date ? '已解散' : '进行中';
+  const statusColor = row.dissolve_date ? '#D56060' : '#3D9A6C';
+  const statusIcon = row.dissolve_date ? '✗' : '✓';
+  document.getElementById('td-body').innerHTML = `
+    <div class="team-detail-grid">
+      <div class="team-detail-item"><span class="team-detail-label">🏠 大厅名称</span><span class="team-detail-value">${row.hall_name || '--'}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">📅 成团日期</span><span class="team-detail-value">${row.form_date || '--'}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">⏱ 已成团天数</span><span class="team-detail-value">${row.days_since_formed || 0} 天</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">🎁 奖励金额</span><span class="team-detail-value">¥${(row.reward_amount || 0).toLocaleString()}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">📊 状态</span><span class="team-detail-value" style="color:${statusColor};font-weight:600;">${statusIcon} ${status}${row.dissolve_date ? ' (' + row.dissolve_date + ')' : ''}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">💥 解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
+    </div>
+    <div class="team-members">
+      <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: ${row.sister_uid || '--'}</div></div></div>
+      <div class="team-member"><div class="member-badge" style="background:#f6a6c1;">妹</div><div class="member-info"><div class="member-name">${row.sister_nickname2 || '--'}</div><div class="member-uid">UID: ${row.sister_uid2 || '--'}</div></div></div>
+    </div>`;
+  document.getElementById('team-detail-modal').classList.add('active');
+}
+
+function closeTeamDetail() {
+  document.getElementById('team-detail-modal').classList.remove('active');
+}
+
+function tdGoUID() {
+  if (_tdSisterUid) { closeTeamDetail(); jumpToUID(_tdSisterUid, _tdTeamId); }
 }
 
 async function checkCookieStatus() {
