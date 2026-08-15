@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=32">
+<link rel="stylesheet" href="css/style.css?v=33">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -119,14 +119,24 @@
       <div class="kpi-detail-card" data-metric="retention">
         <div class="kpi-detail-head">
           <h3>💯 留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
+          <div class="kpi-detail-tabs">
+            <button class="on" data-tab="trend" onclick="wbRetentionTab('trend')">📈 趋势</button>
+            <button data-tab="dist" onclick="wbRetentionTab('dist')">📊 分布</button>
+            <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
+          </div>
         </div>
         <div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div>
-        <div class="kpi-detail-grid">
+        <div class="kpi-detail-grid" data-view="trend">
           <div class="chart-box" id="wb-c-retention"></div>
           <div class="kpi-detail-side">
             <div class="chart-insight" id="wb-insight-retention"></div>
             <div class="kpi-detail-table" id="kpi-detail-table-retention"></div>
+          </div>
+        </div>
+        <div class="kpi-detail-grid" data-view="dist" style="display:none;">
+          <div class="chart-container" id="chart-retention-dist"></div>
+          <div class="kpi-detail-side">
+            <div class="chart-insight" id="retention-dist-insight"></div>
           </div>
         </div>
       </div>
@@ -261,21 +271,6 @@
           <div class="chart-box" id="cmp-popover-chart" style="height:240px;"></div>
           <div class="kpi-detail-table" id="cmp-popover-table"></div>
         </div>
-      </div>
-    </div>
-    <!-- 概览小图：厅留存分布 + 新成团 vs 解散（常驻展示，不再藏按钮里） -->
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h3>📊 厅留存率分布</h3>
-        <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
-        <div class="chart-container" id="chart-retention-dist"></div>
-        <div class="chart-insight" id="retention-dist-insight"></div>
-      </div>
-      <div class="chart-card">
-        <h3>📈 新成团 vs 解散联动（双轴图）</h3>
-        <div class="chart-src">每周新成团（柱）与解散（线）对照 · 净增 = 新成团 − 解散</div>
-        <div class="chart-container" id="chart-compare-dual"></div>
-        <div class="chart-insight" id="compare-dual-insight"></div>
       </div>
     </div>
     <!-- 常驻导航：各大厅数据对比 -->
@@ -787,9 +782,9 @@
 <script src="js/utils.js?v=42"></script>
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=46"></script>
+<script src="js/render.js?v=47"></script>
 <script src="js/app.js?v=42"></script>
-<script src="js/workbench.js?v=42"></script>
+<script src="js/workbench.js?v=43"></script>
 <script src="js/insight.js?v=42"></script>
 </body>
 </html>

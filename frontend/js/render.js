@@ -1,12 +1,4 @@
-let compareWeeklyData = [];
-
 async function initCompareChart() {
-  try {
-    const res = await fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam());
-    const result = await res.json();
-    compareWeeklyData = result.data || [];
-    renderCompareDual();
-  } catch (e) { console.error('对比分析加载失败:', e); }
   try {
     const hallParam = currentHall === 'all' ? '&hall=all' : '';
     const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
@@ -15,53 +7,6 @@ async function initCompareChart() {
     renderHallComparePage();
     if (typeof initCmpBar === 'function') initCmpBar();
   } catch (e) { console.error('大厅排名加载失败:', e); }
-}
-
-/* 新成团 vs 解散 双轴图（常驻展示） */
-function renderCompareDual() {
-  const dualEl = document.getElementById('chart-compare-dual');
-  const dualVisible = dualEl && dualEl.offsetHeight > 0;
-  if (!dualVisible) {
-    if (charts.compareDual) { charts.compareDual.dispose(); charts.compareDual = null; }
-    return;
-  }
-  const data = compareWeeklyData || [];
-  let validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
-  if (currentWeek && currentWeek.includes('|')) {
-    const selectedEnd = currentWeek.split('|')[1];
-    validData = validData.filter(d => d.week_end <= selectedEnd);
-  }
-  const labels = validData.map((d, i) => {
-    const isLast = i === validData.length - 1;
-    return isLast ? d.week_label + ' (收集中)' : d.week_label;
-  });
-  const newTeams = validData.map(d => d.new_team_count || 0);
-  const dissolved = validData.map(d => d.dissolved_count || 0);
-  if (!charts.compareDual) charts.compareDual = echarts.init(dualEl);
-  charts.compareDual.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
-    legend: { data: ['新成团数', '解散数'], top: 5 },
-    grid: { left: 50, right: 50, top: 40, bottom: 50 },
-    xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
-    yAxis: [
-      { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#7C5CFF' } } },
-      { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
-    ],
-    series: [
-      { name: '新成团数', type: 'bar', data: newTeams, barWidth: '40%',
-        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#7C5CFF' }, { offset: 1, color: '#8F7BFF' }]), borderRadius: [4,4,0,0] } },
-      { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true,
-        lineStyle: { color: '#D56060', width: 2.5 },
-        itemStyle: { color: '#D56060' },
-        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(213,96,96,.24)' }, { offset: 1, color: 'rgba(213,96,96,0)' }]) } }
-    ]
-  }, true);
-  const insEl = document.getElementById('compare-dual-insight');
-  if (insEl && newTeams.length) {
-    const n = newTeams[newTeams.length - 1];
-    const dd = dissolved[dissolved.length - 1];
-    insEl.innerHTML = `最新一周新成团 <b>${n}</b> 个 vs 解散 <b>${dd}</b> 个，净${n >= dd ? '增' : '减'} <b>${Math.abs(n - dd)}</b> 个。`;
-  }
 }
 
 let detailPerPage = 20;

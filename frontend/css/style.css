@@ -684,6 +684,10 @@ body { background: var(--wb-bg); }
 .kpi-detail-head h3 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: 8px; }
 .kpi-detail-close { border: none; background: transparent; color: var(--wb-text-2); cursor: pointer; font-size: 15px; line-height: 1; padding: 5px 9px; border-radius: 8px; }
 .kpi-detail-close:hover { background: #F1EDFF; color: #7C5CFF; }
+.kpi-detail-tabs { display: flex; align-items: center; gap: 4px; }
+.kpi-detail-tabs button[data-tab] { border: 1px solid var(--wb-line); background: #fff; color: var(--wb-text-2); padding: 4px 10px; font-size: 12px; border-radius: 8px; cursor: pointer; }
+.kpi-detail-tabs button[data-tab].on { background: var(--wb-grad); color: #fff; border-color: transparent; }
+.kpi-detail-tabs .kpi-detail-close { margin-left: 6px; }
 .kpi-detail-grid { display: grid; grid-template-columns: 1fr 280px; gap: 16px; margin-top: 10px; align-items: start; }
 .kpi-detail-side { display: flex; flex-direction: column; gap: 12px; }
 .kpi-detail-side .chart-insight { margin-top: 0; }

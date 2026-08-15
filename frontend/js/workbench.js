@@ -385,6 +385,19 @@ function wbCloseKpiDetail() {
   document.querySelectorAll('#wb-kpi-hero .kpi-card.hero.expanded').forEach(c => c.classList.remove('expanded'));
 }
 
+/* 留存率详情内的分段切换：趋势 / 分布 */
+function wbRetentionTab(view) {
+  const card = document.querySelector('.kpi-detail-card[data-metric="retention"]');
+  if (!card) return;
+  card.querySelectorAll('.kpi-detail-tabs button[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === view));
+  card.querySelectorAll('.kpi-detail-grid[data-view]').forEach(g => g.style.display = (g.dataset.view === view) ? '' : 'none');
+  if (view === 'dist') {
+    setTimeout(() => { if (typeof initRetentionDist === 'function') initRetentionDist(); }, 60);
+  } else {
+    setTimeout(() => { const ch = charts['wb-retention']; if (ch) ch.resize(); }, 60);
+  }
+}
+
 function wbRenderKpiDetail(metric) {
   const weeks = wbFilteredWeekly();
   const el = document.getElementById('kpi-detail-table-' + metric);
