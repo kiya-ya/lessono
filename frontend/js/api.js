@@ -110,7 +110,11 @@ async function loadDetailTable(page = 1) {
     if (daysRange) {
       daysParam = `&days_min=${daysRange[0]}` + (daysRange[1] != null ? `&days_max=${daysRange[1]}` : '');
     }
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + daysParam + getHallParam() + sortParam);
+    let dateParam = '';
+    if (detailDateField && (detailDateMin || detailDateMax)) {
+      dateParam = `&date_field=${detailDateField}` + (detailDateMin ? `&date_min=${detailDateMin}` : '') + (detailDateMax ? `&date_max=${detailDateMax}` : '');
+    }
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + daysParam + dateParam + getHallParam() + sortParam);
     const result = await res.json();
     _detailRows = result.data;
     document.getElementById('detail-table-body').innerHTML = result.data.map((row, i) => {
@@ -141,7 +145,15 @@ async function loadDetailTable(page = 1) {
     html += `<input type="number" id="goto-page" min="1" max="${totalPages}" placeholder="跳转到" style="width:60px;padding:4px 8px;border:1px solid #d9d9d9;border-radius:4px;font-size:13px;margin-left:8px;"><button onclick="const gp=parseInt(document.getElementById('goto-page').value);if(gp>=1&&gp<=${totalPages})loadDetailTable(gp);" style="margin-left:4px;">GO</button>`;
     document.getElementById('detail-pagination').innerHTML = html;
     const insEl = document.getElementById('detail-insight');
-    if (insEl) insEl.innerHTML = `当前筛选共 <b>${result.total}</b> 条姐妹团记录。`;
+    if (insEl) {
+      let filterNote = '';
+      if (detailDateField && (detailDateMin || detailDateMax)) {
+        const label = detailDateField === 'form_date' ? '成团日期' : '解散日期';
+        const range = detailDateMin === detailDateMax ? detailDateMin : `${detailDateMin} ~ ${detailDateMax}`;
+        filterNote = `<span style="color:#7C5CFF;"> · 已按${label} ${range} 过滤</span> <a href="javascript:void(0)" onclick="clearDateFilter()" style="color:#D56060;cursor:pointer;">清除</a>`;
+      }
+      insEl.innerHTML = `当前筛选共 <b>${result.total}</b> 条姐妹团记录${filterNote}。`;
+    }
   } catch (e) { console.error('明细加载失败:', e); }
 }
 
@@ -149,6 +161,18 @@ async function loadDetailTable(page = 1) {
 let _detailRows = [];
 let _tdSisterUid = '';
 let _tdTeamId = '';
+
+/* ── 日期下钻过滤（趋势图点数据点 → 按成团/解散日期过滤明细） ── */
+let detailDateField = '';
+let detailDateMin = '';
+let detailDateMax = '';
+
+function clearDateFilter() {
+  detailDateField = '';
+  detailDateMin = '';
+  detailDateMax = '';
+  loadDetailTable(1);
+}
 
 function openTeamDetail(idx) {
   const row = _detailRows && _detailRows[idx];

@@ -1697,6 +1697,9 @@ def api_detail_table():
     reason = request.args.get('reason', '')
     days_min = request.args.get('days_min', '')
     days_max = request.args.get('days_max', '')
+    date_field = request.args.get('date_field', '')
+    date_min = request.args.get('date_min', '')
+    date_max = request.args.get('date_max', '')
     sort_field = request.args.get('sort_field', 'team_id')
     sort_order = request.args.get('sort_order', 'asc')
     
@@ -1733,6 +1736,13 @@ def api_detail_table():
     if days_max != '':
         conditions.append('days_since_formed <= ?')
         params.append(int(days_max))
+    if date_field in ('form_date', 'dissolve_date') and (date_min or date_max):
+        if date_min:
+            conditions.append(f'date({date_field}) >= ?')
+            params.append(date_min)
+        if date_max:
+            conditions.append(f'date({date_field}) <= ?')
+            params.append(date_max)
 
     where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
     

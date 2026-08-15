@@ -768,12 +768,25 @@ async function loadDailyOverlay() {
     if (charts['dailyDiss']) charts['dailyDiss'].dispose();
     charts['dailyDiss'] = echarts.init(elDiss);
     charts['dailyDiss'].setOption(mk(d.dissolved.slice(7), d.dissolved.slice(0, 7), '#D56060', '213,96,96'));
+    // 点日级数据点 → 下钻该日成团/解散明细
+    _dailyDates = d.dates;
+    const bindDailyClick = (chart, field, status) => {
+      chart.off('click');
+      chart.on('click', function(params) {
+        const idx = params.seriesName === '本周' ? 7 + params.dataIndex : params.dataIndex;
+        const date = _dailyDates[idx];
+        if (date && typeof drillToDate === 'function') drillToDate(field, date, date, status);
+      });
+    };
+    bindDailyClick(charts['dailyNew'], 'form_date', 'active');
+    bindDailyClick(charts['dailyDiss'], 'dissolve_date', 'dissolved');
   } catch (e) { console.error('日级叠加图加载失败:', e); }
 }
 
 /* ── 日级叠加懒加载：首次滚入视口才请求，避免拖慢工作台首屏 ── */
 let _dailyOverlaySeen = false;
 let _dailyOverlayObserver = null;
+let _dailyDates = [];
 
 function maybeLoadDailyOverlay() {
   if (_dailyOverlaySeen) { loadDailyOverlay(); return; }

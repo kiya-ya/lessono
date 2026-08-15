@@ -126,6 +126,23 @@ function drillToDays(label) {
   loadDetailTable(1);
 }
 
+// 日级趋势图点数据点下钻：按成团/解散日期过滤明细
+function drillToDate(field, min, max, status) {
+  detailDateField = field || '';
+  detailDateMin = min || '';
+  detailDateMax = max || '';
+  switchTab('details');
+  const st = document.getElementById('detail-status');
+  if (st) st.value = status || 'all';
+  const dd = document.getElementById('detail-days');
+  if (dd) dd.value = '';
+  const dr = document.getElementById('detail-reason');
+  if (dr) dr.value = '';
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = '';
+  loadDetailTable(1);
+}
+
 function toggleSort(field) {
   if (detailSortField === field) {
     detailSortOrder = detailSortOrder === 'asc' ? 'desc' : 'asc';
