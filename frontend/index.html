@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=36">
+<link rel="stylesheet" href="css/style.css?v=37">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -366,27 +366,22 @@
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span id="captain-table-title">👑 姐姐排行榜（按当日奖励）</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="seg">
-            <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
-            <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
-            <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
-          </div>
-          <select id="captain-per-page" onchange="setCaptainPerPage(this.value)" class="wb-select">
-            <option value="20" selected>20条/页</option>
-            <option value="30">30条/页</option>
-          </select>
+        <div class="seg">
+          <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+          <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
+          <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
         </div>
       </h3>
-      <div class="chart-src">奖励为当日发放的礼物金额；累计总流水请在「UID查询」查看 · 点表头可排序</div>
-      <div class="rank-scroll"><table class="rank-table" id="captain-table"></table></div>
-      <div class="pagination" id="captain-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-src">奖励为当日发放的礼物金额；点卡片展开全量并可排序 · 累计总流水请在「UID查询」查看</div>
+      <div id="captain-preview"></div>
       <div class="chart-insight" id="captain-insight"></div>
+      <button class="expand-btn" id="captain-expand" onclick="openCaptainFull()">展开全部 →</button>
     </div>
     <div class="chart-card">
       <h3>🎓 最近一周毕业的妹妹</h3>
-      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 近 7 天毕业</div>
-      <div id="recent-grad-list"></div>
+      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 近 7 天毕业 · 点卡片展开查看妹妹 UID 与配对姐姐</div>
+      <div id="grad-preview"></div>
+      <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
     </div>
     </div><!-- /captains-main -->
 
@@ -704,6 +699,47 @@
   </div>
 </div>
 
+<!-- 姐姐排行榜全量弹窗 -->
+<div class="cookie-modal" id="captain-full-modal">
+  <div class="cookie-modal-content" style="width:760px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span id="captain-full-title">👑 姐姐排行榜（按当日奖励）</span>
+      <button onclick="closeCaptainFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:8px;">
+      <div class="seg">
+        <button id="capf-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+        <button id="capf-week" onclick="setCaptainPeriod('week')">当周</button>
+        <button id="capf-month" onclick="setCaptainPeriod('month')">当月</button>
+      </div>
+      <select id="captain-per-page" onchange="setCaptainPerPage(this.value)" class="wb-select">
+        <option value="20" selected>20条/页</option>
+        <option value="30">30条/页</option>
+      </select>
+    </div>
+    <div class="rank-scroll" style="max-height:60vh;"><table class="rank-table" id="captain-full-table"></table></div>
+    <div class="pagination" id="captain-full-pagination" style="margin-top:8px;justify-content:center;"></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-cancel" onclick="closeCaptainFull()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 最近一周毕业妹妹全量弹窗 -->
+<div class="cookie-modal" id="grad-full-modal">
+  <div class="cookie-modal-content" style="width:760px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>🎓 最近一周毕业的妹妹</span>
+      <button onclick="closeGradFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 妹妹 UID + 配对姐姐一览</div>
+    <div class="rank-scroll" style="max-height:60vh;"><table class="rank-table" id="grad-full-table"></table></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-cancel" onclick="closeGradFull()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
@@ -714,6 +750,6 @@
 <script src="js/render.js?v=49"></script>
 <script src="js/app.js?v=48"></script>
 <script src="js/workbench.js?v=48"></script>
-<script src="js/insight.js?v=48"></script>
+<script src="js/insight.js?v=49"></script>
 </body>
 </html>

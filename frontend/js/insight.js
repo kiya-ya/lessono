@@ -16,7 +16,11 @@ function setCaptainPeriod(p) {
   ['day', 'week', 'month'].forEach(k => {
     const b = document.getElementById('cap-' + k);
     if (b) b.classList.toggle('on', k === p);
+    const bf = document.getElementById('capf-' + k);
+    if (bf) bf.classList.toggle('on', k === p);
   });
+  const ft = document.getElementById('captain-full-title');
+  if (ft) ft.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[p]}奖励）`;
   loadCaptains();
 }
 
@@ -38,8 +42,6 @@ function setCaptainPerPage(v) {
 }
 
 function renderCaptainTable() {
-  const tableEl = document.getElementById('captain-table');
-  if (!tableEl) return;
   const sortArrow = f => captainSortField === f ? (captainSortOrder === 'desc' ? '▼' : '▲') : '▲▼';
   const sorted = [...captainData].sort((a, b) => {
     const av = a[captainSortField] || 0, bv = b[captainSortField] || 0;
@@ -51,18 +53,36 @@ function renderCaptainTable() {
   if (captainPage < 0) captainPage = 0;
   const start = captainPage * captainPerPage;
   const pageData = sorted.slice(start, start + captainPerPage);
-  const th = (field, label) =>
-    `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
-  tableEl.innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
-    ${pageData.map((c, i) => `<tr>
-      <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-      <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
-      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
-      <td>${wbFmtMoney(c.total_reward)}</td>
-    </tr>`).join('')}`;
-  const el = document.getElementById('captain-pagination');
-  if (el) {
+
+  // 1) 小窗口预览（TOP 3）
+  const prevEl = document.getElementById('captain-preview');
+  if (prevEl) {
+    const top3 = sorted.slice(0, 3);
+    prevEl.innerHTML = top3.length
+      ? `<ul class="mini-preview">${top3.map((c, i) => `<li>
+          <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+          <span class="mp-name">${c.nickname} <span class="mp-sub">(${c.uid})</span></span>
+          <span class="mp-val">${wbFmtMoney(c.total_reward)}</span>
+        </li>`).join('')}</ul>`
+      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">暂无排行数据。</div>';
+  }
+
+  // 2) 全量表（弹窗内，可排序 + 分页）
+  const tableEl = document.getElementById('captain-full-table');
+  if (tableEl) {
+    const th = (field, label) =>
+      `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
+    tableEl.innerHTML = `
+      <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
+      ${pageData.map((c, i) => `<tr>
+        <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
+        <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
+        <td>${wbFmtMoney(c.total_reward)}</td>
+      </tr>`).join('')}`;
+  }
+  const pg = document.getElementById('captain-full-pagination');
+  if (pg) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${captainPage + 1}/${totalPages} 页</span>`;
     if (captainPage > 0) html += `<button onclick="captainPage--;renderCaptainTable();">上一页</button>`;
     pagerRange(captainPage, totalPages).forEach(i => {
@@ -71,7 +91,7 @@ function renderCaptainTable() {
         : `<button class="${i === captainPage ? 'active' : ''}" onclick="captainPage=${i};renderCaptainTable();">${i + 1}</button>`;
     });
     if (captainPage < totalPages - 1) html += `<button onclick="captainPage++;renderCaptainTable();">下一页</button>`;
-    el.innerHTML = html;
+    pg.innerHTML = html;
   }
   const insEl = document.getElementById('captain-insight');
   if (insEl) {
@@ -80,10 +100,23 @@ function renderCaptainTable() {
       ? `TOP 姐姐「${top.nickname}」${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励 <b>${wbFmtMoney(top.total_reward)}</b>。`
       : '暂无排行数据。';
   }
+  // 展开按钮文案
+  const expEl = document.getElementById('captain-expand');
+  if (expEl) expEl.innerHTML = `展开全部 ${total} 位 →`;
+}
+
+function openCaptainFull() {
+  const modal = document.getElementById('captain-full-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeCaptainFull() {
+  const modal = document.getElementById('captain-full-modal');
+  if (modal) modal.classList.remove('active');
 }
 
 async function loadCaptains() {
-  const tableEl = document.getElementById('captain-table');
+  const tableEl = document.getElementById('captain-preview');
   if (!tableEl) return;
   try {
     const res = await fetch(API_BASE + `/api/captains?limit=100&period=${captainPeriod}&` + getHallParam().substring(1));
@@ -137,24 +170,44 @@ async function loadSisterProfile() {
 
 /* 最近一周毕业的妹妹（满30天自动毕业） */
 function renderRecentGraduates() {
-  const el = document.getElementById('recent-grad-list');
-  if (!el) return;
   const list = sisterProfileGraduates || [];
-  if (!list.length) {
-    el.innerHTML = '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">近一周暂无毕业的妹妹。</div>';
-    return;
+  // 1) 小窗口预览（TOP 3）
+  const prevEl = document.getElementById('grad-preview');
+  if (prevEl) {
+    prevEl.innerHTML = list.length
+      ? `<ul class="mini-preview">${list.slice(0, 3).map((g, i) => `<li>
+          <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+          <span class="mp-name">${g.nickname || g.sister_uid2 || '-'} <span class="mp-sub">🎓 ${g.dissolve_date || '-'}</span></span>
+        </li>`).join('')}</ul>`
+      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">近一周暂无毕业的妹妹。</div>';
   }
-  el.innerHTML = `
-    <div class="rank-scroll" style="max-height:320px;">
-      <table class="rank-table">
-        <thead><tr><th>妹妹</th><th>大厅</th><th>毕业日期</th></tr></thead>
-        <tbody>${list.map((g, i) => `<tr>
-          <td>${g.nickname || g.sister_uid2 || '-'}</td>
+  // 2) 全量表（弹窗内）：妹妹 + 姐姐 + 大厅 + 毕业日期
+  const tableEl = document.getElementById('grad-full-table');
+  if (tableEl) {
+    tableEl.innerHTML = list.length
+      ? `<tr><th>#</th><th>妹妹</th><th>姐姐</th><th>大厅</th><th>毕业日期</th></tr>
+        ${list.map((g, i) => `<tr>
+          <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
+          <td>${g.nickname || '-'} <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid2 || '-'})</span></td>
+          <td>${g.sister_nickname || '-'} <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid || '-'})</span></td>
           <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.hall_name || '-'}</td>
           <td>${g.dissolve_date || '-'}</td>
-        </tr>`).join('')}</tbody>
-      </table>
-    </div>`;
+        </tr>`).join('')}`
+      : '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:16px;">近一周暂无毕业的妹妹</td></tr>';
+  }
+  // 展开按钮文案
+  const expEl = document.getElementById('grad-expand');
+  if (expEl) expEl.innerHTML = `展开全部 ${list.length} 位 →`;
+}
+
+function openGradFull() {
+  const modal = document.getElementById('grad-full-modal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeGradFull() {
+  const modal = document.getElementById('grad-full-modal');
+  if (modal) modal.classList.remove('active');
 }
 
 /* 画像主视图顶部两张图：打标分布环形 + 流水×留存散点 */

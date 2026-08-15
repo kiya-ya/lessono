@@ -917,12 +917,22 @@ def api_sister_profile():
     list_out.sort(key=lambda x: (-(x['week_rev'] or 0), -(x['retention'] or 0)))
 
     # 最近一周毕业的妹妹（满30天毕业 = dissolve_reason='毕业'）
+    # 取每个妹妹最近一次毕业的那条快照，带上配对的姐姐（uid+昵称）
     recent_grad = conn.execute(f'''
-        SELECT CAST(sister_uid2 AS TEXT) AS sister_uid2, MAX(sister_nickname2) AS nickname,
-               MAX(hall_name) AS hall_name, MAX(dissolve_date) AS dissolve_date
-        FROM team_detail
-        WHERE dissolve_reason = '毕业' AND date(dissolve_date) >= date('now', '-7 day') {hc}
-        GROUP BY sister_uid2 ORDER BY dissolve_date DESC LIMIT 15
+        SELECT CAST(sister_uid2 AS TEXT) AS sister_uid2,
+               sister_nickname2 AS nickname,
+               hall_name, dissolve_date,
+               CAST(sister_uid AS TEXT) AS sister_uid,
+               sister_nickname AS sister_nickname
+        FROM team_detail td
+        WHERE dissolve_reason = '毕业'
+          AND date(dissolve_date) >= date('now', '-7 day') {hc}
+          AND rowid = (
+              SELECT MAX(rowid) FROM team_detail t2
+              WHERE CAST(t2.sister_uid2 AS TEXT) = CAST(td.sister_uid2 AS TEXT)
+                AND t2.dissolve_reason = '毕业'
+          )
+        ORDER BY dissolve_date DESC LIMIT 15
     ''', hp).fetchall()
     conn.close()
 
