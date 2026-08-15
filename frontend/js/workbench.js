@@ -824,6 +824,11 @@ async function loadSurvival() {
       yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
       series: [{ name: '进行中团数', type: 'bar', data: histPairs.map(p => p[1]), barWidth: '45%', itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#3D9A6C' }, { offset: 1, color: '#7CC89B' }]), borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' } }]
     });
+    // 点已成团天数柱 → 下钻明细表该天数段（进行中）
+    charts['survival'].off('click');
+    charts['survival'].on('click', function(params) {
+      if (params.name && typeof drillToDays === 'function') drillToDays(params.name);
+    });
     const insEl = document.getElementById('survival-insight');
     if (insEl) {
       const d7 = s.d7 && s.d7.rate != null ? s.d7.rate : null;

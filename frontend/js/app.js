@@ -110,6 +110,22 @@ function drillToReason(reason) {
   loadDetailTable(1);
 }
 
+// 存活分析直方图点击下钻：按已成团天数区间跳到明细（进行中）
+function drillToDays(label) {
+  const m = (label || '').match(/(\d+)-(\d+)/);
+  const val = label === '30天以上' ? '30+' : m ? `${m[1]}-${m[2]}` : '';
+  switchTab('details');
+  const st = document.getElementById('detail-status');
+  if (st) st.value = 'active';
+  const dd = document.getElementById('detail-days');
+  if (dd && [...dd.options].some(o => o.value === val)) dd.value = val;
+  const dr = document.getElementById('detail-reason');
+  if (dr) dr.value = '';
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = '';
+  loadDetailTable(1);
+}
+
 function toggleSort(field) {
   if (detailSortField === field) {
     detailSortOrder = detailSortOrder === 'asc' ? 'desc' : 'asc';

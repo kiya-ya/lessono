@@ -99,12 +99,18 @@ async function loadDetailTable(page = 1) {
   detailPerPage = parseInt(document.getElementById('detail-per-page').value) || 20;
   detailStatus = document.getElementById('detail-status').value;
   const detailReason = document.getElementById('detail-reason') ? document.getElementById('detail-reason').value : '';
+  const daysVal = document.getElementById('detail-days') ? document.getElementById('detail-days').value : '';
+  const daysRange = { '0-3': [0, 3], '4-7': [4, 7], '8-14': [8, 14], '15-30': [15, 30], '30+': [31, null] }[daysVal] || null;
   try {
     let sortParam = '';
     if (detailSortField) {
       sortParam = `&sort_field=${detailSortField}&sort_order=${detailSortOrder}`;
     }
-    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + getHallParam() + sortParam);
+    let daysParam = '';
+    if (daysRange) {
+      daysParam = `&days_min=${daysRange[0]}` + (daysRange[1] != null ? `&days_max=${daysRange[1]}` : '');
+    }
+    const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + daysParam + getHallParam() + sortParam);
     const result = await res.json();
     _detailRows = result.data;
     document.getElementById('detail-table-body').innerHTML = result.data.map((row, i) => {

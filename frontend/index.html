@@ -472,6 +472,14 @@
         <option value="离职">离职</option>
         <option value="其他">其他</option>
       </select>
+      <select id="detail-days" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="">已成团天数</option>
+        <option value="0-3">0-3天</option>
+        <option value="4-7">4-7天</option>
+        <option value="8-14">8-14天</option>
+        <option value="15-30">15-30天</option>
+        <option value="30+">30天以上</option>
+      </select>
       <select id="detail-per-page" onchange="loadDetailTable(1)" class="wb-select">
         <option value="10">10条/页</option>
         <option value="20" selected>20条/页</option>
@@ -736,11 +744,11 @@
 
 <script src="js/config.js?v=42"></script>
 <script src="js/utils.js?v=42"></script>
-<script src="js/api.js?v=46"></script>
+<script src="js/api.js?v=47"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=49"></script>
-<script src="js/app.js?v=45"></script>
-<script src="js/workbench.js?v=46"></script>
+<script src="js/app.js?v=46"></script>
+<script src="js/workbench.js?v=47"></script>
 <script src="js/insight.js?v=44"></script>
 </body>
 </html>

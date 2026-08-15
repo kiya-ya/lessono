@@ -1695,6 +1695,8 @@ def api_detail_table():
     hall = request.args.get('hall', 'all')
     status = request.args.get('status', 'all')
     reason = request.args.get('reason', '')
+    days_min = request.args.get('days_min', '')
+    days_max = request.args.get('days_max', '')
     sort_field = request.args.get('sort_field', 'team_id')
     sort_order = request.args.get('sort_order', 'asc')
     
@@ -1725,7 +1727,13 @@ def api_detail_table():
     if reason:
         conditions.append(f'({DISSOLVE_REASON_CASE}) = ?')
         params.append(reason)
-    
+    if days_min != '':
+        conditions.append('days_since_formed >= ?')
+        params.append(int(days_min))
+    if days_max != '':
+        conditions.append('days_since_formed <= ?')
+        params.append(int(days_max))
+
     where_clause = 'WHERE ' + ' AND '.join(conditions) if conditions else ''
     
     cursor = conn.execute(f'SELECT COUNT(*) as total FROM team_detail {where_clause}', params)
