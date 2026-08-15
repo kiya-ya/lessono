@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=28">
+<link rel="stylesheet" href="css/style.css?v=29">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -234,15 +234,35 @@
       <span class="hint">厅·组对比 / 政策上线（07-17）前后 4 周均值</span>
     </div>
     <div id="compare-main">
-    <div class="chart-grid">
-      <div class="chart-card">
+    <!-- 折叠小图：交互对象行（点开才揭示） -->
+    <div class="cmp-chips">
+      <button class="cmp-chip" data-mini="retdist" onclick="showMini('retdist')">📊 厅留存分布</button>
+      <button class="cmp-chip" data-mini="dual" onclick="showMini('dual')">📈 新成团 vs 解散</button>
+      <button class="cmp-chip" data-mini="weekcmp" onclick="showMini('weekcmp')">📋 本周 vs 上周</button>
+    </div>
+    <!-- 小图揭示区：一次只显示一个 -->
+    <div class="chart-card mini-reveal" id="mini-reveal" style="display:none;">
+      <div id="mini-retdist">
         <h3>📊 厅留存率分布</h3>
         <div class="chart-src">本周各厅留存率分段统计 · 一眼看清整体水位</div>
         <div class="chart-container" id="chart-retention-dist"></div>
         <div class="chart-insight" id="retention-dist-insight"></div>
       </div>
-      <div class="chart-card"><h3>📈 新成团 vs 解散联动（双轴图）</h3><div class="chart-src">每周新成团（柱）与解散（线）对照 · 净增 = 新成团 − 解散</div><div class="chart-container" id="chart-compare-dual"></div><div class="chart-insight" id="compare-dual-insight"></div></div>
+      <div id="mini-dual" style="display:none;">
+        <h3>📈 新成团 vs 解散联动（双轴图）</h3>
+        <div class="chart-src">每周新成团（柱）与解散（线）对照 · 净增 = 新成团 − 解散</div>
+        <div class="chart-container" id="chart-compare-dual"></div>
+        <div class="chart-insight" id="compare-dual-insight"></div>
+      </div>
+      <div id="mini-weekcmp" style="display:none;">
+        <h3>📊 本周 vs 上周 核心指标对比</h3>
+        <div class="chart-src">本周 vs 上周逐项指标 · 绿色=向好的方向，红色=向差</div>
+        <table class="data-table"><thead><tr><th>指标</th><th class="num">上周</th><th class="num">本周</th><th class="num">变化幅度</th><th>趋势</th></tr></thead>
+        <tbody id="compare-table-body"></tbody></table>
+        <div class="chart-insight" id="compare-table-insight"></div>
+      </div>
     </div>
+    <!-- 常驻导航：各大厅数据对比 -->
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span>🏠 各大厅数据对比</span>
@@ -260,18 +280,25 @@
           </select>
         </div>
       </h3>
-      <div class="chart-src">按所选指标排序（下拉/表头切换）· 点击柱子下钻到该厅明细</div>
+      <div class="chart-src">点击柱子 → 展开该厅分析面板；下拉/表头切换排序</div>
       <div class="chart-container" id="chart-hall-compare"></div>
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="hall-compare-insight"></div>
     </div>
-    <div class="chart-card">
-      <h3>📊 本周 vs 上周 核心指标对比</h3>
-      <div class="chart-src">本周 vs 上周逐项指标 · 绿色=向好的方向，红色=向差</div>
-      <table class="data-table"><thead><tr><th>指标</th><th class="num">上周</th><th class="num">本周</th><th class="num">变化幅度</th><th>趋势</th></tr></thead>
-      <tbody id="compare-table-body"></tbody></table>
-      <div class="chart-insight" id="compare-table-insight"></div>
-
+    <!-- 厅分析揭示面板：点击大厅后展开 -->
+    <div class="chart-card hall-focus" id="hall-focus" style="display:none;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span>🏠 <span id="hf-title">厅分析</span></span>
+        <button class="kpi-detail-close" onclick="closeHallFocus()" title="收起">✕</button>
+      </h3>
+      <div class="chart-src" id="hf-src">—</div>
+      <div class="policy-grid" id="hf-cards" style="margin-bottom:12px;"></div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>📈 留存率趋势</h3><div class="chart-box" id="hf-chart-ret"></div></div>
+        <div class="chart-card"><h3>💰 流水趋势</h3><div class="chart-box" id="hf-chart-rev"></div></div>
+        <div class="chart-card" style="grid-column:1/-1;"><h3>📊 该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
+      </div>
+      <div style="margin-top:12px;text-align:right;"><button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button></div>
     </div>
     </div><!-- /compare-main -->
 
@@ -760,13 +787,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=40"></script>
-<script src="js/utils.js?v=40"></script>
-<script src="js/api.js?v=40"></script>
-<script src="js/auth.js?v=40"></script>
-<script src="js/render.js?v=40"></script>
-<script src="js/app.js?v=40"></script>
-<script src="js/workbench.js?v=40"></script>
-<script src="js/insight.js?v=40"></script>
+<script src="js/config.js?v=41"></script>
+<script src="js/utils.js?v=41"></script>
+<script src="js/api.js?v=41"></script>
+<script src="js/auth.js?v=41"></script>
+<script src="js/render.js?v=41"></script>
+<script src="js/app.js?v=41"></script>
+<script src="js/workbench.js?v=41"></script>
+<script src="js/insight.js?v=41"></script>
 </body>
 </html>

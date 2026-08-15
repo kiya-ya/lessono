@@ -626,6 +626,11 @@ function closeWbGuide() {
 async function initRetentionDist() {
   const el = document.getElementById('chart-retention-dist');
   if (!el) return;
+  // 折叠小图：容器隐藏时不渲染，等 chips 揭示再画
+  if (!el.offsetHeight) {
+    if (charts['retDist']) { charts['retDist'].dispose(); charts['retDist'] = null; }
+    return;
+  }
   if (!wbOverview) await loadWorkbenchOverview();
   if (!wbOverview || !wbOverview.data) return;
   const bins = [['0-20%', 0, 20], ['20-40%', 20, 40], ['40-60%', 40, 60], ['60-80%', 60, 80], ['80-100%', 80, 101]];

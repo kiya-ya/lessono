@@ -1,113 +1,119 @@
+let compareWeeklyData = [];
+
 async function initCompareChart() {
   try {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all' + getHallParam());
     const result = await res.json();
-    const data = result.data;
-    let lastWeek = null, thisWeek = null;
-    if (data && data.length > 0) {
-      const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
-      // Filter by selected week if applicable
-      let filteredData = validData;
-      if (currentWeek && currentWeek.includes('|')) {
-        const selectedEnd = currentWeek.split('|')[1];
-        filteredData = validData.filter(d => d.week_end <= selectedEnd);
-      }
-      // Take last two records as 上周 and 本周
-      lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
-      thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
-      const metrics = [
-        { name: '📦 周新成团数', key: 'new_team_count', unit: '个' },
-        { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
-        { name: '💯 留存率', key: 'retention_rate', unit: '%', cap: 100 },
-        { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
-        { name: '💰 周礼物奖励金额', key: 'total_reward', unit: '元' },
-        { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
-      ];
-      const tbody = document.getElementById('compare-table-body');
-      tbody.innerHTML = metrics.map(m => {
-        const getVal = (weekData) => {
-          if (!weekData) return 0;
-          if (m.calc) return m.calc(weekData);
-          let v = weekData[m.key] || 0;
-          if (m.cap) v = Math.min(m.cap, v);
-          return v;
-        };
-        const b = getVal(lastWeek);
-        const a = getVal(thisWeek);
-        let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
-        if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
-        const fmt = (v) => {
-          if (v === null || v === undefined || Number.isNaN(v)) return '—';
-          const n = Number(v);
-          if (!Number.isFinite(n)) return '—';
-          if (m.unit === '元') return `¥${n.toFixed(0)}`;
-          return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
-        };
-        return `<tr><td>${m.name}</td><td class="num">${fmt(b)}</td><td class="num">${fmt(a)}</td><td class="kpi-change num ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
-      }).join('');
-    }
-    const insEl = document.getElementById('compare-table-insight');
-    if (insEl && thisWeek) {
-      const retD = Math.round(((thisWeek.retention_rate || 0) - (lastWeek ? (lastWeek.retention_rate || 0) : 0)) * 10) / 10;
-      insEl.innerHTML = `本周留存率 <b>${thisWeek.retention_rate ?? '—'}%</b>（上周 ${lastWeek ? lastWeek.retention_rate ?? '—' : '—'}%），新成团 ${thisWeek.new_team_count ?? 0} 个、解散 ${thisWeek.dissolved_count ?? 0} 个。`;
-    }
-    try {
-      const hallParam = currentHall === 'all' ? '&hall=all' : '';
-      const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
-      const hallResult = await hallRes.json();
-      hallCompareData = hallResult.data || [];
-      renderHallComparePage();
-    } catch (e) { console.error('大厅排名加载失败:', e); }
-
-    try {
-      let validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
-      if (currentWeek && currentWeek.includes('|')) {
-        const selectedEnd = currentWeek.split('|')[1];
-        validData = validData.filter(d => d.week_end <= selectedEnd);
-      }
-      const labels = validData.map((d, i) => {
-        const isLast = i === validData.length - 1;
-        return isLast ? d.week_label + ' (收集中)' : d.week_label;
-      });
-      const newTeams = validData.map(d => d.new_team_count || 0);
-      const dissolved = validData.map(d => d.dissolved_count || 0);
-      const dualEl = document.getElementById('chart-compare-dual');
-      const dualVisible = dualEl && dualEl.offsetHeight > 0;
-      if (!dualVisible) {
-        if (charts.compareDual) { charts.compareDual.dispose(); charts.compareDual = null; }
-      } else if (!charts.compareDual) {
-        charts.compareDual = echarts.init(dualEl);
-      }
-      if (charts.compareDual) charts.compareDual.setOption({
-        tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
-        legend: { data: ['新成团数', '解散数'], top: 5 },
-        grid: { left: 50, right: 50, top: 40, bottom: 50 },
-        xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
-        yAxis: [
-          { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#7C5CFF' } } },
-          { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
-        ],
-        series: [
-          { name: '新成团数', type: 'bar', data: newTeams, barWidth: '40%',
-            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#7C5CFF' }, { offset: 1, color: '#8F7BFF' }]), borderRadius: [4,4,0,0] } },
-          { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true,
-            lineStyle: { color: '#D56060', width: 2.5 },
-            itemStyle: { color: '#D56060' },
-            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(213,96,96,.24)' }, { offset: 1, color: 'rgba(213,96,96,0)' }]) } }
-        ]
-      }, true);
-      const insEl = document.getElementById('compare-dual-insight');
-      if (insEl && newTeams.length) {
-        const n = newTeams[newTeams.length - 1];
-        const dd = dissolved[dissolved.length - 1];
-        insEl.innerHTML = `最新一周新成团 <b>${n}</b> 个 vs 解散 <b>${dd}</b> 个，净${n >= dd ? '增' : '减'} <b>${Math.abs(n - dd)}</b> 个。`;
-      }
-    } catch (e) { console.error('双轴图加载失败:', e); }
-    setTimeout(() => {
-      if (charts.hallCompare) charts.hallCompare.resize();
-      if (charts.compareDual) charts.compareDual.resize();
-    }, 100);
+    compareWeeklyData = result.data || [];
+    renderCompareTable();
+    renderCompareDual();
   } catch (e) { console.error('对比分析加载失败:', e); }
+  try {
+    const hallParam = currentHall === 'all' ? '&hall=all' : '';
+    const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
+    const hallResult = await hallRes.json();
+    hallCompareData = hallResult.data || [];
+    renderHallComparePage();
+  } catch (e) { console.error('大厅排名加载失败:', e); }
+}
+
+/* 本周 vs 上周 核心指标对比表（chips「本周 vs 上周」揭示时渲染） */
+function renderCompareTable() {
+  const tbody = document.getElementById('compare-table-body');
+  if (!tbody) return;
+  const data = compareWeeklyData;
+  let lastWeek = null, thisWeek = null;
+  if (data && data.length > 0) {
+    const validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+    let filteredData = validData;
+    if (currentWeek && currentWeek.includes('|')) {
+      const selectedEnd = currentWeek.split('|')[1];
+      filteredData = validData.filter(d => d.week_end <= selectedEnd);
+    }
+    lastWeek = filteredData.length >= 2 ? filteredData[filteredData.length - 2] : null;
+    thisWeek = filteredData.length >= 1 ? filteredData[filteredData.length - 1] : null;
+    const metrics = [
+      { name: '📦 周新成团数', key: 'new_team_count', unit: '个' },
+      { name: '🔄 进行中团数', key: 'active_team_count_end', unit: '个' },
+      { name: '💯 留存率', key: 'retention_rate', unit: '%', cap: 100 },
+      { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
+      { name: '💰 周礼物奖励金额', key: 'total_reward', unit: '元' },
+      { name: '⚠️ 主动解散占比', unit: '%', reverse: true, calc: (d) => { const diss = d.dissolved_count || 0; const active = d.active_dissolved_count || 0; return diss > 0 ? active / diss * 100 : 0; } }
+    ];
+    tbody.innerHTML = metrics.map(m => {
+      const getVal = (weekData) => {
+        if (!weekData) return 0;
+        if (m.calc) return m.calc(weekData);
+        let v = weekData[m.key] || 0;
+        if (m.cap) v = Math.min(m.cap, v);
+        return v;
+      };
+      const b = getVal(lastWeek);
+      const a = getVal(thisWeek);
+      let changePct = 0, arrow = '→', trend = '⚪', trendClass = 'flat';
+      if (b > 0) { changePct = ((a - b) / b * 100); arrow = changePct > 0 ? '↑' : changePct < 0 ? '↓' : '→'; const isGood = m.reverse ? changePct < 0 : changePct > 0; trend = isGood ? '🟢' : changePct === 0 ? '⚪' : '🔴'; trendClass = isGood ? 'up' : changePct === 0 ? 'flat' : 'down'; }
+      const fmt = (v) => {
+        if (v === null || v === undefined || Number.isNaN(v)) return '—';
+        const n = Number(v);
+        if (!Number.isFinite(n)) return '—';
+        if (m.unit === '元') return `¥${n.toFixed(0)}`;
+        return `${n.toFixed(m.key === 'activity_index' ? 2 : 1)}${m.unit}`;
+      };
+      return `<tr><td>${m.name}</td><td class="num">${fmt(b)}</td><td class="num">${fmt(a)}</td><td class="kpi-change num ${trendClass}">${arrow}${Math.abs(changePct).toFixed(1)}%</td><td>${trend}</td></tr>`;
+    }).join('');
+  }
+  const insEl = document.getElementById('compare-table-insight');
+  if (insEl && thisWeek) {
+    const retD = Math.round(((thisWeek.retention_rate || 0) - (lastWeek ? (lastWeek.retention_rate || 0) : 0)) * 10) / 10;
+    insEl.innerHTML = `本周留存率 <b>${thisWeek.retention_rate ?? '—'}%</b>（上周 ${lastWeek ? lastWeek.retention_rate ?? '—' : '—'}%），新成团 ${thisWeek.new_team_count ?? 0} 个、解散 ${thisWeek.dissolved_count ?? 0} 个。`;
+  }
+}
+
+/* 新成团 vs 解散 双轴图（chips「新成团 vs 解散」揭示时渲染） */
+function renderCompareDual() {
+  const dualEl = document.getElementById('chart-compare-dual');
+  const dualVisible = dualEl && dualEl.offsetHeight > 0;
+  if (!dualVisible) {
+    if (charts.compareDual) { charts.compareDual.dispose(); charts.compareDual = null; }
+    return;
+  }
+  const data = compareWeeklyData || [];
+  let validData = data.filter(d => d.week_start && d.week_start.startsWith('2026'));
+  if (currentWeek && currentWeek.includes('|')) {
+    const selectedEnd = currentWeek.split('|')[1];
+    validData = validData.filter(d => d.week_end <= selectedEnd);
+  }
+  const labels = validData.map((d, i) => {
+    const isLast = i === validData.length - 1;
+    return isLast ? d.week_label + ' (收集中)' : d.week_label;
+  });
+  const newTeams = validData.map(d => d.new_team_count || 0);
+  const dissolved = validData.map(d => d.dissolved_count || 0);
+  if (!charts.compareDual) charts.compareDual = echarts.init(dualEl);
+  charts.compareDual.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
+    legend: { data: ['新成团数', '解散数'], top: 5 },
+    grid: { left: 50, right: 50, top: 40, bottom: 50 },
+    xAxis: { type: 'category', data: labels, axisLabel: { rotate: 45, fontSize: 10 } },
+    yAxis: [
+      { type: 'value', name: '新成团(个)', position: 'left', axisLine: { lineStyle: { color: '#7C5CFF' } } },
+      { type: 'value', name: '解散(个)', position: 'right', axisLine: { lineStyle: { color: '#D56060' } } }
+    ],
+    series: [
+      { name: '新成团数', type: 'bar', data: newTeams, barWidth: '40%',
+        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#7C5CFF' }, { offset: 1, color: '#8F7BFF' }]), borderRadius: [4,4,0,0] } },
+      { name: '解散数', type: 'line', yAxisIndex: 1, data: dissolved, smooth: true,
+        lineStyle: { color: '#D56060', width: 2.5 },
+        itemStyle: { color: '#D56060' },
+        areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(213,96,96,.24)' }, { offset: 1, color: 'rgba(213,96,96,0)' }]) } }
+    ]
+  }, true);
+  const insEl = document.getElementById('compare-dual-insight');
+  if (insEl && newTeams.length) {
+    const n = newTeams[newTeams.length - 1];
+    const dd = dissolved[dissolved.length - 1];
+    insEl.innerHTML = `最新一周新成团 <b>${n}</b> 个 vs 解散 <b>${dd}</b> 个，净${n >= dd ? '增' : '减'} <b>${Math.abs(n - dd)}</b> 个。`;
+  }
 }
 
 let detailPerPage = 20;
@@ -159,20 +165,8 @@ function renderHallComparePage() {
     } else if (!charts.hallCompare) {
       charts.hallCompare = echarts.init(hallEl);
       charts.hallCompare.on('click', function(params) {
-        // 联动大厅筛选：明细表和存活分析都按点击的大厅过滤
-        const sel = document.getElementById('hall-select');
-        if (sel && [...sel.options].some(o => o.value === params.name)) {
-          sel.value = params.name;
-          currentHall = params.name;
-          localStorage.setItem('wb_hall', params.name);
-          document.getElementById('detail-search').value = '';
-        } else {
-          // 不在当前可选范围（如厅运营看全平台时），退回搜索框过滤
-          currentHall = params.name;  // 存活分析等联动模块跟随点击的大厅
-          document.getElementById('detail-search').value = params.name;
-        }
-        switchTab('details');
-        loadDetailTable(1);
+        // 点击大厅 → 展开该厅分析面板（可再从面板跳明细页）
+        if (params.name) openHallFocus(params.name);
       });
     }
     if (charts.hallCompare) {
@@ -209,6 +203,148 @@ function renderHallComparePage() {
     const byAct = [...hallCompareData].sort((a, b) => (b.active_count || 0) - (a.active_count || 0))[0];
     insEl.innerHTML = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
   }
+}
+
+/* ═══════════════ 交互揭示：chips 折叠小图 + 厅分析面板 ═══════════════ */
+let _activeMini = null;
+
+function showMini(key) {
+  const reveal = document.getElementById('mini-reveal');
+  if (!reveal) return;
+  _activeMini = (_activeMini === key) ? null : key;   // 再点一次收起
+  document.querySelectorAll('.cmp-chip').forEach(b => b.classList.toggle('on', b.dataset.mini === _activeMini));
+  const ids = { retdist: 'mini-retdist', dual: 'mini-dual', weekcmp: 'mini-weekcmp' };
+  reveal.style.display = _activeMini ? '' : 'none';
+  Object.keys(ids).forEach(k => {
+    document.getElementById(ids[k]).style.display = (k === _activeMini) ? '' : 'none';
+  });
+  if (_activeMini === 'retdist' && typeof initRetentionDist === 'function') initRetentionDist();
+  else if (_activeMini === 'dual') renderCompareDual();
+  else if (_activeMini === 'weekcmp') renderCompareTable();
+  setTimeout(() => {
+    if (_activeMini === 'retdist' && charts['retDist']) charts['retDist'].resize();
+    else if (_activeMini === 'dual' && charts.compareDual) charts.compareDual.resize();
+  }, 80);
+}
+
+/* 厅分析揭示：点击大厅 → 该厅 KPI + 趋势 + 本周vs上周 */
+let hfHall = '';
+let _hfCharts = {};
+
+async function openHallFocus(hallName) {
+  hfHall = hallName || '';
+  const panel = document.getElementById('hall-focus');
+  if (!panel) return;
+  const hall = (hallCompareData || []).find(h => h.hall_name === hallName) || {};
+  let trend = [];
+  try {
+    const res = await fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(hallName));
+    trend = (await res.json()).data || [];
+  } catch (e) { console.error('厅趋势加载失败:', e); }
+  document.getElementById('hf-title').textContent = hallName;
+  document.getElementById('hf-src').textContent =
+    `${hallName} · 当前快照 + 近 ${trend.length} 周趋势${trend.length ? ' · 最近周 ' + trend[trend.length - 1].week_label : ''} · 下方「去明细」可下钻`;
+  renderHfCards(hall, trend);
+  renderHfTrend('hf-chart-ret', trend, 'retention_rate', 'pct', hallName);
+  renderHfTrend('hf-chart-rev', trend, 'total_reward', 'money', hallName);
+  renderHfWeekTable(trend);
+  panel.style.display = '';
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+
+function closeHallFocus() {
+  const panel = document.getElementById('hall-focus');
+  if (panel) panel.style.display = 'none';
+  ['hf-chart-ret', 'hf-chart-rev'].forEach(id => {
+    if (_hfCharts[id]) { _hfCharts[id].dispose(); _hfCharts[id] = null; }
+  });
+}
+
+function drillHallFocus() {
+  if (!hfHall) return;
+  if (typeof drillToHall === 'function') drillToHall(hfHall);
+}
+
+function renderHfCards(hall, trend) {
+  const el = document.getElementById('hf-cards');
+  if (!el) return;
+  const last = trend[trend.length - 1] || {};
+  const metrics = [
+    { label: '🏠 进行中团数', v: hall.active_count, unit: ' 个', accent: 'acc-green' },
+    { label: '🧱 总团数', v: hall.team_count, unit: ' 个', accent: 'acc-violet' },
+    { label: '💥 解散数', v: hall.dissolved_count, unit: ' 个', accent: 'acc-red' },
+    { label: '💰 礼物流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
+    { label: '💯 留存率（最近周）', v: last.retention_rate, pct: true, accent: 'acc-green' },
+    { label: '📦 新成团（最近周）', v: last.new_team_count, unit: ' 个', accent: 'acc-violet' },
+  ];
+  el.innerHTML = metrics.map(m => {
+    const has = m.v !== null && m.v !== undefined && !Number.isNaN(m.v);
+    const fmt = v => m.money ? '¥' + Number(v).toFixed(0) : m.pct ? Number(v) + '%' : Number(v) + (m.unit || '');
+    return `<div class="kpi-card ${m.accent}">
+      <div class="kpi-label">${m.label}</div>
+      <div class="kpi-value hf-val">${has ? fmt(m.v) : '—'}</div>
+      <div class="policy-delta"></div>
+    </div>`;
+  }).join('');
+}
+
+function renderHfTrend(id, trend, key, kind, name) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const labels = trend.map(r => r.week_label);
+  const values = trend.map(r => (r[key] ?? null));
+  const fmt = v => kind === 'money' ? wbFmtMoney(v) : (v == null ? '—' : v + '%');
+  if (_hfCharts[id]) _hfCharts[id].dispose();
+  _hfCharts[id] = echarts.init(el);
+  _hfCharts[id].setOption({
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
+      formatter: ps => { const p = ps[0]; return p.name + '<br/>' + p.marker + ' ' + name + ': ' + fmt(p.value); } },
+    grid: { left: kind === 'money' ? 70 : 45, right: 20, top: 16, bottom: 32 },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, rotate: 30 } },
+    yAxis: { type: 'value', axisLabel: { fontSize: 10, formatter: v => kind === 'money' ? wbFmtMoney(v) : v } },
+    series: [{
+      name: name, type: 'line', data: values, smooth: true, connectNulls: true, symbolSize: 5,
+      lineStyle: { color: kind === 'money' ? '#C98A2D' : '#7C5CFF', width: 2.5 },
+      itemStyle: { color: kind === 'money' ? '#C98A2D' : '#7C5CFF' },
+      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: kind === 'money' ? 'rgba(201,138,45,.18)' : 'rgba(124,92,255,.18)' },
+        { offset: 1, color: 'rgba(0,0,0,0)' }]) },
+    }],
+  }, true);
+  setTimeout(() => { if (_hfCharts[id]) _hfCharts[id].resize(); }, 0);
+}
+
+function renderHfWeekTable(trend) {
+  const el = document.getElementById('hf-table');
+  if (!el) return;
+  if (trend.length < 1) {
+    el.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--wb-text-3);padding:14px;">暂无该厅周报数据</td></tr>';
+    return;
+  }
+  const b = trend.length >= 2 ? trend[trend.length - 2] : null;
+  const a = trend[trend.length - 1];
+  const metrics = [
+    { name: '💯 留存率', key: 'retention_rate', unit: '%' },
+    { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
+    { name: '📦 新成团数', key: 'new_team_count', unit: ' 个' },
+    { name: '💥 解散数', key: 'dissolved_count', unit: ' 个', reverse: true },
+    { name: '🔄 进行中团数', key: 'active_team_count_end', unit: ' 个' },
+    { name: '💰 周礼物流水', key: 'total_reward', unit: ' 元' },
+  ];
+  const getVal = (w, m) => { if (!w) return 0; let v = w[m.key] || 0; return v; };
+  const fmt = (v, m) => m.unit === ' 元' ? '¥' + Number(v).toFixed(0) : Number(v).toFixed(m.unit === '%' ? 1 : 0) + m.unit;
+  el.innerHTML = metrics.map(m => {
+    const bv = getVal(b, m), av = getVal(a, m);
+    let diff = '—', cls = 'flat', trendIcon = '⚪';
+    if (b) {
+      const d = av - bv;
+      diff = (d > 0 ? '+' : '') + (m.unit === ' 元' ? '¥' + Number(d).toFixed(0) : Number(d).toFixed(m.unit === '%' ? 1 : 0) + m.unit);
+      const good = m.reverse ? d < 0 : d > 0;
+      cls = d === 0 ? 'flat' : good ? 'up' : 'down';
+      trendIcon = d === 0 ? '⚪' : good ? '🟢' : '🔴';
+    }
+    return `<tr><td>${m.name}</td><td class="num">${fmt(bv, m)}</td><td class="num">${fmt(av, m)}</td><td class="num dt-diff ${cls}">${diff}</td><td>${trendIcon}</td></tr>`;
+  }).join('');
 }
 
 function renderUIDResult(data) {

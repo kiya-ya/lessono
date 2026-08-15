@@ -830,3 +830,18 @@ td.num, th.num {
 .cmp-sep { font-size: 10px; color: var(--wb-text-3); }
 .cmp-b { color: var(--wb-accent); font-weight: 700; }
 .cmp-name { margin-left: auto; font-size: 10px; color: var(--wb-text-3); max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 对比分析：交互揭示（chips 折叠小图 + 厅分析面板） */
+.cmp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.cmp-chip {
+  border: 1px solid var(--wb-line); background: #fff; color: var(--wb-text-2);
+  padding: 6px 14px; border-radius: 999px; font-size: 12px; cursor: pointer;
+  transition: all .15s;
+}
+.cmp-chip:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
+.cmp-chip.on { background: var(--wb-grad); color: #fff; border-color: transparent; box-shadow: 0 2px 8px rgba(124,92,255,.25); }
+.mini-reveal { padding: 16px 18px; }
+.mini-reveal h3 { font-size: 14px; }
+.hall-focus { margin-top: 12px; }
+.hall-focus .chart-grid .chart-card { box-shadow: none; border-color: transparent; background: #F9FAFC; padding: 14px; }
+.hall-focus .kpi-value.hf-val { font-size: 22px; margin: 6px 0 4px; }
