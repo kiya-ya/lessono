@@ -40,7 +40,6 @@ function onWeekChange() {
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
   if (typeof loadCaptains === 'function') loadCaptains();
-  if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
 }
 
 function switchTab(tabName) {
@@ -58,7 +57,7 @@ function switchTab(tabName) {
 
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
 const DRILL_TARGETS = {
-  retention:   { tab: 'compare', view: 'policy' },      // 留存率 → 对比分析 · 政策评估（前后对比 + 分厅响应度）
+  retention:   { tab: 'compare' },                      // 留存率 → 对比分析
   dissolution: { tab: 'details', status: 'dissolved' }, // 解散率 → 明细 · 已解散
   revenue:     { tab: 'compare' },                      // 礼物奖励 → 对比分析（大厅流水对比）
   activity:    { tab: 'compare' },                      // 任务活跃度 → 对比分析（指标对比表）
@@ -70,7 +69,6 @@ function drillTo(key) {
   const t = DRILL_TARGETS[key];
   if (!t) return;
   switchTab(t.tab);
-  if (t.view && typeof switchCompareView === 'function') switchCompareView(t.view);
   if (t.status) {
     const sel = document.getElementById('detail-status');
     if (sel) sel.value = t.status;
@@ -152,8 +150,6 @@ function refreshData() {
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
   if (typeof loadSister2Profile === 'function') loadSister2Profile();
-  if (typeof loadPolicyImpact === 'function') loadPolicyImpact();
-  if (typeof loadPolicyAttribution === 'function') loadPolicyAttribution();
   initCompareChart();
 }
 
