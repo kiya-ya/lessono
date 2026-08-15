@@ -50,7 +50,7 @@ function switchTab(tabName) {
   document.getElementById('tab-' + tabName).classList.add('active');
   if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
   if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
-  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); if (typeof loadLyingFlat === 'function') loadLyingFlat(); }, 100);
+  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
   if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); if (typeof loadSister2Profile === 'function') loadSister2Profile(); }, 100);
 }
 
@@ -143,7 +143,6 @@ function refreshData() {
   loadDetailTable();
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
-  if (typeof loadLyingFlat === 'function') loadLyingFlat();
   if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
   if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();

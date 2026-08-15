@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=35">
+<link rel="stylesheet" href="css/style.css?v=36">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -452,12 +452,6 @@
         <div class="chart-insight" id="dissolve-reasons-insight"></div>
       </div>
     </div>
-    <div class="chart-card" id="lying-flat-card">
-      <h3>😴 躺平预警名单</h3>
-      <div class="chart-src" id="lying-flat-src">连续多个快照日零任务（开车/陪档/收送礼全为0）· 接近自动解散的团</div>
-      <div id="lying-flat-list"></div>
-      <div class="chart-insight" id="lying-flat-insight"></div>
-    </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
         <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
@@ -633,22 +627,6 @@
   </div>
 </div>
 
-<!-- 躺平下钻弹窗 -->
-<div class="cookie-modal" id="lying-detail-modal">
-  <div class="cookie-modal-content" style="width:760px; max-width:95%;">
-    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>😴 <span id="ld-name">躺平明细</span></span>
-      <button onclick="closeLyingDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
-    </h3>
-    <div class="survival-chips" id="ld-chips"></div>
-    <div class="rank-scroll" style="max-height:420px;"><table class="rank-table" id="ld-table"></table></div>
-    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
-      <button class="btn-save" onclick="ldGoUID()">在 UID 查询中查看 →</button>
-      <button class="btn-cancel" onclick="closeLyingDetail()">关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- 妹妹活动追踪弹窗 -->
 <div class="cookie-modal" id="sister2-detail-modal">
   <div class="cookie-modal-content" style="width:860px; max-width:95%;">
@@ -746,8 +724,8 @@
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=49"></script>
-<script src="js/app.js?v=44"></script>
-<script src="js/workbench.js?v=44"></script>
+<script src="js/app.js?v=45"></script>
+<script src="js/workbench.js?v=45"></script>
 <script src="js/insight.js?v=44"></script>
 </body>
 </html>
