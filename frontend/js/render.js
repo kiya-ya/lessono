@@ -9,6 +9,21 @@ async function initCompareChart() {
   } catch (e) { console.error('大厅排名加载失败:', e); }
 }
 
+/* 周序列辅助：判断某周是否有业务数据（成团/解散/流水/在榜任一非零），用于裁掉两端空周 */
+function wbWeekHasData(r) {
+  if (!r) return false;
+  return (r.new_team_count || 0) > 0 || (r.dissolved_count || 0) > 0
+    || (r.total_reward || 0) > 0 || (r.active_team_count_end || 0) > 0
+    || (r.active_team_count_start || 0) > 0;
+}
+function trimSeries(arr) {
+  if (!arr || !arr.length) return arr || [];
+  let s = 0, e = arr.length - 1;
+  while (s <= e && !wbWeekHasData(arr[s])) s++;
+  while (e >= s && !wbWeekHasData(arr[e])) e--;
+  return arr.slice(s, e + 1);
+}
+
 let detailPerPage = 20;
 let hallComparePage = 0;
 let hallCompareData = [];
@@ -183,8 +198,9 @@ function renderHfCards(hall, trend) {
 function renderHfTrend(id, trend, key, kind, name) {
   const el = document.getElementById(id);
   if (!el) return;
-  const labels = trend.map(r => r.week_label);
-  const values = trend.map(r => (r[key] ?? null));
+  const t = trimSeries(trend);
+  const labels = t.map(r => r.week_label);
+  const values = t.map(r => (r[key] ?? null));
   const fmt = v => kind === 'money' ? wbFmtMoney(v) : (v == null ? '—' : v + '%');
   if (_hfCharts[id]) _hfCharts[id].dispose();
   _hfCharts[id] = echarts.init(el);
@@ -825,14 +841,19 @@ function closeCmpPopover() {
   if (_cmpPopoverChart) { _cmpPopoverChart.dispose(); _cmpPopoverChart = null; }
 }
 
-/* 按周对齐两厅周报，返回 labels + A/B 序列 */
+/* 按周对齐两厅周报，返回 labels + A/B 序列（按 week_start 排序，裁掉两端空周） */
 function cmpAligned(key) {
   const { wa, wb } = _cmpWeekly;
-  const ma = {}, mb = {}; const weekSet = new Set();
-  (wa || []).forEach(r => { ma[r.week_label] = r; weekSet.add(r.week_label); });
-  (wb || []).forEach(r => { mb[r.week_label] = r; weekSet.add(r.week_label); });
-  const labels = [...weekSet].sort();
-  return { labels, da: labels.map(l => ma[l] ? ma[l][key] : null), db: labels.map(l => mb[l] ? mb[l][key] : null) };
+  const ma = {}, mb = {};
+  (wa || []).forEach(r => { ma[r.week_start] = r; });
+  (wb || []).forEach(r => { mb[r.week_start] = r; });
+  let weeks = [...new Set([...Object.keys(ma), ...Object.keys(mb)])].sort(); // week_start 字符串排序 == 时间排序
+  let s = 0, e = weeks.length - 1;
+  while (s <= e && !(wbWeekHasData(ma[weeks[s]]) || wbWeekHasData(mb[weeks[s]]))) s++;
+  while (e >= s && !(wbWeekHasData(ma[weeks[e]]) || wbWeekHasData(mb[weeks[e]]))) e--;
+  weeks = weeks.slice(s, e + 1);
+  const labels = weeks.map(ws => (ma[ws] || mb[ws]).week_label);
+  return { labels, da: weeks.map(ws => ma[ws] ? ma[ws][key] : null), db: weeks.map(ws => mb[ws] ? mb[ws][key] : null) };
 }
 
 function renderCmpPopoverChart(m) {
