@@ -863,7 +863,7 @@ td.num, th.num {
 .cmp-popover { position: absolute; z-index: 30; width: 600px; max-width: 94%; background: #fff; border: 1px solid var(--wb-line); border-radius: 12px; box-shadow: 0 16px 40px rgba(26,29,38,.20); padding: 14px 16px; animation: kpiDetailIn .18s ease; }
 .cmp-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cmp-popover-head h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.cmp-popover-grid { display: grid; grid-template-columns: 1fr 240px; gap: 12px; margin-top: 8px; align-items: start; }
+.cmp-popover-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 8px; align-items: start; }
 .cmp-popover-grid .kpi-detail-table { overflow: auto; }
 
 /* 对比分析：厅分析揭示面板 */
