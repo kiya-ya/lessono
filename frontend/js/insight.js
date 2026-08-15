@@ -54,14 +54,11 @@ function renderCaptainTable() {
   const th = (field, label) =>
     `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
   tableEl.innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('team_count', '带团数')}${th('active_count', '进行中')}${th('survival_rate', '团存活率')}${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
+    <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
     ${pageData.map((c, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
       <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
-      <td>${c.team_count}</td>
-      <td>${c.active_count}</td>
-      <td>${c.survival_rate}%</td>
       <td>${wbFmtMoney(c.total_reward)}</td>
     </tr>`).join('')}`;
   const el = document.getElementById('captain-pagination');
@@ -80,7 +77,7 @@ function renderCaptainTable() {
   if (insEl) {
     const top = sorted[0];
     insEl.innerHTML = top
-      ? `TOP 姐姐「${top.nickname}」${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励 <b>${wbFmtMoney(top.total_reward)}</b>，带团 ${top.team_count} 个、存活率 ${top.survival_rate}%。`
+      ? `TOP 姐姐「${top.nickname}」${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励 <b>${wbFmtMoney(top.total_reward)}</b>。`
       : '暂无排行数据。';
   }
 }
