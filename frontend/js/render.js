@@ -129,8 +129,8 @@ function renderHallComparePage() {
       charts.hallCompare = echarts.init(hallEl);
       charts.hallCompare.on('click', function(params) {
         if (!params.name) return;
-        // 普通点击 → 展开该厅分析并填入对比 A
-        openHallFocus(params.name); setCmpHallA(params.name);
+        // 普通点击 → 仅展开该厅分析（逛）；对比 A 由厅面板里「设为对比 A」显式触发
+        openHallFocus(params.name);
       });
     }
     if (charts.hallCompare) {
@@ -776,12 +776,18 @@ function collapseCmpResult() {
   if (el) el.style.display = 'none';
 }
 
-/* 点大厅柱联动：把该厅自动填入自选对比 A 厅 */
+/* 显式把某厅设为自选对比 A 厅（不再由点柱自动触发） */
 function setCmpHallA(hallName) {
   const selA = document.getElementById('cmp-hall-a');
   if (!selA || !cmpHalls.length) return;
   const idx = cmpHalls.findIndex(h => h.hall_name === hallName);
   if (idx >= 0) selA.value = String(idx);
+}
+
+/* 厅分析面板里的「设为对比 A」按钮：读取当前展开厅 */
+function setCmpHallABtn() {
+  if (!hfHall) return;
+  setCmpHallA(hfHall);
 }
 
 function swapCmpHalls() {

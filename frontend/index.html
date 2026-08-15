@@ -316,7 +316,10 @@
       </div>
       <div class="chart-src" style="margin-top:10px;">💡 点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
       <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
-      <div style="margin-top:12px;text-align:right;"><button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button></div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="mini-btn" onclick="setCmpHallABtn()" title="把该厅填入顶部自选对比 A 厅">⚔️ 设为对比 A</button>
+        <button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button>
+      </div>
     </div>
     </div><!-- /compare-main -->
 
@@ -784,7 +787,7 @@
 <script src="js/utils.js?v=42"></script>
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=45"></script>
+<script src="js/render.js?v=46"></script>
 <script src="js/app.js?v=42"></script>
 <script src="js/workbench.js?v=42"></script>
 <script src="js/insight.js?v=42"></script>
