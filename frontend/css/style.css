@@ -830,6 +830,14 @@ td.num, th.num {
 .cmp-sep { font-size: 10px; color: var(--wb-text-3); }
 .cmp-b { color: var(--wb-accent); font-weight: 700; }
 .cmp-name { margin-left: auto; font-size: 10px; color: var(--wb-text-3); max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 胜出方高亮：谁赢谁紫，另一侧弱化（替代「B 永远紫色」） */
+.cmp-a.cmp-win { color: var(--wb-accent); font-weight: 700; }
+.cmp-b.cmp-muted { color: var(--wb-text-2); font-weight: 600; }
+/* 常驻自选对比条 */
+#cmp-bar-card { margin-bottom: 12px; }
+#cmp-bar-card .cmp-bar { margin: 12px 0 4px; }
+#cmp-result h3 { font-size: 15px; }
+#cmp-result .cmp-title { color: var(--wb-accent); }
 
 /* 对比分析：交互揭示（chips 折叠小图 + 厅分析面板） */
 .cmp-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }

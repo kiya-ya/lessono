@@ -14,6 +14,7 @@ async function initCompareChart() {
     const hallResult = await hallRes.json();
     hallCompareData = hallResult.data || [];
     renderHallComparePage();
+    if (typeof initCmpBar === 'function') initCmpBar();
   } catch (e) { console.error('大厅排名加载失败:', e); }
 }
 
@@ -120,6 +121,7 @@ let detailPerPage = 20;
 let hallComparePage = 0;
 let hallCompareData = [];
 let detailStatus = 'all';
+let _hallSel = [];   // Shift+点击多选的大厅，供「对比选中」聚合
 
 function renderHallComparePage() {
   // 搜索过滤
@@ -157,6 +159,25 @@ function renderHallComparePage() {
     const values = pageData.map(d => d[hallCompareSortField] || 0);
     const maxVal = Math.max(...values);
     const xMax = Math.ceil(maxVal * 1.2) || 1;
+    // 全量第一名（跨页唯一）：金色渐变 + 皇冠徽标；避免翻页后皇冠跳到别页
+    const globalMax = Math.max(...filtered.map(d => d[hallCompareSortField] || 0));
+    const isMoney = cfg.unit === '元';
+    const dataObjs = values.map((v, i) => {
+      const sel = _hallSel.includes(pageData[i].hall_name);
+      const isTop = v === globalMax;
+      const base = isTop
+        ? { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: '#C98A2D' }, { offset: 1, color: '#E5B968' }]) }
+        : { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: cfg.color }, { offset: 1, color: cfg.grad }]) };
+      if (sel) Object.assign(base, { borderColor: '#7C5CFF', borderWidth: 2, shadowBlur: 8, shadowColor: 'rgba(124,92,255,.45)' });
+      base.borderRadius = [0, 4, 4, 0];
+      const o = { value: v, itemStyle: base };
+      if (isTop) {
+        o.label = { show: true, position: 'right', fontSize: 11, color: '#B07A1F', fontWeight: 'bold', formatter: '👑 ' + (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
+      } else if (sel) {
+        o.label = { show: true, position: 'right', fontSize: 10, color: '#7C5CFF', fontWeight: 'bold', formatter: '✓ ' + (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
+      }
+      return o;
+    });
 
     const hallEl = document.getElementById('chart-hall-compare');
     const hallVisible = hallEl && hallEl.offsetHeight > 0;
@@ -165,17 +186,23 @@ function renderHallComparePage() {
     } else if (!charts.hallCompare) {
       charts.hallCompare = echarts.init(hallEl);
       charts.hallCompare.on('click', function(params) {
-        // 点击大厅 → 展开该厅分析面板（可再从面板跳明细页）
-        if (params.name) openHallFocus(params.name);
+        if (!params.name) return;
+        // Shift+点击 → 多选该厅（聚合对比）；普通点击 → 展开该厅分析并填入对比 A
+        if (params.event && params.event.event && params.event.event.shiftKey) {
+          toggleHallSel(params.name);
+          return;
+        }
+        openHallFocus(params.name); setCmpHallA(params.name);
       });
     }
     if (charts.hallCompare) {
+      const hallNamesReversed = hallNames.reverse();
       charts.hallCompare.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' }, formatter: `{b}<br/>${cfg.label}: {c}${cfg.unit}` },
         grid: { left: 160, right: 40, top: 20, bottom: 30 },
         xAxis: { type: 'value', max: xMax, minInterval: 1 },
-        yAxis: { type: 'category', data: hallNames.reverse(), axisLabel: { fontSize: 11 } },
-        series: [{ name: cfg.label, type: 'bar', data: values.reverse(), barMaxWidth: 30,
+        yAxis: { type: 'category', data: hallNamesReversed, axisLabel: { fontSize: 11 } },
+        series: [{ name: cfg.label, type: 'bar', data: dataObjs.reverse(), barMaxWidth: 30,
           itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [{ offset: 0, color: cfg.color }, { offset: 1, color: cfg.grad }]), borderRadius: [0,4,4,0] },
           label: { show: true, position: 'right', fontSize: 10, color: '#6B7280', formatter: p => cfg.unit === '元' ? wbFmtMoney(p.value) : p.value + cfg.unit }
         }]
@@ -187,6 +214,7 @@ function renderHallComparePage() {
       charts.hallCompare.setOption({ yAxis: { data: [] }, series: [{ data: [] }] });
     }
   }
+  updateHallSelUi();
 
   let html = `<span style="font-size:13px;color:#666;margin-right:12px;">共 ${total} 个大厅 · 第 ${hallComparePage + 1}/${totalPages || 1} 页</span>`;
   if (hallComparePage > 0) html += `<button onclick="hallComparePage--;renderHallComparePage();">上一页</button>`;
@@ -203,6 +231,38 @@ function renderHallComparePage() {
     const byAct = [...hallCompareData].sort((a, b) => (b.active_count || 0) - (a.active_count || 0))[0];
     insEl.innerHTML = `流水最高「${byRev.hall_name}」${wbFmtMoney(byRev.total_revenue)}，进行中团最多「${byAct.hall_name}」${byAct.active_count} 个。`;
   }
+}
+
+/* ═══════════════ 多选对比：Shift+点击选厅 → 「对比选中」聚合 ═══════════════ */
+function toggleHallSel(name) {
+  const i = _hallSel.indexOf(name);
+  if (i >= 0) _hallSel.splice(i, 1); else _hallSel.push(name);
+  renderHallComparePage();
+  updateHallSelUi();
+}
+
+function updateHallSelUi() {
+  const btn = document.getElementById('btn-hall-sel');
+  const n = _hallSel.length;
+  if (btn) {
+    btn.disabled = n < 2;
+    btn.textContent = n > 0 ? `对比选中（${n}）` : '对比选中';
+  }
+  const hint = document.getElementById('hall-sel-hint');
+  if (hint) hint.textContent = n > 0 ? `已选 ${n} 个厅：${_hallSel.join('、')}` : '';
+}
+
+function clearHallSel() {
+  _hallSel = [];
+  renderHallComparePage();
+  updateHallSelUi();
+  const panel = document.getElementById('brush-panel');
+  if (panel) panel.style.display = 'none';
+}
+
+function runHallSelCompare() {
+  if (_hallSel.length < 2) return;
+  if (typeof renderBrushPanel === 'function') renderBrushPanel(_hallSel.slice());
 }
 
 /* ═══════════════ 交互揭示：chips 折叠小图 + 厅分析面板 ═══════════════ */
@@ -244,6 +304,8 @@ async function openHallFocus(hallName) {
   document.getElementById('hf-title').textContent = hallName;
   document.getElementById('hf-src').textContent =
     `${hallName} · 当前快照 + 近 ${trend.length} 周趋势${trend.length ? ' · 最近周 ' + trend[trend.length - 1].week_label : ''} · 下方「去明细」可下钻`;
+  const drill = document.getElementById('hf-week-drill');
+  if (drill) drill.style.display = 'none';
   renderHfCards(hall, trend);
   renderHfTrend('hf-chart-ret', trend, 'retention_rate', 'pct', hallName);
   renderHfTrend('hf-chart-rev', trend, 'total_reward', 'money', hallName);
@@ -255,6 +317,8 @@ async function openHallFocus(hallName) {
 function closeHallFocus() {
   const panel = document.getElementById('hall-focus');
   if (panel) panel.style.display = 'none';
+  const drill = document.getElementById('hf-week-drill');
+  if (drill) drill.style.display = 'none';
   ['hf-chart-ret', 'hf-chart-rev'].forEach(id => {
     if (_hfCharts[id]) { _hfCharts[id].dispose(); _hfCharts[id] = null; }
   });
@@ -311,7 +375,50 @@ function renderHfTrend(id, trend, key, kind, name) {
         { offset: 1, color: 'rgba(0,0,0,0)' }]) },
     }],
   }, true);
+  // 趋势点下钻：点击某周数据点 → 揭示该周该厅团明细
+  _hfCharts[id].off('click');
+  _hfCharts[id].on('click', function(params) {
+    if (!params.name) return;
+    const w = trend.find(r => r.week_label === params.name);
+    if (w) openWeekDrill(name, w.week_start, w.week_end, w.week_label);
+  });
   setTimeout(() => { if (_hfCharts[id]) _hfCharts[id].resize(); }, 0);
+}
+
+/* 趋势点下钻：该厅该周的新成团 / 该周解散（含原因）/ 周存活数 */
+async function openWeekDrill(hallName, weekStart, weekEnd, weekLabel) {
+  const drill = document.getElementById('hf-week-drill');
+  if (!drill) return;
+  drill.style.display = '';
+  drill.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+    <b>📌 ${hallName} · ${weekLabel} 周团明细</b>
+    <span style="font-size:12px;color:var(--wb-text-3);">点趋势图任一周数据点查看该周情况</span>
+  </div>`;
+  try {
+    const res = await fetch(`${API_BASE}/api/weekly-team-detail?hall=${encodeURIComponent(hallName)}&week_start=${weekStart}&week_end=${weekEnd}`);
+    const d = await res.json();
+    if (d.error) { drill.innerHTML += `<div class="kpi-note">${d.error}</div>`; return; }
+    const newL = d.new_teams || [], dissL = d.dissolved_teams || [];
+    const row = t => `<tr><td>${t.sister_nickname || '—'}</td><td class="num">${t.form_date || '—'}</td></tr>`;
+    const dissRow = t => `<tr><td>${t.sister_nickname || '—'}</td><td class="num">${t.dissolve_date || '—'}</td><td><span class="chip ${t.reason === '手动解散' ? 'down' : 'warn'}">${t.reason || '其他'}</span></td></tr>`;
+    drill.innerHTML += `
+      <div style="display:flex;align-items:center;gap:12px;margin:10px 0 4px;flex-wrap:wrap;">
+        <span class="chip up">该周新成团 ${newL.length} 个</span>
+        <span class="chip down">该周解散 ${dissL.length} 个</span>
+        <span class="chip flat">周末存活 ${d.active_end ?? '—'} 个</span>
+      </div>
+      <div class="chart-grid" style="margin-top:6px;">
+        <div class="chart-card"><h3>🆕 该周新成团</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">成团日</th></tr></thead><tbody>${
+          newL.length ? newL.map(row).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--wb-text-3);padding:12px;">本周无新成团</td></tr>'
+        }</tbody></table></div>
+        <div class="chart-card"><h3>💥 该周解散（含原因）</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">解散日</th><th>原因</th></tr></thead><tbody>${
+          dissL.length ? dissL.map(dissRow).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--wb-text-3);padding:12px;">本周无解散团</td></tr>'
+        }</tbody></table></div>
+      </div>`;
+  } catch (e) {
+    console.error('周明细下钻失败:', e);
+    drill.innerHTML += `<div class="kpi-note">该周明细加载失败</div>`;
+  }
 }
 
 function renderHfWeekTable(trend) {
@@ -345,6 +452,51 @@ function renderHfWeekTable(trend) {
     }
     return `<tr><td>${m.name}</td><td class="num">${fmt(bv, m)}</td><td class="num">${fmt(av, m)}</td><td class="num dt-diff ${cls}">${diff}</td><td>${trendIcon}</td></tr>`;
   }).join('');
+}
+
+/* 拖拽框选多厅 → 框内聚合对比概览（brush 框选时触发） */
+function renderBrushPanel(hallNames) {
+  const panel = document.getElementById('brush-panel');
+  if (!panel) return;
+  const halls = hallNames
+    .map(n => hallCompareData.find(h => h.hall_name === n))
+    .filter(Boolean);
+  if (!halls.length) { panel.style.display = 'none'; return; }
+  const sum = halls.reduce((acc, h) => {
+    acc.active_count += h.active_count || 0;
+    acc.team_count += h.team_count || 0;
+    acc.dissolved_count += h.dissolved_count || 0;
+    acc.total_revenue += h.total_revenue || 0;
+    return acc;
+  }, { active_count: 0, team_count: 0, dissolved_count: 0, total_revenue: 0 });
+  const n = halls.length;
+  const sumCards = [
+    { label: '🏠 进行中团数合计', v: sum.active_count, unit: ' 个', accent: 'acc-green' },
+    { label: '🧱 总团数合计', v: sum.team_count, unit: ' 个', accent: 'acc-violet' },
+    { label: '💥 解散数合计', v: sum.dissolved_count, unit: ' 个', accent: 'acc-red' },
+    { label: '💰 礼物流水合计', v: '¥' + Number(sum.total_revenue).toFixed(0), accent: 'acc-gold' },
+    { label: '🪜 平均进行中团数', v: (sum.active_count / n).toFixed(1), unit: ' 个', accent: 'acc-green' },
+    { label: '🪙 平均礼物流水', v: '¥' + (sum.total_revenue / n).toFixed(0), accent: 'acc-gold' },
+  ];
+  const miniRows = halls.slice().sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0))
+    .map((h, i) => {
+      const w = Math.round((h.total_revenue || 0) / Math.max(1, sum.total_revenue) * 100);
+      return `<tr><td>${i + 1}</td><td>${h.hall_name}</td><td class="num">${h.active_count || 0}</td><td class="num">${h.dissolved_count || 0}</td><td class="num">¥${Number(h.total_revenue || 0).toFixed(0)}</td><td style="width:26%;"><div class="bar-track"><div class="bar-fill" style="width:${w}%;background:linear-gradient(90deg,#C98A2D,#E5B968);"></div></div></td></tr>`;
+    }).join('');
+  panel.style.display = '';
+  panel.innerHTML = `
+    <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span>🔲 多选对比：选中 ${n} 个厅</span>
+      <span style="font-size:12px;font-weight:400;color:var(--wb-text-3);">继续 Shift+点击可增删；「清除」重置选择</span>
+    </h3>
+    <div class="policy-grid" style="margin:8px 0 10px;">${sumCards.map(m => `
+      <div class="kpi-card ${m.accent}">
+        <div class="kpi-label">${m.label}</div>
+        <div class="kpi-value hf-val">${m.v}${m.unit || ''}</div>
+        <div class="policy-delta"></div>
+      </div>`).join('')}
+    </div>
+    <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>位次</th><th>大厅</th><th class="num">进行中</th><th class="num">解散</th><th class="num">礼物流水</th><th>流水占比</th></tr></thead><tbody>${miniRows}</tbody></table></div>`;
 }
 
 function renderUIDResult(data) {
@@ -729,31 +881,33 @@ function exportUIDResult() {
 let cmpHalls = [];
 let _cmpCharts = {};
 
-async function openCompareModal() {
-  const modal = document.getElementById('compare-modal');
-  if (!modal) return;
-  modal.classList.add('active');
-  try {
-    const res = await fetch(API_BASE + '/api/hall-stats?limit=999');
-    const d = await res.json();
-    cmpHalls = (d.data || []).slice().sort((a, b) => b.team_count - a.team_count);
-    const selA = document.getElementById('cmp-hall-a');
-    const selB = document.getElementById('cmp-hall-b');
-    if (cmpHalls.length < 2) {
-      selA.innerHTML = '<option>可选大厅不足</option>';
-      document.getElementById('cmp-cards').innerHTML = '<div class="kpi-note">当前范围可用大厅不足两个，无法对比。</div>';
-      return;
-    }
-    selA.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
-    selB.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
-    selB.value = '1';
-    runHallCompare();
-  } catch (e) { console.error('自选对比加载失败:', e); }
+/* 常驻对比条：用已加载的 hallCompareData 填充 A/B 选厅器（不再弹窗） */
+function initCmpBar() {
+  const selA = document.getElementById('cmp-hall-a');
+  const selB = document.getElementById('cmp-hall-b');
+  if (!selA || !selB || !hallCompareData.length) return;
+  cmpHalls = [...hallCompareData].sort((a, b) => b.team_count - a.team_count);
+  if (cmpHalls.length < 2) {
+    selA.innerHTML = '<option>可选大厅不足</option>';
+    return;
+  }
+  selA.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
+  selB.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
+  selB.value = String(Math.min(1, cmpHalls.length - 1));
 }
 
-function closeCompareModal() {
-  const modal = document.getElementById('compare-modal');
-  if (modal) modal.classList.remove('active');
+/* 收起对比结果区 */
+function collapseCmpResult() {
+  const el = document.getElementById('cmp-result');
+  if (el) el.style.display = 'none';
+}
+
+/* 点大厅柱联动：把该厅自动填入自选对比 A 厅 */
+function setCmpHallA(hallName) {
+  const selA = document.getElementById('cmp-hall-a');
+  if (!selA || !cmpHalls.length) return;
+  const idx = cmpHalls.findIndex(h => h.hall_name === hallName);
+  if (idx >= 0) selA.value = String(idx);
 }
 
 function swapCmpHalls() {
@@ -766,10 +920,15 @@ function swapCmpHalls() {
 async function runHallCompare() {
   const selA = document.getElementById('cmp-hall-a');
   const selB = document.getElementById('cmp-hall-b');
-  if (!selA || !selB) return;
+  const result = document.getElementById('cmp-result');
+  if (!selA || !selB || !result) return;
   const a = cmpHalls[+selA.value];
   const b = cmpHalls[+selB.value];
-  if (!a || !b || a.hall_name === b.hall_name) { alert('请选择两个不同的厅'); return; }
+  if (!a || !b || a.hall_name === b.hall_name) {
+    document.getElementById('cmp-title').textContent = '请选择两个不同的厅';
+    result.style.display = '';
+    return;
+  }
   document.getElementById('cmp-title').textContent = `「${a.hall_name}」 vs 「${b.hall_name}」`;
   try {
     // 当前周快照：直接从已加载的 cmpHalls 取（hall-stats 接口对 admin 忽略单厅参数）
@@ -784,6 +943,8 @@ async function runHallCompare() {
     renderCmpMetricsChart(a, b, sa, sb);
     renderCmpTrend('cmp-chart-ret', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'retention_rate', 'pct');
     renderCmpTrend('cmp-chart-rev', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'total_reward', 'money');
+    result.style.display = '';
+    setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   } catch (e) { console.error('自选对比渲染失败:', e); }
 }
 
@@ -802,16 +963,20 @@ function renderCmpCards(a, b, sa, sb, wa, wb) {
     const hasB = m.vb !== null && m.vb !== undefined && !Number.isNaN(m.vb);
     const fmt = v => m.money ? '¥' + Number(v).toFixed(0) : m.pct ? Number(v) + '%' : Number(v) + (m.unit || '');
     let diffHtml = '<span class="chip flat">—</span>';
+    let d = null, good = false;
     if (hasA && hasB) {
-      const d = m.vb - m.va;
-      const good = m.goodHigher ? d > 0 : d < 0;
+      d = m.vb - m.va;
+      good = m.goodHigher ? d > 0 : d < 0;
       const cls = d === 0 ? 'flat' : good ? 'up' : 'down';
       const t = m.pct ? (d > 0 ? '+' : '') + d + 'pp' : (d > 0 ? '+' : '') + Number(d).toFixed(0) + (m.money ? ' 元' : '');
       diffHtml = `<span class="chip ${cls}">B−A ${t}</span>`;
     }
+    // 胜出方紫色高亮：谁赢谁亮，不再「B 永远紫色」
+    const winA = hasA && hasB && d !== 0 && !good;
+    const winB = hasA && hasB && d !== 0 && good;
     return `<div class="kpi-card ${m.accent}">
       <div class="kpi-label">${m.label}</div>
-      <div class="kpi-value cmp-two"><span class="cmp-a">${hasA ? fmt(m.va) : '—'}</span><span class="cmp-sep">vs</span><span class="cmp-b">${hasB ? fmt(m.vb) : '—'}</span></div>
+      <div class="kpi-value cmp-two"><span class="cmp-a ${winA ? 'cmp-win' : ''}">${hasA ? fmt(m.va) : '—'}</span><span class="cmp-sep">vs</span><span class="cmp-b ${winB ? '' : 'cmp-muted'}">${hasB ? fmt(m.vb) : '—'}</span></div>
       <div class="policy-delta">${diffHtml}<span class="cmp-name">${a.hall_name} / ${b.hall_name}</span></div>
     </div>`;
   }).join('');

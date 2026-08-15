@@ -1742,6 +1742,50 @@ def api_detail_table():
         'page': page,
         'per_page': per_page
     })
+
+@app.route('/api/weekly-team-detail')
+@login_required
+def api_weekly_team_detail():
+    """趋势点下钻：某厅某周的团明细（新成团 / 该周解散+原因 / 周存活数）。
+    口径与 metrics.py 一致：成团归周看 form_date，解散归周看 dissolve_date。
+    """
+    hall = request.args.get('hall', '')
+    week_start = request.args.get('week_start', '')
+    week_end = request.args.get('week_end', '')
+    if not hall or not week_start or not week_end:
+        return jsonify({'error': 'hall/week_start/week_end required'}), 400
+
+    conn = get_db_conn()
+    latest_teams = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
+
+    new_teams = conn.execute(
+        f"SELECT team_id, sister_nickname, sister_uid, sister_level, hall_name, form_date "
+        f"FROM team_detail WHERE {latest_teams} AND hall_name = ? AND date(form_date) BETWEEN ? AND ? "
+        f"ORDER BY form_date",
+        (hall, week_start, week_end)).fetchall()
+
+    dissolved_teams = conn.execute(
+        f"SELECT team_id, sister_nickname, sister_uid, hall_name, form_date, dissolve_date, "
+        f"{DISSOLVE_REASON_CASE} AS reason "
+        f"FROM team_detail WHERE {latest_teams} AND hall_name = ? AND date(dissolve_date) BETWEEN ? AND ? "
+        f"ORDER BY dissolve_date",
+        (hall, week_start, week_end)).fetchall()
+
+    active_end = conn.execute(
+        f"SELECT COUNT(*) AS c FROM team_detail WHERE {latest_teams} AND hall_name = ? "
+        f"AND date(form_date) <= ? AND (dissolve_date = '' OR dissolve_date IS NULL OR date(dissolve_date) > ?)",
+        (hall, week_end, week_end)).fetchone()['c']
+
+    conn.close()
+    return jsonify({
+        'hall_name': hall,
+        'week_start': week_start,
+        'week_end': week_end,
+        'new_teams': new_teams,
+        'dissolved_teams': dissolved_teams,
+        'active_end': active_end,
+    })
+
 @app.route('/api/hall-stats')
 @login_required
 def api_hall_stats():
