@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=31">
+<link rel="stylesheet" href="css/style.css?v=32">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -247,15 +247,20 @@
       </div>
       <div class="chart-src">点击大厅柱 → 自动填入 A 厅；选定 B 后点「生成对比」在下方展开逐项对比</div>
     </div>
-    <!-- 对比结果区：生成后展开 -->
-    <div class="chart-card" id="cmp-result" style="display:none;">
+    <!-- 对比结果区：生成后展开，6 张对垒卡，点卡弹层看周趋势 -->
+    <div class="chart-card" id="cmp-result" style="display:none;position:relative;">
       <h3><span id="cmp-title">—</span></h3>
-      <div class="chart-src">当前周快照取自最新快照；趋势取两厅各自周报（按周对齐）</div>
-      <div class="policy-grid" id="cmp-cards" style="margin:12px 0;"></div>
-      <div class="chart-grid">
-        <div class="chart-card"><h3>📊 当前周指标对比</h3><div class="chart-box" id="cmp-chart-metrics" style="height:300px;"></div></div>
-        <div class="chart-card"><h3>📈 留存率趋势</h3><div class="chart-box" id="cmp-chart-ret" style="height:300px;"></div></div>
-        <div class="chart-card" style="grid-column:1/-1;"><h3>💰 流水趋势</h3><div class="chart-box" id="cmp-chart-rev" style="height:300px;"></div></div>
+      <div class="chart-src">本周快照（两厅各自最新周报）· 点卡片查看该指标周趋势</div>
+      <div class="cmp-cards" id="cmp-cards"></div>
+      <div class="cmp-popover" id="cmp-popover" style="display:none;">
+        <div class="cmp-popover-head">
+          <h3 id="cmp-popover-title">—</h3>
+          <button class="kpi-detail-close" onclick="closeCmpPopover()" title="收起">✕</button>
+        </div>
+        <div class="cmp-popover-grid">
+          <div class="chart-box" id="cmp-popover-chart" style="height:240px;"></div>
+          <div class="kpi-detail-table" id="cmp-popover-table"></div>
+        </div>
       </div>
     </div>
     <!-- 概览小图：厅留存分布 + 新成团 vs 解散（常驻展示，不再藏按钮里） -->
@@ -779,7 +784,7 @@
 <script src="js/utils.js?v=42"></script>
 <script src="js/api.js?v=42"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=44"></script>
+<script src="js/render.js?v=45"></script>
 <script src="js/app.js?v=42"></script>
 <script src="js/workbench.js?v=42"></script>
 <script src="js/insight.js?v=42"></script>

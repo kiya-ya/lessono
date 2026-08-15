@@ -718,6 +718,31 @@ function exportUIDResult() {
 /* ═══════════════ 自选对比：任选两厅逐项对比 ═══════════════ */
 let cmpHalls = [];
 let _cmpCharts = {};
+let _cmpWeekly = null;        // {nameA, nameB, wa, wb} 两厅周报，供弹层复用
+let _cmpPopoverMetric = null; // 当前展开的指标卡（null=关闭）
+let _cmpPopoverChart = null;  // 弹层趋势图实例
+let _cmpPopoverBound = false; // 是否已绑定「点空白关闭」
+
+const CMP_METRICS = [
+  { key: 'active_team_count_end', label: '🏠 进行中团数', unit: ' 个', goodHigher: true,  accent: 'acc-green'  },
+  { key: 'new_team_count',        label: '📦 新成团数',   unit: ' 个', goodHigher: true,  accent: 'acc-violet' },
+  { key: 'dissolved_count',       label: '💥 解散数',     unit: ' 个', goodHigher: false, accent: 'acc-red'    },
+  { key: 'total_reward',          label: '💰 礼物流水',   money: true, goodHigher: true,  accent: 'acc-gold'   },
+  { key: 'retention_rate',        label: '💯 留存率',     pct: true,   goodHigher: true,  accent: 'acc-green'  },
+  { key: 'dissolution_rate',      label: '🚫 解散率',     pct: true,   goodHigher: false, accent: 'acc-red'    },
+];
+
+function cmpFmt(m, v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  if (m.money) return '¥' + Number(v).toFixed(0);
+  if (m.pct) return Number(v).toFixed(1) + '%';
+  return Number(v).toFixed(0) + (m.unit || '');
+}
+function cmpLeadNum(m, d) {
+  if (m.money) return '¥' + Number(d).toFixed(0);
+  if (m.pct) return Number(d).toFixed(1) + 'pp';
+  return Number(d).toFixed(0) + (m.unit || '');
+}
 
 /* 常驻对比条：用已加载的 hallCompareData 填充 A/B 选厅器（不再弹窗） */
 function initCmpBar() {
@@ -732,6 +757,17 @@ function initCmpBar() {
   selA.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
   selB.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
   selB.value = String(Math.min(1, cmpHalls.length - 1));
+  if (!_cmpPopoverBound) {
+    _cmpPopoverBound = true;
+    document.addEventListener('click', function(e) {
+      if (!_cmpPopoverMetric) return;
+      const pop = document.getElementById('cmp-popover');
+      if (!pop) return;
+      if (pop.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('#cmp-cards .cmp-card')) return;
+      closeCmpPopover();
+    });
+  }
 }
 
 /* 收起对比结果区 */
@@ -769,95 +805,95 @@ async function runHallCompare() {
   }
   document.getElementById('cmp-title').textContent = `「${a.hall_name}」 vs 「${b.hall_name}」`;
   try {
-    // 当前周快照：直接从已加载的 cmpHalls 取（hall-stats 接口对 admin 忽略单厅参数）
-    const sa = cmpHalls.find(h => h.hall_name === a.hall_name) || {};
-    const sb = cmpHalls.find(h => h.hall_name === b.hall_name) || {};
-    // 趋势：两厅各自周报
+    // 两厅各自周报（卡片取最新周，弹层取全周趋势）
     const [wa, wb] = await Promise.all([
       fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(a.hall_name)).then(r => r.json()),
       fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(b.hall_name)).then(r => r.json()),
     ]);
-    renderCmpCards(a, b, sa, sb, wa.data || [], wb.data || []);
-    renderCmpMetricsChart(a, b, sa, sb);
-    renderCmpTrend('cmp-chart-ret', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'retention_rate', 'pct');
-    renderCmpTrend('cmp-chart-rev', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'total_reward', 'money');
+    _cmpWeekly = { nameA: a.hall_name, nameB: b.hall_name, wa: wa.data || [], wb: wb.data || [] };
+    closeCmpPopover();
+    renderCmpCards(a.hall_name, b.hall_name, _cmpWeekly.wa, _cmpWeekly.wb);
     result.style.display = '';
     setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
   } catch (e) { console.error('自选对比渲染失败:', e); }
 }
 
-function renderCmpCards(a, b, sa, sb, wa, wb) {
+function renderCmpCards(nameA, nameB, wa, wb) {
   const lastOf = (arr, key) => { const l = arr[arr.length - 1]; return l ? l[key] : null; };
-  const metrics = [
-    { label: '🏠 进行中团数', va: sa.active_count, vb: sb.active_count, unit: ' 个', goodHigher: true, accent: 'acc-green' },
-    { label: '🧱 总团数', va: sa.team_count, vb: sb.team_count, unit: ' 个', goodHigher: true, accent: 'acc-violet' },
-    { label: '💥 解散数', va: sa.dissolved_count, vb: sb.dissolved_count, unit: ' 个', goodHigher: false, accent: 'acc-red' },
-    { label: '💰 礼物流水', va: sa.total_revenue, vb: sb.total_revenue, money: true, goodHigher: true, accent: 'acc-gold' },
-    { label: '💯 留存率（最近周）', va: lastOf(wa, 'retention_rate'), vb: lastOf(wb, 'retention_rate'), pct: true, goodHigher: true, accent: 'acc-green' },
-    { label: '🚫 解散率（最近周）', va: lastOf(wa, 'dissolution_rate'), vb: lastOf(wb, 'dissolution_rate'), pct: true, goodHigher: false, accent: 'acc-red' },
-  ];
-  document.getElementById('cmp-cards').innerHTML = metrics.map(m => {
-    const hasA = m.va !== null && m.va !== undefined && !Number.isNaN(m.va);
-    const hasB = m.vb !== null && m.vb !== undefined && !Number.isNaN(m.vb);
-    const fmt = v => m.money ? '¥' + Number(v).toFixed(0) : m.pct ? Number(v) + '%' : Number(v) + (m.unit || '');
-    let diffHtml = '<span class="chip flat">—</span>';
-    let d = null, good = false;
-    if (hasA && hasB) {
-      d = m.vb - m.va;
-      good = m.goodHigher ? d > 0 : d < 0;
-      const cls = d === 0 ? 'flat' : good ? 'up' : 'down';
-      const t = m.pct ? (d > 0 ? '+' : '') + d + 'pp' : (d > 0 ? '+' : '') + Number(d).toFixed(0) + (m.money ? ' 元' : '');
-      diffHtml = `<span class="chip ${cls}">B−A ${t}</span>`;
-    }
-    // 胜出方紫色高亮：谁赢谁亮，不再「B 永远紫色」
-    const winA = hasA && hasB && d !== 0 && !good;
-    const winB = hasA && hasB && d !== 0 && good;
-    return `<div class="kpi-card ${m.accent}">
-      <div class="kpi-label">${m.label}</div>
-      <div class="kpi-value cmp-two"><span class="cmp-a ${winA ? 'cmp-win' : ''}">${hasA ? fmt(m.va) : '—'}</span><span class="cmp-sep">vs</span><span class="cmp-b ${winB ? '' : 'cmp-muted'}">${hasB ? fmt(m.vb) : '—'}</span></div>
-      <div class="policy-delta">${diffHtml}<span class="cmp-name">${a.hall_name} / ${b.hall_name}</span></div>
+  document.getElementById('cmp-cards').innerHTML = CMP_METRICS.map(m => {
+    const va = lastOf(wa, m.key), vb = lastOf(wb, m.key);
+    const hasA = va !== null && va !== undefined && !Number.isNaN(va);
+    const hasB = vb !== null && vb !== undefined && !Number.isNaN(vb);
+    const numA = hasA ? Number(va) : 0, numB = hasB ? Number(vb) : 0;
+    const d = numB - numA;
+    const good = m.goodHigher ? d > 0 : d < 0;   // B 是否更优
+    const winA = d !== 0 && !good, winB = d !== 0 && good;
+    const lead = d === 0
+      ? '<span class="cmp-lead flat">打平</span>'
+      : `<span class="cmp-lead ${winB ? 'win-b' : 'win-a'}">👑 ${winB ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
+    const max = Math.max(numA, numB, 1);
+    const aPct = (numA / max * 100).toFixed(1), bPct = (numB / max * 100).toFixed(1);
+    return `<div class="kpi-card cmp-card ${m.accent}" data-metric="${m.key}" onclick="toggleCmpPopover(this,'${m.key}')" title="点击查看周趋势">
+      <div class="cmp-card-top"><span class="kpi-label">${m.label}</span>${lead}</div>
+      <div class="cmp-two">
+        <span class="cmp-a${winA ? ' cmp-win' : ''}">${cmpFmt(m, va)}${winA ? ' 👑' : ''}</span>
+        <span class="cmp-sep">vs</span>
+        <span class="cmp-b${winB ? ' cmp-win' : ''}">${cmpFmt(m, vb)}${winB ? ' 👑' : ''}</span>
+      </div>
+      <div class="cmp-race"><span class="cmp-race-a" style="width:${aPct}%"></span><span class="cmp-race-b" style="width:${bPct}%"></span></div>
+      <div class="cmp-name">${nameA} vs ${nameB}</div>
     </div>`;
   }).join('');
 }
 
-function renderCmpMetricsChart(a, b, sa, sb) {
-  const el = document.getElementById('cmp-chart-metrics');
-  if (!el) return;
-  const cats = ['进行中团数', '总团数', '解散数'];
-  const keys = ['active_count', 'team_count', 'dissolved_count'];
-  const va = keys.map(k => sa[k] || 0);
-  const vb = keys.map(k => sb[k] || 0);
-  if (_cmpCharts.metrics) _cmpCharts.metrics.dispose();
-  _cmpCharts.metrics = echarts.init(el);
-  _cmpCharts.metrics.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
-    legend: { data: [a.hall_name, b.hall_name], top: 5, type: 'scroll' },
-    grid: { left: 40, right: 20, top: 40, bottom: 30 },
-    xAxis: { type: 'category', data: cats },
-    yAxis: { type: 'value', minInterval: 1 },
-    series: [
-      { name: a.hall_name, type: 'bar', data: va, barWidth: '32%',
-        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#8F7BFF' }, { offset: 1, color: '#7C5CFF' }]), borderRadius: [4, 4, 0, 0] } },
-      { name: b.hall_name, type: 'bar', data: vb, barWidth: '32%',
-        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#6BC48E' }, { offset: 1, color: '#3D9A6C' }]), borderRadius: [4, 4, 0, 0] } },
-    ],
-  }, true);
-  setTimeout(() => { if (_cmpCharts.metrics) _cmpCharts.metrics.resize(); }, 0);
+/* ── 弹层：点指标卡 → 卡片旁浮出该指标周趋势 + 领先表 ── */
+function toggleCmpPopover(cardEl, key) {
+  if (_cmpPopoverMetric === key) { closeCmpPopover(); return; }
+  openCmpPopover(cardEl, key);
 }
 
-function renderCmpTrend(id, nameA, nameB, wa, wb, key, kind) {
-  const el = document.getElementById(id);
-  if (!el) return;
+function openCmpPopover(cardEl, key) {
+  const pop = document.getElementById('cmp-popover');
+  if (!pop || !_cmpWeekly) return;
+  const m = CMP_METRICS.find(x => x.key === key);
+  if (!m) return;
+  _cmpPopoverMetric = key;
+  document.querySelectorAll('#cmp-cards .cmp-card').forEach(c => c.classList.toggle('expanded', c === cardEl));
+  document.getElementById('cmp-popover-title').textContent = `${m.label} · ${_cmpWeekly.nameA} vs ${_cmpWeekly.nameB}`;
+  renderCmpPopoverTable(m);
+  renderCmpPopoverChart(m);
+  pop.style.display = '';
+  positionCmpPopover(cardEl, pop);
+}
+
+function closeCmpPopover() {
+  _cmpPopoverMetric = null;
+  const pop = document.getElementById('cmp-popover');
+  if (pop) pop.style.display = 'none';
+  document.querySelectorAll('#cmp-cards .cmp-card.expanded').forEach(c => c.classList.remove('expanded'));
+  if (_cmpPopoverChart) { _cmpPopoverChart.dispose(); _cmpPopoverChart = null; }
+}
+
+/* 按周对齐两厅周报，返回 labels + A/B 序列 */
+function cmpAligned(key) {
+  const { wa, wb } = _cmpWeekly;
   const ma = {}, mb = {}; const weekSet = new Set();
   (wa || []).forEach(r => { ma[r.week_label] = r; weekSet.add(r.week_label); });
   (wb || []).forEach(r => { mb[r.week_label] = r; weekSet.add(r.week_label); });
   const labels = [...weekSet].sort();
-  const da = labels.map(l => ma[l] ? ma[l][key] : null);
-  const db = labels.map(l => mb[l] ? mb[l][key] : null);
-  const fmt = v => kind === 'money' ? wbFmtMoney(v) : (v == null ? '—' : v + '%');
-  if (_cmpCharts[id]) _cmpCharts[id].dispose();
-  _cmpCharts[id] = echarts.init(el);
-  _cmpCharts[id].setOption({
+  return { labels, da: labels.map(l => ma[l] ? ma[l][key] : null), db: labels.map(l => mb[l] ? mb[l][key] : null) };
+}
+
+function renderCmpPopoverChart(m) {
+  const el = document.getElementById('cmp-popover-chart');
+  if (!el) return;
+  const { nameA, nameB } = _cmpWeekly;
+  const { labels, da, db } = cmpAligned(m.key);
+  const kind = m.money ? 'money' : m.pct ? 'pct' : 'num';
+  const fmt = v => kind === 'money' ? wbFmtMoney(v) : kind === 'pct' ? (v == null ? '—' : Number(v).toFixed(1) + '%') : (v == null ? '—' : v);
+  if (_cmpPopoverChart) _cmpPopoverChart.dispose();
+  _cmpPopoverChart = echarts.init(el);
+  _cmpPopoverChart.setOption({
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
       formatter: ps => { let h = ps[0].axisValue + '<br/>'; ps.forEach(p => { h += p.marker + ' ' + p.seriesName + ': ' + fmt(p.value) + '<br/>'; }); return h; } },
     legend: { data: [nameA, nameB], top: 5, type: 'scroll' },
@@ -869,5 +905,41 @@ function renderCmpTrend(id, nameA, nameB, wa, wb, key, kind) {
       { name: nameB, type: 'line', data: db, smooth: true, connectNulls: true, lineStyle: { color: '#3D9A6C', width: 2.5 }, itemStyle: { color: '#3D9A6C' }, symbolSize: 5 },
     ],
   }, true);
-  setTimeout(() => { if (_cmpCharts[id]) _cmpCharts[id].resize(); }, 0);
+  setTimeout(() => { if (_cmpPopoverChart) _cmpPopoverChart.resize(); }, 0);
+}
+
+function renderCmpPopoverTable(m) {
+  const el = document.getElementById('cmp-popover-table');
+  if (!el) return;
+  const { nameA, nameB } = _cmpWeekly;
+  const { labels, da, db } = cmpAligned(m.key);
+  const rows = labels.map((l, i) => {
+    const va = da[i], vb = db[i];
+    const hasA = va !== null && va !== undefined, hasB = vb !== null && vb !== undefined;
+    let lead = '<span class="dt-na">—</span>';
+    if (hasA && hasB) {
+      const d = Number(vb) - Number(va);
+      if (d === 0) lead = '<span class="dt-na">打平</span>';
+      else {
+        const good = m.goodHigher ? d > 0 : d < 0;
+        lead = `<span class="dt-diff ${good ? 'up' : 'down'}">${good ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
+      }
+    }
+    return `<tr><td>${l}</td><td class="num">${cmpFmt(m, va)}</td><td class="num">${cmpFmt(m, vb)}</td><td class="num">${lead}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<table class="data-table"><thead><tr><th>周</th><th class="num">${nameA}</th><th class="num">${nameB}</th><th class="num">领先</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function positionCmpPopover(cardEl, pop) {
+  const result = document.getElementById('cmp-result');
+  if (!result) return;
+  const cardR = cardEl.getBoundingClientRect();
+  const resultR = result.getBoundingClientRect();
+  const gap = 12;
+  const popW = pop.offsetWidth;
+  const isLeft = (cardR.left + cardR.width / 2) < (resultR.left + resultR.width / 2);
+  let left = isLeft ? (cardR.right - resultR.left + gap) : (cardR.left - resultR.left - popW - gap);
+  left = Math.max(4, Math.min(left, resultR.width - popW - 4));
+  pop.style.left = left + 'px';
+  pop.style.top = Math.max(0, cardR.top - resultR.top) + 'px';
 }
