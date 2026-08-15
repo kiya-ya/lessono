@@ -588,3 +588,147 @@ function exportUIDResult() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
+
+/* ═══════════════ 自选对比：任选两厅逐项对比 ═══════════════ */
+let cmpHalls = [];
+let _cmpCharts = {};
+
+async function openCompareModal() {
+  const modal = document.getElementById('compare-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  try {
+    const res = await fetch(API_BASE + '/api/hall-stats?limit=999');
+    const d = await res.json();
+    cmpHalls = (d.data || []).slice().sort((a, b) => b.team_count - a.team_count);
+    const selA = document.getElementById('cmp-hall-a');
+    const selB = document.getElementById('cmp-hall-b');
+    if (cmpHalls.length < 2) {
+      selA.innerHTML = '<option>可选大厅不足</option>';
+      document.getElementById('cmp-cards').innerHTML = '<div class="kpi-note">当前范围可用大厅不足两个，无法对比。</div>';
+      return;
+    }
+    selA.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
+    selB.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
+    selB.value = '1';
+    runHallCompare();
+  } catch (e) { console.error('自选对比加载失败:', e); }
+}
+
+function closeCompareModal() {
+  const modal = document.getElementById('compare-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function swapCmpHalls() {
+  const a = document.getElementById('cmp-hall-a');
+  const b = document.getElementById('cmp-hall-b');
+  const t = a.value; a.value = b.value; b.value = t;
+  runHallCompare();
+}
+
+async function runHallCompare() {
+  const selA = document.getElementById('cmp-hall-a');
+  const selB = document.getElementById('cmp-hall-b');
+  if (!selA || !selB) return;
+  const a = cmpHalls[+selA.value];
+  const b = cmpHalls[+selB.value];
+  if (!a || !b || a.hall_name === b.hall_name) { alert('请选择两个不同的厅'); return; }
+  document.getElementById('cmp-title').textContent = `「${a.hall_name}」 vs 「${b.hall_name}」`;
+  try {
+    // 当前周快照：直接从已加载的 cmpHalls 取（hall-stats 接口对 admin 忽略单厅参数）
+    const sa = cmpHalls.find(h => h.hall_name === a.hall_name) || {};
+    const sb = cmpHalls.find(h => h.hall_name === b.hall_name) || {};
+    // 趋势：两厅各自周报
+    const [wa, wb] = await Promise.all([
+      fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(a.hall_name)).then(r => r.json()),
+      fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(b.hall_name)).then(r => r.json()),
+    ]);
+    renderCmpCards(a, b, sa, sb, wa.data || [], wb.data || []);
+    renderCmpMetricsChart(a, b, sa, sb);
+    renderCmpTrend('cmp-chart-ret', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'retention_rate', 'pct');
+    renderCmpTrend('cmp-chart-rev', a.hall_name, b.hall_name, wa.data || [], wb.data || [], 'total_reward', 'money');
+  } catch (e) { console.error('自选对比渲染失败:', e); }
+}
+
+function renderCmpCards(a, b, sa, sb, wa, wb) {
+  const lastOf = (arr, key) => { const l = arr[arr.length - 1]; return l ? l[key] : null; };
+  const metrics = [
+    { label: '🏠 进行中团数', va: sa.active_count, vb: sb.active_count, unit: ' 个', goodHigher: true, accent: 'acc-green' },
+    { label: '🧱 总团数', va: sa.team_count, vb: sb.team_count, unit: ' 个', goodHigher: true, accent: 'acc-violet' },
+    { label: '💥 解散数', va: sa.dissolved_count, vb: sb.dissolved_count, unit: ' 个', goodHigher: false, accent: 'acc-red' },
+    { label: '💰 礼物流水', va: sa.total_revenue, vb: sb.total_revenue, money: true, goodHigher: true, accent: 'acc-gold' },
+    { label: '💯 留存率（最近周）', va: lastOf(wa, 'retention_rate'), vb: lastOf(wb, 'retention_rate'), pct: true, goodHigher: true, accent: 'acc-green' },
+    { label: '🚫 解散率（最近周）', va: lastOf(wa, 'dissolution_rate'), vb: lastOf(wb, 'dissolution_rate'), pct: true, goodHigher: false, accent: 'acc-red' },
+  ];
+  document.getElementById('cmp-cards').innerHTML = metrics.map(m => {
+    const hasA = m.va !== null && m.va !== undefined && !Number.isNaN(m.va);
+    const hasB = m.vb !== null && m.vb !== undefined && !Number.isNaN(m.vb);
+    const fmt = v => m.money ? '¥' + Number(v).toFixed(0) : m.pct ? Number(v) + '%' : Number(v) + (m.unit || '');
+    let diffHtml = '<span class="chip flat">—</span>';
+    if (hasA && hasB) {
+      const d = m.vb - m.va;
+      const good = m.goodHigher ? d > 0 : d < 0;
+      const cls = d === 0 ? 'flat' : good ? 'up' : 'down';
+      const t = m.pct ? (d > 0 ? '+' : '') + d + 'pp' : (d > 0 ? '+' : '') + Number(d).toFixed(0) + (m.money ? ' 元' : '');
+      diffHtml = `<span class="chip ${cls}">B−A ${t}</span>`;
+    }
+    return `<div class="kpi-card ${m.accent}">
+      <div class="kpi-label">${m.label}</div>
+      <div class="kpi-value cmp-two"><span class="cmp-a">${hasA ? fmt(m.va) : '—'}</span><span class="cmp-sep">vs</span><span class="cmp-b">${hasB ? fmt(m.vb) : '—'}</span></div>
+      <div class="policy-delta">${diffHtml}<span class="cmp-name">${a.hall_name} / ${b.hall_name}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderCmpMetricsChart(a, b, sa, sb) {
+  const el = document.getElementById('cmp-chart-metrics');
+  if (!el) return;
+  const cats = ['进行中团数', '总团数', '解散数'];
+  const keys = ['active_count', 'team_count', 'dissolved_count'];
+  const va = keys.map(k => sa[k] || 0);
+  const vb = keys.map(k => sb[k] || 0);
+  if (_cmpCharts.metrics) _cmpCharts.metrics.dispose();
+  _cmpCharts.metrics = echarts.init(el);
+  _cmpCharts.metrics.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
+    legend: { data: [a.hall_name, b.hall_name], top: 5, type: 'scroll' },
+    grid: { left: 40, right: 20, top: 40, bottom: 30 },
+    xAxis: { type: 'category', data: cats },
+    yAxis: { type: 'value', minInterval: 1 },
+    series: [
+      { name: a.hall_name, type: 'bar', data: va, barWidth: '32%',
+        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#8F7BFF' }, { offset: 1, color: '#7C5CFF' }]), borderRadius: [4, 4, 0, 0] } },
+      { name: b.hall_name, type: 'bar', data: vb, barWidth: '32%',
+        itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#6BC48E' }, { offset: 1, color: '#3D9A6C' }]), borderRadius: [4, 4, 0, 0] } },
+    ],
+  }, true);
+  setTimeout(() => { if (_cmpCharts.metrics) _cmpCharts.metrics.resize(); }, 0);
+}
+
+function renderCmpTrend(id, nameA, nameB, wa, wb, key, kind) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const ma = {}, mb = {}; const weekSet = new Set();
+  (wa || []).forEach(r => { ma[r.week_label] = r; weekSet.add(r.week_label); });
+  (wb || []).forEach(r => { mb[r.week_label] = r; weekSet.add(r.week_label); });
+  const labels = [...weekSet].sort();
+  const da = labels.map(l => ma[l] ? ma[l][key] : null);
+  const db = labels.map(l => mb[l] ? mb[l][key] : null);
+  const fmt = v => kind === 'money' ? wbFmtMoney(v) : (v == null ? '—' : v + '%');
+  if (_cmpCharts[id]) _cmpCharts[id].dispose();
+  _cmpCharts[id] = echarts.init(el);
+  _cmpCharts[id].setOption({
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
+      formatter: ps => { let h = ps[0].axisValue + '<br/>'; ps.forEach(p => { h += p.marker + ' ' + p.seriesName + ': ' + fmt(p.value) + '<br/>'; }); return h; } },
+    legend: { data: [nameA, nameB], top: 5, type: 'scroll' },
+    grid: { left: kind === 'money' ? 70 : 45, right: 20, top: 40, bottom: 32 },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, rotate: 30 } },
+    yAxis: { type: 'value', axisLabel: { fontSize: 10, formatter: v => kind === 'money' ? wbFmtMoney(v) : v } },
+    series: [
+      { name: nameA, type: 'line', data: da, smooth: true, connectNulls: true, lineStyle: { color: '#7C5CFF', width: 2.5 }, itemStyle: { color: '#7C5CFF' }, symbolSize: 5 },
+      { name: nameB, type: 'line', data: db, smooth: true, connectNulls: true, lineStyle: { color: '#3D9A6C', width: 2.5 }, itemStyle: { color: '#3D9A6C' }, symbolSize: 5 },
+    ],
+  }, true);
+  setTimeout(() => { if (_cmpCharts[id]) _cmpCharts[id].resize(); }, 0);
+}

@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=27">
+<link rel="stylesheet" href="css/style.css?v=28">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -114,22 +114,6 @@
     <div class="kpi-hero" id="wb-kpi-hero"></div>
     <div class="kpi-sub" id="wb-kpi-sub"></div>
 
-    <!-- 厅排行榜（管理员） -->
-    <div id="wb-rank-board" style="display:none">
-      <div class="section-head">
-        <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
-        <div class="seg">
-          <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
-          <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
-        </div>
-        <span class="hint" id="wb-rank-hint">按姐妹团周流水排名 · 位次为较上周变化 · 点表头可排序</span>
-      </div>
-      <div class="rank-card"><div class="rank-scroll">
-        <table class="rank-table" id="wb-rank-table"></table>
-      </div></div>
-      <div class="rank-note" id="wb-rank-note"></div>
-    </div>
-
     <!-- KPI 卡点击展开的明细面板：留存/解散/金额三张趋势图并入此处 -->
     <div class="kpi-detail" id="wb-kpi-detail">
       <div class="kpi-detail-card" data-metric="retention">
@@ -218,15 +202,34 @@
       </div>
     </div>
 
+    <!-- 厅排行榜（管理员） -->
+    <div id="wb-rank-board" style="display:none">
+      <div class="section-head">
+        <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
+        <div class="seg">
+          <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
+          <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+        </div>
+        <span class="hint" id="wb-rank-hint">按姐妹团周流水排名 · 位次为较上周变化 · 点表头可排序</span>
+      </div>
+      <div class="rank-card"><div class="rank-scroll">
+        <table class="rank-table" id="wb-rank-table"></table>
+      </div></div>
+      <div class="rank-note" id="wb-rank-note"></div>
+    </div>
+
   </div>
 
   <!-- 对比 -->
   <div id="tab-compare" class="tab-panel">
     <div class="section-head">
       <h2>对比分析</h2>
-      <div class="seg" style="margin-left:auto;">
-        <button id="compare-view-hall" class="on" onclick="switchCompareView('hall')">厅对比</button>
-        <button id="compare-view-policy" onclick="switchCompareView('policy')">政策评估</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <div class="seg">
+          <button id="compare-view-hall" class="on" onclick="switchCompareView('hall')">厅对比</button>
+          <button id="compare-view-policy" onclick="switchCompareView('policy')">政策评估</button>
+        </div>
+        <button class="cmp-open" onclick="openCompareModal()">➕ 自选对比</button>
       </div>
       <span class="hint">厅·组对比 / 政策上线（07-17）前后 4 周均值</span>
     </div>
@@ -729,16 +732,41 @@
   </div>
 </div>
 
+<!-- 自选对比弹窗 -->
+<div class="cookie-modal" id="compare-modal">
+  <div class="cookie-modal-content cmp-content" style="width:980px; max-width:96%;">
+    <h3 style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+      <span>🔀 自选对比 · <span id="cmp-title">选择两个厅</span></span>
+      <button onclick="closeCompareModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="cmp-bar">
+      <label>厅 A</label>
+      <select id="cmp-hall-a" class="wb-select cmp-select"></select>
+      <button class="cmp-swap" onclick="swapCmpHalls()" title="交换 A/B">⇄</button>
+      <label>厅 B</label>
+      <select id="cmp-hall-b" class="wb-select cmp-select"></select>
+      <button class="btn-save" onclick="runHallCompare()">生成对比</button>
+    </div>
+    <div class="chart-src">当前周快照取自最新快照；趋势取两厅各自周报（按周对齐）</div>
+    <div class="policy-grid" id="cmp-cards" style="margin:12px 0;"></div>
+    <div class="chart-grid">
+      <div class="chart-card"><h3>📊 当前周指标对比</h3><div class="chart-box" id="cmp-chart-metrics" style="height:300px;"></div></div>
+      <div class="chart-card"><h3>📈 留存率趋势</h3><div class="chart-box" id="cmp-chart-ret" style="height:300px;"></div></div>
+      <div class="chart-card" style="grid-column:1/-1;"><h3>💰 流水趋势</h3><div class="chart-box" id="cmp-chart-rev" style="height:300px;"></div></div>
+    </div>
+  </div>
+</div>
+
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=39"></script>
-<script src="js/utils.js?v=39"></script>
-<script src="js/api.js?v=39"></script>
-<script src="js/auth.js?v=39"></script>
-<script src="js/render.js?v=39"></script>
-<script src="js/app.js?v=39"></script>
-<script src="js/workbench.js?v=39"></script>
-<script src="js/insight.js?v=39"></script>
+<script src="js/config.js?v=40"></script>
+<script src="js/utils.js?v=40"></script>
+<script src="js/api.js?v=40"></script>
+<script src="js/auth.js?v=40"></script>
+<script src="js/render.js?v=40"></script>
+<script src="js/app.js?v=40"></script>
+<script src="js/workbench.js?v=40"></script>
+<script src="js/insight.js?v=40"></script>
 </body>
 </html>

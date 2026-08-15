@@ -811,3 +811,22 @@ td.num, th.num {
 }
 .wb-input.wb-search { width: 150px; }
 .search-box .wb-select { padding: 8px 12px; font-size: 13px; }
+
+/* 自选对比 */
+.cmp-open {
+  border: none; background: var(--wb-grad); color: #fff;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(124,92,255,.25);
+}
+.cmp-open:hover { background: var(--wb-grad-hover); }
+.cmp-content { max-height: 90vh; overflow-y: auto; }
+.cmp-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.cmp-bar label { font-size: 12px; color: var(--wb-text-2); }
+.cmp-select { min-width: 200px; max-width: 260px; }
+.cmp-swap { border: 1px solid var(--wb-line); background: #fff; color: var(--wb-text-2); border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 13px; }
+.cmp-swap:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
+.cmp-two { display: flex; align-items: baseline; gap: 6px; font-size: 20px; flex-wrap: wrap; }
+.cmp-a { color: var(--wb-text-2); font-weight: 600; }
+.cmp-sep { font-size: 10px; color: var(--wb-text-3); }
+.cmp-b { color: var(--wb-accent); font-weight: 700; }
+.cmp-name { margin-left: auto; font-size: 10px; color: var(--wb-text-3); max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
