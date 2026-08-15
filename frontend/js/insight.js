@@ -105,6 +105,7 @@ async function loadCaptains() {
 
 /* 姐姐画像（周口径）：产出/留存/稳定性 + 头部/风险打标 */
 let sisterProfileList = [];
+let sisterProfileSummary = {};
 let sisterProfilePage = 0;
 let sisterProfilePerPage = 20;
 let sisterProfileSort = 'week_rev';
@@ -118,6 +119,7 @@ async function loadSisterProfile() {
     const d = await res.json();
     if (d.error) return;
     sisterProfileList = d.list || [];
+    sisterProfileSummary = d.summary || {};
     const s = d.summary || {};
     sumEl.innerHTML = `
       <span class="survival-chip">👤 姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
@@ -129,7 +131,60 @@ async function loadSisterProfile() {
       insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且留存≥50%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多留存低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
     }
     renderSisterProfile();
+    renderSisterCharts();
   } catch (e) { console.error('姐姐画像加载失败:', e); }
+}
+
+/* 画像主视图顶部两张图：打标分布环形 + 流水×留存散点 */
+function renderSisterCharts() {
+  const list = sisterProfileList || [];
+  const s = sisterProfileSummary || {};
+  // 1) 打标分布环形
+  const tagEl = document.getElementById('chart-sister-tag');
+  if (tagEl && tagEl.offsetHeight) {
+    const head = s.head_count || 0, risk = s.risk_count || 0;
+    const normal = Math.max(0, list.length - head - risk);
+    if (charts['sisterTag']) charts['sisterTag'].dispose();
+    charts['sisterTag'] = echarts.init(tagEl);
+    charts['sisterTag'].setOption({
+      tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 位（${p.percent}%）` },
+      legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 11, color: '#6B7280' } },
+      series: [{
+        type: 'pie', radius: ['48%', '72%'], center: ['38%', '50%'],
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}位', fontSize: 10, color: '#6B7280' },
+        data: [
+          { name: '头部', value: head, itemStyle: { color: '#3D9A6C' } },
+          { name: '风险', value: risk, itemStyle: { color: '#D56060' } },
+          { name: '普通', value: normal, itemStyle: { color: '#C0C4CC' } },
+        ],
+      }]
+    });
+  }
+  // 2) 流水 × 留存率散点
+  const scEl = document.getElementById('chart-sister-scatter');
+  if (scEl && scEl.offsetHeight) {
+    const tagColor = { head: '#3D9A6C', risk: '#D56060', normal: '#B0B4BD' };
+    const pts = list
+      .filter(x => x.retention != null && x.week_rev != null && x.week_rev > 0)
+      .map(x => ({ value: [x.week_rev, x.retention], uid: x.sister_uid, name: x.sister_nickname, tag: x.tag || 'normal' }));
+    if (charts['sisterScatter']) charts['sisterScatter'].dispose();
+    charts['sisterScatter'] = echarts.init(scEl);
+    charts['sisterScatter'].setOption({
+      tooltip: { formatter: p => { const d = p.data; return `${d.name || ''}<br/>流水：${wbFmtMoney(d.value[0])}<br/>存活率：${d.value[1]}%`; } },
+      grid: { left: 50, right: 20, top: 20, bottom: 36 },
+      xAxis: { type: 'log', name: '本周流水', nameTextStyle: { fontSize: 10, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => v >= 10000 ? (v / 10000) + 'w' : v >= 1000 ? (v / 1000) + 'k' : v } },
+      yAxis: { type: 'value', name: '存活率%', max: 100, nameTextStyle: { fontSize: 10, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+      series: [{
+        type: 'scatter', data: pts, symbolSize: 7,
+        itemStyle: { color: p => tagColor[p.data.tag] || '#B0B4BD', opacity: 0.75 },
+      }]
+    });
+    charts['sisterScatter'].off('click');
+    charts['sisterScatter'].on('click', function(params) {
+      if (params.data && params.data.uid && typeof openSisterDetail === 'function') openSisterDetail(params.data.uid);
+    });
+  }
 }
 
 function setSisterProfileSort(v) { sisterProfileSort = v; sisterProfilePage = 0; renderSisterProfile(); }
@@ -435,6 +490,9 @@ function switchCaptainView(view) {
   set('cap-view-pool', view === 'pool');
   if (view === 'promote') { loadSister2Profile(); }
   if (view === 'pool') { loadTalentPool(); loadTalentActions(); }
+  if (view === 'profile') {
+    setTimeout(() => { if (charts['sisterTag']) charts['sisterTag'].resize(); if (charts['sisterScatter']) charts['sisterScatter'].resize(); }, 60);
+  }
 }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }

@@ -324,6 +324,18 @@
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div id="captains-main">
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>🏷️ 打标分布</h3>
+        <div class="chart-src">头部（流水前20%且留存≥50%）· 风险（暴跌或带团多留存低）· 其余普通</div>
+        <div class="chart-container" id="chart-sister-tag" style="height:240px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3>💸 流水 × 留存率</h3>
+        <div class="chart-src">每个点=一位姐姐 · 绿=头部 红=风险 灰=普通 · 点散点看姐姐详情</div>
+        <div class="chart-container" id="chart-sister-scatter" style="height:240px;"></div>
+      </div>
+    </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <span>👤 姐姐画像（周口径）</span>
@@ -749,6 +761,6 @@
 <script src="js/render.js?v=49"></script>
 <script src="js/app.js?v=47"></script>
 <script src="js/workbench.js?v=48"></script>
-<script src="js/insight.js?v=44"></script>
+<script src="js/insight.js?v=45"></script>
 </body>
 </html>
