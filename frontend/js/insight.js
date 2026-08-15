@@ -161,28 +161,31 @@ function renderSisterCharts() {
       }]
     });
   }
-  // 2) 流水 × 留存率散点
-  const scEl = document.getElementById('chart-sister-scatter');
-  if (scEl && scEl.offsetHeight) {
-    const tagColor = { head: '#3D9A6C', risk: '#D56060', normal: '#B0B4BD' };
-    const pts = list
-      .filter(x => x.retention != null && x.week_rev != null && x.week_rev > 0)
-      .map(x => ({ value: [x.week_rev, x.retention], uid: x.sister_uid, name: x.sister_nickname, tag: x.tag || 'normal' }));
-    if (charts['sisterScatter']) charts['sisterScatter'].dispose();
-    charts['sisterScatter'] = echarts.init(scEl);
-    charts['sisterScatter'].setOption({
-      tooltip: { formatter: p => { const d = p.data; return `${d.name || ''}<br/>流水：${wbFmtMoney(d.value[0])}<br/>存活率：${d.value[1]}%`; } },
-      grid: { left: 50, right: 20, top: 20, bottom: 36 },
-      xAxis: { type: 'log', name: '本周流水', nameTextStyle: { fontSize: 10, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF', formatter: v => v >= 10000 ? (v / 10000) + 'w' : v >= 1000 ? (v / 1000) + 'k' : v } },
-      yAxis: { type: 'value', name: '存活率%', max: 100, nameTextStyle: { fontSize: 10, color: '#9CA3AF' }, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
-      series: [{
-        type: 'scatter', data: pts, symbolSize: 7,
-        itemStyle: { color: p => tagColor[p.data.tag] || '#B0B4BD', opacity: 0.75 },
-      }]
+  // 2) 带团存活率分段直方图（分箱避免散点重叠）
+  const retEl = document.getElementById('chart-sister-ret');
+  if (retEl && retEl.offsetHeight) {
+    const bins = [['0-20%', 0, 20], ['20-40%', 20, 40], ['40-60%', 40, 60], ['60-80%', 60, 80], ['80-100%', 80, 101]];
+    const counts = bins.map(() => 0);
+    list.forEach(x => {
+      if (x.retention == null) return;
+      const v = Math.min(100, Math.max(0, x.retention));
+      for (let i = 0; i < bins.length; i++) {
+        if (v >= bins[i][1] && v < bins[i][2]) { counts[i]++; break; }
+      }
     });
-    charts['sisterScatter'].off('click');
-    charts['sisterScatter'].on('click', function(params) {
-      if (params.data && params.data.uid && typeof openSisterDetail === 'function') openSisterDetail(params.data.uid);
+    const colors = ['#D56060', '#E08A5A', '#C98A2D', '#8FA8C9', '#3D9A6C'];
+    if (charts['sisterRet']) charts['sisterRet'].dispose();
+    charts['sisterRet'] = echarts.init(retEl);
+    charts['sisterRet'].setOption({
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: p => `${p[0].name}<br/>${p[0].value} 位姐姐` },
+      grid: { left: 50, right: 30, top: 20, bottom: 36 },
+      xAxis: { type: 'category', data: bins.map(b => b[0]), axisLabel: { fontSize: 11, color: '#6B7280' }, axisLine: { lineStyle: { color: '#E5E7EB' } } },
+      yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+      series: [{
+        type: 'bar', barWidth: '55%',
+        data: counts.map((c, i) => ({ value: c, itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] } })),
+        label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' },
+      }]
     });
   }
 }
@@ -491,7 +494,7 @@ function switchCaptainView(view) {
   if (view === 'promote') { loadSister2Profile(); }
   if (view === 'pool') { loadTalentPool(); loadTalentActions(); }
   if (view === 'profile') {
-    setTimeout(() => { if (charts['sisterTag']) charts['sisterTag'].resize(); if (charts['sisterScatter']) charts['sisterScatter'].resize(); }, 60);
+    setTimeout(() => { if (charts['sisterTag']) charts['sisterTag'].resize(); if (charts['sisterRet']) charts['sisterRet'].resize(); }, 60);
   }
 }
 
