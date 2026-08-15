@@ -807,19 +807,11 @@ async function loadSurvival() {
     if (d.error) { chipsEl.innerHTML = '<span class="survival-chip">暂无数据</span>'; return; }
     const s = d.survival;
     const fmt = o => o && o.rate !== null ? `<strong>${o.rate}%</strong><span style="color:var(--wb-text-3)">（${o.total}个团）</span>` : '<strong>--</strong>';
-    const pre = s.policy_pre_d7, post = s.policy_post_d7;
-    let policyHtml = '';
-    if (pre && pre.rate !== null && post && post.rate !== null) {
-      const diff = Math.round((post.rate - pre.rate) * 10) / 10;
-      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
-      policyHtml = `<span class="survival-chip">政策前后7日存活：${pre.rate}% → ${post.rate}% <span class="chip ${cls}">${diff > 0 ? '↑' : diff < 0 ? '↓' : '→'} ${Math.abs(diff)}pp</span></span>`;
-    }
     chipsEl.innerHTML = `
       <span class="survival-chip">进行中 <strong>${d.active_count}</strong> 个团</span>
       <span class="survival-chip">7日存活率 ${fmt(s.d7)}</span>
       <span class="survival-chip">14日存活率 ${fmt(s.d14)}</span>
-      <span class="survival-chip">30日存活率 ${fmt(s.d30)}</span>
-      ${policyHtml}`;
+      <span class="survival-chip">30日存活率 ${fmt(s.d30)}</span>`;
     document.getElementById('survival-src').textContent = `快照日期 ${d.ref_date} · 进行中团的已成团天数分布`;
     if (charts['survival']) charts['survival'].dispose();
     charts['survival'] = echarts.init(el);
