@@ -213,6 +213,145 @@ def _level_rank_sql(col):
             f"WHEN '初级铜牌' THEN 1 ELSE 0 END")
 
 
+# ========== 指标重算（口径定稿 2026-08-17）==========
+# 真值源 = team_detail 明细快照重算；stats_daily 仅保留「官方发放奖励」与成就。
+# 留存率 = (期末进行中 − 本周新成团) ÷ 期初进行中（老团留存）
+# 解散率 = 非毕业解散 ÷ 期初进行中；毕业（满30天）不算流失。
+# 主动解散占比 = 主动解散 ÷ 非毕业解散。
+# 周 = 周一 → 周日；期初/期末 = 该周最早/最晚快照。
+
+# 主动解散（用户侧发起）：手动解散 / 离职 / 不在同一个大厅
+ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%')"
+
+
+def week_metrics_from_detail(conn, hall, ws, we):
+    """按 team_detail 快照重算单周指标，返回与 weekly_report 行同构 dict（或 None）。
+    所有团级计数均按 team_id 去重，规避快照重复行。"""
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = () if hall == 'all' else (hall,)
+    snap = conn.execute(
+        f"SELECT MIN(snapshot_date) AS s0, MAX(snapshot_date) AS s1 FROM team_detail "
+        f"WHERE snapshot_date >= ? AND snapshot_date <= ? {hc}", (ws, we) + hp).fetchone()
+    if not snap or not snap['s0']:
+        return None
+    s0, s1 = snap['s0'], snap['s1']
+
+    def active_at(snap):
+        return conn.execute(
+            f"SELECT COUNT(DISTINCT team_id) AS n FROM team_detail "
+            f"WHERE snapshot_date = ? AND (dissolve_date IS NULL OR dissolve_date = '') {hc}",
+            (snap,) + hp).fetchone()['n']
+
+    start, end = active_at(s0), active_at(s1)
+    new = conn.execute(
+        f"SELECT COUNT(DISTINCT team_id) AS n FROM team_detail "
+        f"WHERE form_date >= ? AND form_date <= ? {hc}", (ws, we) + hp).fetchone()['n']
+    # 非毕业解散（= 流失）：本周解散且原因 ≠ 毕业
+    diss = conn.execute(
+        f"SELECT COUNT(DISTINCT team_id) AS n FROM team_detail "
+        f"WHERE dissolve_date >= ? AND dissolve_date <= ? AND dissolve_reason != '毕业' {hc}",
+        (ws, we) + hp).fetchone()['n']
+    # 毕业数：满30天正常毕业，单独口径，不算解散
+    grad = conn.execute(
+        f"SELECT COUNT(DISTINCT team_id) AS n FROM team_detail "
+        f"WHERE dissolve_date >= ? AND dissolve_date <= ? AND dissolve_reason = '毕业' {hc}",
+        (ws, we) + hp).fetchone()['n']
+    # 主动解散（非毕业解散里由用户侧发起）
+    active_diss = conn.execute(
+        f"SELECT COUNT(DISTINCT team_id) AS n FROM team_detail "
+        f"WHERE dissolve_date >= ? AND dissolve_date <= ? AND dissolve_reason != '毕业' "
+        f"AND {ACTIVE_DISS_REASON_SQL} {hc}", (ws, we) + hp).fetchone()['n']
+    # 系统解散 = 非毕业解散 − 主动解散
+    sys_diss = diss - active_diss
+
+    # 周流水近似：期末快照妹妹累计流水合计 − 期初快照合计（本周新挣）
+    def rev_at(snap):
+        return conn.execute(
+            f"SELECT COALESCE(SUM(sister_revenue), 0) AS s FROM team_detail "
+            f"WHERE snapshot_date = ? {hc}", (snap,) + hp).fetchone()['s']
+    rev_end, rev_start = rev_at(s1), rev_at(s0)
+    weekly_revenue = round(max(0.0, rev_end - rev_start), 1)
+
+    # 活跃度 + 平均在榜天（期末快照）
+    act = conn.execute(
+        f"SELECT COALESCE(SUM(drive_task_count + accompany_task_count + gift_task_count), 0) AS t, "
+        f"AVG(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN days_since_formed END) AS avgd "
+        f"FROM team_detail WHERE snapshot_date = ? {hc}", (s1,) + hp).fetchone()
+    activity_index = round(act['t'] / end, 2) if end > 0 else 0.0
+    avg_days = round(act['avgd'], 1) if act['avgd'] is not None else None
+
+    retention = round((end - new) / start * 100, 2) if start > 0 else 0.0
+    dissolution = round(diss / start * 100, 2) if start > 0 else 0.0
+    active_diss_pct = round(active_diss / diss * 100, 2) if diss > 0 else 0.0
+
+    start_dt = datetime.strptime(ws, '%Y-%m-%d')
+    end_dt = datetime.strptime(we, '%Y-%m-%d')
+    return {
+        'week_label': f"{start_dt.strftime('%m-%d')}~{end_dt.strftime('%m-%d')}",
+        'week_start': ws, 'week_end': we, 'hall_name': hall,
+        'new_team_count': new,
+        'active_team_count_start': start, 'active_team_count_end': end,
+        'dissolved_count': diss, 'active_dissolved_count': active_diss,
+        'system_dissolved_count': sys_diss, 'graduation_count': grad,
+        'retention_rate': retention, 'dissolution_rate': dissolution,
+        'active_dissolved_pct': active_diss_pct,
+        'weekly_revenue': weekly_revenue,
+        'total_reward': weekly_revenue,  # 前端趋势图「流水」字段直接用
+        'activity_index': activity_index,
+        'avg_days': avg_days,
+    }
+
+
+def week_list_from_detail(conn, limit=16):
+    """基于 team_detail 快照日推导周列表（周一为键，升序），供逐周重算。"""
+    snaps = [r['snapshot_date'] for r in conn.execute(
+        "SELECT DISTINCT snapshot_date FROM team_detail WHERE snapshot_date IS NOT NULL ORDER BY snapshot_date").fetchall()]
+    weeks = {}
+    for s in snaps:
+        d = datetime.strptime(s, '%Y-%m-%d')
+        ws = (d - timedelta(days=d.weekday())).strftime('%Y-%m-%d')
+        we = (d - timedelta(days=d.weekday() - 6)).strftime('%Y-%m-%d')
+        weeks.setdefault(ws, we)
+    items = sorted(weeks.items())
+    return items[-limit:] if limit else items
+
+
+def _stats_daily_dedup_rows(conn, ws, we):
+    """stats_daily 每 date_str 取 active_team_count 最大的一行（正确行）。
+    08-01 起 stats_daily 出现「减半」双行：正确行 ~600 vs 减半行 ~360，
+    减半行 id 更大，故不能用 MAX(id)；用 active_team_count DESC 取正确行。"""
+    return conn.execute("""
+        SELECT date_str, new_team_count, active_team_count, dissolved_count,
+               active_dissolved_count, system_dissolved_count,
+               drive_task_count, accompany_task_count, gift_task_count,
+               level_achievement_count, revenue_achievement_count, reward_amount
+        FROM (
+            SELECT *, ROW_NUMBER() OVER (
+                PARTITION BY date_str ORDER BY active_team_count DESC, id DESC
+            ) AS rn
+            FROM stats_daily
+            WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
+        ) WHERE rn = 1
+    """, (ws, we)).fetchall()
+
+
+def stats_daily_dedup_reward(conn, ws, we):
+    """官方发放奖励周合计（全平台，去减半双行后求和）。"""
+    s = sum(r['reward_amount'] or 0 for r in _stats_daily_dedup_rows(conn, ws, we))
+    return round(s, 1)
+
+
+def week_rows_all(conn, limit=0):
+    """全平台逐周重算行（升序），total_reward 用官方奖励，供预警/导出复用。"""
+    rows = []
+    for ws, we in week_list_from_detail(conn, limit=limit):
+        m = week_metrics_from_detail(conn, 'all', ws, we)
+        if m:
+            m['total_reward'] = stats_daily_dedup_reward(conn, ws, we)
+            rows.append(m)
+    return rows
+
+
 # ========== API路由 ==========
 
 @app.route('/api/search-suggest')
@@ -333,7 +472,7 @@ def api_hall_overview():
     role = row['role'] if row else 'admin'
     if role == 'admin':
         halls = [r['hall_name'] for r in conn.execute(
-            "SELECT DISTINCT hall_name FROM weekly_report WHERE hall_name != 'all' ORDER BY hall_name"
+            "SELECT DISTINCT hall_name FROM team_detail WHERE hall_name IS NOT NULL AND hall_name != '' ORDER BY hall_name"
         ).fetchall()]
     else:
         halls = [r['hall_name'] for r in conn.execute(
@@ -358,13 +497,15 @@ def api_hall_overview():
             'SELECT MAX(week_start) AS w FROM team_sister_revenue WHERE week_start < ?', (latest_sw,)
         ).fetchone()['w']
     for h in halls:
-        rows = conn.execute('''
-            SELECT week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate, total_reward
-            FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT ?
-        ''', (h, weeks)).fetchall()
+        # 逐周从 team_detail 重算（口径定稿 2026-08-17）
+        week_items = week_list_from_detail(conn, limit=weeks)
+        rows = []
+        for ws, we in week_items:
+            m = week_metrics_from_detail(conn, h, ws, we)
+            if m:
+                rows.append(m)
         if rows:
-            week_list = [dict(r) for r in reversed(rows)]
+            week_list = rows
             # 合并真实厅周流水（hall_revenue_daily 按周区间求和；无数据为 None）
             for w in week_list:
                 w['hall_revenue'] = None
@@ -384,13 +525,11 @@ def api_hall_overview():
                     (h, month_start)).fetchone()
                 if mrev['n']:
                     month['revenue'] = round(mrev['s'], 1)
-            mwk = conn.execute(
-                'SELECT SUM(total_reward) AS s, SUM(new_team_count) AS n FROM weekly_report WHERE hall_name = ? AND week_start >= ?',
-                (h, month_start)).fetchone()
-            if mwk['s'] is not None:
-                month['sis_revenue'] = round(mwk['s'] or 0, 1)
-            if mwk['n'] is not None:
-                month['new_teams'] = int(mwk['n'] or 0)
+            # 月汇总改从已重算的周行聚合（本月各周流水/新成团）
+            month_rev = sum((w.get('weekly_revenue') or 0) for w in week_list if w['week_start'] >= month_start)
+            month_new = sum((w.get('new_team_count') or 0) for w in week_list if w['week_start'] >= month_start)
+            month['sis_revenue'] = round(month_rev, 1)
+            month['new_teams'] = int(month_new)
             # 姐妹团周/月流水（真·流水 = 姐姐+妹妹当周礼物总流水合计）
             sister_weekly = None
             sister_monthly = None
@@ -428,168 +567,73 @@ def api_kpi():
     week = request.args.get('week', '')
     conn = get_db_conn()
 
-    # 指定大厅但未指定周时，默认取该厅最新一周
-    if not (week and '|' in week) and hall != 'all':
-        latest = conn.execute(
-            "SELECT week_start, week_end FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT 1",
-            (hall,)
-        ).fetchone()
-        if latest:
-            week = latest['week_start'] + '|' + latest['week_end']
+    weeks = week_list_from_detail(conn)
+    if not weeks:
+        conn.close()
+        return jsonify({'error': '数据不足'}), 400
 
+    # 选定周（缺省取最新一周），逐周从 team_detail 重算
+    ws, we = weeks[-1]
     if week and '|' in week:
         ws, we = week.split('|')
-        cursor = conn.execute("""
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                   total_reward, activity_index
-            FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?
-        """, (hall, ws, we))
-        this_row = cursor.fetchone()
-        if not this_row:
-            # 所选周无数据（如本周仍在收集中），回退到最新一周
-            latest = conn.execute(
-                "SELECT week_start, week_end FROM weekly_report WHERE hall_name = ? ORDER BY week_start DESC LIMIT 1",
-                (hall,)
-            ).fetchone()
-            if latest:
-                ws, we = latest['week_start'], latest['week_end']
-                cursor = conn.execute("""
-                    SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                           dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                           total_reward, activity_index
-                    FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?
-                """, (hall, ws, we))
-                this_row = cursor.fetchone()
-        if not this_row:
-            conn.close()
-            return jsonify({'error': '该周暂无数据'}), 404
-        cursor = conn.execute("""
-            SELECT * FROM weekly_report WHERE hall_name = ? AND week_start < ?
-            ORDER BY week_start DESC LIMIT 1
-        """, (hall, ws))
-        prev_row = cursor.fetchone()
-        # 先不 close，还需要查询成就数据
-        def calc_pct(curr, prev):
-            if prev == 0: return 0
-            return round((curr - prev) / prev * 100, 2)
-        def getv(row, key, default=0):
-            return row[key] if row else default
-        
-        # 从 stats_daily 聚合该周的成就数据（仅有全平台数据，单厅无此维度）
-        achieve_rate = 0
-        if hall == 'all':
-            cursor = conn.execute("""
-                SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
-                       SUM(active_team_count) as active
-                FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
-            """, (ws, we))
-            achieve_row = cursor.fetchone()
-            achieve_total = (achieve_row['lvl'] or 0) + (achieve_row['rev'] or 0)
-            achieve_rate = round(achieve_total / achieve_row['active'] * 100, 1) if achieve_row['active'] else 0
-
-        # 前一周成就（用于环比）
-        pws = getv(prev_row, 'week_start', '')
-        pwe = getv(prev_row, 'week_end', '')
-        prev_achieve_rate = 0
-        if hall == 'all' and pws and pwe:
-            cursor = conn.execute("""
-                SELECT SUM(level_achievement_count) as lvl, SUM(revenue_achievement_count) as rev,
-                       SUM(active_team_count) as active
-                FROM stats_daily WHERE hall_name = '全部' AND date_str >= ? AND date_str <= ?
-            """, (pws, pwe))
-            prev_achieve = cursor.fetchone()
-            pat = (prev_achieve['lvl'] or 0) + (prev_achieve['rev'] or 0)
-            prev_achieve_rate = round(pat / prev_achieve['active'] * 100, 1) if prev_achieve['active'] else 0
-        
+    this_row = week_metrics_from_detail(conn, hall, ws, we)
+    if not this_row:
+        ws, we = weeks[-1]
+        this_row = week_metrics_from_detail(conn, hall, ws, we)
+    if not this_row:
         conn.close()
-        
-        def calc_retention(row):
-            if not row:
-                return 0
-            start = row.get('active_team_count_start', 0) or 0
-            end = row.get('active_team_count_end', 0) or 0
-            new = row.get('new_team_count', 0) or 0
-            if start <= 0:
-                return 0
-            return min(100, round((end - new) / start * 100, 2))
-        
-        this_retention = calc_retention(this_row)
-        prev_retention = calc_retention(prev_row)
-        
-        kpis = {
-            'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
-            'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
-            'retention':     {'value': this_retention,                  'change': round(this_retention - prev_retention, 2),                                   'unit': '%'},
-            'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
-            'revenue':       {'value': round(this_row['total_reward'], 1), 'change': calc_pct(this_row['total_reward'], getv(prev_row, 'total_reward')), 'unit': '元'},
-            'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
-            'achievement':   {'value': achieve_rate, 'change': round(achieve_rate - prev_achieve_rate, 2), 'unit': '%'},
-            'active_dissolved_pct': {'value': round((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0, 1), 'change': round(((this_row['active_dissolved_count'] / this_row['dissolved_count'] * 100) if this_row['dissolved_count'] > 0 else 0) - ((prev_row['active_dissolved_count'] / prev_row['dissolved_count'] * 100) if prev_row and prev_row['dissolved_count'] > 0 else 0), 2), 'unit': '%', 'reverse': True},
-        }
-        return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
-    
-    cursor = conn.execute('''
-        SELECT cycle, new_team_count, active_team_count, dissolved_count, active_dissolved_count,
-               reward_amount, level_achievement_count, revenue_achievement_count
-        FROM stats_daily WHERE hall_name = '全部' ORDER BY date_str DESC LIMIT 2
-    ''')
-    daily_rows = cursor.fetchall()
-    
-    cursor = conn.execute('''
-        SELECT week_label, active_team_count_start, active_team_count_end, new_team_count,
-               retention_rate, dissolution_rate, total_reward, activity_index
-        FROM weekly_report WHERE hall_name = 'all' ORDER BY week_start DESC LIMIT 2
-    ''')
-    weekly_rows = cursor.fetchall()
-    conn.close()
-    
-    if len(daily_rows) < 1 and len(weekly_rows) < 1:
-        return jsonify({'error': '数据不足'}), 400
-    
-    today = daily_rows[0]
-    yesterday = daily_rows[1]
-    this_week = weekly_rows[0]
-    last_week = weekly_rows[1]
-    
+        return jsonify({'error': '该周暂无数据'}), 404
+
+    # 上一周（重算）
+    prev_row = None
+    for (pws, pwe) in reversed(weeks):
+        if pws < ws:
+            prev_row = week_metrics_from_detail(conn, hall, pws, pwe)
+            if prev_row:
+                break
+    if not prev_row:
+        prev_row = {k: 0 for k in this_row.keys()}
+        prev_row['week_start'] = prev_row['week_end'] = ''
+
     def calc_pct(curr, prev):
-        if prev == 0:
-            return 0
+        if prev == 0: return 0
         return round((curr - prev) / prev * 100, 2)
-    
-    today_achieve = today['level_achievement_count'] + today['revenue_achievement_count']
-    yesterday_achieve = yesterday['level_achievement_count'] + yesterday['revenue_achievement_count']
-    today_achieve_rate = (today_achieve / today['active_team_count'] * 100) if today['active_team_count'] > 0 else 0
-    yesterday_achieve_rate = (yesterday_achieve / yesterday['active_team_count'] * 100) if yesterday['active_team_count'] > 0 else 0
-    
-    today_active_pct = (today['active_dissolved_count'] / today['dissolved_count'] * 100) if today['dissolved_count'] > 0 else 0
-    yesterday_active_pct = (yesterday['active_dissolved_count'] / yesterday['dissolved_count'] * 100) if yesterday['dissolved_count'] > 0 else 0
-    
-    def calc_retention(row):
-        if not row:
-            return 0
-        start = row.get('active_team_count_start', 0) or 0
-        end = row.get('active_team_count_end', 0) or 0
-        new = row.get('new_team_count', 0) or 0
-        if start <= 0:
-            return 0
-        return min(100, round((end - new) / start * 100, 2))
-    
-    this_retention = calc_retention(this_week)
-    last_retention = calc_retention(last_week)
-    
+    def getv(row, key, default=0):
+        return row[key] if row else default
+
+    # 官方发放奖励（仅全平台 stats_daily 有，单厅无此维度 → 0）
+    this_reward = stats_daily_dedup_reward(conn, ws, we) if hall == 'all' else 0.0
+    pws, pwe = prev_row.get('week_start'), prev_row.get('week_end')
+    prev_reward = stats_daily_dedup_reward(conn, pws, pwe) if hall == 'all' and pws else 0.0
+
+    # 成就达成率（仅全平台 stats_daily，去减半双行）
+    def achieve_rate(ws2, we2):
+        if hall != 'all':
+            return 0.0
+        rows = _stats_daily_dedup_rows(conn, ws2, we2)
+        lvl = sum(r['level_achievement_count'] or 0 for r in rows)
+        rev = sum(r['revenue_achievement_count'] or 0 for r in rows)
+        act = sum(r['active_team_count'] or 0 for r in rows)
+        tot = lvl + rev
+        return round(tot / act * 100, 1) if act else 0
+    this_achieve = achieve_rate(ws, we)
+    prev_achieve = achieve_rate(pws, pwe) if pws else 0.0
+
+    conn.close()
+
+    this_retention = getv(this_row, 'retention_rate')
+    prev_retention = getv(prev_row, 'retention_rate')
     kpis = {
-        'new_team':      {'value': today['new_team_count'],      'change': calc_pct(today['new_team_count'], yesterday['new_team_count']),      'unit': '个'},
-        'active_team':   {'value': today['active_team_count'],   'change': calc_pct(today['active_team_count'], yesterday['active_team_count']),   'unit': '个'},
-        'retention':     {'value': this_retention,               'change': round(this_retention - last_retention, 2),                             'unit': '%'},
-        'dissolution':   {'value': this_week['dissolution_rate'],'change': round(this_week['dissolution_rate'] - last_week['dissolution_rate'], 2),  'unit': '%', 'reverse': True},
-        'revenue':       {'value': round(this_week['total_reward'], 1), 'change': calc_pct(this_week['total_reward'], last_week['total_reward']), 'unit': '元'},
-        'activity':      {'value': this_week['activity_index'],  'change': round(this_week['activity_index'] - last_week['activity_index'], 2),     'unit': ''},
-        'achievement':   {'value': round(today_achieve_rate, 1), 'change': round(today_achieve_rate - yesterday_achieve_rate, 2),                    'unit': '%'},
-        'active_dissolved_pct': {'value': round(today_active_pct, 1), 'change': round(today_active_pct - yesterday_active_pct, 2), 'unit': '%', 'reverse': True},
+        'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
+        'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
+        'retention':     {'value': this_retention,                  'change': round(this_retention - prev_retention, 2),                                   'unit': '%'},
+        'dissolution':   {'value': this_row['dissolution_rate'],    'change': round(this_row['dissolution_rate'] - getv(prev_row, 'dissolution_rate'), 2),   'unit': '%', 'reverse': True},
+        'revenue':       {'value': this_reward, 'change': calc_pct(this_reward, prev_reward), 'unit': '元'},
+        'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
+        'achievement':   {'value': this_achieve, 'change': round(this_achieve - prev_achieve, 2), 'unit': '%'},
+        'active_dissolved_pct': {'value': this_row['active_dissolved_pct'], 'change': round(this_row['active_dissolved_pct'] - getv(prev_row, 'active_dissolved_pct'), 2), 'unit': '%', 'reverse': True},
     }
-    
-    return jsonify({'data': kpis, 'date': today['cycle'], 'week': this_week['week_label']})
+    return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
 
 
 @app.route('/api/trends')
@@ -734,7 +778,9 @@ POLICY_WEEK_START = '2026-07-20'
 @app.route('/api/policy-impact')
 @login_required
 def api_policy_impact():
-    """政策效果评估：政策前4周 vs 政策后4周均值对比 + 分厅响应度排名"""
+    """政策效果评估：政策前4周 vs 政策后4周均值对比 + 分厅响应度排名。
+    注：政策点 2026-07-20 早于 team_detail 首张快照(07-27)，政策前各周仅存在于 weekly_report，
+    故本接口保留读 weekly_report（前端未接线，属历史分析口径）。"""
     hall = request.args.get('hall', 'all')
     user_uid = request.cookies.get('auth_uid')
     conn = get_db_conn()
@@ -799,7 +845,8 @@ def api_policy_impact():
 @app.route('/api/policy-attribution')
 @login_required
 def api_policy_attribution():
-    """政策归因：政策前后留存率/解散率变化按大厅存量规模加权，贡献(pp)加总=整体变化"""
+    """政策归因：政策前后留存率/解散率变化按大厅存量规模加权，贡献(pp)加总=整体变化。
+    注：同 policy-impact，政策前各周仅 weekly_report 有，保留读 weekly_report（前端未接线）。"""
     user_uid = request.cookies.get('auth_uid')
     conn = get_db_conn()
     role = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,)).fetchone()
@@ -1455,30 +1502,32 @@ def api_trend_insights():
         'tasks': round(r['tasks'] or 0) if r else 0,
     } if r and r['tasks'] else None
 
-    # ── 4) 留存：最好/最差厅（或单厅 vs 平台均值） ──
+    # ── 4) 留存：最好/最差厅（或单厅 vs 平台均值），基于 team_detail 重算 ──
+    # 仅统计期初在榜 ≥5 团的厅，过滤 1~2 团长尾厅的极端留存（100% / -100% 无意义）
+    hall_list = [r['hall_name'] for r in conn.execute(
+        "SELECT DISTINCT hall_name FROM team_detail WHERE hall_name IS NOT NULL AND hall_name != ''").fetchall()]
+    rets = []
+    for h in hall_list:
+        m = week_metrics_from_detail(conn, h, ws, we)
+        if m and m['retention_rate'] is not None and (m['active_team_count_start'] or 0) >= 5:
+            rets.append((h, m['retention_rate']))
     if hall == 'all':
-        best = conn.execute(
-            "SELECT hall_name, retention_rate FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ? AND retention_rate IS NOT NULL ORDER BY retention_rate DESC LIMIT 1",
-            [ws, we]).fetchone()
-        worst = conn.execute(
-            "SELECT hall_name, retention_rate FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ? AND retention_rate IS NOT NULL ORDER BY retention_rate ASC LIMIT 1",
-            [ws, we]).fetchone()
-        out['retention'] = {
-            'best_hall': best['hall_name'] if best else '',
-            'best_rate': round(best['retention_rate'] or 0, 1) if best else None,
-            'worst_hall': worst['hall_name'] if worst else '',
-            'worst_rate': round(worst['retention_rate'] or 0, 1) if worst else None,
-        }
+        if rets:
+            best = max(rets, key=lambda x: x[1])
+            worst = min(rets, key=lambda x: x[1])
+            out['retention'] = {
+                'best_hall': best[0], 'best_rate': round(best[1], 1),
+                'worst_hall': worst[0], 'worst_rate': round(worst[1], 1),
+            }
+        else:
+            out['retention'] = {'best_hall': '', 'best_rate': None, 'worst_hall': '', 'worst_rate': None}
     else:
-        own = conn.execute(
-            "SELECT retention_rate FROM weekly_report WHERE hall_name = ? AND week_start = ? AND week_end = ?",
-            [hall, ws, we]).fetchone()
-        avg = conn.execute(
-            "SELECT AVG(retention_rate) AS a FROM weekly_report WHERE hall_name != 'all' AND week_start = ? AND week_end = ?",
-            [ws, we]).fetchone()['a']
+        own_m = week_metrics_from_detail(conn, hall, ws, we)
+        own = own_m['retention_rate'] if own_m else None
+        avg = round(sum(v for _, v in rets) / len(rets), 1) if rets else None
         out['retention'] = {
-            'rate': round(own['retention_rate'] or 0, 1) if own else None,
-            'avg': round(avg or 0, 1) if avg else None,
+            'rate': round(own, 1) if own is not None else None,
+            'avg': avg,
         }
 
     conn.close()
@@ -1656,55 +1705,45 @@ def api_alert_resolve(alert_id):
 @app.route('/api/daily-retention')
 @login_required
 def api_daily_retention():
-    """返回近N周的周级留存率/解散率/新成团数（基于 weekly_report，与KPI卡片一致）"""
+    """返回近N周的周级留存率/解散率/新成团数（基于 team_detail 重算）"""
     weeks = int(request.args.get('weeks', 10))
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT week_label, week_start, retention_rate, dissolution_rate, new_team_count
-        FROM weekly_report
-        WHERE hall_name = ?
-        ORDER BY week_start DESC LIMIT ?
-    ''', (hall, weeks))
-    rows = cursor.fetchall()
+    week_items = week_list_from_detail(conn, limit=weeks)
+    rows = []
+    for ws, we in week_items:
+        m = week_metrics_from_detail(conn, hall, ws, we)
+        if m:
+            rows.append(m)
     conn.close()
-    
+
     rows = list(reversed(rows))
     dates = [r['week_label'] for r in rows]
     retention = [round(r['retention_rate'] or 0, 1) for r in rows]
     dissolution = [round(r['dissolution_rate'] or 0, 1) for r in rows]
     new_teams = [r['new_team_count'] or 0 for r in rows]
-    
+
     return jsonify({'dates': dates, 'retention': retention, 'dissolution': dissolution, 'new_teams': new_teams})
 
 @app.route('/api/weekly-report')
 @login_required
 def api_weekly_report():
+    """周报趋势：基于 team_detail 逐周重算（口径定稿 2026-08-17），替换 weekly_report 表直读"""
     limit = request.args.get('limit', 'all')
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
-    
-    if hall == 'all':
-        hall_filter = "hall_name = 'all'"
-        params = ()
-    else:
-        hall_filter = 'hall_name = ?'
-        params = (hall,)
-    
-    if limit == 'all':
-        cursor = conn.execute(f'''
-            SELECT * FROM weekly_report WHERE {hall_filter}
-            ORDER BY week_start
-        ''', params)
-    else:
-        cursor = conn.execute(f'''
-            SELECT * FROM weekly_report WHERE {hall_filter}
-            ORDER BY week_start DESC LIMIT ?
-        ''', params + (int(limit),))
-    
-    rows = cursor.fetchall()
+    weeks = week_list_from_detail(conn, limit=int(limit) if limit != 'all' else 0)
+    rows = []
+    for ws, we in weeks:
+        m = week_metrics_from_detail(conn, hall, ws, we)
+        if m:
+            # 官方发放奖励仅全平台有，补进返回行（供对比页等字段兼容）
+            if hall == 'all':
+                m['total_reward'] = stats_daily_dedup_reward(conn, ws, we)
+            else:
+                m['total_reward'] = m['weekly_revenue']
+            rows.append(m)
     conn.close()
-    
     return jsonify({'data': rows})
 @app.route('/api/detail-table')
 @login_required
@@ -1891,49 +1930,31 @@ def api_hall_stats():
 @app.route('/api/alerts')
 @login_required
 def api_alerts():
-    """动态生成预警列表，支持按指定周或最近3周对比"""
+    """动态生成预警列表，支持按指定周或最近3周对比（基于 team_detail 重算）"""
     week = request.args.get('week', '')
     conn = get_db_conn()
-    
+    all_rows = week_rows_all(conn)
+    if not all_rows:
+        conn.close()
+        return jsonify({'data': []})
     if week and '|' in week:
-        ws, we = week.split('|')
-        # 查询指定周
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                   total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
-        ''', (ws, we))
-        this_week = cursor.fetchone()
+        ws, _ = week.split('|')
+        this_week = next((r for r in all_rows if r['week_start'] == ws), None)
         if not this_week:
             conn.close()
             return jsonify({'data': []})
-        # 查询前两周（用于环比和连续趋势）
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                   total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all' AND week_end < ?
-            ORDER BY week_end DESC LIMIT 2
-        ''', (ws,))
-        prev_rows = cursor.fetchall()
-        conn.close()
-        rows = [this_week] + list(prev_rows)
+        # 前两周（新→旧），用于环比和连续趋势
+        older = [r for r in all_rows if r['week_start'] < ws]
+        prev_rows = older[-2:][::-1]
+        rows = [this_week] + prev_rows
     else:
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                   total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all'
-            ORDER BY week_start DESC LIMIT 3
-        ''')
-        rows = cursor.fetchall()
-        conn.close()
-    
+        rows = all_rows[-3:][::-1]
+    conn.close()
+
     alerts = []
     if len(rows) < 2:
         return jsonify({'data': alerts})
-    
+
     this_week = rows[0]
     last_week = rows[1]
     week_label = this_week['week_label']
@@ -2027,14 +2048,9 @@ def api_alerts():
 @login_required
 def api_export_weekly():
     conn = get_db_conn()
-    cursor = conn.execute('''
-        SELECT week_label, week_start, week_end, new_team_count, active_team_count_end,
-               dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
-        FROM weekly_report WHERE hall_name = 'all' ORDER BY week_start
-    ''')
-    rows = cursor.fetchall()
+    rows = week_rows_all(conn)
     conn.close()
-    
+
     import io, csv
     output = io.StringIO()
     writer = csv.writer(output)
@@ -2067,50 +2083,24 @@ def api_export_pdf_report():
     
     week = request.args.get('week', '')
     conn = get_db_conn()
-    
-    # 查询周报数据
-    if week and '|' in week:
-        ws, we = week.split('|')
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                   dissolved_count, active_dissolved_count, retention_rate, dissolution_rate,
-                   total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all' AND week_start = ? AND week_end = ?
-        ''', (ws, we))
-        week_row = cursor.fetchone()
-        # 前两周（用于环比和连续趋势）
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all' AND week_end < ?
-            ORDER BY week_end DESC LIMIT 2
-        ''', (ws,))
-        prev_rows = cursor.fetchall()
-        prev_row = prev_rows[0] if prev_rows else None
-        week3_row = prev_rows[1] if len(prev_rows) > 1 else None
-    else:
-        cursor = conn.execute('''
-            SELECT week_label, week_start, week_end, new_team_count, active_team_count_start, active_team_count_end,
-                   dissolved_count, retention_rate, dissolution_rate, total_reward, activity_index
-            FROM weekly_report WHERE hall_name = 'all'
-            ORDER BY week_start DESC LIMIT 3
-        ''')
-        rows = cursor.fetchall()
-        week_row = rows[0] if rows else None
-        prev_row = rows[1] if len(rows) > 1 else None
-        week3_row = rows[2] if len(rows) > 2 else None
-    
-    # 查询近12周趋势数据（用于图表）
-    cursor = conn.execute('''
-        SELECT week_label, new_team_count, active_team_count_end, dissolved_count,
-               retention_rate, dissolution_rate, total_reward, activity_index
-        FROM weekly_report WHERE hall_name = 'all'
-        ORDER BY week_start DESC LIMIT 12
-    ''')
-    trend_rows = list(cursor.fetchall())
-    trend_rows.reverse()  # 从早到晚
+    all_rows = week_rows_all(conn)
     conn.close()
-    
+
+    # 查询周报数据（基于 team_detail 重算）
+    if week and '|' in week:
+        ws, _ = week.split('|')
+        week_row = next((r for r in all_rows if r['week_start'] == ws), None)
+        older = [r for r in all_rows if r['week_start'] < ws]
+        prev_row = older[-1] if older else None
+        week3_row = older[-2] if len(older) > 1 else None
+    else:
+        week_row = all_rows[-1] if all_rows else None
+        prev_row = all_rows[-2] if len(all_rows) > 1 else None
+        week3_row = all_rows[-3] if len(all_rows) > 2 else None
+
+    # 近12周趋势数据（用于图表，从早到晚）
+    trend_rows = all_rows[-12:]
+
     # PDF生成
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,

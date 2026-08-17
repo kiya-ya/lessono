@@ -178,18 +178,52 @@ python setup_task.py
 
 ## 核心指标计算说明
 
-| 图表 | 数据来源 | 计算公式 |
-|------|---------|---------|
-| 💯 留存率趋势 | `weekly_report` 表 | (周末进行中 - 本周新成团) / 周始进行中 × 100% |
-| 🚫 解散率趋势 | `weekly_report` 表 | 本周解散数 / ((周始进行中 + 周末进行中) / 2) × 100% |
-| 💰 礼物流水趋势 | `weekly_report` 表 | 本周7天 `reward_amount` 累计（全部大厅总和） |
-| 📊 任务活跃度 | `weekly_report` 表 | (开车任务 + 陪档任务 + 收送礼任务) / 周末进行中 |
+> **口径定稿（2026-08-17 grill 确认）**：指标以 **`team_detail` 明细快照重算**为准，`stats_daily` / `weekly_report` 不再作为指标真源（`stats_daily` 只有「全部」大厅、`reward_amount` 是奖励非流水、且 2026-08-01 起同日双行导致留存率减半）。`team_detail` 自 2026-07-27 起逐日积累。
+
+### 奖励 vs 流水（两个独立指标，勿混）
+
+| 名称 | 字段 | 含义 |
+|------|------|------|
+| **奖励** | `team_detail.reward_amount` | 官方发放的礼物奖励（快照日口径） |
+| **流水** | `team_detail.sister_revenue` / `team_sister_revenue` | 自己挣的礼物流水（周口径） |
+
+### 指标重算口径（周粒度，周一 → 周日）
+
+```
+新成团     = DISTINCT team_id WHERE form_date     ∈ [week_start, week_end]
+非毕业解散 = DISTINCT team_id WHERE dissolve_date ∈ [week_start, week_end] AND dissolve_reason ≠ '毕业'
+毕业数     = DISTINCT team_id WHERE dissolve_date ∈ [week_start, week_end] AND dissolve_reason = '毕业'
+期初进行中 = 该周最早快照里 dissolve_date 为空的团数
+期末进行中 = 该周最晚快照里 dissolve_date 为空的团数
+留存率     = (期末进行中 − 新成团) ÷ 期初进行中     （老团留存）
+解散率     = 非毕业解散 ÷ 期初进行中                （毕业不计入流失）
+主动解散占比 = 主动解散 ÷ 非毕业解散
+单团流水   = 周流水 ÷ 期末进行中                    （不叫「人均流水」）
+在榜团数   = 期末进行中
+平均在榜天 = AVG(days_since_formed) over 期末进行中的团
+```
 
 **术语说明：**
-- **周始进行中**：本周第一天（周一）正在进行中的姐妹团数量
-- **周末进行中**：本周最后一天（周日）正在进行中的姐妹团数量
-- **本周新成团**：本周内新成立的姐妹团数量
-- **本周解散数**：本周内解散的姐妹团数量
+- **期初进行中**：本周最早快照里 `dissolve_date` 为空的团数
+- **期末进行中**：本周最晚快照里 `dissolve_date` 为空的团数
+- **本周新成团**：本周内新成立的姐妹团数量（按 `form_date`）
+- **非毕业解散**：本周内解散且原因 ≠ 「毕业」的团数（满 30 天毕业不算流失）
+- **毕业**：姐妹团满 30 天自动毕业（`dissolve_reason='毕业'`），与牌子/等级无关
+
+### 页面指标归属
+
+| 页面指标 | 归属 |
+|---------|------|
+| 姐姐排行榜「按当日奖励」 | 奖励（`reward_amount`） |
+| 概览「单团流水」 | 流水（`sister_revenue`） |
+| 对比页「礼物流水」 | 流水 |
+| 明细表「奖励」列 | 奖励 |
+| 画像「本周流水」 | 流水 |
+
+### 数据层已知问题（历史背景）
+
+- `team_detail` 是**当日快照**性质（`/sisters/detail/` 只返回当前团），首次抓取 2026-07-27，之前无团级明细 → 07-27 前只有 `stats_daily`（仅「全部」、奖励≠流水、日期推断丢星期几）
+- `stats_daily` 2026-08-01 起每天出现两行（`cycle` 星期标签不一致），`infer_full_date` 丢星期几导致同日双行、留存率呈现「周末=周初一半」——已被 team_detail 重算取代
 
 ---
 
