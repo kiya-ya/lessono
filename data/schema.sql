@@ -157,6 +157,9 @@ CREATE INDEX IF NOT EXISTS idx_stats_date ON stats_daily(cycle);
 CREATE INDEX IF NOT EXISTS idx_stats_hall ON stats_daily(hall_name);
 CREATE INDEX IF NOT EXISTS idx_detail_team ON team_detail(team_id);
 CREATE INDEX IF NOT EXISTS idx_detail_snapshot ON team_detail(snapshot_date);
+CREATE INDEX IF NOT EXISTS idx_detail_form ON team_detail(form_date);
+CREATE INDEX IF NOT EXISTS idx_detail_dissolve ON team_detail(dissolve_date);
+CREATE INDEX IF NOT EXISTS idx_detail_hall ON team_detail(hall_name);
 CREATE INDEX IF NOT EXISTS idx_trend_metric ON trend_data(metric_name, date_type);
 CREATE INDEX IF NOT EXISTS idx_report_week ON weekly_report(week_start, week_end);
 

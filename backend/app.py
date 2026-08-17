@@ -151,9 +151,28 @@ def init_talent_db():
         print(f'[WARN] 培养力结果记录表初始化失败: {e}')
 
 
+def init_detail_indexes():
+    """为 team_detail 高频过滤列补索引（form_date/dissolve_date/hall_name），
+    加速周指标重算与明细查询；幂等，已有索引跳过。"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        for ddl in (
+            'CREATE INDEX IF NOT EXISTS idx_detail_form ON team_detail(form_date)',
+            'CREATE INDEX IF NOT EXISTS idx_detail_dissolve ON team_detail(dissolve_date)',
+            'CREATE INDEX IF NOT EXISTS idx_detail_hall ON team_detail(hall_name)',
+        ):
+            conn.execute(ddl)
+        conn.commit()
+        conn.close()
+        print('[BOOT] team_detail 索引补齐完成')
+    except Exception as e:
+        print(f'[WARN] team_detail 索引补齐失败: {e}')
+
+
 # 启动时执行
 init_auth_db()
 init_talent_db()
+init_detail_indexes()
 
 
 # Cookie 保活：启动 60 秒后先跑一次，之后每 30 分钟保活一次（防 session 因不活跃过期）
@@ -300,6 +319,39 @@ def week_metrics_from_detail(conn, hall, ws, we):
         'activity_index': activity_index,
         'avg_days': avg_days,
     }
+
+
+def retention_by_hall(conn, ws, we):
+    """单次聚合计算所有厅的留存率，供趋势结论层「最好/最差厅」使用。
+    替代逐厅循环 week_metrics_from_detail（178 厅 × ~9 查询 → 7s 卡顿）。
+    口径与 week_metrics_from_detail 完全一致：留存 = (期末进行中 − 本周新成团) ÷ 期初进行中，
+    期初/期末 = 各厅在该周最早/最晚快照。仅返回期初在榜 ≥5 团的厅。"""
+    base = "AND hall_name IS NOT NULL AND hall_name != ''"
+
+    def _active(agg):
+        # 各厅在自身期初(或期末)快照日的进行中团数
+        return {r['hall_name']: r['n'] for r in conn.execute(
+            f"SELECT t.hall_name, COUNT(DISTINCT t.team_id) AS n FROM team_detail t "
+            f"JOIN (SELECT hall_name, {agg} AS s FROM team_detail "
+            f"      WHERE snapshot_date >= ? AND snapshot_date <= ? {base} GROUP BY hall_name) s "
+            f"  ON t.hall_name = s.hall_name AND t.snapshot_date = s.s "
+            f"WHERE (t.dissolve_date IS NULL OR t.dissolve_date = '') "
+            f"GROUP BY t.hall_name", (ws, we)).fetchall()}
+
+    start_map = _active('MIN(snapshot_date)')
+    end_map = _active('MAX(snapshot_date)')
+    new_map = {r['hall_name']: r['n'] for r in conn.execute(
+        f"SELECT hall_name, COUNT(DISTINCT team_id) AS n FROM team_detail "
+        f"WHERE form_date >= ? AND form_date <= ? {base} GROUP BY hall_name",
+        (ws, we)).fetchall()}
+
+    out = {}
+    for h, start in start_map.items():
+        if start >= 5:
+            end = end_map.get(h, 0)
+            new = new_map.get(h, 0)
+            out[h] = round((end - new) / start * 100, 2)
+    return out
 
 
 def week_list_from_detail(conn, limit=16):
@@ -1504,17 +1556,12 @@ def api_trend_insights():
 
     # ── 4) 留存：最好/最差厅（或单厅 vs 平台均值），基于 team_detail 重算 ──
     # 仅统计期初在榜 ≥5 团的厅，过滤 1~2 团长尾厅的极端留存（100% / -100% 无意义）
-    hall_list = [r['hall_name'] for r in conn.execute(
-        "SELECT DISTINCT hall_name FROM team_detail WHERE hall_name IS NOT NULL AND hall_name != ''").fetchall()]
-    rets = []
-    for h in hall_list:
-        m = week_metrics_from_detail(conn, h, ws, we)
-        if m and m['retention_rate'] is not None and (m['active_team_count_start'] or 0) >= 5:
-            rets.append((h, m['retention_rate']))
+    # retention_by_hall 单次聚合（3 条 GROUP BY 查询），替代逐厅循环（~1600 查询）
+    rets = retention_by_hall(conn, ws, we)   # {hall_name: retention_rate}
     if hall == 'all':
         if rets:
-            best = max(rets, key=lambda x: x[1])
-            worst = min(rets, key=lambda x: x[1])
+            best = max(rets.items(), key=lambda x: x[1])
+            worst = min(rets.items(), key=lambda x: x[1])
             out['retention'] = {
                 'best_hall': best[0], 'best_rate': round(best[1], 1),
                 'worst_hall': worst[0], 'worst_rate': round(worst[1], 1),
@@ -1524,7 +1571,7 @@ def api_trend_insights():
     else:
         own_m = week_metrics_from_detail(conn, hall, ws, we)
         own = own_m['retention_rate'] if own_m else None
-        avg = round(sum(v for _, v in rets) / len(rets), 1) if rets else None
+        avg = round(sum(rets.values()) / len(rets), 1) if rets else None
         out['retention'] = {
             'rate': round(own, 1) if own is not None else None,
             'avg': avg,
