@@ -1,13 +1,23 @@
-function switchTab(tabName) {
+function switchPage(name) {
+  state.page = name;  // 单一来源记录当前页
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + tabName + "'"));
+  const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + name + "'"));
   if (clicked) clicked.classList.add('active');
-  document.getElementById('tab-' + tabName).classList.add('active');
-  if (tabName === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
-  if (tabName === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
-  if (tabName === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
-  if (tabName === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
+  if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
+  if (name === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
+  if (name === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+}
+
+// 旧名兼容：index.html 里的 onclick="switchTab(...)" 仍走这里
+function switchTab(tabName) { switchPage(tabName); }
+
+// 跨页下钻：记下目标页 + 上下文 → 切页；目标页就绪后自行消费 state.pending（替代「切页后再手动筛一遍」）
+function goPage(name, context) {
+  state.pending = context || null;
+  switchPage(name);
 }
 
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
