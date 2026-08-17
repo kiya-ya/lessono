@@ -43,6 +43,22 @@ async function loadWeeks() {
     // 恢复上次选择的周（localStorage）
     const savedWeek = localStorage.getItem('wb_week');
     if (savedWeek) currentWeek = savedWeek;
+
+    // 填充周选择下拉（概览页 KPI 标题行右侧）
+    const sel = document.getElementById('week-select');
+    if (sel) {
+      const opts = [];
+      if (!hasThisWeek) {
+        opts.push(`<option value="${thisWeekValue}">本周·收集中（${thisWeekStart.slice(5)} ~ ${thisWeekEnd.slice(5)}）</option>`);
+      }
+      opts.push(...dbWeeks.map(w => {
+        const v = w.week_start + '|' + w.week_end;
+        const label = w.week_label || `${(w.week_start || '').slice(5)} ~ ${(w.week_end || '').slice(5)}`;
+        return `<option value="${v}">${label}</option>`;
+      }));
+      sel.innerHTML = opts.join('');
+      sel.value = currentWeek;
+    }
   } catch (e) { console.error('周列表加载失败:', e); }
 }
 async function loadDetailTable(page = 1) {

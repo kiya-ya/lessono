@@ -117,6 +117,15 @@ function toggleSidebar() {
   setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 260);
 }
 
+// 周选择下拉（概览页 KPI 标题行右侧）：切换统计周 → 刷新工作台
+function onWeekChange() {
+  const sel = document.getElementById('week-select');
+  if (!sel) return;
+  currentWeek = sel.value;
+  localStorage.setItem('wb_week', currentWeek);
+  if (typeof refreshWorkbench === 'function') refreshWorkbench();
+}
+
 function refreshData() {
   // 工作台（KPI + 趋势图）
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
