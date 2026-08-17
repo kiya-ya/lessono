@@ -13,7 +13,7 @@ SCRIPT_PATH = os.path.join(PROJECT_DIR, 'daily_crawl.py')
 LOG_PATH = os.path.join(PROJECT_DIR, 'data', 'crawl_log.txt')
 TASK_NAME = '姐妹团数据自动抓取'
 # 使用项目虚拟环境的 Python，避免系统 Python 缺少依赖
-PYTHON_PATH = os.path.join(PROJECT_DIR, '.venv', 'Scripts', 'python.exe')
+PYTHON_PATH = os.path.join(PROJECT_DIR, '.venv311', 'Scripts', 'python.exe')
 
 
 def check_admin():
@@ -44,14 +44,14 @@ def main():
     else:
         python_cmd = f'"{PYTHON_PATH}"'
 
-    # 创建命令（每天 23:30）
+    # 创建命令（每天 10:00）
     cmd = (
         f'cmd /c cd /d "{PROJECT_DIR}" && '
         f'{python_cmd} daily_crawl.py >> "{LOG_PATH}" 2>&1'
     )
 
     print(f'\n任务名称: {TASK_NAME}')
-    print(f'执行时间: 每天 23:30')
+    print(f'执行时间: 每天 10:00')
     print(f'执行命令: {cmd}')
     print(f'日志文件: {LOG_PATH}')
     print()
@@ -66,7 +66,7 @@ def main():
         '/tn', TASK_NAME,
         '/tr', cmd,
         '/sc', 'daily',
-        '/st', '23:30',
+        '/st', '10:00',
         '/f'
     ], capture_output=True, text=True)
 
@@ -75,7 +75,7 @@ def main():
         print()
         print('任务详情:')
         print(f'  名称: {TASK_NAME}')
-        print(f'  时间: 每天 23:30')
+        print(f'  时间: 每天 10:00')
         print(f'  命令: {python_cmd} daily_crawl.py')
         print()
         print('如需修改或删除，请打开【任务计划程序】搜索"姐妹团"')
@@ -95,7 +95,7 @@ def main():
         print('1. 按 Win+R，输入 taskschd.msc 回车')
         print('2. 右侧点击【创建基本任务...】')
         print('3. 名称填: 姐妹团数据自动抓取')
-        print('4. 触发器选: 每天，时间 23:30:00')
+        print('4. 触发器选: 每天，时间 10:00:00')
         print('5. 操作选: 启动程序')
         print(f'6. 程序/脚本填: {PYTHON_PATH}')
         print(f'7. 起始于填: {PROJECT_DIR}')
