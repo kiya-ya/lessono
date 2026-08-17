@@ -186,7 +186,7 @@ function wbRenderRank() {
     : '该厅排名较上周的变化：↑ 上升 · ↓ 下降 · — 持平';
   document.getElementById('wb-rank-table').innerHTML = `
     <tr><th>#</th><th>大厅</th><th${thSort('active', 'center')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th title="${moveTitle}">流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th title="${moveTitle}">留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
-    ${top.map((it, idx) => `<tr class="row-click" onclick="wbSelectHall('${it.name.replace(/'/g, "\\'")}')" title="点击查看该厅">
+    ${top.map((it, idx) => `<tr class="row-click" onclick="wbDrillHall('${it.name.replace(/'/g, "\\'")}')" title="点击进入厅分析查看该厅">
       <td class="rank-no ${idx < 3 ? 'top' : ''}">${idx + 1}</td>
       <td class="rank-hall">${it.name}</td>
       <td class="num center">${it.active}</td>
@@ -258,21 +258,39 @@ function applyKpiAlertBadges() {
 /* ─────────────── 联动 ─────────────── */
 
 function wbSelectHall(hall) {
-  currentHall = hall;
-  localStorage.setItem('wb_hall', hall);
+  setHall(hall);
   // 卡片选中态即时反馈
   document.querySelectorAll('#wb-hall-grid .hall-card').forEach(c => {
     c.classList.toggle('active', c.querySelector('.hall-name').textContent === hall);
   });
+  wbSyncHallSelect();
   refreshData();
 }
 
 // 从「单厅下钻」切回全部大厅（厅排行榜点行后可用）
 function wbResetHall() {
-  currentHall = 'all';
-  localStorage.setItem('wb_hall', 'all');
+  setHall('all');
   document.querySelectorAll('#wb-hall-grid .hall-card').forEach(c => c.classList.remove('active'));
+  wbSyncHallSelect();
   refreshData();
+}
+
+// 概览页厅选择器：选厅 → 联动筛选下方全部数据
+function onHallSelect() {
+  const sel = document.getElementById('hall-select');
+  if (!sel) return;
+  wbSelectHall(sel.value);
+}
+
+// 让厅选择器显示值始终跟随 currentHall（外部 setHall 后同步）
+function wbSyncHallSelect() {
+  const sel = document.getElementById('hall-select');
+  if (sel) sel.value = currentHall;
+}
+
+// 概览厅排行榜点行 → 跳到厅分析页并展开该厅（跨页下钻，不改变概览的筛选大厅）
+function wbDrillHall(hall) {
+  goPage('compare', { hall: hall });
 }
 
 /* ─────────────── KPI + 趋势 ─────────────── */

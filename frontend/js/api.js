@@ -4,6 +4,7 @@ async function loadHalls() {
     const result = await res.json();
     const role = result.role || 'admin';
     const halls = result.data || [];
+    allHalls = halls;
 
     // 厅运营默认选中第一个具体厅（管理员保持 'all'）
     if (role === 'hall_manager' && halls.length > 0) {
@@ -13,6 +14,15 @@ async function loadHalls() {
     // 恢复上次选择的大厅（localStorage）
     const savedHall = localStorage.getItem('wb_hall');
     if (savedHall) currentHall = savedHall;
+
+    // 概览页厅选择器：全量大厅，可下拉选择联动下方全部数据
+    const sel = document.getElementById('hall-select');
+    if (sel) {
+      const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      sel.innerHTML = '<option value="all">🏠 全部大厅</option>' +
+        halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
+      sel.value = currentHall;
+    }
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
 async function loadWeeks() {

@@ -12,6 +12,9 @@ let hallCompareSortField = 'active_count';
 let hallCompareSortOrder = 'desc';
 let hallCompareSearch = '';
 
+// 全量大厅名单（/api/halls 返回，供概览厅选择器使用）
+let allHalls = [];
+
 // ===== 页面状态（单一来源，后续各页逐步迁入）=====
 const state = {
   page: 'overview',   // 当前激活页

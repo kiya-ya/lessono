@@ -6,6 +6,12 @@ async function initCompareChart() {
     hallCompareData = hallResult.data || [];
     renderHallComparePage();
     if (typeof initCmpBar === 'function') initCmpBar();
+    // 跨页下钻：概览厅排行榜点行 → goPage 写入 state.pending，这里消费一次展开该厅分析
+    if (state.pending && state.pending.hall && state.page === 'compare') {
+      const hall = state.pending.hall;
+      state.pending = null;
+      openHallFocus(hall);
+    }
   } catch (e) { console.error('大厅排名加载失败:', e); }
 }
 
