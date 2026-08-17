@@ -196,12 +196,11 @@ function jumpToUID(uid, teamId) {
 async function queryUID(teamId) {
   const uid = document.getElementById('uid-input').value.trim();
   const captainType = document.getElementById('uid-type').value;
-  const useMock = document.getElementById('uid-mock').checked;
   if (!uid) { alert('请输入UID'); return; }
   document.getElementById('uid-loading').style.display = 'block';
   document.getElementById('uid-result').style.display = 'none';
   document.getElementById('uid-error').style.display = 'none';
-  const body = { uid, captain_type: captainType, mock: useMock };
+  const body = { uid, captain_type: captainType };
   if (teamId) body.team_id = teamId;
   try {
     const resp = await fetch(API_BASE + '/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -212,7 +211,7 @@ async function queryUID(teamId) {
   } catch (e) {
     const errDiv = document.getElementById('uid-error');
     let html = `<strong>❌ 查询失败</strong><br>${e.message}`;
-    if (e.message.includes('Cookie') || e.message.includes('连接') || e.message.includes('未加载')) html += `<div class="hint">💡 提示：请勾选「模拟数据模式」重新查询，或更新Cookie后重启后端。</div>`;
+    if (e.message.includes('Cookie') || e.message.includes('连接') || e.message.includes('未加载')) html += `<div class="hint">💡 提示：请更新Cookie后重试。</div>`;
     errDiv.innerHTML = html;
     errDiv.style.display = 'block';
   } finally {

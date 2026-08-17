@@ -498,107 +498,12 @@ class UIDCrawler:
         return {'this': this_v, 'last': last_v, 'change': f'{arrow}{abs(diff):.1f}{unit}', 'change_pct': round(pct, 1), 'trend': trend}
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-#  Mock 数据模式（用于前端开发测试，无需内网连接）
-# ═══════════════════════════════════════════════════════════════════════════
-
-def get_mock_uid_data(uid: str, captain_type: str = 'game') -> dict:
-    """返回模拟的UID查询对比数据，用于前端开发测试"""
-    return {
-        'uid': uid,
-        'nickname': '尾戒ᩚಣ',
-        'captain_type': captain_type,
-        'type_label': CAPTAIN_TYPE_LABELS.get(captain_type, '新队长-游戏'),
-        'this_week': {
-            'period': '2026-07-21 ~ 2026-07-27',
-            'week_label': '07-21 ~ 07-27',
-            'data': {
-                'uid': uid, 'nickname': '尾戒ᩚਣ', 'found': True,
-                'schedule_hall': '♡LOL战争女神厅♡',
-                'auth_hall': '♡LOL战争女神厅♡',
-                'captain_type': '新队长-游戏',
-                'is_elite': '是',
-                'week_level': '金牌',
-                'week_schedule_days': 5,
-                'total_schedule_days': 45,
-                'week_schedule_count': 25,
-                'daily_task_count': 12,
-                'week_rank': 15,
-                'week_accompany_time': 510,
-                'week_drive_count': 10,
-                'week_total_drive': 12,
-                'week_revenue': 1280.0,
-                'total_revenue': 12500.0,
-                'best_4week_level': '金牌',
-                'hist_best_level': '金牌',
-                'protection_end': '2026-08-01',
-            },
-        },
-        'last_week': {
-            'period': '2026-07-14 ~ 2026-07-20',
-            'week_label': '07-14 ~ 07-20',
-            'data': {
-                'uid': uid, 'nickname': '尾戒ᩚਣ', 'found': True,
-                'schedule_hall': '♡LOL战争女神厅♡',
-                'auth_hall': '♡LOL战争女神厅♡',
-                'captain_type': '新队长-游戏',
-                'is_elite': '是',
-                'week_level': '银牌',
-                'week_schedule_days': 3,
-                'total_schedule_days': 40,
-                'week_schedule_count': 18,
-                'daily_task_count': 7,
-                'week_rank': 42,
-                'week_accompany_time': 312,
-                'week_drive_count': 6,
-                'week_total_drive': 8,
-                'week_revenue': 850.0,
-                'total_revenue': 11220.0,
-                'best_4week_level': '银牌',
-                'hist_best_level': '金牌',
-                'protection_end': '2026-08-01',
-            },
-        },
-        'compare': {
-            'week_level': {'this': '金牌', 'last': '银牌', 'change': '↑晋升1级', 'trend': 'up'},
-            'week_schedule_days': {'this': 5, 'last': 3, 'change': '↑2.0天', 'change_pct': 66.7, 'trend': 'up'},
-            'daily_task_count': {'this': 12, 'last': 7, 'change': '↑5.0次', 'change_pct': 71.4, 'trend': 'up'},
-            'week_revenue': {'this': 1280.0, 'last': 850.0, 'change': '↑430.0元', 'change_pct': 50.6, 'trend': 'up'},
-            'week_accompany_time': {'this': 8.5, 'last': 5.2, 'change': '↑198.0分钟', 'change_pct': 63.5, 'trend': 'up'},
-            'week_rank': {'this': '第15名', 'last': '第42名', 'change': '↑27名', 'trend': 'up'},
-            'total_revenue': {'this': 12500.0, 'last': 11220.0, 'change': '累计值', 'trend': 'flat'},
-            'best_4week_level': {'this': '金牌', 'last': '银牌', 'change': '↑晋升', 'trend': 'up'},
-            'hall': {'this': '♡LOL战争女神厅♡', 'last': '♡LOL战争女神厅♡', 'change': '—', 'trend': 'flat'},
-            'is_elite': {'this': '是', 'last': '是', 'change': '—', 'trend': 'flat'},
-        },
-        'team_info': {
-            'team_id': 12345,
-            'hall_name': '♡LOL战争女神厅♡',
-            'form_date': '2026-03-15',
-            'sister_nickname': '尾戒ᩚਣ',
-            'sister_uid': uid,
-            'sister_nickname2': '妹妹测试',
-            'sister_uid2': '23073267',
-            'total_revenue': 12500.0,
-            'reward_amount': 3750.0,
-            'status': '进行中',
-            'dissolve_date': None,
-        },
-    }
-
-
 if __name__ == '__main__':
     print('=' * 60)
     print('UID查询爬虫测试')
     print('=' * 60)
 
-    print('\n[测试1] Mock数据模式')
-    mock = get_mock_uid_data('26482359', 'game')
-    print(f"UID: {mock['uid']}, 昵称: {mock['nickname']}")
-    print(f"本周等级: {mock['compare']['week_level']['this']} (上周: {mock['compare']['week_level']['last']})")
-    print(f"流水变化: {mock['compare']['week_revenue']['change']} ({mock['compare']['week_revenue']['change_pct']}%)")
-
-    print('\n[测试2] 真实查询模式')
+    print('\n真实查询模式')
     print('提示: 以下测试需要内网连接和有效Cookie')
     try:
         crawler = UIDCrawler()

@@ -56,8 +56,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .uid-query-bar select { padding: 8px 12px; border: 1px solid #d9d9d9; border-radius: 4px; font-size: 13px; }
 .uid-query-bar button { padding: 8px 20px; border: none; border-radius: 4px; background: #667eea; color: white; font-size: 13px; cursor: pointer; }
 .uid-query-bar button:hover { background: #5a6fd6; }
-.uid-query-bar .mock-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
-.uid-query-bar .mock-toggle input { cursor: pointer; }
 
 .uid-result-card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .uid-result-card h3 { font-size: 15px; margin-bottom: 14px; color: #333; display: flex; align-items: center; gap: 8px; }
@@ -210,7 +208,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   }
   .uid-query-bar input[type="text"] { width: 100%; }
   .uid-query-bar button { width: 100%; }
-  .uid-query-bar .mock-toggle { font-size: 11px; }
   .compare-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
   .compare-table th, .compare-table td { padding: 10px; font-size: 12px; }
   .cookie-modal-content {

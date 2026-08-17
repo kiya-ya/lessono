@@ -501,13 +501,12 @@ async function renderPartnerCompare(data) {
       }
     }
   } else if (currentUid === sisterUid2 && sisterUid) {
-    const mockMode = document.getElementById('uid-mock').checked;
     const captainType = document.getElementById('uid-type').value;
     try {
       const resp = await fetch(API_BASE + '/api/uid-query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: sisterUid, captain_type: captainType, mock: mockMode }),
+        body: JSON.stringify({ uid: sisterUid, captain_type: captainType }),
       });
       const partnerData = await resp.json();
       if (!partnerData.error) {

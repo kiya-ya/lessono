@@ -100,6 +100,7 @@
       <h2 id="wb-kpi-title">核心指标</h2>
       <span class="hint" id="wb-kpi-subtitle"></span>
       <select id="week-select" class="wb-select" style="margin-left:auto" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
+      <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">🏠 全部大厅</button>
     </div>
     <div class="kpi-hero" id="wb-kpi-hero"></div>
     <div class="kpi-sub" id="wb-kpi-sub"></div>
@@ -490,7 +491,6 @@
         <label>UID：</label>
         <input type="text" id="uid-input" placeholder="输入UID，如 26482359">
         <button onclick="queryUID()">🔍 查询</button>
-        <label class="mock-toggle"><input type="checkbox" id="uid-mock" checked> 模拟数据模式（无需内网）</label>
       </div>
     </div>
     <div id="uid-loading" class="uid-loading" style="display:none;">⏳ 正在查询 UID 数据，请稍候...</div>
@@ -740,7 +740,7 @@
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=49"></script>
 <script src="js/app.js?v=50"></script>
-<script src="js/workbench.js?v=50"></script>
+<script src="js/workbench.js?v=51"></script>
 <script src="js/insight.js?v=49"></script>
 </body>
 </html>

@@ -267,6 +267,14 @@ function wbSelectHall(hall) {
   refreshData();
 }
 
+// 从「单厅下钻」切回全部大厅（厅排行榜点行后可用）
+function wbResetHall() {
+  currentHall = 'all';
+  localStorage.setItem('wb_hall', 'all');
+  document.querySelectorAll('#wb-hall-grid .hall-card').forEach(c => c.classList.remove('active'));
+  refreshData();
+}
+
 /* ─────────────── KPI + 趋势 ─────────────── */
 
 function wbFilteredWeekly() {
@@ -318,6 +326,8 @@ function wbCountUp(el, to, fmt, dur = 1000) {
 
 function wbRenderKPI() {
   const hallLabel = currentHall === 'all' ? '全部大厅' : currentHall;
+  const resetBtn = document.getElementById('wb-hall-reset');
+  if (resetBtn) resetBtn.style.display = currentHall === 'all' ? 'none' : '';
   document.getElementById('wb-kpi-title').textContent = '核心指标 · ' + hallLabel;
   document.getElementById('wb-kpi-subtitle').textContent = wbKpiMeta.week
     ? `数据周期 ${wbKpiMeta.week} · 对比上一周`

@@ -30,16 +30,11 @@ from db import get_db
 # UID查询模块（可选，内网环境才可用）
 _uid_crawler_available = False
 try:
-    from uid_crawler import UIDCrawler, get_mock_uid_data, CAPTAIN_TYPES
+    from uid_crawler import UIDCrawler, CAPTAIN_TYPES
     _uid_crawler_available = True
 except Exception as e:
     print(f'[WARN] UID爬虫模块加载失败: {e}')
-    from uid_crawler import get_mock_uid_data, CAPTAIN_TYPES
-
-# 验证 Mock 数据是否包含 team_info
-_test_mock = get_mock_uid_data('test', 'game')
-print(f'[BOOT] Mock data keys: {list(_test_mock.keys())}')
-print(f'[BOOT] Has team_info: {"team_info" in _test_mock}')
+    from uid_crawler import CAPTAIN_TYPES
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'sisters-dashboard-secret-key-2026')
@@ -2495,13 +2490,12 @@ def _get_bound_sisters(uid: str) -> list:
 def api_uid_query():
     """
     UID查询 + 本周vs上周对比 + 姐妹团参与明细
-    请求体: { uid: string, captain_type?: string, mock?: boolean }
+    请求体: { uid: string, captain_type?: string }
     返回: { uid, nickname, this_week, last_week, compare, team_info? }
     """
     body = request.get_json() or {}
     uid = str(body.get('uid', '')).strip()
     captain_type = body.get('captain_type', 'game')
-    use_mock = body.get('mock', False)
 
     if not uid:
         return jsonify({'error': 'UID不能为空'}), 400
@@ -2510,37 +2504,28 @@ def api_uid_query():
     team_id = body.get('team_id')
     team_info = _get_team_info_by_uid(uid, team_id)
 
-    result = None
+    # 真实查询模式（需要内网连接 + 有效Cookie）
+    if not _uid_crawler_available:
+        return jsonify({
+            'error': 'UID爬虫模块未加载，请检查 crawler/uid_crawler.py 是否存在'
+        }), 500
 
-    # Mock 模式（前端开发测试用，无需内网）
-    if use_mock:
-        result = get_mock_uid_data(uid, captain_type)
-    else:
-        # 真实查询模式（需要内网连接 + 有效Cookie）
-        if not _uid_crawler_available:
+    try:
+        crawler = UIDCrawler()
+        result = crawler.query_with_compare(uid, captain_type)
+    except Exception as e:
+        error_msg = str(e)
+        if 'Cookie' in error_msg or '过期' in error_msg:
             return jsonify({
-                'error': 'UID爬虫模块未加载，请检查 crawler/uid_crawler.py 是否存在',
-                'hint': '可设置 mock=true 使用模拟数据测试前端'
-            }), 500
-
-        try:
-            crawler = UIDCrawler()
-            result = crawler.query_with_compare(uid, captain_type)
-        except Exception as e:
-            error_msg = str(e)
-            if 'Cookie' in error_msg or '过期' in error_msg:
-                return jsonify({
-                    'error': error_msg,
-                    'hint': '请在页面右上角「Cookie 管理」中更新 UID 查询 Cookie（保存后立即生效，无需重启）',
-                    'suggest_mock': True
-                }), 503
-            if '无法连接' in error_msg or 'ConnectionError' in error_msg:
-                return jsonify({
-                    'error': error_msg,
-                    'hint': '请确认已连接内网/VPN',
-                    'suggest_mock': True
-                }), 503
-            return jsonify({'error': error_msg}), 500
+                'error': error_msg,
+                'hint': '请在页面右上角「Cookie 管理」中更新 UID 查询 Cookie（保存后立即生效，无需重启）'
+            }), 503
+        if '无法连接' in error_msg or 'ConnectionError' in error_msg:
+            return jsonify({
+                'error': error_msg,
+                'hint': '请确认已连接内网/VPN'
+            }), 503
+        return jsonify({'error': error_msg}), 500
 
     # 附加姐妹团信息
     if team_info:
@@ -2557,7 +2542,7 @@ def api_uid_query():
                 continue
             # 尝试查询妹妹的 UID 数据
             sister_data = None
-            if _uid_crawler_available and not use_mock:
+            if _uid_crawler_available:
                 try:
                     c = UIDCrawler()
                     sister_data = c.query_with_compare(str(sister_uid), captain_type)
@@ -2593,7 +2578,7 @@ def api_uid_query():
     # 3. 如果当前UID是妹妹，额外查询姐姐的累计流水
     if team_info and str(team_info.get('sister_uid2')) == uid:
         captain_uid = team_info.get('sister_uid')
-        if captain_uid and str(captain_uid) not in crawled_uids and _uid_crawler_available and not use_mock:
+        if captain_uid and str(captain_uid) not in crawled_uids and _uid_crawler_available:
             try:
                 c = UIDCrawler()
                 captain_data = c.query_with_compare(str(captain_uid), captain_type)
