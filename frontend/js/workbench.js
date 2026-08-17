@@ -64,17 +64,6 @@ function wbHealth(weeks) {
   return 'green';
 }
 
-function wbHealthReason(weeks) {
-  const prev = weeks[weeks.length - 2], last = weeks[weeks.length - 1];
-  const ret = (last.retention_rate || 0) - (prev.retention_rate || 0);
-  const revPrev = prev.total_reward || 0;
-  const rev = revPrev > 0 ? ((last.total_reward || 0) - revPrev) / revPrev * 100 : 0;
-  if (!last.new_team_count && !prev.new_team_count) return '连续2周新成团为 0';
-  if (ret <= -10) return `留存率环比 ${Math.round(ret)}pp`;
-  if (rev <= -20) return `流水环比 ${Math.round(rev)}%`;
-  return '指标波动';
-}
-
 /* ─────────────── 卡墙 / 排行榜 / 横幅 ─────────────── */
 
 async function loadWorkbenchOverview(initial = false) {
@@ -97,7 +86,6 @@ async function loadWorkbenchOverview(initial = false) {
   document.getElementById('wb-hall-wall').style.display = isAdmin ? 'none' : '';
   document.getElementById('wb-rank-board').style.display = isAdmin ? '' : 'none';
   if (isAdmin) wbRenderRank(); else wbRenderWall();
-  wbRenderBanner();
 }
 
 function wbRenderWall() {
@@ -218,19 +206,6 @@ function wbRenderRank() {
   if (noteEl) noteEl.textContent = month
     ? '备注：流水位次 / 留存位次 仅在「本周」视图显示各厅排名较上周的变化。'
     : '备注：流水位次 / 留存位次 = 该厅排名较上周的变化（↑ 上升 · ↓ 下降 · — 持平），不是当前排名。';
-}
-
-function wbRenderBanner() {
-  const banner = document.getElementById('wb-alert-banner');
-  const bad = wbOverview.data.filter(d => wbHealth(d.weeks) === 'red');
-  if (!bad.length) { banner.style.display = 'none'; return; }
-  const shown = bad.slice(0, 3).map(d =>
-    `<a href="javascript:void(0)" onclick="wbSelectHall('${d.hall_name.replace(/'/g, "\\'")}')">${d.hall_name} ${wbHealthReason(d.weeks)}</a>`
-  ).join('、');
-  const more = bad.length > 3 ? ` 等 ${bad.length} 个厅` : '';
-  banner.innerHTML = `<span class="tag">需关注 ${bad.length}</span><span>${shown}${more}</span>
-    <a href="javascript:void(0)" style="margin-left:auto" onclick="wbSelectHall('${bad[0].hall_name.replace(/'/g, "\\'")}')">查看 →</a>`;
-  banner.style.display = '';
 }
 
 /* ─────────────── 就地预警（预警中心已撤，散到各模块） ─────────────── */

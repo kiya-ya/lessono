@@ -292,19 +292,6 @@ body { background: var(--wb-bg); }
 /* 内容区 */
 .content { padding-top: 4px; padding-bottom: 40px; }
 
-/* 预警横幅 */
-.alert-banner {
-  margin: 16px 0 0; background: #FEF2F2; border: 1px solid #FECACA;
-  border-left: 3px solid var(--wb-down); border-radius: 8px; padding: 10px 16px;
-  display: flex; align-items: center; gap: 10px; font-size: 13px; flex-wrap: wrap;
-}
-.alert-banner .tag {
-  background: var(--wb-down); color: #fff; font-size: 11px; font-weight: 600;
-  padding: 2px 8px; border-radius: 4px; flex-shrink: 0;
-}
-.alert-banner a { color: var(--wb-down); font-weight: 600; text-decoration: none; font-size: 12px; }
-.alert-banner a:hover { text-decoration: underline; }
-
 /* 区块标题 */
 .section-head { display: flex; align-items: baseline; gap: 10px; margin: 20px 0 12px; flex-wrap: wrap; }
 .section-head h2 { font-size: 15px; font-weight: 600; }
@@ -430,7 +417,6 @@ body { background: var(--wb-bg); }
   .kpi-hero .kpi-card { padding: 14px 16px; }
   .kpi-sub .kpi-card { padding: 10px 16px; }
   .chart-box { height: 220px; }
-  .alert-banner { font-size: 12px; }
 }
 @media (max-width: 400px) {
   .hall-grid { grid-template-columns: 1fr; }
