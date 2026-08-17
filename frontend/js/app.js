@@ -38,20 +38,33 @@ function drillTo(key) {
     const sel = document.getElementById('detail-status');
     if (sel) sel.value = t.status;
     if (typeof loadDetailTable === 'function') loadDetailTable(1);
+    focusDetailTable();
   }
+}
+
+// 明细下钻统一落点：切到团分析页后滚动到明细表（避免落在顶部存活/解散图上）
+function focusDetailTable() {
+  const card = document.getElementById('detail-table-card');
+  if (!card) return;
+  setTimeout(() => {
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    card.style.animation = 'none';
+    requestAnimationFrame(() => { card.style.animation = ''; });
+  }, 150);
 }
 
 // 柱状图点击下钻：切到指定大厅并跳到明细
 function drillToHall(hall) {
   if (!hall) return;
-  currentHall = hall;
-  localStorage.setItem('wb_hall', hall);
+  setHall(hall);
+  if (typeof wbSyncHallSelect === 'function') wbSyncHallSelect();
   const ds = document.getElementById('detail-search');
   if (ds) ds.value = '';
   refreshData();
   if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
   switchTab('details');
   loadDetailTable(1);
+  focusDetailTable();
 }
 
 // 饼图点击下钻：按解散原因跳到明细（已解散 + 原因筛选）
@@ -65,6 +78,7 @@ function drillToReason(reason) {
   const ds = document.getElementById('detail-search');
   if (ds) ds.value = '';
   loadDetailTable(1);
+  focusDetailTable();
 }
 
 // 存活分析直方图点击下钻：按已成团天数区间跳到明细（进行中）
@@ -81,6 +95,7 @@ function drillToDays(label) {
   const ds = document.getElementById('detail-search');
   if (ds) ds.value = '';
   loadDetailTable(1);
+  focusDetailTable();
 }
 
 // 日级趋势图点数据点下钻：按成团/解散日期过滤明细
@@ -98,6 +113,7 @@ function drillToDate(field, min, max, status) {
   const ds = document.getElementById('detail-search');
   if (ds) ds.value = '';
   loadDetailTable(1);
+  focusDetailTable();
 }
 
 function toggleSort(field) {

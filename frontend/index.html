@@ -410,6 +410,10 @@
 
   <!-- 明细 -->
   <div id="tab-details" class="tab-panel">
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 团明细</span>
+    </div>
     <div class="chart-grid">
       <div class="chart-card" id="survival-card">
         <h3>🌱 姐妹团存活分析</h3>
@@ -462,7 +466,7 @@
       <button onclick="loadDetailTable(1)">🔍 搜索</button>
       <button onclick="exportDetail()">📥 导出CSV</button>
     </div>
-    <div class="chart-card">
+    <div class="chart-card" id="detail-table-card">
       <table class="data-table">
         <thead><tr>
 <th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
@@ -740,7 +744,7 @@
 <script src="js/api.js?v=51"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=50"></script>
-<script src="js/app.js?v=51"></script>
+<script src="js/app.js?v=52"></script>
 <script src="js/workbench.js?v=52"></script>
 <script src="js/insight.js?v=49"></script>
 </body>
