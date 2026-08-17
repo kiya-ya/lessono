@@ -165,40 +165,13 @@ function refreshData() {
   initCompareChart();
 }
 
-// 大厅对比搜索
+// 大厅对比搜索：仅过滤当前厅排行条形图，不跨模块改动 currentHall
 let _hallSearchTimer = null;
 function onHallCompareSearch() {
   clearTimeout(_hallSearchTimer);
   _hallSearchTimer = setTimeout(() => {
     hallCompareSearch = document.getElementById('hall-compare-search').value.trim();
     hallComparePage = 0;
-
-    // 联动：搜索到匹配大厅时，同步更新全局 currentHall 并刷新政策前后对比+双轴图
-    if (hallCompareSearch && hallCompareData.length > 0) {
-      const kw = hallCompareSearch.toLowerCase();
-      const matched = hallCompareData.filter(d => d.hall_name && d.hall_name.toLowerCase().includes(kw));
-      if (matched.length >= 1) {
-        currentHall = matched[0].hall_name;  // 取第一个匹配
-      } else {
-        currentHall = 'all';
-      }
-    } else if (!hallCompareSearch) {
-      currentHall = 'all';
-    }
-    if (hallCompareSearch && hallCompareData.length > 0) {
-      const kw = hallCompareSearch.toLowerCase();
-      const matched = hallCompareData.filter(d => d.hall_name && d.hall_name.toLowerCase().includes(kw));
-      if (matched.length === 1) {
-        currentHall = matched[0].hall_name;
-      } else {
-        currentHall = 'all';
-      }
-    } else if (!hallCompareSearch) {
-      currentHall = 'all';
-    }
-    // 刷新联动模块：政策前后对比 + 双轴图
-    initCompareChart();
-
     renderHallComparePage();
   }, 300);
 }
