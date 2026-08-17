@@ -2,54 +2,23 @@ async function loadHalls() {
   try {
     const res = await fetch(API_BASE + '/api/halls');
     const result = await res.json();
-    const select = document.getElementById('hall-select');
-    if (!select) return;
-
-    select.innerHTML = '';
     const role = result.role || 'admin';
     const halls = result.data || [];
 
-    if (role === 'admin') {
-      const opt = document.createElement('option');
-      opt.value = 'all';
-      opt.textContent = '全部大厅';
-      select.appendChild(opt);
-    } else {
-      // hall_manager: 添加「所有大厅」选项（可查看全平台155个厅）
-      const optAll = document.createElement('option');
-      optAll.value = 'all';
-      optAll.textContent = '所有大厅';
-      select.appendChild(optAll);
-    }
-
-    halls.forEach(hall => {
-      const opt = document.createElement('option');
-      opt.value = hall;
-      opt.textContent = hall;
-      select.appendChild(opt);
-    });
-
-    // 厅运营默认选中第一个具体厅
+    // 厅运营默认选中第一个具体厅（管理员保持 'all'）
     if (role === 'hall_manager' && halls.length > 0) {
-      select.value = halls[0];
       currentHall = halls[0];
     }
 
     // 恢复上次选择的大厅（localStorage）
     const savedHall = localStorage.getItem('wb_hall');
-    if (savedHall && [...select.options].some(o => o.value === savedHall)) {
-      select.value = savedHall;
-      currentHall = savedHall;
-    }
-    if (typeof updateFilterSummary === 'function') updateFilterSummary();
+    if (savedHall) currentHall = savedHall;
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
 async function loadWeeks() {
   try {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all');
     const result = await res.json();
-    const select = document.getElementById('week-select');
-    select.innerHTML = '';
     const dbWeeks = (result.data || []).slice().reverse(); // 从新到旧
 
     // 计算本周（周一~周日）
@@ -65,32 +34,15 @@ async function loadWeeks() {
     const thisWeekEnd = fmt(sunday);
     const thisWeekValue = thisWeekStart + '|' + thisWeekEnd;
 
-    // 如果数据库不包含本周，先插一个「本周·收集中」选项
+    // 默认最新周（数据库不含本周时用「本周·收集中」）
     const hasThisWeek = dbWeeks.some(w => w.week_start === thisWeekStart);
-    const weeks = [];
-    if (!hasThisWeek) {
-      weeks.push({ week_start: thisWeekStart, week_end: thisWeekEnd, _labelSuffix: '（本周·收集中）' });
-    }
-    weeks.push(...dbWeeks);
-
-    weeks.forEach((w, idx) => {
-      const opt = document.createElement('option');
-      opt.value = w.week_start + '|' + w.week_end;
-      opt.textContent = w.week_start + ' ~ ' + w.week_end + (w._labelSuffix || '');
-      if (idx === 0) {
-        opt.selected = true;
-        currentWeek = opt.value;
-      }
-      select.appendChild(opt);
-    });
+    currentWeek = hasThisWeek
+      ? dbWeeks[0].week_start + '|' + dbWeeks[0].week_end
+      : thisWeekValue;
 
     // 恢复上次选择的周（localStorage）
     const savedWeek = localStorage.getItem('wb_week');
-    if (savedWeek && [...select.options].some(o => o.value === savedWeek)) {
-      select.value = savedWeek;
-      currentWeek = savedWeek;
-    }
-    if (typeof updateFilterSummary === 'function') updateFilterSummary();
+    if (savedWeek) currentWeek = savedWeek;
   } catch (e) { console.error('周列表加载失败:', e); }
 }
 async function loadDetailTable(page = 1) {

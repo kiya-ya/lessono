@@ -1,47 +1,3 @@
-function toggleFilterBar() {
-  const bar = document.getElementById('filter-bar');
-  const btn = document.getElementById('filter-toggle');
-  if (!bar) return;
-  const show = bar.style.display === 'none';
-  bar.style.display = show ? 'flex' : 'none';
-  if (btn) btn.classList.toggle('on', show);
-}
-
-function updateFilterSummary() {
-  const el = document.getElementById('filter-summary');
-  if (!el) return;
-  const hall = document.getElementById('hall-select');
-  const week = document.getElementById('week-select');
-  const parts = [];
-  if (hall && hall.selectedOptions && hall.selectedOptions[0]) parts.push(hall.selectedOptions[0].textContent);
-  if (week && week.selectedOptions && week.selectedOptions[0]) parts.push(week.selectedOptions[0].textContent.replace(/（本周.*）/, '').trim());
-  el.textContent = parts.length ? ' · ' + parts.join(' · ') : '';
-}
-
-function onHallChange() {
-  currentHall = document.getElementById('hall-select').value;
-  localStorage.setItem('wb_hall', currentHall);
-  updateFilterSummary();
-  refreshData();
-  if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
-}
-
-function onWeekChange() {
-  currentWeek = document.getElementById('week-select').value;
-  localStorage.setItem('wb_week', currentWeek);
-  updateFilterSummary();
-  // 工作台刷新
-  if (typeof refreshWorkbench === 'function') refreshWorkbench();
-  // 对比分析页刷新
-  initCompareChart();
-  if (typeof initRetentionDist === 'function') initRetentionDist();
-  // 明细数据刷新
-  loadDetailTable();
-  if (typeof loadSurvival === 'function') loadSurvival();
-  if (typeof maybeLoadDailyOverlay === 'function') maybeLoadDailyOverlay();
-  if (typeof loadCaptains === 'function') loadCaptains();
-}
-
 function switchTab(tabName) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -78,19 +34,10 @@ function drillTo(key) {
 // 柱状图点击下钻：切到指定大厅并跳到明细
 function drillToHall(hall) {
   if (!hall) return;
-  const sel = document.getElementById('hall-select');
-  if (sel && [...sel.options].some(o => o.value === hall)) {
-    sel.value = hall;
-    currentHall = hall;
-    localStorage.setItem('wb_hall', hall);
-    if (typeof updateFilterSummary === 'function') updateFilterSummary();
-    const ds = document.getElementById('detail-search');
-    if (ds) ds.value = '';
-  } else {
-    currentHall = hall;
-    const ds = document.getElementById('detail-search');
-    if (ds) ds.value = hall;
-  }
+  currentHall = hall;
+  localStorage.setItem('wb_hall', hall);
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = '';
   refreshData();
   if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
   switchTab('details');
@@ -214,9 +161,6 @@ function onHallCompareSearch() {
     } else if (!hallCompareSearch) {
       currentHall = 'all';
     }
-    // 同步全局大厅选择器
-    const hallSelect = document.getElementById('hall-select');
-    if (hallSelect) hallSelect.value = currentHall;
     // 刷新联动模块：政策前后对比 + 双轴图
     initCompareChart();
 

@@ -90,8 +90,6 @@ async function loadWorkbenchOverview(initial = false) {
     const hasData = wbOverview.data.some(d => d.hall_name === currentHall);
     if (!hasData) {
       currentHall = wbOverview.data[0].hall_name;
-      const sel = document.getElementById('hall-select');
-      if (sel) sel.value = currentHall;
       localStorage.setItem('wb_hall', currentHall);
     }
   }
@@ -285,8 +283,6 @@ function applyKpiAlertBadges() {
 /* ─────────────── 联动 ─────────────── */
 
 function wbSelectHall(hall) {
-  const sel = document.getElementById('hall-select');
-  if (sel) sel.value = hall;
   currentHall = hall;
   localStorage.setItem('wb_hall', hall);
   // 卡片选中态即时反馈
