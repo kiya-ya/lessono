@@ -184,6 +184,17 @@ function wbRenderRank() {
   const moveTitle = month
     ? '「本月」视图不计算位次变化，切换「本周」可查看排名较上周的升降'
     : '该厅排名较上周的变化：↑ 上升 · ↓ 下降 · — 持平';
+  // 小框 TOP5（紧凑列表，点厅名 → 厅分析）
+  const miniEl = document.getElementById('wb-rank-mini');
+  if (miniEl) {
+    miniEl.innerHTML = top.length
+      ? `<ul class="mini-preview">${top.slice(0, 5).map((it, i) => `<li class="row-click" onclick="wbDrillHall('${it.name.replace(/'/g, "\\'")}')" title="点击进入厅分析查看该厅">
+          <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+          <span class="mp-name">${it.name} <span class="mp-sub">留存 ${Math.round(it.ret)}%</span></span>
+          <span class="mp-val">${it.sisRev != null ? wbFmtMoney(it.sisRev) : '—'}</span>
+        </li>`).join('')}</ul>`
+      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">暂无排行数据。</div>';
+  }
   document.getElementById('wb-rank-table').innerHTML = `
     <tr><th>#</th><th>大厅</th><th${thSort('active', 'center')}>进行中姐妹团${sortArrow('active')}</th><th${thSort('sisRev')}>${sisLabel}${sortArrow('sisRev')}</th><th title="${moveTitle}">流水位次</th><th${thSort('ret')}>留存率${sortArrow('ret')}</th><th title="${moveTitle}">留存位次</th><th${thSort('newTeams')}>${newLabel}${sortArrow('newTeams')}</th></tr>
     ${top.map((it, idx) => `<tr class="row-click" onclick="wbDrillHall('${it.name.replace(/'/g, "\\'")}')" title="点击进入厅分析查看该厅">
@@ -206,6 +217,16 @@ function wbRenderRank() {
   if (noteEl) noteEl.textContent = month
     ? '备注：流水位次 / 留存位次 仅在「本周」视图显示各厅排名较上周的变化。'
     : '备注：流水位次 / 留存位次 = 该厅排名较上周的变化（↑ 上升 · ↓ 下降 · — 持平），不是当前排名。';
+}
+
+// 厅排行榜小框「查看全部」内联展开/收起完整排名表
+function toggleRankFull() {
+  const full = document.getElementById('wb-rank-full');
+  const btn = document.getElementById('wb-rank-toggle');
+  if (!full) return;
+  const show = full.style.display === 'none';
+  full.style.display = show ? '' : 'none';
+  if (btn) btn.textContent = show ? '收起 ▲' : '查看全部 ▼';
 }
 
 /* ─────────────── 就地预警（预警中心已撤，散到各模块） ─────────────── */

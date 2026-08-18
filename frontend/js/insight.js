@@ -133,6 +133,24 @@ async function loadCaptains() {
   } catch (e) { console.error('姐姐分析加载失败:', e); }
 }
 
+/* 概览页姐姐小窗：当日奖励 TOP3（点行跳姐姐分析页） */
+async function loadOverviewCaptains() {
+  const el = document.getElementById('overview-captain-preview');
+  if (!el) return;
+  try {
+    const res = await fetch(API_BASE + `/api/captains?limit=5&period=day&` + getHallParam().substring(1));
+    const d = await res.json();
+    const list = (d.data || []).slice(0, 3);
+    el.innerHTML = list.length
+      ? `<ul class="mini-preview">${list.map((c, i) => `<li onclick="switchTab('captains')" style="cursor:pointer;" title="点击查看姐姐分析">
+          <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+          <span class="mp-name">${c.nickname} <span class="mp-sub">(${c.uid})</span></span>
+          <span class="mp-val">${wbFmtMoney(c.total_reward)}</span>
+        </li>`).join('')}</ul>`
+      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">暂无排行数据。</div>';
+  } catch (e) { console.error('概览姐姐排行加载失败:', e); }
+}
+
 /* 姐姐画像（周口径）：产出/留存/稳定性 + 头部/风险打标 */
 let sisterProfileList = [];
 let sisterProfileSummary = {};

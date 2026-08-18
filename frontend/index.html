@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=38">
+<link rel="stylesheet" href="css/style.css?v=39">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -47,10 +47,9 @@
       <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
-      <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>核心指标 · 趋势</small></span></button>
+      <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
       <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
       <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
-      <button class="tab" onclick="switchTab('details')"><span class="ico">▤</span><span class="tab-txt"><b>团分析</b><small>存活 · 解散 · 团明细</small></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
     <div class="side-foot">
@@ -94,6 +93,27 @@
         <span class="hint">点击卡片联动下方全部数据</span>
       </div>
       <div class="hall-grid" id="wb-hall-grid"></div>
+    </div>
+
+    <!-- 团分析（原「团分析」页内容，合并进概览首位） -->
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>🌱 姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
+      </div>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>💥 解散原因分布</h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+      </div>
     </div>
 
     <div class="section-head">
@@ -204,20 +224,94 @@
       </div>
     </div>
 
-    <!-- 厅排行榜（管理员） -->
-    <div id="wb-rank-board" style="display:none">
-      <div class="section-head">
-        <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
-        <div class="seg">
-          <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
-          <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+    <!-- 厅排行榜 + 姐姐排行 并列小框（管理员看两个；厅运营只看姐姐） -->
+    <div class="chart-grid">
+      <div id="wb-rank-board" class="chart-card" style="display:none">
+        <div class="section-head" style="margin:0 0 6px;">
+          <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
+          <div class="seg">
+            <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
+            <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+          </div>
         </div>
-        <span class="hint" id="wb-rank-hint">按姐妹团周流水排名 · 位次为较上周变化 · 点表头可排序</span>
+        <span class="hint" id="wb-rank-hint">按姐妹团周流水排名 · 点厅名进入厅分析</span>
+        <div id="wb-rank-mini"></div>
+        <button class="expand-btn" id="wb-rank-toggle" onclick="toggleRankFull()">查看全部 ▼</button>
+        <div id="wb-rank-full" style="display:none;margin-top:10px;">
+          <div class="rank-scroll"><table class="rank-table" id="wb-rank-table"></table></div>
+          <div class="rank-note" id="wb-rank-note"></div>
+        </div>
       </div>
-      <div class="rank-card"><div class="rank-scroll">
-        <table class="rank-table" id="wb-rank-table"></table>
-      </div></div>
-      <div class="rank-note" id="wb-rank-note"></div>
+      <div class="chart-card" id="overview-captain-box">
+        <div class="section-head" style="margin:0 0 6px;">
+          <h2>👑 姐姐排行 · 当日</h2>
+        </div>
+        <span class="hint">当日奖励 TOP3 · 点击查看完整姐姐分析</span>
+        <div id="overview-captain-preview"></div>
+        <button class="expand-btn" onclick="switchTab('captains')">查看全部姐姐 →</button>
+      </div>
+    </div>
+
+    <!-- 明细搜索（原「团分析」页的明细表，合并进概览末位） -->
+    <div class="section-head">
+      <h2>明细搜索</h2>
+      <span class="hint">全量团明细 · 筛选 / 排序 / 导出</span>
+    </div>
+    <div class="search-box" style="flex-wrap:wrap;">
+      <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
+        <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
+        <div class="search-suggest" id="search-suggest" style="display:none;"></div>
+      </div>
+      <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="all">全部状态</option>
+        <option value="active">进行中</option>
+        <option value="dissolved">已解散</option>
+      </select>
+      <select id="detail-reason" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="">全部原因</option>
+        <option value="手动解散">手动解散</option>
+        <option value="任务未完成自动解散">任务未完成自动解散</option>
+        <option value="满月自动解散">满月自动解散</option>
+        <option value="等级自动解散">等级自动解散</option>
+        <option value="注销">注销</option>
+        <option value="离职">离职</option>
+        <option value="其他">其他</option>
+      </select>
+      <select id="detail-days" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="">已成团天数</option>
+        <option value="0-3">0-3天</option>
+        <option value="4-7">4-7天</option>
+        <option value="8-14">8-14天</option>
+        <option value="15-30">15-30天</option>
+        <option value="30+">30天以上</option>
+      </select>
+      <select id="detail-per-page" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="10">10条/页</option>
+        <option value="20" selected>20条/页</option>
+        <option value="50">50条/页</option>
+        <option value="100">100条/页</option>
+      </select>
+      <button onclick="loadDetailTable(1)">🔍 搜索</button>
+      <button onclick="exportDetail()">📥 导出CSV</button>
+    </div>
+    <div class="chart-card" id="detail-table-card">
+      <table class="data-table">
+        <thead><tr>
+<th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
+<th onclick="toggleSort('form_date')" style="cursor:pointer;">成团日期 <span id="sort-form_date">▲▼</span></th>
+<th onclick="toggleSort('hall_name')" style="cursor:pointer;">大厅 <span id="sort-hall_name">▲▼</span></th>
+<th>姐姐</th>
+<th>妹妹</th>
+<th onclick="toggleSort('days_since_formed')" style="cursor:pointer;">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
+<th onclick="toggleSort('reward_amount')" style="cursor:pointer;">奖励金额 <span id="sort-reward_amount">▲▼</span></th>
+<th>状态</th>
+<th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
+<th>解散原因</th>
+</tr></thead>
+        <tbody id="detail-table-body"></tbody>
+      </table>
+      <div class="pagination" id="detail-pagination"></div>
+      <div class="chart-insight" id="detail-insight"></div>
     </div>
 
   </div>
@@ -405,85 +499,6 @@
         <div class="chart-src">记录每次倾斜动作，攒成功案例后据此学习培养力权重（动作发生在点点开黑平台，需人工回填）</div>
         <div class="rank-scroll"><table class="rank-table" id="talent-actions-table"></table></div>
       </div>
-    </div>
-  </div>
-
-  <!-- 明细 -->
-  <div id="tab-details" class="tab-panel">
-    <div class="section-head">
-      <h2>团分析</h2>
-      <span class="hint">存活 · 解散 · 团明细</span>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card" id="survival-card">
-        <h3>🌱 姐妹团存活分析</h3>
-        <div class="chart-src" id="survival-src">基于最新快照</div>
-        <div class="survival-chips" id="survival-chips"></div>
-        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
-        <div class="chart-insight" id="survival-insight"></div>
-      </div>
-      <div class="chart-card" id="dissolve-reasons-card">
-        <h3>💥 解散原因分布</h3>
-        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
-        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
-        <div class="chart-insight" id="dissolve-reasons-insight"></div>
-      </div>
-    </div>
-    <div class="search-box" style="flex-wrap:wrap;">
-      <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
-        <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
-        <div class="search-suggest" id="search-suggest" style="display:none;"></div>
-      </div>
-      <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="all">全部状态</option>
-        <option value="active">进行中</option>
-        <option value="dissolved">已解散</option>
-      </select>
-      <select id="detail-reason" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="">全部原因</option>
-        <option value="手动解散">手动解散</option>
-        <option value="任务未完成自动解散">任务未完成自动解散</option>
-        <option value="满月自动解散">满月自动解散</option>
-        <option value="等级自动解散">等级自动解散</option>
-        <option value="注销">注销</option>
-        <option value="离职">离职</option>
-        <option value="其他">其他</option>
-      </select>
-      <select id="detail-days" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="">已成团天数</option>
-        <option value="0-3">0-3天</option>
-        <option value="4-7">4-7天</option>
-        <option value="8-14">8-14天</option>
-        <option value="15-30">15-30天</option>
-        <option value="30+">30天以上</option>
-      </select>
-      <select id="detail-per-page" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="10">10条/页</option>
-        <option value="20" selected>20条/页</option>
-        <option value="50">50条/页</option>
-        <option value="100">100条/页</option>
-      </select>
-      <button onclick="loadDetailTable(1)">🔍 搜索</button>
-      <button onclick="exportDetail()">📥 导出CSV</button>
-    </div>
-    <div class="chart-card" id="detail-table-card">
-      <table class="data-table">
-        <thead><tr>
-<th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
-<th onclick="toggleSort('form_date')" style="cursor:pointer;">成团日期 <span id="sort-form_date">▲▼</span></th>
-<th onclick="toggleSort('hall_name')" style="cursor:pointer;">大厅 <span id="sort-hall_name">▲▼</span></th>
-<th>姐姐</th>
-<th>妹妹</th>
-<th onclick="toggleSort('days_since_formed')" style="cursor:pointer;">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
-<th onclick="toggleSort('reward_amount')" style="cursor:pointer;">奖励金额 <span id="sort-reward_amount">▲▼</span></th>
-<th>状态</th>
-<th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
-<th>解散原因</th>
-</tr></thead>
-        <tbody id="detail-table-body"></tbody>
-      </table>
-      <div class="pagination" id="detail-pagination"></div>
-      <div class="chart-insight" id="detail-insight"></div>
     </div>
   </div>
 
@@ -744,8 +759,8 @@
 <script src="js/api.js?v=51"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=50"></script>
-<script src="js/app.js?v=52"></script>
-<script src="js/workbench.js?v=52"></script>
-<script src="js/insight.js?v=49"></script>
+<script src="js/app.js?v=53"></script>
+<script src="js/workbench.js?v=53"></script>
+<script src="js/insight.js?v=50"></script>
 </body>
 </html>

@@ -5,9 +5,14 @@ function switchPage(name) {
   const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + name + "'"));
   if (clicked) clicked.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
-  if (name === 'overview') setTimeout(() => { if (typeof wbResizeCharts === 'function') wbResizeCharts(); }, 100);
+  if (name === 'overview') setTimeout(() => {
+    if (typeof wbResizeCharts === 'function') wbResizeCharts();
+    // 团分析 + 姐姐小框并入概览页：切回概览时重绘（自愈隐藏态 0×0 图表）
+    if (typeof loadSurvival === 'function') loadSurvival();
+    if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
+    if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+  }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
-  if (name === 'details') setTimeout(() => { if (typeof loadSurvival === 'function') loadSurvival(); if (typeof loadDissolveReasons === 'function') loadDissolveReasons(); }, 100);
   if (name === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
 }
 
@@ -23,11 +28,11 @@ function goPage(name, context) {
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
 const DRILL_TARGETS = {
   retention:   { tab: 'compare' },                      // 留存率 → 对比分析
-  dissolution: { tab: 'details', status: 'dissolved' }, // 解散率 → 明细 · 已解散
+  dissolution: { tab: 'overview', status: 'dissolved' }, // 解散率 → 概览 · 明细已解散
   revenue:     { tab: 'compare' },                      // 礼物奖励 → 对比分析（大厅流水对比）
   activity:    { tab: 'compare' },                      // 任务活跃度 → 对比分析（指标对比表）
-  dailyNew:    { tab: 'details', status: 'active' },    // 日级新成团 → 明细 · 进行中
-  dailyDiss:   { tab: 'details', status: 'dissolved' }, // 日级解散 → 明细 · 已解散
+  dailyNew:    { tab: 'overview', status: 'active' },   // 日级新成团 → 概览 · 明细进行中
+  dailyDiss:   { tab: 'overview', status: 'dissolved' }, // 日级解散 → 概览 · 明细已解散
 };
 
 function drillTo(key) {
@@ -62,7 +67,7 @@ function drillToHall(hall) {
   if (ds) ds.value = '';
   refreshData();
   if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
-  switchTab('details');
+  switchTab('overview');
   loadDetailTable(1);
   focusDetailTable();
 }
@@ -70,7 +75,7 @@ function drillToHall(hall) {
 // 饼图点击下钻：按解散原因跳到明细（已解散 + 原因筛选）
 function drillToReason(reason) {
   if (!reason) return;
-  switchTab('details');
+  switchTab('overview');
   const st = document.getElementById('detail-status');
   if (st) st.value = 'dissolved';
   const dr = document.getElementById('detail-reason');
@@ -85,7 +90,7 @@ function drillToReason(reason) {
 function drillToDays(label) {
   const m = (label || '').match(/(\d+)-(\d+)/);
   const val = label === '30天以上' ? '30+' : m ? `${m[1]}-${m[2]}` : '';
-  switchTab('details');
+  switchTab('overview');
   const st = document.getElementById('detail-status');
   if (st) st.value = 'active';
   const dd = document.getElementById('detail-days');
@@ -103,7 +108,7 @@ function drillToDate(field, min, max, status) {
   detailDateField = field || '';
   detailDateMin = min || '';
   detailDateMax = max || '';
-  switchTab('details');
+  switchTab('overview');
   const st = document.getElementById('detail-status');
   if (st) st.value = status || 'all';
   const dd = document.getElementById('detail-days');
@@ -162,6 +167,7 @@ function refreshData() {
   if (typeof initRetentionDist === 'function') initRetentionDist();
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
+  if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
   initCompareChart();
 }
 
@@ -282,6 +288,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 工作台初始化（卡墙/排行榜 + KPI + 趋势图）
   if (typeof initWorkbench === 'function') await initWorkbench();
   loadDetailTable();
+  // 团分析 + 姐姐小框已并入概览页：首屏渲染
+  if (typeof loadSurvival === 'function') loadSurvival();
+  if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
+  if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
 
   // 明细搜索框自动补全
   const searchInput = document.getElementById('detail-search');

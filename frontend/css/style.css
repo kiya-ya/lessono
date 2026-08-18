@@ -346,6 +346,7 @@ body { background: var(--wb-bg); }
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 .chart-grid.single { grid-template-columns: 1fr; }
 .chart-grid .chart-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); margin-bottom: 0; border: 1px solid var(--wb-line); }
+.chart-grid > .chart-card:only-child { grid-column: 1 / -1; }
 .chart-grid .chart-card.drillable { cursor: pointer; transition: box-shadow .18s ease, transform .18s ease; }
 .chart-grid .chart-card.drillable:hover { box-shadow: 0 10px 28px rgba(124,92,255,.22); transform: translateY(-3px) scale(1.02); z-index: 2; }
 .chart-grid .chart-card.drillable:hover .drill-tag { color: #7C5CFF; font-weight: 600; }
