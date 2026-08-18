@@ -6,13 +6,13 @@ echo ========================================
 echo.
 
 set "PROJECT_DIR=D:\姐妹团看板系统"
-set "VENV_PY=%PROJECT_DIR%\.venv\Scripts\python.exe"
-set "VENV_PIP=%PROJECT_DIR%\.venv\Scripts\pip.exe"
+set "VENV_PY=%PROJECT_DIR%\.venv311\Scripts\python.exe"
+set "VENV_PIP=%PROJECT_DIR%\.venv311\Scripts\pip.exe"
 
 :: 检查虚拟环境
 if not exist "%VENV_PY%" (
     echo [1/4] 创建虚拟环境...
-    python -m venv "%PROJECT_DIR%\.venv"
+    python -m venv "%PROJECT_DIR%\.venv311"
     if errorlevel 1 (
         echo ❌ 创建虚拟环境失败
         pause

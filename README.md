@@ -355,7 +355,7 @@ python setup_task.py
 
 **Q: 如何启动服务？**
 A: 两种方式：
-- 开发启动：`.venv\Scripts\python.exe start.py`（自动打开浏览器）
+- 开发启动：`.venv311\Scripts\python.exe start.py`（自动打开浏览器）
 - 生产部署：双击 `deploy.bat`
 
 **Q: 如何按大厅筛选数据？**
@@ -376,7 +376,7 @@ A: 打开 UID查询页面 → F12 → Network → 复制 Cookie → 粘贴到 Co
 A: 检查 `data/last_update.json` 确认上次更新时间；运行 `python daily_crawl.py` 手动抓取；或配置定时任务 `python setup_task.py`。
 
 **Q: 启动报 `ModuleNotFoundError`？**
-A: 确保使用 `.venv\Scripts\python.exe` 运行，而不是系统 Python。虚拟环境已包含所有依赖。
+A: 确保使用 `.venv311\Scripts\python.exe` 运行，而不是系统 Python。虚拟环境已包含所有依赖。
 
 ---
 

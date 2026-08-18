@@ -15,6 +15,24 @@ PORT = 5000
 URL = f'http://{HOST}:{PORT}/'
 
 
+def find_python():
+    """找出一个可用的 Python 解释器（优先项目自带 venv，自愈失效的 venv）。"""
+    candidates = [
+        PROJECT_DIR / '.venv311' / 'Scripts' / 'python.exe',
+        PROJECT_DIR / '.venv' / 'Scripts' / 'python.exe',
+        Path(sys.executable),
+    ]
+    for p in candidates:
+        try:
+            if p.exists() and subprocess.run(
+                [str(p), '--version'], capture_output=True, timeout=5
+            ).returncode == 0:
+                return str(p)
+        except Exception:
+            continue
+    return sys.executable
+
+
 def is_port_open(host, port, timeout=1):
     """检查端口是否已监听"""
     try:
@@ -63,7 +81,7 @@ def main():
     # 1. 启动后端
     print('[1/3] 正在启动 Flask 后端服务...')
     proc = subprocess.Popen(
-        [sys.executable, 'backend/app.py'],
+        [find_python(), 'backend/app.py'],
         stdout=sys.stdout,
         stderr=sys.stderr,
         text=True,
