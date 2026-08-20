@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>概览页 · 布局预览</title>
+<style>
+  :root{
+    --accent:#7C5CFF;
+    --bg:#F6F7F9; --card:#FFFFFF; --radius:14px;
+    --up:#16A34A; --down:#DC2626; --warn:#D97706;
+    --text:#1A1D26; --text2:#6B7280; --text3:#9CA3AF; --line:#ECEEF2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .page{max-width:1160px;margin:0 auto;padding:28px 24px 90px;}
+
+  /* ── 页头 ── */
+  .page-head{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .page-head h1{font-size:20px;font-weight:700;letter-spacing:-.3px;}
+  .page-head p{font-size:12.5px;color:var(--text3);margin-top:2px;}
+  .role-toggle{display:flex;background:#F1F2F5;border-radius:9px;padding:3px;}
+  .role-toggle button{border:none;background:none;padding:6px 14px;font-size:12.5px;color:var(--text2);border-radius:7px;cursor:pointer;font-weight:500;}
+  .role-toggle button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.1);}
+
+  /* ── 导览条 ── */
+  .guide{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#F3F0FF;border:1px solid #E7DFFF;
+    border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:#5B3EC4;}
+  .guide .tag{font-weight:700;font-size:12px;}
+  .guide .close{margin-left:auto;background:none;border:none;color:#8A76D6;cursor:pointer;font-size:15px;line-height:1;}
+
+  /* ── 预警卡（小 KPI 窗口，点击跳对应趋势） ── */
+  .warn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  @media(max-width:900px){.warn-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.warn-grid{grid-template-columns:1fr;}}
+  .warn-card{border-radius:12px;padding:12px 14px;cursor:pointer;position:relative;transition:transform .22s ease,box-shadow .22s ease;min-height:98px;border:1px solid;border-left-width:3px;}
+  .warn-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(16,24,40,.16);}
+  .warn-card .top{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .warn-card .lvl{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;flex-shrink:0;}
+  .warn-card .val{font-size:20px;font-weight:700;margin:4px 0 2px;color:var(--text);}
+  .warn-card .foot{font-size:11px;}
+  .warn-card .go{position:absolute;bottom:10px;right:12px;font-size:11px;opacity:1;}
+  /* 预警等级配色：严重（红）→ 警告（琥珀）→ 提醒（紫） */
+  .warn-card.severe{background:#FEF2F2;border-color:#F3C1C1;border-left-color:#DC2626;}
+  .warn-card.severe .top{color:#B91C1C;}
+  .warn-card.severe .lvl{color:#DC2626;background:#FCEBEB;}
+  .warn-card.severe .foot{color:#B91C1C;}
+  .warn-card.severe .go{color:#DC2626;}
+  .warn-card.warning{background:#FFFBEB;border-color:#F3D9A6;border-left-color:#D97706;}
+  .warn-card.warning .top{color:#B45309;}
+  .warn-card.warning .lvl{color:#D97706;background:#FDF0D8;}
+  .warn-card.warning .foot{color:#B45309;}
+  .warn-card.warning .go{color:#D97706;}
+  .warn-card.notice{background:#F5F3FF;border-color:#E2DBFF;border-left-color:#7C5CFF;}
+  .warn-card.notice .top{color:#5B3EC4;}
+  .warn-card.notice .lvl{color:#7C5CFF;background:#EFEBFF;}
+  .warn-card.notice .foot{color:#6B7280;}
+  .warn-card.notice .go{color:#7C5CFF;}
+
+  /* ── 区块标题 ── */
+  .section-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px;}
+  .section-head h2{font-size:15px;font-weight:700;letter-spacing:-.2px;}
+  .section-head .hint{font-size:12px;color:var(--text3);}
+  .section-head .seg{margin-left:auto;display:flex;background:#F1F2F5;border-radius:9px;padding:3px;}
+  .section-head .seg button{border:none;background:none;padding:5px 12px;font-size:12px;color:var(--text2);border-radius:7px;cursor:pointer;font-weight:500;}
+  .section-head .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.1);}
+
+  /* ═══════ 1. 搜索栏（一体化：大厅输入补全 + 时间下拉） ═══════ */
+  .searchbar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:6px 8px;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:box-shadow .2s,border-color .2s;}
+  .searchbar.focus{box-shadow:0 8px 24px -12px rgba(124,92,255,.25);border-color:#DDD3FF;}
+  .search-main{display:flex;align-items:center;gap:4px;}
+  .combo{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;}
+  .combo .lbl{font-size:12px;color:var(--text3);flex-shrink:0;}
+  .hall-combo{flex:1;position:relative;min-width:0;}
+  .hall-combo input{flex:1;border:none;outline:none;font-size:14px;color:var(--text);background:transparent;width:100%;min-width:0;}
+  .hall-combo input::placeholder{color:var(--text3);}
+  .vdivider{width:1px;height:22px;background:var(--line);flex-shrink:0;}
+  .time-combo select{border:none;outline:none;background:transparent;font-size:13px;color:var(--text2);cursor:pointer;font-weight:500;appearance:none;padding-right:4px;}
+  .hall-suggest{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);
+    border-radius:10px;box-shadow:0 12px 30px -12px rgba(16,24,40,.22);z-index:30;overflow:hidden;max-height:280px;overflow-y:auto;}
+  .hall-suggest.open{display:block;}
+  .hall-suggest .sg{padding:9px 14px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+  .hall-suggest .sg:hover{background:#FAF8FF;}
+  .hall-suggest .sg.all{color:var(--text2);border-bottom:1px solid #F3F4F6;}
+  .hall-suggest .sg .cnt{font-size:11px;color:var(--text3);}
+  .search-expand{display:none;margin-top:8px;padding:10px 12px 6px;border-top:1px dashed var(--line);animation:fadeIn .25s ease;}
+  .search-expand.open{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;
+    font-size:12.5px;background:#F3F0FF;color:#5B3EC4;font-weight:500;}
+  .pill.gray{background:#F3F4F6;color:var(--text2);}
+  .reset-btn{border:1px dashed #DDD3FF;background:transparent;color:var(--accent);border-radius:20px;padding:6px 12px;font-size:12.5px;cursor:pointer;}
+  .reset-btn:hover{background:#F3F0FF;}
+  .expand-stat{margin-left:auto;font-size:12px;color:var(--text3);}
+
+  /* ═══════ 厅体检卡墙（厅运营） ═══════ */
+  .hall-wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:820px){.hall-wall{grid-template-columns:repeat(2,1fr);}}
+  .hall-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;
+    transition:transform .22s ease,box-shadow .22s ease,border-color .22s;}
+  .hall-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(16,24,40,.18);border-color:#DDD3FF;}
+  .hall-card.active{border-color:var(--accent);box-shadow:0 0 0 3px #F3F0FF;}
+  .hall-card .hn{font-size:14px;font-weight:600;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .hall-card .row{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:5px;}
+  .hall-card .row b{color:var(--text);font-weight:600;}
+
+  /* ═══════ 卡片基础 ═══════ */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;transition:transform .22s ease,box-shadow .22s ease;}
+  .card.hover:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(16,24,40,.18);cursor:pointer;}
+  .card h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;}
+  .card .src{font-size:11.5px;color:var(--text3);margin-top:3px;}
+
+  /* ═══════ 2. 核心指标（KPI） ═══════ */
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:820px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.kpi-row{grid-template-columns:1fr;}}
+  .kpi{position:relative;}
+  .kpi .top{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);flex-wrap:wrap;}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot.green{background:#16A34A;}
+  .dot.red{background:#DC2626;}
+  .dot.amber{background:#D97706;}
+  .dot.gold{background:#D9A13F;}
+  .dot.violet{background:#7C5CFF;}
+  .dot.teal{background:#0EA5A4;}
+  .kpi .val{font-size:28px;font-weight:700;letter-spacing:-.5px;margin:8px 0 2px;}
+  .kpi .foot{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px;}
+  .chip{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;}
+  .chip.up{color:var(--up);background:#EAF6EF;}
+  .chip.down{color:var(--down);background:#FCEBEB;}
+  .kpi .hint-go{position:absolute;bottom:14px;right:16px;font-size:11px;color:var(--text3);opacity:0;transition:opacity .2s;}
+  .kpi:hover .hint-go{opacity:1;}
+  .kpi .spark{margin-top:10px;}
+
+  /* KPI 细节图（就地展开） */
+  .kpi-detail{display:none;margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:16px;background:#FAFBFC;animation:fadeIn .25s ease;}
+  .kpi-detail.open{display:block;}
+  .kpi-detail .head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;margin-bottom:8px;}
+  .kpi-detail .close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;}
+  .kpi-detail .close:hover{color:var(--text);}
+
+  /* ═══════ 数据说明（衬底，顶部，自动换行） ═══════ */
+  .kpi-panel{padding:18px 18px 14px;}
+  .kpi-panel .section-head{margin:0 0 12px;}
+  .dn-footer{margin:0 0 14px;padding:12px 16px;background:#F8F9FB;border:1px solid #F0F1F4;border-radius:10px;}
+  .dn-foot-head{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:8px;}
+  .dn-line{display:flex;flex-wrap:wrap;gap:6px 16px;padding-bottom:2px;}
+  .dni{font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px;line-height:1.7;}
+  .dni b{color:var(--text);font-weight:600;white-space:nowrap;}
+  .dni code{font-size:11px;color:#5B3EC4;background:#F3F0FF;border-radius:5px;padding:0 5px;font-family:inherit;white-space:nowrap;}
+  .dn-notes{border-top:1px dashed var(--line);margin-top:9px;padding-top:8px;display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--text2);line-height:1.7;}
+  .dn-tag{flex-shrink:0;font-size:10.5px;font-weight:600;color:var(--accent);background:#F3F0FF;border-radius:6px;padding:2px 6px;line-height:1.5;}
+
+  /* 预警说明框（上方，三行） */
+  .warn-note{display:flex;flex-direction:column;gap:6px;margin:0 0 14px;padding:10px 14px;background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;}
+  .warn-note .wn-item{font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:6px;line-height:1.7;}
+  .warn-note .wn-item b{color:var(--text);font-weight:600;}
+  .wn-tag{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+  .wn-tag.severe{color:#DC2626;background:#FCEBEB;}
+  .wn-tag.warning{color:#D97706;background:#FDF0D8;}
+  .wn-tag.notice{color:#7C5CFF;background:#EFEBFF;}
+
+  /* ═══════ 3. 团分析 ═══════ */
+  .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:820px){.chart-grid{grid-template-columns:1fr;}}
+  .chart-box{width:100%;height:180px;margin-top:12px;}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .c-chip{font-size:11.5px;color:var(--text2);background:#F5F6F8;border-radius:8px;padding:5px 10px;}
+  .c-chip strong{color:var(--text);font-weight:600;}
+  .chart-insight{font-size:12px;color:var(--text2);margin-top:12px;padding:9px 12px;background:#F8F9FB;border-radius:9px;}
+  .chart-insight b{color:var(--text);}
+
+  /* 大厅对比横向条形 */
+  .hallcmp{margin-top:12px;display:flex;flex-direction:column;gap:9px;}
+  .hc-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+  .hc-name{flex:0 0 118px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;}
+  .hc-bar{flex:1;height:14px;background:#F1F2F5;border-radius:7px;overflow:hidden;}
+  .hc-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#A48CFF,#7C5CFF);}
+  .hc-ret{flex:0 0 34px;text-align:right;color:var(--text);font-weight:600;font-size:12px;}
+  .hc-diss{flex:0 0 74px;text-align:right;color:var(--text2);font-size:11.5px;white-space:nowrap;}
+  .hc-diss b{color:var(--down);font-weight:600;}
+
+  /* ═══════ 4. 厅排行 + 姐姐排行 ═══════ */
+  .rank-mini{list-style:none;margin-top:12px;}
+  .rank-mini li{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px;cursor:pointer;font-size:13px;}
+  .rank-mini li:hover{background:#FAF8FF;}
+  .mp-rank{width:22px;height:22px;border-radius:7px;background:#F1F2F5;color:var(--text2);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .mp-rank.top{background:var(--accent);color:#fff;}
+  .mp-name{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mp-sub{color:var(--text3);font-size:11px;margin-left:6px;}
+  .mp-val{color:var(--text);font-weight:600;font-size:13px;}
+  .expand-btn{width:100%;margin-top:10px;padding:9px;border:1px dashed var(--line);border-radius:9px;background:transparent;color:var(--text2);font-size:12.5px;cursor:pointer;}
+  .expand-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ═══════ 5. 明细数据 ═══════ */
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .filters .f{font-size:12px;color:var(--text2);padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;}
+  .filters .f:hover{border-color:#DDD3FF;color:var(--accent);}
+  table.list{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.list th{text-align:left;padding:10px;font-weight:600;color:var(--text2);background:#FAFBFC;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.list td{padding:10px;border-bottom:1px solid #F3F4F6;white-space:nowrap;}
+  table.list tr:hover td{background:#FAF8FF;}
+  .st{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;}
+  .st.active{background:#EAF6EF;color:#16A34A;}
+  .st.diss{background:#FCEBEB;color:#DC2626;}
+  .flash td{background:#F3F0FF !important;}
+  .tg{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;}
+  .tg.hero{background:#F3F0FF;color:#7C5CFF;}
+  .tg.risk{background:#FDF0D8;color:#D97706;}
+  .tg.normal{background:#F3F4F6;color:#6B7280;}
+
+  /* ═══════ 弹窗 ═══════ */
+  .modal{display:none;position:fixed;inset:0;background:rgba(16,24,40,.45);z-index:50;align-items:center;justify-content:center;padding:24px;}
+  .modal.open{display:flex;}
+  .modal-box{background:#fff;border-radius:16px;width:760px;max-width:100%;max-height:84vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px -20px rgba(16,24,40,.4);animation:pop .22s ease;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line);}
+  .modal-head h3{font-size:15px;font-weight:600;}
+  .modal-head .close{background:none;border:none;font-size:18px;color:var(--text3);cursor:pointer;line-height:1;}
+  .modal-body{padding:14px 20px 16px;overflow-y:auto;}
+  .modal-sub{font-size:12px;color:var(--text3);margin-bottom:12px;}
+  .modal-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;}
+  .modal-foot .pg{margin-right:auto;font-size:12px;color:var(--text3);}
+  .btn{border:none;border-radius:9px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:500;}
+  .btn.primary{background:var(--accent);color:#fff;}
+  .btn.ghost{background:#F3F4F6;color:var(--text2);}
+  .btn.ghost:disabled{opacity:.45;cursor:not-allowed;}
+
+  /* ═══════ 预览 tab 栏 ═══════ */
+  .tabbar{max-width:1160px;margin:0 auto;padding:18px 24px 0;display:flex;align-items:center;gap:8px;}
+  .tabbar button{border:1px solid var(--line);background:#fff;padding:7px 16px;font-size:13px;color:var(--text2);border-radius:9px;cursor:pointer;font-weight:500;}
+  .tabbar button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tabbar-note{margin-left:auto;font-size:11.5px;color:var(--text3);}
+
+  /* ═══════ 预警中心 ═══════ */
+  .warn-overview{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
+  .wo-item{font-size:12.5px;color:var(--text2);display:flex;align-items:center;gap:7px;padding:5px 12px;border-radius:8px;font-weight:500;}
+  .wo-item b{font-size:18px;font-weight:700;}
+  .wo-item.severe{background:#FEF2F2;color:#B91C1C;}
+  .wo-item.severe b{color:#DC2626;}
+  .wo-item.warning{background:#FFFBEB;color:#B45309;}
+  .wo-item.warning b{color:#D97706;}
+  .wo-item.notice{background:#F5F3FF;color:#5B3EC4;}
+  .wo-item.notice b{color:#7C5CFF;}
+  .wo-total{margin-left:auto;font-size:12px;color:var(--text3);}
+  .warn-rule{background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;}
+  .wr-head{font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .wr-line{font-size:11.5px;color:var(--text2);display:flex;align-items:center;gap:6px;line-height:1.7;}
+  .rule-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:2px;}
+  .rule-table th{text-align:left;font-size:11px;color:var(--text3);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  .rule-table td{padding:9px 10px;border-bottom:1px solid #F3F4F6;vertical-align:top;color:var(--text2);line-height:1.6;}
+  .rule-table td:first-child{font-weight:600;color:var(--text);white-space:nowrap;}
+  .rule-table code{font-family:inherit;background:#F3F0FF;color:#5B3EC4;padding:1px 5px;border-radius:4px;font-size:11px;white-space:nowrap;}
+  .warn-detail{border-left:3px solid transparent;}
+  .warn-detail.flash-card{box-shadow:0 0 0 3px #DDD3FF,0 10px 28px -12px rgba(124,92,255,.4);}
+  .warn-detail.severe{border-left-color:#DC2626;}
+  .warn-detail.warning{border-left-color:#D97706;}
+  .warn-detail.notice{border-left-color:#7C5CFF;}
+  .wd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+  .wd-head h3{font-size:14px;font-weight:600;}
+  .wd-subhead{font-size:12px;font-weight:600;color:var(--text2);margin-top:12px;margin-bottom:6px;}
+  /* 躺平预警（妹妹维度） */
+  .lying-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 14px;}
+  @media(max-width:820px){.lying-kpis{grid-template-columns:repeat(2,1fr);}}
+  .lying-kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;border-left:3px solid transparent;}
+  .lying-kpi .lk-label{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:7px;}
+  .lying-kpi .lk-val{font-size:24px;font-weight:700;margin:6px 0 2px;color:var(--text);letter-spacing:-.5px;}
+  .lying-kpi .lk-foot{font-size:11px;color:var(--text3);}
+  .lying-kpi.danger{border-left-color:#DC2626;}
+  .lying-kpi.danger .lk-val{color:#DC2626;}
+
+  /* ═══════ 厅分析（compare） ═══════ */
+  .kpi-six{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;}
+  @media(max-width:1000px){.kpi-six{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:620px){.kpi-six{grid-template-columns:repeat(2,1fr);}}
+  .kpi-six .kpi{padding:12px 14px;}
+  .kpi-six .kpi .val{font-size:22px;margin:6px 0 2px;}
+
+  /* ═══════ UID 查询 ═══════ */
+  .uid-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:860px){.uid-grid{grid-template-columns:1fr;}}
+  .uid-hero{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .uid-avatar{width:52px;height:52px;border-radius:12px;background:#F3F0FF;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;}
+  .uid-hero .u-title{font-size:16px;font-weight:700;}
+  .uid-hero .u-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+  .uid-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .kv-cell{background:#FAFBFC;border:1px solid #F0F1F4;border-radius:9px;padding:9px 12px;}
+  .kv-cell .k{font-size:11px;color:var(--text3);}
+  .kv-cell .v{font-size:15px;font-weight:700;margin-top:2px;}
+
+  /* ═══════ 待落地角标 ═══════ */
+  .todo-badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;color:#B45309;background:#FDF0D8;border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:2px;white-space:nowrap;}
+  .todo-note{font-size:11.5px;color:#B45309;background:#FFFBEB;border:1px solid #F3D9A6;border-radius:8px;padding:9px 13px;margin-top:14px;line-height:1.8;}
+  .todo-note b{color:#92400E;}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+  @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:none;}}
+</style>
+</head>
+<body>
+<div class="tabbar">
+  <button class="on" onclick="switchPreviewTab('overview', this)">概览页</button>
+  <button onclick="switchPreviewTab('warncenter', this)">预警中心</button>
+  <button onclick="switchPreviewTab('compare', this)">厅分析</button>
+  <button onclick="switchPreviewTab('captains', this)">姐姐分析</button>
+  <button onclick="switchPreviewTab('uid', this)">UID查询</button>
+  <span class="tabbar-note">预览 · 5 页全部可切</span>
+</div>
+<div class="page" id="view-overview">
+
+  <div class="page-head">
+    <div>
+      <h1>概览页</h1>
+      <p>布局：导览 → 搜索栏 → 核心指标 → 团分析 → 厅排行+姐姐排行 → 明细数据</p>
+    </div>
+    <div class="role-toggle">
+      <button class="on" onclick="setRole('admin',this)">管理员</button>
+      <button onclick="setRole('operator',this)">厅运营</button>
+    </div>
+  </div>
+
+  <!-- ═══════ 0. 导览条（可关闭） ═══════ -->
+  <div class="guide" id="guide">
+    <span class="tag">导览</span>
+    <span>姐妹团 = 姐姐 + 妹妹 配对</span>
+    <span>留存率：上周的团还剩多少（↑好）</span>
+    <span>解散率：本周解散占比（↓好）</span>
+    <span>顶部搜索栏选大厅，点卡片/柱状图联动明细</span>
+    <button class="close" onclick="document.getElementById('guide').style.display='none'">✕</button>
+  </div>
+
+  <!-- ═══════ 1. 搜索栏 ═══════ -->
+  <div class="searchbar" id="searchbar">
+    <div class="search-main">
+      <div class="combo hall-combo" id="hall-combo">
+        <span class="lbl">大厅</span>
+        <input type="text" id="hall-input" placeholder="输入大厅名…（默认全部大厅）" autocomplete="off"
+          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
+          oninput="onHallInput(this.value)">
+        <div class="hall-suggest" id="hall-suggest"></div>
+      </div>
+      <div class="vdivider"></div>
+      <div class="combo time-combo">
+        <span class="lbl">时间</span>
+        <select id="time-select" onchange="onTimeChange(this.value)">
+          <option value="本周">本周 (08-11 ~ 08-17)</option>
+          <option value="上周">上周 (08-04 ~ 08-10)</option>
+          <option value="08-04~08-10">08-04 ~ 08-10</option>
+          <option value="07-28~08-03">07-28 ~ 08-03</option>
+        </select>
+      </div>
+    </div>
+    <!-- 选厅后展开的筛选条 -->
+    <div class="search-expand" id="search-expand">
+      <span class="pill"><span id="pill-hall">王者荣耀·恰逢今月</span></span>
+      <span class="pill gray"><span id="pill-time">本周</span></span>
+      <button class="reset-btn" onclick="resetHall()">全部大厅</button>
+      <span class="expand-stat" id="expand-stat">该厅 12 个团 · 23 位姐姐</span>
+    </div>
+  </div>
+
+  <!-- ═══════ 1.5 厅体检卡墙（厅运营视角） ═══════ -->
+  <div id="hall-wall" style="display:none;">
+    <div class="section-head" style="margin-top:18px;">
+      <h2>我的厅</h2>
+      <span class="hint">点击卡片联动下方全部数据</span>
+    </div>
+    <div class="hall-wall">
+      <div class="hall-card active" onclick="pickHall('王者荣耀·恰逢今月', this)">
+        <div class="hn">王者荣耀·恰逢今月</div>
+        <div class="row"><span>留存率</span><b>72%</b></div>
+        <div class="row"><span>解散率</span><b>15%</b></div>
+        <div class="row"><span>周流水</span><b>¥12.8w</b></div>
+      </div>
+      <div class="hall-card" onclick="pickHall('王者荣耀·迷鹿之森', this)">
+        <div class="hn">王者荣耀·迷鹿之森</div>
+        <div class="row"><span>留存率</span><b>69%</b></div>
+        <div class="row"><span>解散率</span><b>18%</b></div>
+        <div class="row"><span>周流水</span><b>¥9.6w</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ 1.8 预警（小 KPI 窗口，点击跳对应趋势） ═══════ -->
+  <div class="section-head" style="margin-top:18px;">
+    <h2>预警</h2>
+    <span class="hint">点击卡片进入预警中心 · 查看规则与下钻明细</span>
+  </div>
+  <!-- 预警说明（上方，三行） -->
+  <div class="warn-note">
+    <div class="wn-item"><span class="wn-tag severe">严重</span>跌破健康线（如留存率 &lt; 60%）或环比连续骤降</div>
+    <div class="wn-item"><span class="wn-tag warning">警告</span>连续 2 周恶化（如主动解散占比连续升高）</div>
+    <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
+  </div>
+  <div class="warn-grid">
+    <div class="warn-card severe" onclick="openWarn('retention')">
+      <div class="top"><span class="dot red"></span>留存率预警<span class="lvl">严重</span></div>
+      <div class="val">58%</div>
+      <div class="foot">跌破 60% 健康线</div>
+      <span class="go">进入预警中心 →</span>
+    </div>
+    <div class="warn-card warning" onclick="openWarn('activediss')">
+      <div class="top"><span class="dot amber"></span>主动解散占比预警<span class="lvl">警告</span></div>
+      <div class="val">42%</div>
+      <div class="foot">连续 2 周升高</div>
+      <span class="go">进入预警中心 →</span>
+    </div>
+    <div class="warn-card notice" onclick="openWarn('newteam')">
+      <div class="top"><span class="dot violet"></span>新成团数预警<span class="lvl">提醒</span></div>
+      <div class="val">12 个</div>
+      <div class="foot">连续 2 周下降</div>
+      <span class="go">进入预警中心 →</span>
+    </div>
+    <div class="warn-card warning" onclick="openWarn('activity')">
+      <div class="top"><span class="dot amber"></span>任务活跃度预警<span class="lvl">警告</span></div>
+      <div class="val">33.8%</div>
+      <div class="foot">陪档率整体偏低 · 近 8 日剧烈波动</div>
+      <span class="go">进入预警中心 →</span>
+    </div>
+  </div>
+
+  <!-- ═══════ 2. 核心指标 · 全部大厅 ═══════ -->
+  <div class="card kpi-panel">
+    <div class="section-head">
+      <h2 id="kpi-title">核心指标 · 全部大厅</h2>
+      <span class="hint" id="kpi-hint">数据周期 2026-08-11 ~ 2026-08-17 · 对比上一周</span>
+    </div>
+    <!-- 数据说明（衬底，顶部，不换行） -->
+    <div class="dn-footer" id="data-note">
+      <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">指标口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
+        <span class="dni"><b>礼物奖励金额</b><code>官方发放奖励合计</code><span>reward_amount · 非流水</span></span>
+        <span class="dni"><b>新成团数</b><code>周期计数</code><span>新配对成团数</span></span>
+        <span class="dni"><b>进行中姐妹团</b><code>期末在榜计数</code><span>未解散团数</span></span>
+        <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>≠解散率</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>主动解散占比 ≠ 解散率；毕业 = 满 30 天正常流程、不计入流失；主动解散 = 手动 / 离职(含换厅) / 注销。数据对齐搜索栏所选时间，对比口径均为较上一周。</span>
+      </div>
+    </div>
+    <div class="kpi-row">
+    <div class="card kpi hover" onclick="openKpiDetail('retention')">
+      <div class="top"><span class="dot green"></span>留存率</div>
+      <div class="val">58%</div>
+      <div class="foot"><span class="chip down">↓12pp</span><span>较上周 · 越高越好</span></div>
+      <span class="hint-go">查看趋势 →</span>
+    </div>
+    <div class="card kpi hover" onclick="openKpiDetail('dissolution')">
+      <div class="top"><span class="dot red"></span>解散率</div>
+      <div class="val">18%</div>
+      <div class="foot"><span class="chip up">↓3pp</span><span>较上周 · 越低越好</span></div>
+      <span class="hint-go">查看趋势 →</span>
+    </div>
+    <div class="card kpi hover" onclick="openKpiDetail('revenue')">
+      <div class="top"><span class="dot gold"></span>礼物奖励金额</div>
+      <div class="val">¥1.28M</div>
+      <div class="foot"><span class="chip up">↑12%</span><span>较上周 · 越高越好</span></div>
+      <span class="hint-go">查看趋势 →</span>
+    </div>
+    <div class="card kpi hover" onclick="openList('new')">
+      <div class="top"><span class="dot violet"></span>新成团数</div>
+      <div class="val">12 个</div>
+      <div class="foot"><span class="chip up">↑33%</span><span>较上周 · 越高越好</span></div>
+      <span class="hint-go">查看名单 →</span>
+    </div>
+    <div class="card kpi hover" onclick="openList('active')">
+      <div class="top"><span class="dot teal"></span>进行中姐妹团</div>
+      <div class="val">96 个</div>
+      <div class="foot"><span class="chip up">↑9%</span><span>在榜团数 · 较上周</span></div>
+      <span class="hint-go">查看名单 →</span>
+    </div>
+    <div class="card kpi hover" onclick="openKpiDetail('activediss')">
+      <div class="top"><span class="dot amber"></span>主动解散占比</div>
+      <div class="val">42%</div>
+      <div class="foot"><span class="chip down">↑5pp</span><span>较上周 · 越低越好</span></div>
+      <span class="hint-go">查看趋势 →</span>
+    </div>
+  </div>
+
+  <!-- KPI 细节图（就地展开） -->
+  <div class="kpi-detail" id="kpi-detail">
+    <div class="head"><span id="kd-title">留存率 · 近 8 周趋势</span><button class="close" onclick="closeKpiDetail()">✕</button></div>
+    <div class="chart-box" id="kd-chart"></div>
+    <div class="chart-insight" id="kd-insight"></div>
+  </div>
+
+  </div>
+
+  <!-- ═══════ 3. 团分析 ═══════ -->
+  <div class="section-head">
+    <h2>团分析</h2>
+    <span class="hint">存活 · 解散 · 大厅对比 · 排行</span>
+  </div>
+  <div class="dn-footer">
+    <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">团分析口径与计算方式</span></div>
+    <div class="dn-line">
+      <span class="dni"><b>存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+      <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+      <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+      <span class="dni"><b>大厅对比 TOP</b><code>留存率降序前 5</code><span>解散率 = 同周期占比</span></span>
+    </div>
+    <div class="dn-notes">
+      <span class="dn-tag">注意</span>
+      <span>上方 chips（存活率）与下方柱状图（天数分布）是两套指标，请勿混读；解散原因含「毕业」（满 30 天正常流程）与流失类原因，毕业不计入解散率。</span>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="card">
+      <h3>姐妹团存活分析</h3>
+      <div class="src">快照日期 2026-08-18 · 已成团天数分布</div>
+      <div class="chips">
+        <span class="c-chip">7日存活 <strong>82%</strong></span>
+        <span class="c-chip">14日存活 <strong>74%</strong></span>
+        <span class="c-chip">30日存活 <strong>61%</strong></span>
+      </div>
+      <div class="chart-box" id="c-surv"></div>
+      <div class="chart-insight">7日存活 <b>82%</b>，30日存活 <b>61%</b>——成团后 30 日内约流失 <b>21pp</b>。</div>
+    </div>
+    <div class="card">
+      <h3>解散原因分布</h3>
+      <div class="src">快照日期 2026-08-18 · 累计结束 982 个团（含毕业 234）</div>
+      <div class="chart-box" id="c-diss-reason"></div>
+      <div class="chart-insight">累计结束 <b>982</b> 个团：主因「<b>离职解散</b>」314 个（32%）；「<b>毕业</b>」234 个为满 30 天正常流程。</div>
+    </div>
+    <div class="card">
+      <h3>大厅对比 TOP</h3>
+      <div class="src">按留存率降序 · 存活率 / 解散率</div>
+      <div class="hallcmp">
+        <div class="hc-row"><span class="hc-name">王者荣耀·恰逢今月</span><div class="hc-bar"><div class="hc-fill" style="width:72%"></div></div><span class="hc-ret">72%</span><span class="hc-diss">解散 <b>15%</b></span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:69%"></div></div><span class="hc-ret">69%</span><span class="hc-diss">解散 <b>18%</b></span></div>
+        <div class="hc-row"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:66%"></div></div><span class="hc-ret">66%</span><span class="hc-diss">解散 <b>20%</b></span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀·半糖心事</span><div class="hc-bar"><div class="hc-fill" style="width:64%"></div></div><span class="hc-ret">64%</span><span class="hc-diss">解散 <b>22%</b></span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:61%"></div></div><span class="hc-ret">61%</span><span class="hc-diss">解散 <b>24%</b></span></div>
+      </div>
+      <div class="chart-insight">恰逢今月留存 <b>72%</b> 最高、解散 <b>15%</b> 最低；橙心如意留存 <b>61%</b> 逼近 60% 红线。</div>
+    </div>
+    <div class="card">
+      <div class="section-head" style="margin:0 0 4px;">
+        <h2>姐姐排行 · 当日</h2>
+      </div>
+      <span class="hint" style="font-size:12px;color:var(--text3);">当日奖励 TOP3 · 点击查看完整姐姐分析</span>
+      <ul class="rank-mini">
+        <li><span class="mp-rank top">1</span><span class="mp-name">雪儿<span class="mp-sub">王者荣耀·恰逢今月</span></span><span class="mp-val">¥12,400</span></li>
+        <li><span class="mp-rank top">2</span><span class="mp-name">若曦<span class="mp-sub">王者荣耀·迷鹿之森</span></span><span class="mp-val">¥9,800</span></li>
+        <li><span class="mp-rank top">3</span><span class="mp-name">琳琳<span class="mp-sub">和平精英•幸运星</span></span><span class="mp-val">¥8,600</span></li>
+      </ul>
+      <button class="expand-btn">查看全部姐姐 →</button>
+    </div>
+  </div>
+
+  <!-- ═══════ 4. 近期毕业妹妹（厅运营） ═══════ -->
+  <div class="chart-grid">
+    <div class="card" id="grad-box" style="display:none;">
+      <div class="section-head" style="margin:0 0 4px;">
+        <h2>近期毕业妹妹</h2>
+      </div>
+      <span class="hint" style="font-size:12px;color:var(--text3);">满 30 天自动毕业 · 近 7 天 · 点行查看配对姐姐</span>
+      <ul class="rank-mini">
+        <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
+        <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
+        <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
+      </ul>
+      <button class="expand-btn">查看全部毕业妹妹 →</button>
+    </div>
+  </div>
+
+  <!-- ═══════ 5. 明细数据 ═══════ -->
+  <div class="section-head" id="detail-sec">
+    <h2>明细数据</h2>
+    <span class="hint">全量团明细 · 筛选 / 排序 / 导出</span>
+  </div>
+  <div class="card" id="detail-card">
+    <div class="filters">
+      <span class="f">全部状态 ▾</span>
+      <span class="f">全部原因 ▾</span>
+      <span class="f">已成团天数 ▾</span>
+      <span class="f">20条/页 ▾</span>
+      <span class="f" style="margin-left:auto;border-color:#DDD3FF;color:var(--accent);">搜索</span>
+      <span class="f">导出CSV</span>
+    </div>
+    <table class="list">
+      <thead><tr>
+        <th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>奖励金额</th><th>状态</th><th>解散日期</th><th>解散原因</th>
+      </tr></thead>
+      <tbody id="detail-body">
+        <tr data-tid="SJ20260801"><td style="color:#5B3EC4;font-weight:500;">SJ20260801</td><td>08-06</td><td>王者荣耀·恰逢今月</td><td>雪儿</td><td>灵儿</td><td>12天</td><td>¥12,400</td><td><span class="st active">进行中</span></td><td>—</td><td>—</td></tr>
+        <tr data-tid="SJ20260802"><td style="color:#5B3EC4;font-weight:500;">SJ20260802</td><td>08-09</td><td>王者荣耀·迷鹿之森</td><td>若曦</td><td>沐晴</td><td>9天</td><td>¥9,800</td><td><span class="st active">进行中</span></td><td>—</td><td>—</td></tr>
+        <tr data-tid="SJ20260715"><td style="color:#5B3EC4;font-weight:500;">SJ20260715</td><td>07-20</td><td>和平精英•幸运星</td><td>琳琳</td><td>婷婷</td><td>29天</td><td>¥8,600</td><td><span class="st active">进行中</span></td><td>—</td><td>—</td></tr>
+        <tr data-tid="SJ20260701"><td style="color:#5B3EC4;font-weight:500;">SJ20260701</td><td>07-05</td><td>王者荣耀·半糖心事</td><td>悦悦</td><td>思思</td><td>—</td><td>¥6,200</td><td><span class="st diss">已解散</span></td><td>08-02</td><td>任务未完成自动解散</td></tr>
+        <tr data-tid="SJ20260618"><td style="color:#5B3EC4;font-weight:500;">SJ20260618</td><td>06-22</td><td>王者荣耀·橙心如意</td><td>甜甜</td><td>微微</td><td>—</td><td>¥5,600</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>满月自动解散</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ═══════ 预警中心（独立 tab） ═══════ -->
+<div class="page" id="view-warncenter" style="display:none;">
+  <div class="page-head">
+    <div>
+      <h1>预警中心</h1>
+      <p>集中查看所有预警 · 规则说明 · 受影响厅 / 团下钻</p>
+    </div>
+  </div>
+
+  <div class="warn-overview">
+    <span class="wo-item severe">严重 <b>1</b></span>
+    <span class="wo-item warning">警告 <b>2</b></span>
+    <span class="wo-item notice">提醒 <b>1</b></span>
+    <span class="wo-total">本周期共 4 条 · 环比 +1</span>
+  </div>
+
+  <div class="warn-rule">
+    <div class="wr-head">预警规则<span style="color:var(--text3);font-weight:400;">计算方式 · 触发阈值 · 数据来源</span></div>
+    <table class="rule-table">
+      <thead>
+        <tr><th>预警项</th><th>等级</th><th>计算方式</th><th>触发阈值（原因）</th><th>数据来源</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>留存率</td>
+          <td><span class="wn-tag severe">严重</span></td>
+          <td>(期末进行中 − 本周新成团) ÷ 期初进行中 × 100%</td>
+          <td>&lt; 60% 健康线</td>
+          <td><code>team_detail</code> 按 team_id 去重</td>
+        </tr>
+        <tr>
+          <td>主动解散占比</td>
+          <td><span class="wn-tag warning">警告</span></td>
+          <td>主动解散 ÷ 非毕业解散 × 100%；主动 = 手动 / 离职(含换厅) / 注销</td>
+          <td>连续 2 周环比升高</td>
+          <td><code>team_detail.dissolve_reason</code></td>
+        </tr>
+        <tr>
+          <td>新成团数</td>
+          <td><span class="wn-tag notice">提醒</span></td>
+          <td>form_date 落在本周的团计数</td>
+          <td>连续 2 周环比下降</td>
+          <td><code>team_detail.form_date</code></td>
+        </tr>
+        <tr>
+          <td>任务活跃度</td>
+          <td><span class="wn-tag warning">警告</span></td>
+          <td>陪档完成率 = 最新快照日有陪档团 ÷ 进行中团 × 100%</td>
+          <td>陪档率 &lt; 40% 或近 8 个快照日波动 &gt; 20pp</td>
+          <td><code>team_detail.accompany_task_count</code></td>
+        </tr>
+        <tr>
+          <td>躺平预警</td>
+          <td><span class="wn-tag severe">严重</span></td>
+          <td>进行中团连续 ≥4 天未完成陪档的团数；提醒 = 连续 1~3 天未陪档</td>
+          <td>连续 ≥4 天未陪档（自动解散线为连续 5 日）</td>
+          <td><code>team_detail.accompany_task_count</code> 按快照日连算</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-head">
+    <h2>平台级预警</h2>
+    <span class="hint">厅维度 · 核心指标环比异常</span>
+  </div>
+
+  <div class="chart-grid">
+    <div class="card warn-detail severe">
+      <div class="wd-head"><h3>留存率预警</h3><span class="wn-tag severe">严重</span></div>
+      <div class="src">近 8 周留存率 · 跌破 60% 健康线</div>
+      <div class="chart-box" id="wc-ret"></div>
+      <div class="chart-insight">本周留存 <b>58%</b>，较上周 <b>↓12pp</b>，跌破 60% 健康线。</div>
+      <div class="wd-subhead">跌破健康线的厅</div>
+      <table class="list">
+        <thead><tr><th>大厅</th><th>当前留存</th><th>较上周</th></tr></thead>
+        <tbody>
+          <tr><td>王者荣耀·恰逢今月</td><td style="color:#DC2626;font-weight:600;">58%</td><td style="color:#DC2626;">↓12pp</td></tr>
+          <tr><td>王者荣耀·橙心如意</td><td style="color:#DC2626;font-weight:600;">55%</td><td style="color:#DC2626;">↓9pp</td></tr>
+        </tbody>
+      </table>
+      <button class="expand-btn">下钻明细 →</button>
+    </div>
+
+    <div class="card warn-detail warning">
+      <div class="wd-head"><h3>主动解散占比预警</h3><span class="wn-tag warning">警告</span></div>
+      <div class="src">近 8 周主动解散占比 · 连续 2 周升高</div>
+      <div class="chart-box" id="wc-diss"></div>
+      <div class="chart-insight">本周主动解散占比 <b>42%</b>，连续 2 周升高（37% → 40% → 42%）。</div>
+      <div class="wd-subhead">连续升高的厅</div>
+      <table class="list">
+        <thead><tr><th>大厅</th><th>当前占比</th><th>趋势</th></tr></thead>
+        <tbody>
+          <tr><td>王者荣耀·恰逢今月</td><td style="color:#D97706;font-weight:600;">42%</td><td style="color:#D97706;">↑ 连续 2 周</td></tr>
+          <tr><td>王者荣耀·迷鹿之森</td><td style="color:#D97706;font-weight:600;">38%</td><td style="color:#D97706;">↑ 连续 2 周</td></tr>
+        </tbody>
+      </table>
+      <button class="expand-btn">下钻明细 →</button>
+    </div>
+
+    <div class="card warn-detail notice">
+      <div class="wd-head"><h3>新成团数预警</h3><span class="wn-tag notice">提醒</span></div>
+      <div class="src">近 8 周新成团数 · 连续 2 周下降</div>
+      <div class="chart-box" id="wc-new"></div>
+      <div class="chart-insight">本周新成团 <b>12 个</b>，连续 2 周下降（15 → 14 → 12）。</div>
+      <div class="wd-subhead">连续下降的厅</div>
+      <table class="list">
+        <thead><tr><th>大厅</th><th>本周</th><th>趋势</th></tr></thead>
+        <tbody>
+          <tr><td>王者荣耀·恰逢今月</td><td style="font-weight:600;">3 个</td><td style="color:#D97706;">↓ 连续 2 周</td></tr>
+          <tr><td>王者荣耀·半糖心事</td><td style="font-weight:600;">2 个</td><td style="color:#D97706;">↓ 连续 2 周</td></tr>
+        </tbody>
+      </table>
+      <button class="expand-btn">查看名单 →</button>
+    </div>
+
+    <div class="card warn-detail warning">
+      <div class="wd-head"><h3>任务活跃度预警</h3><span class="wn-tag warning">警告</span></div>
+      <div class="src">近 8 个快照日陪档完成率 · 整体偏低且剧烈波动</div>
+      <div class="chart-box" id="wc-activity"></div>
+      <div class="chart-insight">最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。</div>
+      <div class="wd-subhead">活跃度偏低的厅</div>
+      <table class="list">
+        <thead><tr><th>大厅</th><th>陪档率</th><th>趋势</th></tr></thead>
+        <tbody>
+          <tr><td>王者荣耀·怪诞学姐</td><td style="color:#D97706;font-weight:600;">21%</td><td style="color:#D97706;">↓ 波动</td></tr>
+          <tr><td>王者荣耀·少女心事</td><td style="color:#D97706;font-weight:600;">24%</td><td style="color:#D97706;">↓ 波动</td></tr>
+        </tbody>
+      </table>
+      <button class="expand-btn">下钻明细 →</button>
+    </div>
+  </div>
+
+  <!-- ═══════ 躺平预警（妹妹 / 团维度） ═══════ -->
+  <div class="section-head" style="margin-top:26px;">
+    <h2>躺平预警</h2>
+    <span class="hint">妹妹维度 · 进行中团连续未完成陪档 · 接近自动解散</span>
+  </div>
+
+  <!-- 数据说明（三大日任务 + 躺平判定口径） -->
+  <div class="dn-footer">
+    <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">日常任务与预警口径</span></div>
+    <div class="dn-line">
+      <span class="dni"><b>陪档</b><code>姐姐主持时妹妹陪档 20 分钟</code><span>日任务 ①</span></span>
+      <span class="dni"><b>开车</b><code>共同和老板开车打游戏一局</code><span>日任务 ②</span></span>
+      <span class="dni"><b>收送礼</b><code>姐妹共同收到或送出礼物</code><span>日任务 ③</span></span>
+    </div>
+    <div class="dn-notes">
+      <span class="dn-tag">规则</span>
+      <span><b>躺平</b> = 进行中团连续 <b>≥4 天</b> 未完成陪档；<b>提醒</b> = 连续 <b>1~3 天</b> 未陪档。自动解散线为「连续 5 日未完成陪档」，预警阈值取 4 天以便提前介入。连续天数按快照日计（快照有断档，实际自然日略多）。</span>
+    </div>
+  </div>
+
+  <div class="lying-kpis">
+    <div class="lying-kpi danger"><div class="lk-label"><span class="dot red"></span>躺平团数</div><div class="lk-val">194</div><div class="lk-foot">连续 ≥4 天未陪档</div></div>
+    <div class="lying-kpi"><div class="lk-label"><span class="dot amber"></span>提醒团数</div><div class="lk-val">191</div><div class="lk-foot">连续 1~3 天未陪档</div></div>
+    <div class="lying-kpi"><div class="lk-label"><span class="dot green"></span>陪档活跃率</div><div class="lk-val">33.8%</div><div class="lk-foot">最新快照日有陪档团 ÷ 进行中团</div></div>
+    <div class="lying-kpi"><div class="lk-label"><span class="dot violet"></span>参考日期</div><div class="lk-val">08-17</div><div class="lk-foot">最新快照日</div></div>
+  </div>
+
+  <div class="warn-rule">
+    <div class="wr-head">判定规则<span style="color:var(--text3);font-weight:400;">妹妹维度</span></div>
+    <div class="wr-line"><span class="wn-tag severe">躺平</span>进行中团连续 <b>≥4 天</b> 未完成「陪档」任务（成团日之前不计）</div>
+    <div class="wr-line"><span class="wn-tag warning">提醒</span>连续 <b>1~3 天</b> 未陪档，列入观察名单</div>
+    <div class="wr-line"><span class="wn-tag warning">注意</span>长期未陪档团多已接近 30 天毕业线，属毕业前自然停滞，需与真正流失区分</div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="card">
+      <h3>连续未陪档天数分布</h3>
+      <div class="src">躺平团按连续未陪档天数分组</div>
+      <div class="chart-box" id="ly-days"></div>
+      <div class="chart-insight">连续 <b>4天</b> 18 · <b>5天</b> 34 · <b>6天</b> 43 · <b>7天</b> 24 · <b>8天及以上</b> 75。8 天以上多为全程未陪档，接近毕业或已停滞。</div>
+    </div>
+    <div class="card">
+      <h3>躺平团 · 大厅分布</h3>
+      <div class="src">受影响厅 · 按躺平团数降序</div>
+      <div class="hallcmp">
+        <div class="hc-row"><span class="hc-name">王者荣耀·财神降临</span><div class="hc-bar"><div class="hc-fill" style="width:100%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">5</span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀星穹之恋</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀天才少女</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+      </div>
+      <div class="chart-insight">其余 99 厅共 <b>169</b> 个，分布分散、无集中厅；躺平是全局性现象而非个别厅问题。</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px;">
+    <div class="wd-head"><h3>躺平团名单</h3><span style="font-size:11px;color:var(--text3);">按连续未陪档天数降序 · 点行查看逐日任务明细</span></div>
+    <table class="list">
+      <thead><tr><th>大厅</th><th>妹妹</th><th>连续未陪档</th><th>已成团天数</th><th>等级</th></tr></thead>
+      <tbody>
+        <tr><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>王牌</td></tr>
+        <tr><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>银牌</td></tr>
+        <tr><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td>王者荣耀·浪漫有约</td><td>蔷薇小白兔ෆᐝ</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td>王者荣耀·星晴少女</td><td>✨礼礼蝶影成双呢</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>金牌</td></tr>
+        <tr><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>28 天</td><td>王牌</td></tr>
+      </tbody>
+    </table>
+    <button class="expand-btn">查看全部躺平名单（194 个）→</button>
+  </div>
+</div>
+
+<!-- ═══════ 厅分析（compare） ═══════ -->
+<div class="page" id="view-compare" style="display:none;">
+  <div class="page-head">
+    <div>
+      <h1>厅分析</h1>
+      <p>厅排行 → 点行钻取单厅揭示 · 单厅 vs 平台均值</p>
+    </div>
+  </div>
+
+  <!-- 各大厅数据对比 -->
+  <div class="section-head">
+    <h2>🏠 各大厅数据对比</h2>
+    <span class="hint">按进行中团数降序 · 点行 / 点图钻取单厅</span>
+  </div>
+  <div class="card">
+    <div class="filters">
+      <span class="f">搜索大厅…</span>
+      <span class="f">进行中团数 ▾</span>
+    </div>
+    <div class="hallcmp">
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('王者荣耀·恰逢今月', this)"><span class="hc-name">王者荣耀·恰逢今月</span><div class="hc-bar"><div class="hc-fill" style="width:100%"></div></div><span class="hc-ret">12 团</span></div>
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('王者荣耀·迷鹿之森', this)"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:92%"></div></div><span class="hc-ret">11 团</span></div>
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('和平精英•幸运星', this)"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:75%"></div></div><span class="hc-ret">9 团</span></div>
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('王者荣耀·半糖心事', this)"><span class="hc-name">王者荣耀·半糖心事</span><div class="hc-bar"><div class="hc-fill" style="width:67%"></div></div><span class="hc-ret">8 团</span></div>
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('王者荣耀·橙心如意', this)"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:58%"></div></div><span class="hc-ret">7 团</span></div>
+      <div class="hc-row" style="cursor:pointer;" onclick="focusHall('王者荣耀·怪诞学姐', this)"><span class="hc-name">王者荣耀·怪诞学姐</span><div class="hc-bar"><div class="hc-fill" style="width:50%"></div></div><span class="hc-ret">6 团</span></div>
+    </div>
+    <div class="chart-insight">恰逢今月进行中团 <b>12</b> 个居首；点任一行在下方揭示该厅的周指标与趋势。</div>
+  </div>
+
+  <div class="chart-grid" style="margin-top:14px;">
+    <div class="card">
+      <h3>各厅进行中团占比</h3>
+      <div class="src">按最新快照 · TOP5 厅 · 点扇区钻取</div>
+      <div class="chart-box" id="hall-share"></div>
+      <div class="chart-insight">恰逢今月 + 迷鹿之森两家合计 <b>49%</b>，头部集中明显。</div>
+    </div>
+    <div class="card">
+      <h3>各厅礼物流水周趋势</h3>
+      <div class="src">近 8 周 · TOP5 厅 · 点图例钻取</div>
+      <div class="chart-box" id="hall-trend"></div>
+      <div class="chart-insight">恰逢今月流水稳居首位且持续走高，橙心如意近两周回落。</div>
+    </div>
+  </div>
+
+  <!-- 厅分析揭示面板 -->
+  <div class="section-head" style="margin-top:24px;">
+    <h2 id="hf-title">厅分析 · 王者荣耀·恰逢今月</h2>
+    <span class="hint">点行 / 点图进入 · 本周 vs 上周</span>
+  </div>
+  <div class="card">
+    <div class="kpi-six">
+      <div class="card kpi"><div class="top"><span class="dot green"></span>留存率</div><div class="val">72%</div><div class="foot"><span class="chip up">↑2pp</span></div></div>
+      <div class="card kpi"><div class="top"><span class="dot red"></span>解散率</div><div class="val">15%</div><div class="foot"><span class="chip up">↓2pp</span></div></div>
+      <div class="card kpi"><div class="top"><span class="dot violet"></span>新成团数</div><div class="val">3</div><div class="foot"><span class="chip up">↑1</span></div></div>
+      <div class="card kpi"><div class="top"><span class="dot amber"></span>解散数</div><div class="val">2</div><div class="foot"><span class="chip up">↓1</span></div></div>
+      <div class="card kpi"><div class="top"><span class="dot teal"></span>进行中团</div><div class="val">12</div><div class="foot"><span class="chip up">↑2</span></div></div>
+      <div class="card kpi"><div class="top"><span class="dot gold"></span>周礼物流水</div><div class="val">¥12.8w</div><div class="foot"><span class="chip up">↑8%</span></div></div>
+    </div>
+    <div class="chart-grid">
+      <div class="card">
+        <h3>留存率趋势</h3>
+        <div class="src">近 8 周 · 单厅 vs 平台均值</div>
+        <div class="chart-box" id="cmp-hf-ret"></div>
+      </div>
+      <div class="card">
+        <h3>周礼物流水趋势</h3>
+        <div class="src">近 8 周 · 单厅 vs 平台均值</div>
+        <div class="chart-box" id="cmp-hf-rev"></div>
+      </div>
+    </div>
+    <div class="wd-subhead" style="cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="toggleWoW(this)">
+      <span>📊 本周 vs 上周</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:400;">小框见上方 KPI · 点击展开完整明细</span>
+      <span class="wow-arrow" style="margin-left:auto;font-size:12px;color:var(--text3);">▾</span>
+    </div>
+    <div id="wow-full" style="display:none;">
+      <table class="list">
+        <thead><tr><th>指标</th><th>本周</th><th>上周</th><th>环比</th></tr></thead>
+        <tbody>
+          <tr><td>留存率</td><td>72%</td><td>70%</td><td style="color:#16A34A;">↑2pp</td></tr>
+          <tr><td>解散率</td><td>15%</td><td>17%</td><td style="color:#16A34A;">↓2pp</td></tr>
+          <tr><td>新成团数</td><td>3</td><td>2</td><td style="color:#16A34A;">↑1</td></tr>
+          <tr><td>解散数</td><td>2</td><td>3</td><td style="color:#16A34A;">↓1</td></tr>
+          <tr><td>进行中团数</td><td>12</td><td>10</td><td style="color:#16A34A;">↑2</td></tr>
+          <tr><td>周礼物流水</td><td>¥12.8w</td><td>¥11.9w</td><td style="color:#16A34A;">↑8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 单厅解散原因构成 -->
+  <div class="card" style="margin-top:14px;">
+    <div class="wd-head"><h3>解散原因构成</h3><span style="font-size:11px;color:var(--text3);">该厅已解散团 · 环形占比 + 金字塔量级</span></div>
+    <div class="chart-grid">
+      <div class="card">
+        <div class="src">占比视角 · 主动 = 手动 + 离职(含换厅) + 注销</div>
+        <div class="chart-box" id="cmp-diss"></div>
+      </div>
+      <div class="card">
+        <div class="src">量级视角 · 金字塔（自上而下 主动 → 毕业 → 系统）</div>
+        <div class="chart-box" id="cmp-diss-funnel"></div>
+      </div>
+    </div>
+    <div class="chart-insight">主动解散占比 <b>60%</b>（手动 3 + 离职含换厅 2 + 注销 1）；毕业 3 个为满 30 天正常流程、不计入流失。</div>
+  </div>
+
+  <!-- 该厅团明细 -->
+  <div class="card" style="margin-top:14px;">
+    <div class="wd-head"><h3>该厅团明细</h3><span style="font-size:11px;color:var(--text3);">姐姐 / 妹妹 成对名单 · 点行进入团队明细</span></div>
+    <div class="filters">
+      <span class="f" style="background:#F3F0FF;color:#7C5CFF;border-color:#7C5CFF;">全部 12</span>
+      <span class="f">进行中 9</span>
+      <span class="f">已解散 3</span>
+    </div>
+    <table class="list">
+      <thead><tr><th>姐姐</th><th>妹妹</th><th>姐姐等级</th><th>妹妹等级</th><th>成团日</th><th>天数</th><th>状态</th><th>妹妹流水</th></tr></thead>
+      <tbody>
+        <tr><td>苏念</td><td>星野みう</td><td>王牌</td><td>金牌</td><td>08-10</td><td>10 天</td><td><span class="chip up">进行中</span></td><td>¥2,480</td></tr>
+        <tr><td>白桃</td><td>奶盖啵啵</td><td>王牌</td><td>银牌</td><td>08-07</td><td>13 天</td><td><span class="chip up">进行中</span></td><td>¥1,930</td></tr>
+        <tr><td>顾青梧</td><td>月下独酌</td><td>大神</td><td>金牌</td><td>08-03</td><td>17 天</td><td><span class="chip up">进行中</span></td><td>¥4,120</td></tr>
+        <tr><td>江辞</td><td>小熊软糖</td><td>王牌</td><td>金牌</td><td>07-25</td><td>26 天</td><td><span class="chip down">已解散</span></td><td>¥1,540</td></tr>
+        <tr><td>林晚</td><td>糖豆豆</td><td>金牌</td><td>银牌</td><td>07-28</td><td>23 天</td><td><span class="chip down">已解散</span></td><td>¥860</td></tr>
+        <tr><td>沈知微</td><td>草莓布丁</td><td>大神</td><td>金牌</td><td>07-21</td><td>30 天</td><td><span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span></td><td>¥3,300</td></tr>
+      </tbody>
+    </table>
+    <button class="expand-btn">查看全部 12 个团 →</button>
+  </div>
+
+  <!-- 数据说明（指标口径与公式） -->
+  <div class="dn-footer" style="margin-top:14px;">
+    <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">指标口径与计算公式</span></div>
+    <div class="dn-line">
+      <span class="dni"><b>留存率</b><code>周末存活团 ÷ 周初进行中团</code><span>周指标</span></span>
+      <span class="dni"><b>解散率</b><code>本周解散数 ÷ 周初进行中团</code><span>周指标</span></span>
+      <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>手动+离职含换厅+注销</span></span>
+    </div>
+    <div class="dn-line">
+      <span class="dni"><b>躺平</b><code>进行中团连续 ≥4 天未陪档</code><span>预警</span></span>
+      <span class="dni"><b>任务活跃度</b><code>最新快照日有陪档团 ÷ 进行中团</code><span>预警</span></span>
+    </div>
+    <div class="dn-notes">
+      <span class="dn-tag">来源</span>
+      <span>数据来自 <b>team_detail 每日快照</b>，按最新快照去重；快照有断档（08-09、08-15、08-16），「连续 N 天」按快照日计、实际自然日略多。毕业 = 满 30 天正常流程、不计入流失；主动解散占比分母为「非毕业解散」。</span>
+    </div>
+    <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+      <span class="dn-tag">平台均值</span>
+      <span>趋势折线里的灰色虚线 = <b>全平台同指标当周均值</b>，用作单厅对比基准。口径：留存率取「全平台周末存活团 ÷ 周初进行中团」，流水取「全平台当周礼物流水总和 ÷ 有数据厅数」。单厅折线在虚线上方 = 领先平台，下方 = 落后平台。该序列落地时需后端在 <code>/api/weekly-report</code> 增补 <code>hall=all</code> 均值列。</span>
+    </div>
+  </div>
+
+  <div class="todo-note"><b>🔧 待落地</b>：后端 <code>/api/hall-stats</code> 路由重复定义（app.py 1908 vs 1954）需去重、排行改实时聚合；揭示面板趋势图实例未进全局 <code>charts</code>，resize 需并入统一重绘；趋势折线加「平台均值」灰色参考虚线（需后端补全平台均值序列）；团明细复用 <code>/api/detail-table?hall=xxx</code>；数据说明文案随落地同步进源码。</div>
+</div>
+
+<!-- ═══════ 姐姐分析（captains） ═══════ -->
+<div class="page" id="view-captains" style="display:none;">
+  <div class="page-head">
+    <div>
+      <h1>姐姐分析</h1>
+      <p>画像 / 候选池 · 打标分布 · 带团存活率 · 排行榜 · 毕业妹妹</p>
+    </div>
+    <div class="seg" id="cap-seg">
+      <button class="on" onclick="switchCaptainView('profile', this)">画像</button>
+      <button onclick="switchCaptainView('pool', this)">候选池</button>
+    </div>
+  </div>
+
+  <!-- 画像视图 -->
+  <div id="captains-main">
+    <div class="chart-grid">
+      <div class="card">
+        <h3>🏷️ 打标分布</h3>
+        <div class="src">头牌 / 风险 / 正常 · 姐姐总数</div>
+        <div class="chart-box" id="cap-tag"></div>
+        <div class="chart-insight">头牌 <b>42</b> 位占比 21%，风险 <b>18</b> 位需重点跟进。</div>
+      </div>
+      <div class="card">
+        <h3>🌱 带团存活率分布</h3>
+        <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）</div>
+        <div class="chart-box" id="cap-ret"></div>
+        <div class="chart-insight">存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
+      </div>
+    </div>
+
+    <div class="section-head"><h2>👤 姐姐总览（画像 + 排行）</h2><span class="hint">点行下钻 · 排名随奖励口径切换</span>
+      <div class="seg" style="margin-left:auto;">
+        <button class="on" onclick="setCapPeriod('day', this)">当日</button>
+        <button onclick="setCapPeriod('week', this)">当周</button>
+        <button onclick="setCapPeriod('month', this)">当月</button>
+      </div>
+    </div>
+    <!-- 数据说明：打标口径 -->
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">打标口径与指标计算</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>头牌</b><code>流水高于八成非零姐姐 且 留存 ≥50%</code><span>头部核心</span></span>
+        <span class="dni"><b>风险</b><code>环比暴跌 或 带团多但留存低</code><span>重点跟进</span></span>
+        <span class="dni"><b>正常</b><code>其余姐姐</code><span>常规观察</span></span>
+        <span class="dni"><b>存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除（此前已定不启用该指标）。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
+      </div>
+    </div>
+    <div class="card">
+      <table class="list">
+        <thead><tr><th>#</th><th>姐姐</th><th>等级</th><th>所在大厅</th><th id="cap-reward-th">当日奖励</th><th>带团</th><th>进行中</th><th>存活率</th><th>标签</th></tr></thead>
+        <tbody>
+          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td>王牌</td><td>王者荣耀·恰逢今月</td><td style="font-weight:600;">¥12,400</td><td>6</td><td>5</td><td>72%</td><td><span class="tg hero">头牌</span></td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td>王牌</td><td>王者荣耀·迷鹿之森</td><td style="font-weight:600;">¥9,800</td><td>5</td><td>4</td><td>69%</td><td><span class="tg hero">头牌</span></td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td>金牌</td><td>和平精英•幸运星</td><td style="font-weight:600;">¥8,600</td><td>5</td><td>3</td><td>64%</td><td><span class="tg normal">正常</span></td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td>银牌</td><td>王者荣耀·半糖心事</td><td style="font-weight:600;">¥6,200</td><td>4</td><td>2</td><td>58%</td><td><span class="tg risk">风险</span></td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td>铜牌</td><td>王者荣耀·橙心如意</td><td style="font-weight:600;">¥5,600</td><td>3</td><td>1</td><td>51%</td><td><span class="tg risk">风险</span></td></tr>
+        </tbody>
+      </table>
+      <button class="expand-btn">查看全部姐姐（100+）→</button>
+    </div>
+
+    <div class="section-head" style="margin-top:24px;"><h2>🎓 最近一周毕业的妹妹</h2><span class="hint">满 30 天自动毕业 · 点行查看配对姐姐</span></div>
+    <div class="card">
+      <ul class="rank-mini">
+        <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
+        <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
+        <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
+      </ul>
+      <button class="expand-btn">查看全部毕业妹妹 →</button>
+    </div>
+  </div>
+
+  <!-- 候选池视图 -->
+  <div id="captains-pool" style="display:none;">
+    <div class="section-head" style="margin-top:0;"><h2>🎯 培养力候选池</h2><span class="hint">并列展示 · 不做权威排序 · 记录输送 / 提拔</span></div>
+    <div class="card">
+      <table class="list">
+        <thead><tr><th>#</th><th>姐姐</th><th>牌子等级</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>雪儿</td><td>王牌</td><td>6 / 5</td><td>72%</td><td>1.8</td><td>0.6</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>2</td><td>若曦</td><td>王牌</td><td>5 / 4</td><td>69%</td><td>1.5</td><td>0.5</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>3</td><td>琳琳</td><td>金牌</td><td>5 / 3</td><td>64%</td><td>1.2</td><td>0.4</td><td><span class="st active">培养中</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-head" style="margin-top:24px;"><h2>📝 结果记录</h2><span class="hint">输送妹妹 / 提拔管理</span></div>
+    <div class="card">
+      <table class="list">
+        <thead><tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td>08-18</td><td>雪儿</td><td>王者荣耀·恰逢今月</td><td>输送妹妹</td><td><span class="st active">成功</span></td><td>灵儿毕业配对</td><td>08-18 14:20</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
+          <tr><td>08-16</td><td>若曦</td><td>王者荣耀·迷鹿之森</td><td>提拔管理</td><td><span class="st active">成功</span></td><td>升为厅管</td><td>08-16 10:05</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="todo-note"><b>🔧 待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口。</div>
+</div>
+
+<!-- ═══════ UID查询（uid） ═══════ -->
+<div class="page" id="view-uid" style="display:none;">
+  <div class="page-head">
+    <div>
+      <h1>UID 查询</h1>
+      <p>按 UID / 类型查询 · 周对比 · 姐妹团参与 · 姐 vs 妹对比</p>
+    </div>
+  </div>
+
+  <!-- 查询条 -->
+  <div class="searchbar" style="margin-bottom:14px;">
+    <div class="search-main">
+      <div class="combo">
+        <span class="lbl">类型</span>
+        <select style="border:none;outline:none;background:transparent;font-size:13px;color:var(--text2);cursor:pointer;font-weight:500;">
+          <option>新队长-游戏</option>
+          <option>新队长-歌房</option>
+          <option>新队长-狼人杀</option>
+          <option>实时-乐园杀</option>
+        </select>
+      </div>
+      <div class="vdivider"></div>
+      <div class="combo" style="flex:1;">
+        <span class="lbl">UID</span>
+        <input type="text" placeholder="输入 UID…" style="border:none;outline:none;font-size:14px;background:transparent;width:100%;min-width:0;">
+      </div>
+      <button class="btn primary">查询</button>
+    </div>
+  </div>
+
+  <!-- 用户信息卡 -->
+  <div class="card" style="margin-bottom:14px;">
+    <div class="uid-hero">
+      <div class="uid-avatar">雪</div>
+      <div>
+        <div class="u-title">雪儿 <span class="st active" style="margin-left:6px;">精英队长</span></div>
+        <div class="u-sub">UID 100234567 · 类型：新队长-游戏</div>
+        <div class="uid-tags">
+          <span class="chip">🏠 王者荣耀·恰逢今月</span>
+          <span class="chip">等级 王牌</span>
+        </div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="kv-cell"><div class="k">保护状态</div><div class="v">已保护</div></div>
+        <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
+        <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="uid-grid">
+    <!-- 周对比 -->
+    <div class="card">
+      <h3>📊 本周 vs 上周 对比分析</h3>
+      <div class="src">指标 / 本周 / 上周 / 环比 / 变化率 / 趋势</div>
+      <div style="margin-top:10px;">
+        <table class="list">
+          <thead><tr><th>指标</th><th>本周</th><th>上周</th><th>环比</th><th>趋势</th></tr></thead>
+          <tbody>
+            <tr><td>当周队长等级</td><td>王牌</td><td>金牌</td><td style="color:#16A34A;">↑1级</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>当周排档天数</td><td>6 天</td><td>5 天</td><td style="color:#16A34A;">↑1天</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>每日任务完成</td><td>5 项</td><td>4 项</td><td style="color:#16A34A;">↑1</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>当周礼物流水</td><td>¥12,400</td><td>¥11,900</td><td style="color:#16A34A;">↑4%</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>当周陪档时长</td><td>2.4h</td><td>2.0h</td><td style="color:#16A34A;">↑0.4h</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>排行榜排名</td><td>3</td><td>5</td><td style="color:#16A34A;">↑2</td><td style="color:#16A34A;">↑</td></tr>
+            <tr><td>4 周最高等级</td><td>大神</td><td>大神</td><td style="color:#9CA3AF;">—</td><td style="color:#9CA3AF;">—</td></tr>
+            <tr><td>参与姐妹团</td><td>6 个</td><td>5 个</td><td style="color:#16A34A;">↑1</td><td style="color:#16A34A;">↑</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 姐妹团参与明细 -->
+    <div class="card">
+      <h3>🔗 姐妹团参与明细</h3>
+      <div class="src">历史配对团 · 累计流水口径 = 妹妹累计流水</div>
+      <div style="margin-top:10px;">
+        <table class="list">
+          <thead><tr><th>团ID</th><th>大厅</th><th>成团日</th><th>妹妹</th><th>状态</th><th>妹妹累计流水 <span class="todo-badge">口径修正</span></th></tr></thead>
+          <tbody>
+            <tr><td style="color:#5B3EC4;font-weight:500;">SJ20260801</td><td>恰逢今月</td><td>08-06</td><td>灵儿</td><td><span class="st active">进行中</span></td><td>¥6,800</td></tr>
+            <tr><td style="color:#5B3EC4;font-weight:500;">SJ20260720</td><td>恰逢今月</td><td>07-25</td><td>沐晴</td><td><span class="st diss">已毕业</span></td><td>¥18,400</td></tr>
+            <tr><td style="color:#5B3EC4;font-weight:500;">SJ20260615</td><td>迷鹿之森</td><td>06-20</td><td>婷婷</td><td><span class="st diss">已毕业</span></td><td>¥22,100</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 姐 vs 妹 对比 -->
+  <div class="card" style="margin-top:14px;">
+    <h3>👭 姐姐 vs 妹妹 本周数据对比</h3>
+    <div class="src">近 7 日礼物流水 · 双线对比</div>
+    <div class="chart-box" id="uid-partner" style="height:150px;"></div>
+    <div class="wd-subhead">累计对比</div>
+    <table class="list">
+      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹</th><th>差值</th></tr></thead>
+      <tbody>
+        <tr><td>本周流水</td><td>¥12,400</td><td>¥8,900</td><td style="color:#16A34A;">姐 +¥3,500</td></tr>
+        <tr><td>累计流水</td><td>¥86,400</td><td>¥62,300</td><td style="color:#16A34A;">姐 +¥24,100</td></tr>
+        <tr><td>陪档时长</td><td>2.4h</td><td>2.2h</td><td style="color:#16A34A;">姐 +0.2h</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 绑定妹妹列表 -->
+  <div class="section-head" style="margin-top:24px;"><h2>👭 绑定妹妹列表</h2><span class="hint">当前及历史配对的妹妹</span></div>
+  <div class="card">
+    <table class="list">
+      <thead><tr><th>妹妹昵称</th><th>UID</th><th>所在大厅</th><th>状态</th><th>成团日期</th><th>本周等级</th><th>本周流水</th></tr></thead>
+      <tbody>
+        <tr><td>灵儿</td><td>200111001</td><td>恰逢今月</td><td><span class="st active">进行中</span></td><td>08-06</td><td>金牌</td><td>¥6,800</td></tr>
+        <tr><td>沐晴</td><td>200111002</td><td>恰逢今月</td><td><span class="st diss">已毕业</span></td><td>07-25</td><td>—</td><td>—</td></tr>
+        <tr><td>婷婷</td><td>200111003</td><td>迷鹿之森</td><td><span class="st diss">已毕业</span></td><td>06-20</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="todo-note"><b>🔧 待落地</b>：<code>#uid-type</code> 类型下拉硬编码在 HTML（后端 <code>/api/uid-query/types</code> 为死接口），落地时改由接口驱动；导出 CSV 的「累计流水」字段对不上（读 <code>compare.total_revenue</code>，实际应是顶层 <code>team_total_revenue</code>，现恒为 0），需修；<code>team_info.total_revenue</code> 实为 <code>sister_revenue</code>（妹妹累计流水），口径已在上表标正。该页依赖外部爬虫 + Cookie，无凭据时后端返回 500。</div>
+</div>
+
+<!-- ═══════ 弹窗：数量类指标名单 ═══════ -->
+<div class="modal" id="list-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="lm-title">进行中姐妹团名单</h3>
+      <button class="close" onclick="closeList()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sub" id="lm-sub">共 96 个进行中姐妹团 · 点行跳转明细定位</div>
+      <table class="list">
+        <thead><tr><th>姐妹团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>已成团天数</th><th>奖励金额</th><th>状态</th></tr></thead>
+        <tbody id="lm-body"></tbody>
+      </table>
+    </div>
+    <div class="modal-foot">
+      <span class="pg" id="lm-pg"></span>
+      <button class="btn ghost" id="lm-prev" onclick="lmPage(-1)">← 上一页</button>
+      <button class="btn ghost" id="lm-next" onclick="lmPage(1)">下一页 →</button>
+      <button class="btn primary" onclick="jumpAll()">查看全部名单 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 弹窗：姐姐下钻（带团明细 + 流水曲线 + 等级轨迹） ═══════ -->
+<div class="modal" id="sister-modal">
+  <div class="modal-box" style="width:820px;">
+    <div class="modal-head">
+      <h3 id="sm-title">姐姐下钻</h3>
+      <button class="close" onclick="closeSister()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sub" id="sm-sub"></div>
+      <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div class="kv-cell"><div class="k">带团 / 进行中</div><div class="v" id="sm-teams">—</div></div>
+        <div class="kv-cell"><div class="k">存活率</div><div class="v" id="sm-ret">—</div></div>
+        <div class="kv-cell"><div class="k">本周流水</div><div class="v" id="sm-rev">—</div></div>
+        <div class="kv-cell"><div class="k">标签</div><div class="v" id="sm-tag">—</div></div>
+      </div>
+      <div class="wd-subhead">带团明细</div>
+      <table class="list">
+        <thead><tr><th>团ID</th><th>大厅</th><th>妹妹</th><th>成团日</th><th>天数</th><th>状态</th><th>妹妹流水</th></tr></thead>
+        <tbody id="sm-body"></tbody>
+      </table>
+      <div class="chart-grid" style="margin-top:14px;">
+        <div class="card"><h3>近 8 周流水趋势</h3><div class="src">周礼物流水 · 姐姐本人</div><div class="chart-box" id="sm-rev-line"></div></div>
+        <div class="card"><h3>等级轨迹</h3><div class="src">近 8 周牌子等级</div><div class="chart-box" id="sm-level-line"></div><div class="chart-insight" id="sm-lv-note"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── SVG 迷你图表 ── */
+function svgLine(el, data, color, fill, maxOverride, ref) {
+  const W = 460, H = 150, pad = 24;
+  const max = maxOverride || Math.max(...data, ref ? ref.v : 0);
+  const y = v => H - pad - (v / max) * (H - pad * 2);
+  const pts = data.map((v, i) => [pad + i * ((W - pad * 2) / (data.length - 1)), y(v)]);
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad + g * ((H - pad * 2) / 4);
+    grid += `<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  const poly = `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const area = `<polygon points="${pad},${H-pad} ${pts.map(p=>p.join(',')).join(' ')} ${W-pad},${H-pad}" fill="${fill}"/>`;
+  const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#fff" stroke="${color}" stroke-width="2"/>`).join('');
+  let refLine = '';
+  if (ref) {
+    const ry = y(ref.v);
+    refLine = `<line x1="${pad}" y1="${ry}" x2="${W-pad}" y2="${ry}" stroke="#9CA3AF" stroke-width="1.3" stroke-dasharray="5 4"/>
+      <text x="${W-pad}" y="${ry-5}" text-anchor="end" font-size="9" fill="#9CA3AF">${ref.label}</text>`;
+  }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${area}${poly}${dots}${refLine}</svg>`;
+}
+/* 多线对比图（预警中心）：多条厅线 + 可选健康线阈值 */
+function svgMultiLine(el, series, threshold, onPick) {
+  const W = 460, H = 150, pad = 24;
+  const allVals = series.flatMap(s => s.data);
+  const max = Math.max(...allVals, threshold || 0) * 1.12;
+  const y = v => H - pad - (v / max) * (H - pad * 2);
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad + g * ((H - pad * 2) / 4);
+    grid += `<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  let thresholdLine = '';
+  if (threshold != null) {
+    const ty = y(threshold);
+    thresholdLine = `<line x1="${pad}" y1="${ty}" x2="${W-pad}" y2="${ty}" stroke="#DC2626" stroke-width="1.3" stroke-dasharray="5 4"/>
+      <text x="${W-pad}" y="${ty-4}" text-anchor="end" font-size="9" fill="#DC2626">${threshold}% 健康线</text>`;
+  }
+  const legend = series.map((s, i) => {
+    const lx = pad + i * ((W - pad * 2) / series.length);
+    return `<g data-idx="${i}"><circle cx="${lx}" cy="11" r="4" fill="${s.color}"/><text x="${lx+8}" y="14.5" font-size="9.5" fill="#6B7280">${s.name}</text></g>`;
+  }).join('');
+  const lines = series.map(s => {
+    const pts = s.data.map((v, i) => [pad + i * ((W - pad * 2) / (s.data.length - 1)), y(v)]);
+    const poly = `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#fff" stroke="${s.color}" stroke-width="1.8"/>`).join('');
+    return poly + dots;
+  }).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${thresholdLine}${legend}${lines}</svg>`;
+  if (onPick) {
+    el.querySelectorAll('g[data-idx]').forEach(g => {
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', () => {
+        const s = series[+g.getAttribute('data-idx')];
+        onPick(s.full || s.name, s);
+      });
+    });
+  }
+}
+function svgBar(el, data, color, labelColor) {
+  const W = 460, H = 150, pad = 24;
+  const max = Math.max(...data);
+  const bw = (W - pad * 2) / data.length * 0.55;
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad + g * ((H - pad * 2) / 4);
+    grid += `<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  const bars = data.map((v, i) => {
+    const x = pad + i * ((W - pad * 2) / data.length) + ((W - pad * 2) / data.length - bw) / 2;
+    const h = (v / max) * (H - pad * 2);
+    return `<rect x="${x.toFixed(1)}" y="${(H - pad - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${color}" opacity=".92"/>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${(H - pad - h - 5).toFixed(1)}" text-anchor="middle" font-size="9" fill="${labelColor}">${v}</text>`;
+  }).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${bars}</svg>`;
+}
+function svgDonut(el, parts, centerLabel, onSlice) {
+  const W = 460, H = 180;
+  const cx = W * 0.42, cy = H / 2, R = 66, r = 40;
+  const total = parts.reduce((s, p) => s + p.v, 0);
+  let acc = -Math.PI / 2;
+  const segs = parts.map((p, i) => {
+    const ang = (p.v / total) * Math.PI * 2;
+    const a0 = acc, a1 = acc + ang; acc = a1;
+    const x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0);
+    const x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+    const xi0 = cx + r * Math.cos(a0), yi0 = cy + r * Math.sin(a0);
+    const xi1 = cx + r * Math.cos(a1), yi1 = cy + r * Math.sin(a1);
+    const large = ang > Math.PI ? 1 : 0;
+    const d = `M${x0.toFixed(1)},${y0.toFixed(1)} A${R},${R} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} L${xi1.toFixed(1)},${yi1.toFixed(1)} A${r},${r} 0 ${large} 0 ${xi0.toFixed(1)},${yi0.toFixed(1)} Z`;
+    return `<path data-idx="${i}" d="${d}" fill="${p.c}"><title>${p.n} ${p.v}个</title></path>`;
+  }).join('');
+  const legend = parts.map((p, i) => {
+    const ly = 30 + i * 24;
+    return `<circle cx="${W*0.78}" cy="${ly}" r="6" fill="${p.c}"/><text x="${W*0.78+12}" y="${ly+3.5}" font-size="10.5" fill="#6B7280">${p.n} <tspan font-weight="600" fill="#1A1D26">${p.v}个</tspan></text>`;
+  }).join('');
+  const center = `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1D26">${total}</text><text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="#9CA3AF">${centerLabel || '累计解散'}</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${segs}${center}${legend}</svg>`;
+  if (onSlice) {
+    el.querySelectorAll('path').forEach(p => {
+      p.style.cursor = 'pointer';
+      p.addEventListener('click', () => {
+        const part = parts[+p.getAttribute('data-idx')];
+        onSlice(part.full || part.n, part);
+      });
+    });
+  }
+}
+
+/* 漏斗/金字塔：横向梯形，宽 ∝ 数量，用于解散原因量级 */
+function svgFunnel(el, parts) {
+  const W = 460, H = 180, pad = 20;
+  const maxV = Math.max(...parts.map(p => p.v));
+  const total = parts.reduce((s, p) => s + p.v, 0);
+  const rows = parts.length;
+  const rowH = (H - pad * 2) / rows;
+  const cx = W * 0.30, maxHalf = W * 0.28;
+  let body = '';
+  parts.forEach((p, i) => {
+    const halfW = (p.v / maxV) * maxHalf;
+    const y0 = pad + i * rowH + 4, y1 = pad + (i + 1) * rowH - 4;
+    body += `<path d="M${(cx - halfW).toFixed(1)},${y0} L${(cx + halfW).toFixed(1)},${y0} L${(cx + halfW).toFixed(1)},${y1} L${(cx - halfW).toFixed(1)},${y1} Z" fill="${p.c}"/>`;
+  });
+  const labels = parts.map((p, i) => {
+    const y = pad + i * rowH + rowH / 2;
+    return `<circle cx="${W*0.72}" cy="${y-2}" r="5" fill="${p.c}"/>
+      <text x="${W*0.72+11}" y="${y+1}" font-size="11" font-weight="600" fill="#1A1D26">${p.n} ${p.v}个</text>
+      <text x="${W*0.72+11}" y="${y+14}" font-size="9.5" fill="#9CA3AF">${Math.round(p.v / total * 100)}%</text>`;
+  }).join('');
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${body}${labels}</svg>`;
+}
+
+/* 图表数据 */
+const RET = [72,70,68,66,64,62,60,58];
+const DISS = [26,24,22,21,20,22,21,18];
+const REV = [88,92,96,90,102,108,114,128];
+const SURV = [12,9,7,5,3,2,1];
+svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C');
+svgDonut(document.getElementById('c-diss-reason'), [
+  { n:'离职解散（含换厅）', v:314, c:'#E08A5A' },
+  { n:'手动解散', v:248, c:'#D56060' },
+  { n:'毕业', v:234, c:'#16A34A' },
+  { n:'任务未完成自动解散', v:178, c:'#C98A2D' },
+  { n:'注销', v:5, c:'#9CA3AF' },
+  { n:'其他', v:3, c:'#C0C4CC' },
+], '累计结束');
+
+/* 预警中心图表 */
+svgMultiLine(document.getElementById('wc-ret'), [
+  { name: '恰逢今月', data: [74,72,69,66,63,61,60,58], color: '#DC2626' },
+  { name: '橙心如意', data: [71,69,66,63,60,58,56,55], color: '#F08A8A' }
+], 60);
+svgMultiLine(document.getElementById('wc-diss'), [
+  { name: '恰逢今月', data: [33,34,35,34,36,37,40,42], color: '#D97706' },
+  { name: '迷鹿之森', data: [30,31,32,32,34,35,37,38], color: '#E8A44A' }
+]);
+svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0');
+svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)');
+svgBar(document.getElementById('ly-days'), [18, 34, 43, 24, 75], '#DC2626', '#F08A8A');
+
+/* 厅分析 · 揭示面板趋势 */
+svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'});
+svgLine(document.getElementById('cmp-hf-rev'), [96,100,104,101,110,116,119,128], '#D9A13F', 'rgba(217,161,63,.14)', null, {v:104, label:'平台均值 ¥104'});
+svgDonut(document.getElementById('hall-share'), [
+  { n:'恰逢今月', full:'王者荣耀·恰逢今月', v:12, c:'#3B82F6' },
+  { n:'迷鹿之森', full:'王者荣耀·迷鹿之森', v:11, c:'#0EA5E9' },
+  { n:'幸运星', full:'和平精英•幸运星', v:9, c:'#06B6D4' },
+  { n:'半糖心事', full:'王者荣耀·半糖心事', v:8, c:'#14B8A6' },
+  { n:'橙心如意', full:'王者荣耀·橙心如意', v:7, c:'#2DD4BF' },
+], '5 厅进行中团', (hall) => focusHall(hall, null, true));
+svgMultiLine(document.getElementById('hall-trend'), [
+  { name: '恰逢今月', full:'王者荣耀·恰逢今月', data: [100,104,108,112,118,124,128,132], color: '#3B82F6' },
+  { name: '迷鹿之森', full:'王者荣耀·迷鹿之森', data: [90,92,95,96,99,101,103,105], color: '#0EA5E9' },
+  { name: '幸运星', full:'和平精英•幸运星', data: [80,82,80,84,83,86,85,87], color: '#06B6D4' },
+  { name: '半糖心事', full:'王者荣耀·半糖心事', data: [70,72,71,74,75,74,77,76], color: '#14B8A6' },
+  { name: '橙心如意', full:'王者荣耀·橙心如意', data: [65,66,67,68,70,68,64,60], color: '#2DD4BF' },
+], null, (hall) => focusHall(hall, null, true));
+svgDonut(document.getElementById('cmp-diss'), [
+  { n:'主动解散', v:6, c:'#C2410C' },
+  { n:'毕业', v:3, c:'#F97316' },
+  { n:'系统自动解散', v:1, c:'#FDBA74' },
+], '已解散');
+svgFunnel(document.getElementById('cmp-diss-funnel'), [
+  { n:'主动解散', v:6, c:'#C2410C' },
+  { n:'毕业（满30天）', v:3, c:'#F97316' },
+  { n:'系统自动解散', v:1, c:'#FDBA74' },
+]);
+
+/* 姐姐分析 · 打标分布 + 存活率分布 */
+svgDonut(document.getElementById('cap-tag'), [
+  { n:'头牌', v:42, c:'#7C5CFF' },
+  { n:'风险', v:18, c:'#D97706' },
+  { n:'正常', v:140, c:'#C0C4CC' }
+], '姐姐总数');
+svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0');
+
+/* UID · 姐 vs 妹 近 7 日流水 */
+svgMultiLine(document.getElementById('uid-partner'), [
+  { name:'姐姐', data:[120,180,150,200,170,220,190], color:'#7C5CFF' },
+  { name:'妹妹', data:[90,140,120,160,130,180,150], color:'#16A34A' }
+]);
+
+/* 预览 tab 切换 */
+const PREVIEW_VIEWS = ['overview', 'warncenter', 'compare', 'captains', 'uid'];
+function switchPreviewTab(tab, btn) {
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  PREVIEW_VIEWS.forEach(v => {
+    document.getElementById('view-' + v).style.display = v === tab ? '' : 'none';
+  });
+}
+
+/* ── 姐姐分析 · 画像/候选池切换 ── */
+function switchCaptainView(view, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('captains-main').style.display = view === 'profile' ? '' : 'none';
+  document.getElementById('captains-pool').style.display = view === 'pool' ? '' : 'none';
+}
+const CAP_PERIOD = { day: '当日奖励', week: '当周奖励', month: '当月奖励' };
+function setCapPeriod(p, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const th = document.getElementById('cap-reward-th');
+  if (th) th.textContent = CAP_PERIOD[p] || '奖励';
+}
+
+/* ── 姐姐分析 · 姐姐下钻弹窗 ── */
+const SISTER_EXTRA = {
+  '雪儿': { uid:'100234567', ret:'72%', teams:'6 / 5', rev:'¥12,400',
+    rows:[['SJ20260801','恰逢今月','灵儿','08-06','12天','进行中','¥6,800'],['SJ20260720','恰逢今月','沐晴','07-25','30天','已毕业','¥18,400'],['SJ20260615','恰逢今月','婷婷','06-20','30天','已毕业','¥22,100']],
+    revTrend:[88,96,90,102,108,114,124,128], lvTrend:[2,3,3,4,4,4,4,4], lvNote:'银牌 → 金牌 → 王牌，近 4 周稳定' },
+  '若曦': { uid:'100234568', ret:'69%', teams:'5 / 4', rev:'¥9,800',
+    rows:[['SJ20260802','迷鹿之森','沐晴','08-09','9天','进行中','¥5,900'],['SJ20260710','迷鹿之森','思思','07-15','30天','已毕业','¥16,800']],
+    revTrend:[80,84,82,88,92,96,100,98], lvTrend:[2,3,3,4,4,4,4,4], lvNote:'金牌 → 王牌，稳中有升' },
+  '琳琳': { uid:'100234569', ret:'64%', teams:'5 / 3', rev:'¥8,600',
+    rows:[['SJ20260803','幸运星','婷婷','08-10','8天','进行中','¥4,600'],['SJ20260705','幸运星','可欣','07-10','30天','已毕业','¥15,200']],
+    revTrend:[74,76,80,78,82,84,86,86], lvTrend:[2,2,3,3,3,3,3,3], lvNote:'金牌，近 4 周持平' },
+  '悦悦': { uid:'100234570', ret:'58%', teams:'4 / 2', rev:'¥6,200',
+    rows:[['SJ20260804','半糖心事','思思','08-11','7天','进行中','¥3,800'],['SJ20260620','半糖心事','微微','06-25','30天','已毕业','¥11,400']],
+    revTrend:[90,82,74,68,62,58,60,58], lvTrend:[2,2,2,3,3,2,2,2], lvNote:'环比回落、留存偏低（风险）' },
+  '甜甜': { uid:'100234571', ret:'51%', teams:'3 / 1', rev:'¥5,600',
+    rows:[['SJ20260805','橙心如意','微微','08-12','6天','进行中','¥2,900']],
+    revTrend:[70,64,58,52,48,44,46,44], lvTrend:[1,2,2,2,2,1,2,2], lvNote:'流水持续下滑（风险）' }
+};
+function openSister(name, tag, level, hall) {
+  const d = SISTER_EXTRA[name] || {};
+  document.getElementById('sm-title').textContent = name;
+  document.getElementById('sm-sub').textContent = (d.uid || '—') + ' · ' + hall + ' · ' + level;
+  document.getElementById('sm-teams').textContent = d.teams || '—';
+  document.getElementById('sm-ret').textContent = d.ret || '—';
+  document.getElementById('sm-rev').textContent = d.rev || '—';
+  const tagEl = document.getElementById('sm-tag');
+  tagEl.textContent = tag;
+  tagEl.style.color = tag === '头牌' ? '#7C5CFF' : tag === '风险' ? '#D97706' : '#6B7280';
+  document.getElementById('sm-body').innerHTML = (d.rows || []).map(r => {
+    const st = r[5];
+    const stCls = st === '进行中' ? 'st active' : 'st diss';
+    return `<tr><td style="color:#5B3EC4;font-weight:500;">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td><span class="${stCls}">${st}</span></td><td>${r[6]}</td></tr>`;
+  }).join('');
+  svgLine(document.getElementById('sm-rev-line'), d.revTrend || [0,0,0,0,0,0,0,0], '#7C5CFF', 'rgba(124,92,255,.12)');
+  svgLine(document.getElementById('sm-level-line'), d.lvTrend || [1,1,1,1,1,1,1,1], '#D97706', 'rgba(217,119,6,.12)');
+  document.getElementById('sm-lv-note').textContent = d.lvNote || '';
+  document.getElementById('sister-modal').classList.add('open');
+}
+function closeSister() { document.getElementById('sister-modal').classList.remove('open'); }
+document.getElementById('sister-modal').addEventListener('click', e => { if (e.target.id === 'sister-modal') closeSister(); });
+
+/* ── 厅分析 · 点行钻取单厅 ── */
+function focusHall(hall, rowEl, doScroll) {
+  document.querySelectorAll('#view-compare .hc-row').forEach(r => r.style.background = '');
+  const row = Array.from(document.querySelectorAll('#view-compare .hc-row')).find(r => r.querySelector('.hc-name') && r.querySelector('.hc-name').textContent === hall);
+  if (row) row.style.background = '#FAF8FF';
+  else if (rowEl) rowEl.style.background = '#FAF8FF';
+  document.getElementById('hf-title').textContent = '厅分析 · ' + hall;
+  if (doScroll) document.getElementById('hf-title').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ── 本周 vs 上周：点击展开/收起明细表 ── */
+function toggleWoW(el) {
+  const full = document.getElementById('wow-full');
+  if (!full) return;
+  const open = full.style.display !== 'none';
+  full.style.display = open ? 'none' : '';
+  const arr = el.querySelector('.wow-arrow');
+  if (arr) arr.textContent = open ? '▾' : '▴';
+}
+
+/* ── 角色切换 ── */
+function setRole(role, btn) {
+  document.querySelectorAll('.role-toggle button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  const isAdmin = role === 'admin';
+  document.getElementById('grad-box').style.display = isAdmin ? 'none' : '';
+  document.getElementById('hall-wall').style.display = isAdmin ? 'none' : '';
+}
+
+/* ── 搜索栏：大厅输入补全 ── */
+const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐'];
+const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐' };
+function onHallInput(v) {
+  const sug = document.getElementById('hall-suggest');
+  const t = v.trim();
+  const matches = HALLS.filter(h => h.includes(t));
+  if (!t) {
+    sug.innerHTML = `<div class="sg all" onclick="resetHall()">全部大厅</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  if (!matches.length) {
+    sug.innerHTML = `<div class="sg" style="color:var(--text3);cursor:default;">无匹配大厅</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  sug.innerHTML = `<div class="sg all" onclick="resetHall()">全部大厅</div>` +
+    matches.map(h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
+  sug.classList.add('open');
+}
+function pickHall(hall, cardEl) {
+  const input = document.getElementById('hall-input');
+  input.value = hall;
+  document.getElementById('hall-suggest').classList.remove('open');
+  document.getElementById('search-expand').classList.add('open');
+  document.getElementById('pill-hall').textContent = hall;
+  document.getElementById('expand-stat').textContent = '该厅 ' + HALL_STAT[hall];
+  document.getElementById('kpi-title').textContent = '核心指标 · ' + hall;
+  if (cardEl) {
+    document.querySelectorAll('.hall-card').forEach(c => c.classList.remove('active'));
+    cardEl.classList.add('active');
+  }
+}
+function resetHall() {
+  const input = document.getElementById('hall-input');
+  input.value = '';
+  document.getElementById('hall-suggest').classList.remove('open');
+  document.getElementById('search-expand').classList.remove('open');
+  document.getElementById('kpi-title').textContent = '核心指标 · 全部大厅';
+  document.querySelectorAll('.hall-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('hall-wall').querySelector('.hall-card')?.classList.add('active');
+}
+function onTimeChange(v) {
+  document.getElementById('pill-time').textContent = v;
+  const hint = document.getElementById('kpi-hint');
+  hint.textContent = '数据周期 ' + (v === '本周' ? '2026-08-11 ~ 2026-08-17' : v === '上周' ? '2026-08-04 ~ 2026-08-10' : v) + ' · 对比上一周';
+}
+
+/* ── KPI 细节图 ── */
+function openKpiDetail(metric) {
+  const detail = document.getElementById('kpi-detail');
+  const title = document.getElementById('kd-title');
+  const chart = document.getElementById('kd-chart');
+  const insight = document.getElementById('kd-insight');
+  if (detail.classList.contains('open') && detail.dataset.metric === metric) {
+    detail.classList.remove('open'); return;
+  }
+  detail.dataset.metric = metric;
+  if (metric === 'retention') {
+    title.textContent = '留存率 · 近 8 周趋势';
+    svgLine(chart, RET, '#7C5CFF', 'rgba(124,92,255,.12)');
+    insight.innerHTML = '本周 <b>58%</b>（较上周 <b>↓12pp</b>）· 偏低，已跌破 60% 健康线。';
+  } else if (metric === 'dissolution') {
+    title.textContent = '解散率 · 近 8 周趋势';
+    svgBar(chart, DISS, '#E06969', '#D56060');
+    insight.innerHTML = '本周 <b>18%</b>（较上周 <b>↓3pp</b>）· 低位健康。';
+  } else if (metric === 'revenue') {
+    title.textContent = '礼物奖励金额 · 近 8 周趋势';
+    svgBar(chart, REV, '#D9A13F', '#B07A1F');
+    insight.innerHTML = '本周 <b>¥1.28M</b>（环比 <b>+12%</b>）· 增长。';
+  } else if (metric === 'activity') {
+    title.textContent = '任务活跃度 · 近 8 个快照日趋势';
+    svgLine(chart, [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)');
+    insight.innerHTML = '最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。';
+  } else {
+    title.textContent = '主动解散占比 · 近 8 周趋势';
+    svgLine(chart, [30,34,36,38,37,40,37,42], '#D97706', 'rgba(217,119,6,.12)');
+    insight.innerHTML = '本周 <b>42%</b>（较上周 <b>↑5pp</b>）· 连续 2 周升高。';
+  }
+  detail.classList.add('open');
+}
+function closeKpiDetail() { document.getElementById('kpi-detail').classList.remove('open'); }
+function openWarn(metric) {
+  switchPreviewTab('warncenter', document.querySelectorAll('.tabbar button')[1]);
+  const map = { retention: 'wc-ret', activediss: 'wc-diss', newteam: 'wc-new', activity: 'wc-activity' };
+  const el = document.getElementById(map[metric]);
+  const card = el ? el.closest('.warn-detail') : null;
+  if (card) {
+    document.querySelectorAll('.warn-detail').forEach(c => c.classList.remove('flash-card'));
+    card.classList.add('flash-card');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => card.classList.remove('flash-card'), 2200);
+  }
+}
+
+/* ── 数量类指标名单弹窗（全字段 + 分页） ── */
+const LISTS = {
+  active: {
+    title: '进行中姐妹团名单', sub: '共 96 个进行中姐妹团',
+    rows: [
+      ['SJ20260801','08-06','王者荣耀·恰逢今月','雪儿','灵儿','12天','¥12,400'],
+      ['SJ20260802','08-09','王者荣耀·迷鹿之森','若曦','沐晴','9天','¥9,800'],
+      ['SJ20260803','08-10','和平精英•幸运星','琳琳','婷婷','8天','¥8,600'],
+      ['SJ20260804','08-11','王者荣耀·半糖心事','悦悦','思思','7天','¥7,200'],
+      ['SJ20260805','08-12','王者荣耀·橙心如意','甜甜','微微','6天','¥6,600'],
+      ['SJ20260806','08-13','王者荣耀·怪诞学姐','娜娜','可可','5天','¥5,400'],
+      ['SJ20260807','08-14','王者荣耀·恰逢今月','小玉','诗涵','4天','¥4,900'],
+      ['SJ20260808','08-15','和平精英•幸运星','雨欣','梦琪','3天','¥4,100'],
+      ['SJ20260809','08-16','王者荣耀·迷鹿之森','依依','可欣','2天','¥3,600'],
+      ['SJ20260810','08-17','王者荣耀·半糖心事','晨晨','雨桐','1天','¥2,800'],
+    ]
+  },
+  new: {
+    title: '新成团名单（本周）', sub: '本周新配对 12 个姐妹团',
+    rows: [
+      ['SJ20260901','08-11','王者荣耀·恰逢今月','雪儿','灵儿','7天','¥3,200'],
+      ['SJ20260902','08-12','和平精英•幸运星','琳琳','婷婷','6天','¥2,900'],
+      ['SJ20260903','08-13','王者荣耀·怪诞学姐','娜娜','乐乐','5天','¥2,400'],
+      ['SJ20260904','08-14','王者荣耀·迷鹿之森','若曦','雨彤','4天','¥2,100'],
+      ['SJ20260905','08-15','王者荣耀·橙心如意','甜甜','思思','3天','¥1,800'],
+      ['SJ20260906','08-17','王者荣耀·半糖心事','悦悦','微微','1天','¥1,200'],
+    ]
+  }
+};
+let LM = { key: null, page: 1, size: 5 };
+function openList(key) {
+  const L = LISTS[key];
+  document.getElementById('lm-title').textContent = L.title;
+  document.getElementById('lm-sub').textContent = L.sub + ' · 点行跳转明细定位';
+  LM = { key, page: 1, size: 5 };
+  lmRender();
+  document.getElementById('list-modal').classList.add('open');
+}
+function lmRender() {
+  const L = LISTS[LM.key];
+  const total = L.rows.length;
+  const pages = Math.max(1, Math.ceil(total / LM.size));
+  const start = (LM.page - 1) * LM.size;
+  const rows = L.rows.slice(start, start + LM.size);
+  document.getElementById('lm-body').innerHTML = rows.map(r =>
+    `<tr style="cursor:pointer;" onclick="jumpToDetail('${r[0]}')">` +
+    r.map((c, i) => i === 0 ? `<td style="color:#5B3EC4;font-weight:500;">${c}</td>` : `<td>${c}</td>`).join('') +
+    `<td><span class="st active">进行中</span></td></tr>`
+  ).join('');
+  document.getElementById('lm-pg').textContent = `第 ${LM.page}/${pages} 页 · 共 ${total} 个团`;
+  document.getElementById('lm-prev').disabled = LM.page <= 1;
+  document.getElementById('lm-next').disabled = LM.page >= pages;
+}
+function lmPage(d) {
+  LM.page += d;
+  lmRender();
+}
+function jumpToDetail(tid) {
+  closeList();
+  document.getElementById('detail-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('#detail-body tr').forEach(tr => tr.classList.remove('flash'));
+  const row = document.querySelector(`#detail-body tr[data-tid="${tid}"]`);
+  if (row) {
+    row.classList.add('flash');
+    setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250);
+  }
+}
+function jumpAll() {
+  closeList();
+  document.getElementById('detail-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function closeList() { document.getElementById('list-modal').classList.remove('open'); }
+document.getElementById('list-modal').addEventListener('click', e => { if (e.target.id === 'list-modal') closeList(); });
+
+/* 默认展开「全部大厅」提示 */
+onHallInput('');
+</script>
+</body>
+</html>
