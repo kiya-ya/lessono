@@ -533,7 +533,7 @@
   <div class="chart-grid">
     <div class="card">
       <h3>姐妹团存活分析</h3>
-      <div class="src">快照日期 2026-08-18 · 已成团天数分布</div>
+      <div class="src">快照日期 2026-08-18 · 已成团天数分布 · 点柱下钻明细</div>
       <div class="chips">
         <span class="c-chip">7日存活 <strong>82%</strong></span>
         <span class="c-chip">14日存活 <strong>74%</strong></span>
@@ -544,7 +544,7 @@
     </div>
     <div class="card">
       <h3>解散原因分布</h3>
-      <div class="src">快照日期 2026-08-18 · 累计结束 982 个团（含毕业 234）</div>
+      <div class="src">快照日期 2026-08-18 · 累计结束 982 个团（含毕业 234）· 点扇区下钻明细</div>
       <div class="chart-box" id="c-diss-reason"></div>
       <div class="chart-insight">累计结束 <b>982</b> 个团：主因「<b>离职解散</b>」314 个（32%）；「<b>毕业</b>」234 个为满 30 天正常流程。</div>
     </div>
@@ -581,7 +581,7 @@
   </div>
   <div class="card" id="detail-card">
     <div id="detail-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
-      <span style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">预警下钻</span>
+      <span id="dfb-label" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">预警下钻</span>
       <span id="dfb-note" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
       <button class="reset-btn" onclick="clearDetailFilter()">清除筛选</button>
     </div>
@@ -788,30 +788,35 @@
   <div class="chart-grid">
     <div class="card">
       <h3>连续未陪档天数分布</h3>
-      <div class="src">躺平团按连续未陪档天数分组</div>
+      <div class="src">躺平团按连续未陪档天数分组 · 点柱下钻</div>
       <div class="chart-box" id="ly-days"></div>
       <div class="chart-insight">连续 <b>4天</b> 18 · <b>5天</b> 34 · <b>6天</b> 43 · <b>7天</b> 24 · <b>8天及以上</b> 75。8 天以上多为全程未陪档，接近毕业或已停滞。</div>
     </div>
     <div class="card">
       <h3>躺平团 · 大厅分布</h3>
-      <div class="src">受影响厅 · 按躺平团数降序</div>
+      <div class="src">受影响厅 · 按躺平团数降序 · 点行下钻</div>
       <div class="hallcmp">
-        <div class="hc-row"><span class="hc-name">王者荣耀·财神降临</span><div class="hc-bar"><div class="hc-fill" style="width:100%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">5</span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀星穹之恋</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀天才少女</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
-        <div class="hc-row"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀·财神降临')"><span class="hc-name">王者荣耀·财神降临</span><div class="hc-bar"><div class="hc-fill" style="width:100%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">5</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀星穹之恋')"><span class="hc-name">王者荣耀星穹之恋</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀天才少女')"><span class="hc-name">王者荣耀天才少女</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('和平精英•幸运星')"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀·橙心如意')"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀·迷鹿之森')"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
       </div>
       <div class="chart-insight">其余 99 厅共 <b>169</b> 个，分布分散、无集中厅；躺平是全局性现象而非个别厅问题。</div>
     </div>
   </div>
 
   <div class="card" style="margin-top:14px;">
-    <div class="wd-head"><h3>躺平团名单</h3><span style="font-size:11px;color:var(--text3);">按连续未陪档天数降序 · 点行查看逐日任务明细</span></div>
+    <div class="wd-head"><h3>躺平团名单</h3><span style="font-size:11px;color:var(--text3);">按连续未陪档天数降序 · 点团ID查看 · 点上方图下钻筛选</span></div>
+    <div id="lying-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
+      <span id="lying-flabel" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">躺平下钻</span>
+      <span id="lying-fnote" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
+      <button class="reset-btn" onclick="clearLyingFilter()">清除筛选</button>
+    </div>
     <table class="list">
       <thead><tr><th>团ID</th><th>大厅</th><th>妹妹</th><th>连续未陪档</th><th>已成团天数</th><th>等级</th></tr></thead>
-      <tbody>
+      <tbody id="lying-body">
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>王牌</td></tr>
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>银牌</td></tr>
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
@@ -922,7 +927,7 @@
     <div class="wd-head"><h3>解散原因构成</h3><span style="font-size:11px;color:var(--text3);">该厅已解散团 · 环形占比 + 近 8 周趋势</span></div>
     <div class="chart-grid">
       <div class="card">
-        <div class="src">占比视角 · 主动 = 手动 + 离职(含换厅) + 注销</div>
+        <div class="src">占比视角 · 主动 = 手动 + 离职(含换厅) + 注销 · 点扇区下钻</div>
         <div class="chart-box" id="cmp-diss"></div>
       </div>
       <div class="card">
@@ -935,15 +940,20 @@
 
   <!-- 该厅团明细 -->
   <div class="card" style="margin-top:14px;">
-    <div class="wd-head"><h3>该厅团明细</h3><span style="font-size:11px;color:var(--text3);">姐姐 / 妹妹 成对名单 · 点行进入团队明细</span></div>
+    <div class="wd-head"><h3>该厅团明细</h3><span style="font-size:11px;color:var(--text3);">姐姐 / 妹妹 成对名单 · 点团ID进入团队明细 · 点上方图下钻</span></div>
     <div class="filters">
       <span class="f" style="background:#F3F0FF;color:#7C5CFF;border-color:#7C5CFF;">全部 12</span>
       <span class="f">进行中 9</span>
       <span class="f">已解散 3</span>
     </div>
+    <div id="cmp-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
+      <span id="cmp-flabel" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">解散下钻</span>
+      <span id="cmp-fnote" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
+      <button class="reset-btn" onclick="clearCmpFilter()">清除筛选</button>
+    </div>
     <table class="list">
       <thead><tr><th>团ID</th><th>姐姐</th><th>妹妹</th><th>成团日</th><th>天数</th><th>状态</th><th>姐姐等级</th><th>妹妹等级</th><th>妹妹流水</th></tr></thead>
-      <tbody>
+      <tbody id="cmp-team-body">
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260815')">SJ20260815</td><td>苏念</td><td>星野みう</td><td>08-10</td><td>10 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>金牌</td><td>¥2,480</td></tr>
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260807')">SJ20260807</td><td>白桃</td><td>奶盖啵啵</td><td>08-07</td><td>13 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>银牌</td><td>¥1,930</td></tr>
         <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260803')">SJ20260803</td><td>顾青梧</td><td>月下独酌</td><td>08-03</td><td>17 天</td><td><span class="chip up">进行中</span></td><td>大神</td><td>金牌</td><td>¥4,120</td></tr>
@@ -994,13 +1004,13 @@
     <div class="chart-grid">
       <div class="card">
         <h3>打标分布</h3>
-        <div class="src">头牌 / 风险 / 正常 · 姐姐总数</div>
+        <div class="src">头牌 / 风险 / 正常 · 姐姐总数 · 点扇区下钻</div>
         <div class="chart-box" id="cap-tag"></div>
         <div class="chart-insight">头牌 <b>42</b> 位占比 21%，风险 <b>18</b> 位需重点跟进。</div>
       </div>
       <div class="card">
         <h3>带团存活率分布</h3>
-        <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）</div>
+        <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）· 点柱下钻</div>
         <div class="chart-box" id="cap-ret"></div>
         <div class="chart-insight">存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
       </div>
@@ -1036,9 +1046,14 @@
       </div>
     </div>
     <div class="card">
+      <div id="cap-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
+        <span id="cap-flabel" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">画像下钻</span>
+        <span id="cap-fnote" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
+        <button class="reset-btn" onclick="clearCapFilter()">清除筛选</button>
+      </div>
       <table class="list">
         <thead><tr><th>#</th><th>姐姐</th><th>标签</th><th>带团</th><th>进行中</th><th>存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
-        <tbody>
+        <tbody id="cap-table-body">
           <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
           <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
           <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
@@ -1351,7 +1366,7 @@
 
 <script>
 /* ── SVG 迷你图表 ── */
-function svgLine(el, data, color, fill, maxOverride, ref) {
+function svgLine(el, data, color, fill, maxOverride, ref, onPoint) {
   const W = 460, H = 150, pad = 24;
   const max = maxOverride || Math.max(...data, ref ? ref.v : 0);
   const y = v => H - pad - (v / max) * (H - pad * 2);
@@ -1363,7 +1378,7 @@ function svgLine(el, data, color, fill, maxOverride, ref) {
   }
   const poly = `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
   const area = `<polygon points="${pad},${H-pad} ${pts.map(p=>p.join(',')).join(' ')} ${W-pad},${H-pad}" fill="${fill}"/>`;
-  const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#fff" stroke="${color}" stroke-width="2"/>`).join('');
+  const dots = pts.map((p, i) => `<circle data-idx="${i}" cx="${p[0]}" cy="${p[1]}" r="3" fill="#fff" stroke="${color}" stroke-width="2"><title>第 ${i+1} 周 · ${data[i]}</title></circle>`).join('');
   let refLine = '';
   if (ref) {
     const ry = y(ref.v);
@@ -1371,6 +1386,12 @@ function svgLine(el, data, color, fill, maxOverride, ref) {
       <text x="${W-pad}" y="${ry-5}" text-anchor="end" font-size="9" fill="#9CA3AF">${ref.label}</text>`;
   }
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${area}${poly}${dots}${refLine}</svg>`;
+  if (onPoint) {
+    el.querySelectorAll('circle[data-idx]').forEach(c => {
+      c.style.cursor = 'pointer';
+      c.addEventListener('click', () => onPoint(+c.getAttribute('data-idx'), data[+c.getAttribute('data-idx')]));
+    });
+  }
 }
 /* 多线对比图（预警中心）：多条厅线 + 可选健康线阈值 */
 function svgMultiLine(el, series, threshold, onPick) {
@@ -1410,7 +1431,7 @@ function svgMultiLine(el, series, threshold, onPick) {
     });
   }
 }
-function svgBar(el, data, color, labelColor) {
+function svgBar(el, data, color, labelColor, labels, onBar) {
   const W = 460, H = 150, pad = 24;
   const max = Math.max(...data);
   const bw = (W - pad * 2) / data.length * 0.55;
@@ -1422,10 +1443,18 @@ function svgBar(el, data, color, labelColor) {
   const bars = data.map((v, i) => {
     const x = pad + i * ((W - pad * 2) / data.length) + ((W - pad * 2) / data.length - bw) / 2;
     const h = (v / max) * (H - pad * 2);
-    return `<rect x="${x.toFixed(1)}" y="${(H - pad - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${color}" opacity=".92"/>
-      <text x="${(x + bw / 2).toFixed(1)}" y="${(H - pad - h - 5).toFixed(1)}" text-anchor="middle" font-size="9" fill="${labelColor}">${v}</text>`;
+    const title = `<title>${labels && labels[i] ? labels[i] + ' · ' : ''}${v}</title>`;
+    const lab = labels && labels[i] ? `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="8.5" fill="#9CA3AF">${labels[i]}</text>` : '';
+    return `<rect data-idx="${i}" x="${x.toFixed(1)}" y="${(H - pad - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${color}" opacity=".92">${title}</rect>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${(H - pad - h - 5).toFixed(1)}" text-anchor="middle" font-size="9" fill="${labelColor}">${v}</text>${lab}`;
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${bars}</svg>`;
+  if (onBar) {
+    el.querySelectorAll('rect[data-idx]').forEach(r => {
+      r.style.cursor = 'pointer';
+      r.addEventListener('click', () => onBar(+r.getAttribute('data-idx'), data[+r.getAttribute('data-idx')], labels ? labels[+r.getAttribute('data-idx')] : ''));
+    });
+  }
 }
 /* 分组柱状图（双系列并排，用于姐 vs 妹对比） */
 function svgGroupBar(el, series, colors) {
@@ -1448,7 +1477,7 @@ function svgGroupBar(el, series, colors) {
       const offset = (si - (series.length - 1) / 2) * (bw + 3);
       const x = cx + offset - bw / 2;
       const h = (v / max) * (H - pad * 2);
-      bars += `<rect x="${x.toFixed(1)}" y="${(H - pad - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${colors[si]}" opacity=".92"/>`;
+      bars += `<rect x="${x.toFixed(1)}" y="${(H - pad - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${colors[si]}" opacity=".92"><title>${s.name} · 周${i+1} · ¥${v}</title></rect>`;
     });
   });
   const legend = series.map((s, i) => {
@@ -1514,7 +1543,7 @@ function svgFunnel(el, parts) {
 }
 
 /* 培养力象限散点图（X=妹妹成长，Y=共同成长，气泡=带团总数） */
-function svgScatter(el, points, opts) {
+function svgScatter(el, points, opts, onPick) {
   const W = 460, H = 180, pad = 30;
   const xMax = opts.xMax, yMax = opts.yMax;
   const px = v => pad + (v / xMax) * (W - pad * 2);
@@ -1533,10 +1562,10 @@ function svgScatter(el, points, opts) {
     <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共赢低</text>
     <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共赢高</text>
     <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
-  const dots = points.map(p => {
+  const dots = points.map((p, i) => {
     const cx = px(p.x), cy = py(p.y);
     const r = 6 + p.size * 1.3;
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${p.c}" opacity=".5"/>
+    return `<circle data-idx="${i}" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${p.c}" opacity=".5"><title>${p.name} · 点开画像</title></circle>
       <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="${p.c}" stroke-width="1.6"/>
       <text x="${cx.toFixed(1)}" y="${(cy - r - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#1A1D26">${p.name}</text>`;
   }).join('');
@@ -1545,6 +1574,12 @@ function svgScatter(el, points, opts) {
   const legend = `<circle cx="${W*0.64}" cy="14" r="5" fill="#7C5CFF" opacity=".6"/><text x="${W*0.64+10}" y="17.5" font-size="10" fill="#6B7280">候选</text>
     <circle cx="${W*0.74}" cy="14" r="5" fill="#D1D5DB" opacity=".6"/><text x="${W*0.74+10}" y="17.5" font-size="10" fill="#6B7280">未入选</text>`;
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
+  if (onPick) {
+    el.querySelectorAll('circle[data-idx]').forEach(c => {
+      c.style.cursor = 'pointer';
+      c.addEventListener('click', () => onPick(points[+c.getAttribute('data-idx')]));
+    });
+  }
 }
 
 /* 图表数据 */
@@ -1552,32 +1587,32 @@ const RET = [72,70,68,66,64,62,60,58];
 const DISS = [26,24,22,21,20,22,21,18];
 const REV = [88,92,96,90,102,108,114,128];
 const SURV = [12,9,7,5,3,2,1];
-svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C');
+svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C', ['≤7天','8-14天','15-21天','22-28天','29-35天','36-42天','43天+'], (idx, v, label) => drillSurv(label));
 svgDonut(document.getElementById('c-diss-reason'), [
-  { n:'离职解散（含换厅）', v:314, c:'#E08A5A' },
-  { n:'手动解散', v:248, c:'#D56060' },
-  { n:'毕业', v:234, c:'#16A34A' },
-  { n:'任务未完成自动解散', v:178, c:'#C98A2D' },
-  { n:'注销', v:5, c:'#9CA3AF' },
-  { n:'其他', v:3, c:'#C0C4CC' },
-], '累计结束');
+  { n:'离职解散（含换厅）', v:314, c:'#E08A5A', match:'离职' },
+  { n:'手动解散', v:248, c:'#D56060', match:'手动' },
+  { n:'毕业', v:234, c:'#16A34A', match:'满月' },
+  { n:'任务未完成自动解散', v:178, c:'#C98A2D', match:'任务未完成' },
+  { n:'注销', v:5, c:'#9CA3AF', match:'注销' },
+  { n:'其他', v:3, c:'#C0C4CC', match:'其他' },
+], '累计结束', (name, part) => drillDissReason(part));
 
 /* 预警中心图表 */
 svgMultiLine(document.getElementById('wc-ret'), [
   { name: '恰逢今月', data: [74,72,69,66,63,61,60,58], color: '#DC2626' },
   { name: '橙心如意', data: [71,69,66,63,60,58,56,55], color: '#F08A8A' }
-], 60);
+], 60, () => drillWarn('retention'));
 svgMultiLine(document.getElementById('wc-diss'), [
   { name: '恰逢今月', data: [33,34,35,34,36,37,40,42], color: '#D97706' },
   { name: '迷鹿之森', data: [30,31,32,32,34,35,37,38], color: '#E8A44A' }
-]);
-svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0');
-svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)');
-svgBar(document.getElementById('ly-days'), [18, 34, 43, 24, 75], '#DC2626', '#F08A8A');
+], null, () => drillWarn('activediss'));
+svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null, () => drillWarn('newteam'));
+svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null, () => drillWarn('activity'));
+svgBar(document.getElementById('ly-days'), [18, 34, 43, 24, 75], '#DC2626', '#F08A8A', ['4天','5天','6天','7天','8天+'], (idx, v, label) => drillLyDays(label));
 
 /* 厅分析 · 揭示面板趋势 */
-svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'});
-svgLine(document.getElementById('cmp-hf-rev'), [96,100,104,101,110,116,119,128], '#D9A13F', 'rgba(217,161,63,.14)', null, {v:104, label:'平台均值 ¥104'});
+svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'}, (i, v) => toast('留存率 第 ' + (i+1) + ' 周 <b>' + v + '%</b>（平台均值 70%）'));
+svgLine(document.getElementById('cmp-hf-rev'), [96,100,104,101,110,116,119,128], '#D9A13F', 'rgba(217,161,63,.14)', null, {v:104, label:'平台均值 ¥104'}, (i, v) => toast('周流水 第 ' + (i+1) + ' 周 <b>¥' + v + '</b>（平台均值 ¥104）'));
 svgDonut(document.getElementById('hall-share'), [
   { n:'恰逢今月', full:'王者荣耀·恰逢今月', v:12, c:'#3B82F6' },
   { n:'迷鹿之森', full:'王者荣耀·迷鹿之森', v:11, c:'#0EA5E9' },
@@ -1593,31 +1628,31 @@ svgMultiLine(document.getElementById('hall-trend'), [
   { name: '橙心如意', full:'王者荣耀·橙心如意', data: [65,66,67,68,70,68,64,60], color: '#2DD4BF' },
 ], null, (hall) => focusHall(hall, null, true));
 svgDonut(document.getElementById('cmp-diss'), [
-  { n:'主动解散', v:6, c:'#C2410C' },
-  { n:'毕业', v:3, c:'#F97316' },
-  { n:'系统自动解散', v:1, c:'#FDBA74' },
-], '已解散');
+  { n:'主动解散', v:6, c:'#C2410C', match:'已解散' },
+  { n:'毕业', v:3, c:'#F97316', match:'已毕业' },
+  { n:'系统自动解散', v:1, c:'#FDBA74', match:'已解散' },
+], '已解散', (name, part) => drillCmpDiss(part));
 svgMultiLine(document.getElementById('cmp-diss-trend'), [
-  { name:'主动解散', data:[5,6,5,7,6,7,6,6], color:'#C2410C' },
-  { name:'毕业', data:[2,3,2,3,3,4,3,3], color:'#F97316' },
-  { name:'系统自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74' }
-]);
+  { name:'主动解散', data:[5,6,5,7,6,7,6,6], color:'#C2410C', match:'已解散' },
+  { name:'毕业', data:[2,3,2,3,3,4,3,3], color:'#F97316', match:'已毕业' },
+  { name:'系统自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74', match:'已解散' }
+], null, (name, s) => drillCmpDiss(s));
 
 /* 姐姐分析 · 打标分布 + 存活率分布 */
 svgDonut(document.getElementById('cap-tag'), [
-  { n:'头牌', v:42, c:'#7C5CFF' },
-  { n:'风险', v:18, c:'#D97706' },
-  { n:'正常', v:140, c:'#C0C4CC' }
-], '姐姐总数');
-svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0');
-svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)');
+  { n:'头牌', v:42, c:'#7C5CFF', match:'头牌' },
+  { n:'风险', v:18, c:'#D97706', match:'风险' },
+  { n:'正常', v:140, c:'#C0C4CC', match:'正常' }
+], '姐姐总数', (name, part) => drillCapTag(part));
+svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0', ['0-20%','20-40%','40-60%','60-80%','80-100%'], (idx, v, label) => drillCapRet(label));
+svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)', null, null, (i, v) => toast('毕业 第 ' + (i+1) + ' 周 <b>' + v + '</b> 位'));
 svgScatter(document.getElementById('pool-quad'), [
-  { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF' },
-  { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF' },
-  { name:'琳琳', x:1.2, y:0.40, size:5, c:'#7C5CFF' },
-  { name:'悦悦', x:0.0, y:0.20, size:4, c:'#D1D5DB' },
-  { name:'甜甜', x:0.6, y:0.20, size:3, c:'#D1D5DB' },
-], { xMax:3, yMax:1 });
+  { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·恰逢今月' },
+  { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·迷鹿之森' },
+  { name:'琳琳', x:1.2, y:0.40, size:5, c:'#7C5CFF', tag:'正常', level:'金牌', hall:'和平精英•幸运星' },
+  { name:'悦悦', x:0.0, y:0.20, size:4, c:'#D1D5DB', tag:'风险', level:'银牌', hall:'王者荣耀·半糖心事' },
+  { name:'甜甜', x:0.6, y:0.20, size:3, c:'#D1D5DB', tag:'风险', level:'铜牌', hall:'王者荣耀·橙心如意' },
+], { xMax:3, yMax:1 }, (p) => openSister(p.name, p.tag, p.level, p.hall));
 
 /* UID · 姐 vs 妹 本周流水（分组柱状） */
 svgGroupBar(document.getElementById('uid-partner'), [
@@ -1941,6 +1976,7 @@ function drillWarn(kind) {
     if (match) { tr.style.opacity = ''; tr.style.background = '#F3F0FF'; hit++; }
     else { tr.style.opacity = '.35'; tr.style.background = ''; }
   });
+  document.getElementById('dfb-label').textContent = '预警下钻';
   document.getElementById('dfb-note').innerHTML =
     `按「${d.title}」受影响厅筛选：<b>${d.halls.join(' / ')}</b>，命中 <b>${hit}</b> 个团（高亮 = 命中，半透明 = 非命中）。` +
     (hit === 0 ? '演示数据中该厅暂无团，落地后按厅过滤 <code>/api/detail-table?hall=xxx</code> 返回真实名单。' : '');
@@ -1951,6 +1987,106 @@ function clearDetailFilter() {
   document.querySelectorAll('#detail-body tr').forEach(tr => { tr.style.opacity = ''; tr.style.background = ''; });
   document.getElementById('detail-filter-bar').style.display = 'none';
 }
+
+/* ── 图表点击钻取：高亮/半透明目标表 + 顶部横幅 ── */
+function dimMatch(tableSel, matchFn) {
+  let hit = 0;
+  document.querySelectorAll(tableSel + ' tr').forEach(tr => {
+    const m = matchFn(tr);
+    if (m) { tr.style.opacity = ''; tr.style.background = '#F3F0FF'; hit++; }
+    else { tr.style.opacity = '.35'; tr.style.background = ''; }
+  });
+  return hit;
+}
+function clearDim(tableSel) {
+  document.querySelectorAll(tableSel + ' tr').forEach(tr => { tr.style.opacity = ''; tr.style.background = ''; });
+}
+function showBar(barId, labelId, noteId, labelText, noteHtml, targetId) {
+  document.getElementById(labelId).textContent = labelText;
+  document.getElementById(noteId).innerHTML = noteHtml;
+  document.getElementById(barId).style.display = 'flex';
+  if (targetId) setTimeout(() => document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+function toast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:360px;padding:11px 15px;background:#1A1D26;color:#fff;font-size:12.5px;line-height:1.6;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.22);opacity:0;transition:opacity .25s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2600);
+}
+
+/* 概览 · 天数分布 → 明细数据（已成团天数） */
+function drillSurv(label) {
+  let lo = 0, hi = Infinity;
+  if (label.startsWith('≤')) { hi = parseInt(label.slice(1)); }
+  else if (label.endsWith('+')) { lo = parseInt(label); }
+  else { const m = label.match(/(\d+)\s*[-~]\s*(\d+)/); if (m) { lo = +m[1]; hi = +m[2]; } }
+  const hit = dimMatch('#detail-body', tr => {
+    const d = parseInt(tr.cells[5] ? tr.cells[5].textContent : '');
+    return !isNaN(d) && d >= lo && d <= hi;
+  });
+  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', '天数分布下钻',
+    `按「已成团天数 <b>${label}</b>」过滤明细数据：命中 <b>${hit}</b> 行（演示数据仅节选 7 条，落地后按 <code>/api/detail-table?days=</code> 返回真实名单）。`, 'detail-sec');
+}
+/* 概览 · 解散原因 → 明细数据（解散原因） */
+function drillDissReason(part) {
+  const hit = dimMatch('#detail-body', tr => tr.cells[8] ? tr.cells[8].textContent.includes(part.match) : false);
+  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', '解散原因下钻',
+    `按「<b>${part.n}</b>」过滤明细数据：命中 <b>${hit}</b> 行（演示数据仅节选 7 条，落地后按 <code>/api/detail-table?reason=xxx</code> 返回真实名单）。`, 'detail-sec');
+}
+
+/* 预警中心 · 躺平天数分布 / 大厅分布 → 躺平名单 */
+function drillLyDays(label) {
+  const day = parseInt(label);
+  const isPlus = label.endsWith('+');
+  const hit = dimMatch('#lying-body', tr => {
+    const d = parseInt(tr.cells[3] ? tr.cells[3].textContent : '');
+    return isPlus ? d >= day : d === day;
+  });
+  showBar('lying-filter-bar', 'lying-flabel', 'lying-fnote', '躺平天数下钻',
+    `按「连续未陪档 <b>${label}</b>」过滤躺平名单：命中 <b>${hit}</b> 行（演示名单仅节选 Top6 均 17 天，落地后按 <code>/api/lying-flat?days=</code> 返回真实 194 条）。`, null);
+}
+function drillLyHall(hall) {
+  const hit = dimMatch('#lying-body', tr => tr.cells[1] ? tr.cells[1].textContent.includes(hall) : false);
+  showBar('lying-filter-bar', 'lying-flabel', 'lying-fnote', '躺平大厅下钻',
+    `按「<b>${hall}</b>」过滤躺平名单：命中 <b>${hit}</b> 行（演示名单仅节选 6 条，落地后按 <code>/api/lying-flat?hall=xxx</code> 返回真实名单）。`, null);
+}
+function clearLyingFilter() { clearDim('#lying-body'); document.getElementById('lying-filter-bar').style.display = 'none'; }
+
+/* 厅分析 · 解散原因构成 → 该厅团明细（状态） */
+function drillCmpDiss(part) {
+  const label = part.n || part.name;
+  const hit = dimMatch('#cmp-team-body', tr => tr.cells[5] ? tr.cells[5].textContent.includes(part.match) : false);
+  const note = part.match === '已解散'
+    ? `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行（主动/系统自动演示均归「已解散」，细分原因落地后由明细表区分）。`
+    : `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行。`;
+  showBar('cmp-filter-bar', 'cmp-flabel', 'cmp-fnote', '解散原因下钻', note, null);
+}
+function clearCmpFilter() { clearDim('#cmp-team-body'); document.getElementById('cmp-filter-bar').style.display = 'none'; }
+
+/* 姐姐分析 · 打标分布 / 存活率分布 → 姐姐总览 */
+function drillCapTag(part) {
+  const hit = dimMatch('#cap-table-body', tr => tr.cells[2] ? tr.cells[2].textContent.includes(part.match) : false);
+  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '画像下钻',
+    `按「<b>${part.n}</b>」标签过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?tag=</code> 返回真实名单）。`, null);
+}
+function drillCapRet(label) {
+  const m = label.match(/(\d+)\s*-\s*(\d+)/);
+  const lo = +m[1], hi = +m[2];
+  const hit = dimMatch('#cap-table-body', tr => {
+    const p = parseInt(tr.cells[5] ? tr.cells[5].textContent : '');
+    return !isNaN(p) && p >= lo && p < hi;
+  });
+  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '存活率下钻',
+    `按「存活率 <b>${label}</b>」过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?surv=</code> 返回真实名单）。`, null);
+}
+function clearCapFilter() { clearDim('#cap-table-body'); document.getElementById('cap-filter-bar').style.display = 'none'; }
 
 /* ── 全量名单弹窗（「查看全部」类按钮） ── */
 const FULL_LISTS = {
