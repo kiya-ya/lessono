@@ -14,7 +14,7 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
     background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
-  .page{max-width:1160px;margin:0 auto;padding:28px 24px 90px;}
+  .page{padding:28px 28px 90px;}
 
   /* ── 页头 ── */
   .page-head{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -361,10 +361,6 @@
       <h1>概览页</h1>
       <p>布局：导览 → 搜索栏 → 核心指标 → 团分析 → 厅排行+姐姐排行 → 明细数据</p>
     </div>
-    <div class="role-toggle">
-      <button class="on" onclick="setRole('admin',this)">管理员</button>
-      <button onclick="setRole('operator',this)">厅运营</button>
-    </div>
   </div>
 
   <!-- ═══════ 0. 导览条（可关闭） ═══════ -->
@@ -405,40 +401,6 @@
       <span class="pill gray"><span id="pill-time">本周</span></span>
       <button class="reset-btn" onclick="resetHall()">全部大厅</button>
       <span class="expand-stat" id="expand-stat">该厅 12 个团 · 23 位姐姐</span>
-    </div>
-  </div>
-
-  <!-- ═══════ 1.5 厅运营视角（今日关注 + 厅体检卡墙） ═══════ -->
-  <div id="hall-wall" style="display:none;">
-    <div class="section-head" style="margin-top:18px;">
-      <h2>今日关注</h2>
-      <span class="hint">厅运营专属 · 只看我管的厅</span>
-    </div>
-    <div class="op-strip">
-      <div class="op-item grad"><div class="op-n"><span class="dot violet"></span>即将毕业（28~30天）</div><div class="op-v">3 团</div><div style="font-size:11px;color:var(--text3);">提前安排新妹妹配对</div></div>
-      <div class="op-item lying"><div class="op-n"><span class="dot red"></span>躺平预警（≥4天未陪档）</div><div class="op-v">1 团</div><div style="font-size:11px;color:var(--text3);">迷鹿之森 · 接近自动解散线</div></div>
-      <div class="op-item fresh"><div class="op-n"><span class="dot green"></span>本周新成团</div><div class="op-v">2 团</div><div style="font-size:11px;color:var(--text3);">恰逢今月 + 迷鹿之森各 1</div></div>
-    </div>
-    <div class="section-head" style="margin-top:18px;">
-      <h2>我的厅</h2>
-      <span class="hint">点击卡片联动下方全部数据 · 健康色标 = 一眼定位要盯的厅</span>
-    </div>
-    <div class="hall-wall">
-      <div class="hall-card active" onclick="pickHall('王者荣耀·恰逢今月', this)">
-        <div class="hn">王者荣耀·恰逢今月 <span class="hlth good">健康</span></div>
-        <div class="row"><span>留存率</span><span><b>72%</b> <em class="dl up">↑2pp</em></span></div>
-        <div class="row"><span>解散率</span><span><b>15%</b> <em class="dl up">↓2pp</em></span></div>
-        <div class="row"><span>进行中团</span><b>12</b></div>
-        <div class="row"><span>周流水</span><span><b>¥12.8w</b> <em class="dl up">↑8%</em></span></div>
-      </div>
-      <div class="hall-card" onclick="pickHall('王者荣耀·迷鹿之森', this)">
-        <div class="hn">王者荣耀·迷鹿之森 <span class="hlth warn">关注</span></div>
-        <div class="row"><span>留存率</span><span><b>69%</b> <em class="dl down">↓1pp</em></span></div>
-        <div class="row"><span>解散率</span><span><b>18%</b> <em class="dl down">↑1pp</em></span></div>
-        <div class="row"><span>进行中团</span><b>11</b></div>
-        <div class="row"><span>周流水</span><span><b>¥9.6w</b> <em class="dl down">↓2%</em></span></div>
-        <span class="alert">⚠ 1 团躺平预警</span>
-      </div>
     </div>
   </div>
 
@@ -612,36 +574,6 @@
     </div>
   </div>
 
-  <!-- ═══════ 4. 即将毕业 / 近期毕业妹妹（厅运营） ═══════ -->
-  <div class="chart-grid">
-    <div class="card" id="grad-box" style="display:none;">
-      <div class="section-head" style="margin:0 0 4px;">
-        <h2>即将毕业</h2>
-        <span class="hint">28~30 天 · 提前安排配对</span>
-      </div>
-      <span class="hint" style="font-size:12px;color:var(--text3);">满 30 天自动毕业 · 点行查看配对姐姐</span>
-      <ul class="rank-mini">
-        <li><span class="mp-rank top">1</span><span class="mp-name">诗涵<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">29天</span></li>
-        <li><span class="mp-rank top">2</span><span class="mp-name">梦琪<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">29天</span></li>
-        <li><span class="mp-rank top">3</span><span class="mp-name">可欣<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">28天</span></li>
-      </ul>
-      <button class="expand-btn">查看全部即将毕业 →</button>
-    </div>
-    <div class="card" id="grad-box2" style="display:none;">
-      <div class="section-head" style="margin:0 0 4px;">
-        <h2>近期毕业妹妹</h2>
-        <span class="hint">近 7 天已毕业</span>
-      </div>
-      <span class="hint" style="font-size:12px;color:var(--text3);">满 30 天自动毕业 · 点行查看配对姐姐</span>
-      <ul class="rank-mini">
-        <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
-        <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
-        <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
-      </ul>
-      <button class="expand-btn">查看全部毕业妹妹 →</button>
-    </div>
-  </div>
-
   <!-- ═══════ 5. 明细数据 ═══════ -->
   <div class="section-head" id="detail-sec">
     <h2>明细数据</h2>
@@ -683,11 +615,18 @@
     </div>
   </div>
 
-  <div class="warn-overview">
-    <span class="wo-item severe">严重 <b>1</b></span>
-    <span class="wo-item warning">警告 <b>2</b></span>
-    <span class="wo-item notice">提醒 <b>1</b></span>
-    <span class="wo-total">本周期共 4 条 · 环比 +1</span>
+  <div class="searchbar" id="wc-searchbar" style="margin-bottom:14px;">
+    <div class="search-main">
+      <div class="combo hall-combo" id="wc-hall-combo">
+        <span class="lbl">大厅</span>
+        <input type="text" id="wc-hall-input" placeholder="搜索大厅，筛选预警明细…（默认全部）" autocomplete="off"
+          onfocus="document.getElementById('wc-searchbar').classList.add('focus')"
+          onblur="setTimeout(()=>document.getElementById('wc-searchbar').classList.remove('focus'),120)"
+          oninput="onWcHallInput(this.value)">
+        <div class="hall-suggest" id="wc-hall-suggest"></div>
+      </div>
+      <button class="reset-btn" onclick="resetWcHall()">全部大厅</button>
+    </div>
   </div>
 
   <div class="warn-rule">
@@ -1058,13 +997,6 @@
         <div class="chart-box" id="cap-ret"></div>
         <div class="chart-insight">存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
       </div>
-    </div>
-
-    <div class="card" style="margin-top:14px;">
-      <h3>牌子 vs 留存</h3>
-      <div class="src">X 轴 = 牌子等级（铜 → 大神） · Y 轴 = 带团留存率 · 颜色 = 画像</div>
-      <div class="chart-box" id="cap-badge-ret" style="height:210px;"></div>
-      <div class="chart-insight">同档「大神」留存横跨 <b>58%</b>（顾青梧·风险）到 <b>75%</b>（沈知微·头牌），相差 17pp；「银牌」雨欣 <b>78%</b> 反超「王牌」雪儿——<b>牌子衡量等级经验，不是带妹妹的能力</b>，画像与牌子解耦。</div>
     </div>
 
     <div class="section-head"><h2>姐姐总览（画像 + 排行）</h2><span class="hint">点行下钻 · 排名随奖励口径切换</span>
@@ -1564,41 +1496,6 @@ function svgScatter(el, points, opts) {
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
 }
 
-/* 牌子 vs 留存 散点：X=牌子等级（铜→大神），Y=留存率，颜色=画像 */
-function svgBadgeRet(el, points) {
-  const W = 460, H = 200, padL = 36, padR = 14, padT = 24, padB = 30;
-  const LEVELS = ['铜牌','银牌','金牌','王牌','大神'];
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const px = lv => padL + (lv / (LEVELS.length - 1)) * plotW;
-  const py = r => padT + (1 - r / 100) * plotH;
-  let grid = '';
-  for (let g = 0; g <= 4; g++) {
-    const gy = padT + g * (plotH / 4);
-    const val = 100 - g * 25;
-    grid += `<line x1="${padL}" y1="${gy}" x2="${W-padR}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
-    grid += `<text x="${padL-7}" y="${gy+3}" text-anchor="end" font-size="9" fill="#9CA3AF">${val}%</text>`;
-  }
-  const y50 = py(50);
-  grid += `<line x1="${padL}" y1="${y50}" x2="${W-padR}" y2="${y50}" stroke="#DC2626" stroke-width="1.1" stroke-dasharray="5 4"/>
-    <text x="${W-padR}" y="${y50-4}" text-anchor="end" font-size="8.5" fill="#DC2626">留存 50%</text>`;
-  LEVELS.forEach((lv, i) => {
-    const cx = px(i);
-    grid += `<line x1="${cx}" y1="${padT}" x2="${cx}" y2="${H-padB}" stroke="#F0F1F4" stroke-width="1"/>`;
-    grid += `<text x="${cx}" y="${H-9}" text-anchor="middle" font-size="10" font-weight="600" fill="#6B7280">${lv}</text>`;
-  });
-  grid += `<text x="${W-padR}" y="${padT-8}" text-anchor="end" font-size="9" fill="#9CA3AF">↑ 留存率</text>`;
-  const dots = points.map(p => {
-    const cx = px(p.lv) + (p.dx || 0);
-    const cy = py(p.ret);
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6" fill="${p.c}" opacity=".82" stroke="#fff" stroke-width="1.4"/>
-      <text x="${cx.toFixed(1)}" y="${(cy-9).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="600" fill="#1A1D26">${p.name}</text>`;
-  }).join('');
-  const legend = `<circle cx="${W*0.44}" cy="13" r="5" fill="#7C5CFF"/><text x="${W*0.44+10}" y="16.5" font-size="9.5" fill="#6B7280">头牌</text>
-    <circle cx="${W*0.54}" cy="13" r="5" fill="#D97706"/><text x="${W*0.54+10}" y="16.5" font-size="9.5" fill="#6B7280">风险</text>
-    <circle cx="${W*0.64}" cy="13" r="5" fill="#C0C4CC"/><text x="${W*0.64+10}" y="16.5" font-size="9.5" fill="#6B7280">正常</text>`;
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${dots}${legend}</svg>`;
-}
-
 /* 图表数据 */
 const RET = [72,70,68,66,64,62,60,58];
 const DISS = [26,24,22,21,20,22,21,18];
@@ -1663,18 +1560,6 @@ svgDonut(document.getElementById('cap-tag'), [
 ], '姐姐总数');
 svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0');
 svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)');
-svgBadgeRet(document.getElementById('cap-badge-ret'), [
-  { name:'甜甜', lv:0, ret:51, dx:2, c:'#D97706' },
-  { name:'娜娜', lv:0, ret:43, dx:16, c:'#D97706' },
-  { name:'悦悦', lv:1, ret:58, dx:-8, c:'#D97706' },
-  { name:'雨欣', lv:1, ret:78, dx:8, c:'#7C5CFF' },
-  { name:'琳琳', lv:2, ret:64, dx:-8, c:'#C0C4CC' },
-  { name:'林晚', lv:2, ret:60, dx:8, c:'#C0C4CC' },
-  { name:'雪儿', lv:3, ret:72, dx:-8, c:'#7C5CFF' },
-  { name:'若曦', lv:3, ret:69, dx:8, c:'#7C5CFF' },
-  { name:'顾青梧', lv:4, ret:58, dx:-16, c:'#D97706' },
-  { name:'沈知微', lv:4, ret:75, dx:-2, c:'#7C5CFF' },
-]);
 svgScatter(document.getElementById('pool-quad'), [
   { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF' },
   { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF' },
@@ -1785,16 +1670,6 @@ function toggleWoW(el) {
   if (arr) arr.textContent = open ? '▾' : '▴';
 }
 
-/* ── 角色切换 ── */
-function setRole(role, btn) {
-  document.querySelectorAll('.role-toggle button').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  const isAdmin = role === 'admin';
-  document.getElementById('grad-box').style.display = isAdmin ? 'none' : '';
-  document.getElementById('grad-box2').style.display = isAdmin ? 'none' : '';
-  document.getElementById('hall-wall').style.display = isAdmin ? 'none' : '';
-}
-
 /* ── 搜索栏：大厅输入补全 ── */
 const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐'];
 const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐' };
@@ -1835,13 +1710,51 @@ function resetHall() {
   document.getElementById('hall-suggest').classList.remove('open');
   document.getElementById('search-expand').classList.remove('open');
   document.getElementById('kpi-title').textContent = '核心指标 · 全部大厅';
-  document.querySelectorAll('.hall-card').forEach(c => c.classList.remove('active'));
-  document.getElementById('hall-wall').querySelector('.hall-card')?.classList.add('active');
 }
 function onTimeChange(v) {
   document.getElementById('pill-time').textContent = v;
   const hint = document.getElementById('kpi-hint');
   hint.textContent = '数据周期 ' + (v === '本周' ? '2026-08-11 ~ 2026-08-17' : v === '上周' ? '2026-08-04 ~ 2026-08-10' : v) + ' · 对比上一周';
+}
+
+/* ── 预警中心 · 大厅搜索 ── */
+function onWcHallInput(v) {
+  const sug = document.getElementById('wc-hall-suggest');
+  const t = v.trim();
+  const matches = HALLS.filter(h => h.includes(t));
+  if (!t) {
+    sug.innerHTML = `<div class="sg all" onclick="resetWcHall()">全部大厅</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  if (!matches.length) {
+    sug.innerHTML = `<div class="sg" style="color:var(--text3);cursor:default;">无匹配大厅</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  sug.innerHTML = `<div class="sg all" onclick="resetWcHall()">全部大厅</div>` +
+    matches.map(h => `<div class="sg" onclick="pickWcHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
+  sug.classList.add('open');
+}
+function pickWcHall(hall) {
+  document.getElementById('wc-hall-input').value = hall;
+  document.getElementById('wc-hall-suggest').classList.remove('open');
+  filterWcHall(hall);
+}
+function resetWcHall() {
+  document.getElementById('wc-hall-input').value = '';
+  document.getElementById('wc-hall-suggest').classList.remove('open');
+  filterWcHall('');
+}
+function filterWcHall(hall) {
+  document.querySelectorAll('#view-warncenter .warn-detail tbody tr').forEach(tr => {
+    const name = tr.querySelector('td')?.textContent || '';
+    tr.style.display = (!hall || name.includes(hall)) ? '' : 'none';
+  });
+  document.querySelectorAll('#view-warncenter .hallcmp .hc-row').forEach(r => {
+    const name = r.querySelector('.hc-name')?.textContent || '';
+    r.style.display = (!hall || name.includes(hall)) ? '' : 'none';
+  });
 }
 
 /* ── KPI 细节图 ── */
