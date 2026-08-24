@@ -1361,7 +1361,7 @@ function svgGroupBar(el, series, colors) {
     });
   });
   const legend = series.map((s, i) => {
-    const lx = W - pad - (series.length - 1 - i) * 72;
+    const lx = pad + i * 96;
     return `<circle cx="${lx}" cy="12" r="5" fill="${colors[i]}"/><text x="${lx+9}" y="15.5" font-size="10" fill="#6B7280">${s.name}</text>`;
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${legend}${bars}</svg>`;
