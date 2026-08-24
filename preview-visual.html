@@ -810,14 +810,14 @@
   <div class="card" style="margin-top:14px;">
     <div class="wd-head"><h3>躺平团名单</h3><span style="font-size:11px;color:var(--text3);">按连续未陪档天数降序 · 点行查看逐日任务明细</span></div>
     <table class="list">
-      <thead><tr><th>大厅</th><th>妹妹</th><th>连续未陪档</th><th>已成团天数</th><th>等级</th></tr></thead>
+      <thead><tr><th>团ID</th><th>大厅</th><th>妹妹</th><th>连续未陪档</th><th>已成团天数</th><th>等级</th></tr></thead>
       <tbody>
-        <tr><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>王牌</td></tr>
-        <tr><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>银牌</td></tr>
-        <tr><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
-        <tr><td>王者荣耀·浪漫有约</td><td>蔷薇小白兔ෆᐝ</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
-        <tr><td>王者荣耀·星晴少女</td><td>✨礼礼蝶影成双呢</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>金牌</td></tr>
-        <tr><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>28 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>银牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·浪漫有约</td><td>蔷薇小白兔ෆᐝ</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·星晴少女</td><td>✨礼礼蝶影成双呢</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>金牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260720')">SJ20260720</td><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>28 天</td><td>王牌</td></tr>
       </tbody>
     </table>
     <button class="expand-btn" onclick="openFull('lying')">查看全部躺平名单（194 个）→</button>
@@ -876,12 +876,12 @@
   </div>
   <div class="card">
     <div class="kpi-six">
-      <div class="card kpi"><div class="top"><span class="dot green"></span>留存率</div><div class="val">72%</div><div class="foot"><span class="chip up">↑2pp</span></div></div>
-      <div class="card kpi"><div class="top"><span class="dot red"></span>解散率</div><div class="val">15%</div><div class="foot"><span class="chip up">↓2pp</span></div></div>
-      <div class="card kpi"><div class="top"><span class="dot violet"></span>新成团数</div><div class="val">3</div><div class="foot"><span class="chip up">↑1</span></div></div>
-      <div class="card kpi"><div class="top"><span class="dot amber"></span>解散数</div><div class="val">2</div><div class="foot"><span class="chip up">↓1</span></div></div>
-      <div class="card kpi"><div class="top"><span class="dot teal"></span>进行中团</div><div class="val">12</div><div class="foot"><span class="chip up">↑2</span></div></div>
-      <div class="card kpi"><div class="top"><span class="dot gold"></span>周礼物流水</div><div class="val">¥12.8w</div><div class="foot"><span class="chip up">↑8%</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('留存率', this)" title="点卡看该项环比"><div class="top"><span class="dot green"></span>留存率</div><div class="val">72%</div><div class="foot"><span class="chip up">↑2pp</span><span class="hint-go">看环比 →</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('解散率', this)" title="点卡看该项环比"><div class="top"><span class="dot red"></span>解散率</div><div class="val">15%</div><div class="foot"><span class="chip up">↓2pp</span><span class="hint-go">看环比 →</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('新成团数', this)" title="点卡看该项环比"><div class="top"><span class="dot violet"></span>新成团数</div><div class="val">3</div><div class="foot"><span class="chip up">↑1</span><span class="hint-go">看环比 →</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('解散数', this)" title="点卡看该项环比"><div class="top"><span class="dot amber"></span>解散数</div><div class="val">2</div><div class="foot"><span class="chip up">↓1</span><span class="hint-go">看环比 →</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('进行中团', this)" title="点卡看该项环比"><div class="top"><span class="dot teal"></span>进行中团</div><div class="val">12</div><div class="foot"><span class="chip up">↑2</span><span class="hint-go">看环比 →</span></div></div>
+      <div class="card kpi" style="cursor:pointer;" onclick="openCompareKpi('周礼物流水', this)" title="点卡看该项环比"><div class="top"><span class="dot gold"></span>周礼物流水</div><div class="val">¥12.8w</div><div class="foot"><span class="chip up">↑8%</span><span class="hint-go">看环比 →</span></div></div>
     </div>
     <div class="chart-grid">
       <div class="card">
@@ -899,7 +899,7 @@
     </div>
     <div class="wd-subhead" style="cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="toggleWoW(this)">
       <span>本周 vs 上周</span>
-      <span style="font-size:11px;color:var(--text3);font-weight:400;">小框见上方 KPI · 点击展开完整明细</span>
+      <span style="font-size:11px;color:var(--text3);font-weight:400;">点上方 KPI 卡高亮对应环比 · 点击展开完整明细</span>
       <span class="wow-arrow" style="margin-left:auto;font-size:12px;color:var(--text3);">▾</span>
     </div>
     <div id="wow-full" style="display:none;">
@@ -942,14 +942,14 @@
       <span class="f">已解散 3</span>
     </div>
     <table class="list">
-      <thead><tr><th>姐姐</th><th>妹妹</th><th>成团日</th><th>天数</th><th>状态</th><th>姐姐等级</th><th>妹妹等级</th><th>妹妹流水</th></tr></thead>
+      <thead><tr><th>团ID</th><th>姐姐</th><th>妹妹</th><th>成团日</th><th>天数</th><th>状态</th><th>姐姐等级</th><th>妹妹等级</th><th>妹妹流水</th></tr></thead>
       <tbody>
-        <tr><td>苏念</td><td>星野みう</td><td>08-10</td><td>10 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>金牌</td><td>¥2,480</td></tr>
-        <tr><td>白桃</td><td>奶盖啵啵</td><td>08-07</td><td>13 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>银牌</td><td>¥1,930</td></tr>
-        <tr><td>顾青梧</td><td>月下独酌</td><td>08-03</td><td>17 天</td><td><span class="chip up">进行中</span></td><td>大神</td><td>金牌</td><td>¥4,120</td></tr>
-        <tr><td>江辞</td><td>小熊软糖</td><td>07-25</td><td>26 天</td><td><span class="chip down">已解散</span></td><td>王牌</td><td>金牌</td><td>¥1,540</td></tr>
-        <tr><td>林晚</td><td>糖豆豆</td><td>07-28</td><td>23 天</td><td><span class="chip down">已解散</span></td><td>金牌</td><td>银牌</td><td>¥860</td></tr>
-        <tr><td>沈知微</td><td>草莓布丁</td><td>07-21</td><td>30 天</td><td><span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span></td><td>大神</td><td>金牌</td><td>¥3,300</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260815')">SJ20260815</td><td>苏念</td><td>星野みう</td><td>08-10</td><td>10 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>金牌</td><td>¥2,480</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260807')">SJ20260807</td><td>白桃</td><td>奶盖啵啵</td><td>08-07</td><td>13 天</td><td><span class="chip up">进行中</span></td><td>王牌</td><td>银牌</td><td>¥1,930</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260803')">SJ20260803</td><td>顾青梧</td><td>月下独酌</td><td>08-03</td><td>17 天</td><td><span class="chip up">进行中</span></td><td>大神</td><td>金牌</td><td>¥4,120</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260725')">SJ20260725</td><td>江辞</td><td>小熊软糖</td><td>07-25</td><td>26 天</td><td><span class="chip down">已解散</span></td><td>王牌</td><td>金牌</td><td>¥1,540</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260728')">SJ20260728</td><td>林晚</td><td>糖豆豆</td><td>07-28</td><td>23 天</td><td><span class="chip down">已解散</span></td><td>金牌</td><td>银牌</td><td>¥860</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260721')">SJ20260721</td><td>沈知微</td><td>草莓布丁</td><td>07-21</td><td>30 天</td><td><span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span></td><td>大神</td><td>金牌</td><td>¥3,300</td></tr>
       </tbody>
     </table>
     <button class="expand-btn" onclick="openFull('hallteams')">查看全部 12 个团 →</button>
@@ -1775,6 +1775,21 @@ function toggleWoW(el) {
   if (arr) arr.textContent = open ? '▾' : '▴';
 }
 
+/* ── 厅分析 6 卡：点卡展开环比表并高亮对应行 ── */
+function openCompareKpi(metric, el) {
+  const full = document.getElementById('wow-full');
+  if (!full) return;
+  full.style.display = '';
+  const arr = document.querySelector('#view-compare .wow-arrow');
+  if (arr) arr.textContent = '▴';
+  document.querySelectorAll('#wow-full tbody tr').forEach(tr => tr.style.background = '');
+  const row = Array.from(document.querySelectorAll('#wow-full tbody tr')).find(tr => tr.cells[0].textContent.includes(metric));
+  if (row) {
+    row.style.background = '#F3F0FF';
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 /* ── 搜索栏：大厅输入补全 ── */
 const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐'];
 const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐' };
@@ -1941,36 +1956,36 @@ function clearDetailFilter() {
 const FULL_LISTS = {
   lying: {
     title: '躺平团名单（全量）', sub: '共 194 个躺平团 · 演示节选 10 条（按连续未陪档天数降序）',
-    cols: ['大厅','妹妹','连续未陪档','已成团天数','等级'],
+    cols: ['团ID','大厅','妹妹','连续未陪档','已成团天数','等级'],
     rows: [
-      ['三角洲★黄金海岸','大晓姐͜','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','王牌'],
-      ['王者·回家的诱惑','水漾漾⋆｡˚','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','银牌'],
-      ['王者荣耀·秋日私语','u.uও˖⊹','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
-      ['王者荣耀·浪漫有约','蔷薇小白兔ෆᐝ','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
-      ['王者荣耀·星晴少女','✨礼礼蝶影成双呢','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','金牌'],
-      ['王者荣耀天才少女','Tc.小稀-贴贴','<span style="color:#DC2626;font-weight:600;">17 天</span>','28 天','王牌'],
-      ['王者荣耀·恰逢今月','甜心小鹿','<span style="color:#DC2626;font-weight:600;">6 天</span>','12 天','金牌'],
-      ['王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">5 天</span>','9 天','银牌'],
-      ['和平精英•幸运星','奶糖','<span style="color:#DC2626;font-weight:600;">4 天</span>','29 天','王牌'],
-      ['王者荣耀·怪诞学姐','阿梨','<span style="color:#DC2626;font-weight:600;">4 天</span>','8 天','铜牌']
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','三角洲★黄金海岸','大晓姐͜','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','王者·回家的诱惑','水漾漾⋆｡˚','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','银牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·秋日私语','u.uও˖⊹','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·浪漫有约','蔷薇小白兔ෆᐝ','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·星晴少女','✨礼礼蝶影成双呢','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','金牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260720\')">SJ20260720</span>','王者荣耀天才少女','Tc.小稀-贴贴','<span style="color:#DC2626;font-weight:600;">17 天</span>','28 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260806\')">SJ20260806</span>','王者荣耀·恰逢今月','甜心小鹿','<span style="color:#DC2626;font-weight:600;">6 天</span>','12 天','金牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260809\')">SJ20260809</span>','王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">5 天</span>','9 天','银牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260811\')">SJ20260811</span>','和平精英•幸运星','奶糖','<span style="color:#DC2626;font-weight:600;">4 天</span>','29 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260816\')">SJ20260816</span>','王者荣耀·怪诞学姐','阿梨','<span style="color:#DC2626;font-weight:600;">4 天</span>','8 天','铜牌']
     ]
   },
   hallteams: {
     title: '该厅团明细（全量）', sub: '王者荣耀·恰逢今月 · 共 12 个团',
-    cols: ['姐姐','妹妹','成团日','天数','状态','姐姐等级','妹妹等级','妹妹流水'],
+    cols: ['团ID','姐姐','妹妹','成团日','天数','状态','姐姐等级','妹妹等级','妹妹流水'],
     rows: [
-      ['苏念','星野みう','08-10','10 天','<span class="chip up">进行中</span>','王牌','金牌','¥2,480'],
-      ['白桃','奶盖啵啵','08-07','13 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,930'],
-      ['顾青梧','月下独酌','08-03','17 天','<span class="chip up">进行中</span>','大神','金牌','¥4,120'],
-      ['江辞','小熊软糖','07-25','26 天','<span class="chip down">已解散</span>','王牌','金牌','¥1,540'],
-      ['林晚','糖豆豆','07-28','23 天','<span class="chip down">已解散</span>','金牌','银牌','¥860'],
-      ['沈知微','草莓布丁','07-21','30 天','<span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span>','大神','金牌','¥3,300'],
-      ['沈知微','蜜桃','08-15','5 天','<span class="chip up">进行中</span>','大神','银牌','¥1,120'],
-      ['江辞','洛洛','08-12','8 天','<span class="chip up">进行中</span>','王牌','铜牌','¥720'],
-      ['顾青梧','晚晚','08-01','19 天','<span class="chip up">进行中</span>','大神','金牌','¥3,860'],
-      ['林晚','苏苏','07-26','25 天','<span class="chip down">已解散</span>','金牌','银牌','¥940'],
-      ['苏念','小葵','08-08','12 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,580'],
-      ['白桃','芝芝','07-30','21 天','<span class="chip down">已解散</span>','王牌','金牌','¥2,030']
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260815\')">SJ20260815</span>','苏念','星野みう','08-10','10 天','<span class="chip up">进行中</span>','王牌','金牌','¥2,480'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260807\')">SJ20260807</span>','白桃','奶盖啵啵','08-07','13 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,930'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260803\')">SJ20260803</span>','顾青梧','月下独酌','08-03','17 天','<span class="chip up">进行中</span>','大神','金牌','¥4,120'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260725\')">SJ20260725</span>','江辞','小熊软糖','07-25','26 天','<span class="chip down">已解散</span>','王牌','金牌','¥1,540'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260728\')">SJ20260728</span>','林晚','糖豆豆','07-28','23 天','<span class="chip down">已解散</span>','金牌','银牌','¥860'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260721\')">SJ20260721</span>','沈知微','草莓布丁','07-21','30 天','<span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span>','大神','金牌','¥3,300'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260812\')">SJ20260812</span>','沈知微','蜜桃','08-15','5 天','<span class="chip up">进行中</span>','大神','银牌','¥1,120'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260810\')">SJ20260810</span>','江辞','洛洛','08-12','8 天','<span class="chip up">进行中</span>','王牌','铜牌','¥720'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260801\')">SJ20260801</span>','顾青梧','晚晚','08-01','19 天','<span class="chip up">进行中</span>','大神','金牌','¥3,860'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260726\')">SJ20260726</span>','林晚','苏苏','07-26','25 天','<span class="chip down">已解散</span>','金牌','银牌','¥940'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260808\')">SJ20260808</span>','苏念','小葵','08-08','12 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,580'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260730\')">SJ20260730</span>','白桃','芝芝','07-30','21 天','<span class="chip down">已解散</span>','王牌','金牌','¥2,030']
     ]
   },
   sisters: {
