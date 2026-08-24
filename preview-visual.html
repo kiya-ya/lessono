@@ -1028,14 +1028,24 @@
       <button class="expand-btn">查看全部姐姐（100+）→</button>
     </div>
 
-    <div class="section-head" style="margin-top:24px;"><h2>🎓 最近一周毕业的妹妹</h2><span class="hint">满 30 天自动毕业 · 点行查看配对姐姐</span></div>
-    <div class="card">
-      <ul class="rank-mini">
-        <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
-        <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
-        <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
-      </ul>
-      <button class="expand-btn">查看全部毕业妹妹 →</button>
+    <div class="section-head" style="margin-top:24px;"><h2>🎓 毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 最近一周名单</span></div>
+    <div class="chart-grid">
+      <div class="card">
+        <h3>📈 近 8 周毕业趋势</h3>
+        <div class="src">每周满 30 天自动毕业的妹妹数</div>
+        <div class="chart-box" id="cap-grad-line"></div>
+        <div class="chart-insight">近 8 周每周毕业 <b>4~7</b> 位，节奏平稳，本周 <b>6</b> 位处于均值附近。</div>
+      </div>
+      <div class="card">
+        <h3>🎓 最近一周毕业的妹妹</h3>
+        <div class="src">满 30 天自动毕业 · 点行查看配对姐姐</div>
+        <ul class="rank-mini">
+          <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
+          <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
+          <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
+        </ul>
+        <button class="expand-btn">查看全部毕业妹妹 →</button>
+      </div>
     </div>
   </div>
 
@@ -1065,7 +1075,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>🔧 待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口。</div>
+  <div class="todo-note"><b>🔧 待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -1451,6 +1461,7 @@ svgDonut(document.getElementById('cap-tag'), [
   { n:'正常', v:140, c:'#C0C4CC' }
 ], '姐姐总数');
 svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0');
+svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)');
 
 /* UID · 姐 vs 妹 近 7 日流水 */
 svgMultiLine(document.getElementById('uid-partner'), [
