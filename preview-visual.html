@@ -68,7 +68,7 @@
 
   /* ═══════ 1. 搜索栏（一体化：大厅输入补全 + 时间下拉） ═══════ */
   .searchbar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    padding:6px 8px;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:box-shadow .2s,border-color .2s;}
+    padding:6px 8px;box-shadow:0 1px 2px rgba(16,24,40,.04);transition:box-shadow .2s,border-color .2s;max-width:540px;}
   .searchbar.focus{box-shadow:0 8px 24px -12px rgba(124,92,255,.25);border-color:#DDD3FF;}
   .search-main{display:flex;align-items:center;gap:4px;}
   .combo{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;}
@@ -216,6 +216,9 @@
   .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
   .filters .f{font-size:12px;color:var(--text2);padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;}
   .filters .f:hover{border-color:#DDD3FF;color:var(--accent);}
+  .tbl-search{font-size:12px;color:var(--text);padding:6px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;width:210px;outline:none;}
+  .tbl-search:focus{border-color:var(--accent);box-shadow:0 0 0 3px #F3F0FF;}
+  .tbl-search::placeholder{color:var(--text3);}
   table.list{width:100%;border-collapse:collapse;font-size:12.5px;}
   table.list th{text-align:left;padding:10px;font-weight:600;color:var(--text2);background:#FAFBFC;border-bottom:1px solid var(--line);white-space:nowrap;}
   table.list td{padding:10px;border-bottom:1px solid #F3F4F6;white-space:nowrap;}
@@ -378,7 +381,7 @@
     <div class="search-main">
       <div class="combo hall-combo" id="hall-combo">
         <span class="lbl">大厅</span>
-        <input type="text" id="hall-input" placeholder="输入大厅名…（默认全部大厅）" autocomplete="off"
+        <input type="text" id="hall-input" placeholder="搜索大厅…" autocomplete="off"
           onfocus="document.getElementById('searchbar').classList.add('focus')"
           onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
           oninput="onHallInput(this.value)">
@@ -590,8 +593,8 @@
       <span class="f">全部原因 ▾</span>
       <span class="f">已成团天数 ▾</span>
       <span class="f">20条/页 ▾</span>
-      <span class="f" style="margin-left:auto;border-color:#DDD3FF;color:var(--accent);">搜索</span>
-      <span class="f">导出CSV</span>
+      <input type="text" id="detail-search" class="tbl-search" style="margin-left:auto;" placeholder="搜索团ID / 姐姐 / 妹妹…" oninput="searchTable('detail-search','detail-body')">
+      <span class="f" style="border-color:#DDD3FF;color:var(--accent);">导出CSV</span>
     </div>
     <table class="list">
       <thead><tr>
@@ -624,7 +627,7 @@
     <div class="search-main">
       <div class="combo hall-combo" id="wc-hall-combo">
         <span class="lbl">大厅</span>
-        <input type="text" id="wc-hall-input" placeholder="搜索大厅，筛选预警明细…（默认全部）" autocomplete="off"
+        <input type="text" id="wc-hall-input" placeholder="搜索大厅…" autocomplete="off"
           onfocus="document.getElementById('wc-searchbar').classList.add('focus')"
           onblur="setTimeout(()=>document.getElementById('wc-searchbar').classList.remove('focus'),120)"
           oninput="onWcHallInput(this.value)">
@@ -809,6 +812,7 @@
 
   <div class="card" style="margin-top:14px;">
     <div class="wd-head"><h3>躺平团名单</h3><span style="font-size:11px;color:var(--text3);">按连续未陪档天数降序 · 点团ID查看 · 点上方图下钻筛选</span></div>
+    <input type="text" id="lying-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索团ID / 大厅 / 妹妹…" oninput="searchTable('lying-search','lying-body')">
     <div id="lying-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
       <span id="lying-flabel" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">躺平下钻</span>
       <span id="lying-fnote" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
@@ -945,6 +949,7 @@
       <span class="f" style="background:#F3F0FF;color:#7C5CFF;border-color:#7C5CFF;">全部 12</span>
       <span class="f">进行中 9</span>
       <span class="f">已解散 3</span>
+      <input type="text" id="cmp-team-search" class="tbl-search" style="margin-left:auto;" placeholder="搜索团ID / 姐姐 / 妹妹…" oninput="searchTable('cmp-team-search','cmp-team-body')">
     </div>
     <div id="cmp-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
       <span id="cmp-flabel" style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">解散下钻</span>
@@ -1051,6 +1056,7 @@
         <span id="cap-fnote" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
         <button class="reset-btn" onclick="clearCapFilter()">清除筛选</button>
       </div>
+      <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
         <thead><tr><th>#</th><th>姐姐</th><th>标签</th><th>带团</th><th>进行中</th><th>存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
@@ -2006,6 +2012,13 @@ function dimMatch(tableSel, matchFn) {
 }
 function clearDim(tableSel) {
   document.querySelectorAll(tableSel + ' tr').forEach(tr => { tr.style.opacity = ''; tr.style.background = ''; });
+}
+/* ── 表格就近搜索：按关键字隐藏不匹配行（搜团ID / 姐姐 / 妹妹 / 大厅等任意列） ── */
+function searchTable(inputId, tbodyId) {
+  const q = document.getElementById(inputId).value.trim().toLowerCase();
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
+    tr.style.display = (!q || tr.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
 }
 function showBar(barId, labelId, noteId, labelText, noteHtml, targetId) {
   document.getElementById(labelId).textContent = labelText;
