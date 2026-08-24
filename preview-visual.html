@@ -227,11 +227,25 @@
   .btn.ghost{background:#F3F4F6;color:var(--text2);}
   .btn.ghost:disabled{opacity:.45;cursor:not-allowed;}
 
-  /* ═══════ 预览 tab 栏 ═══════ */
-  .tabbar{max-width:1160px;margin:0 auto;padding:18px 24px 0;display:flex;align-items:center;gap:8px;}
-  .tabbar button{border:1px solid var(--line);background:#fff;padding:7px 16px;font-size:13px;color:var(--text2);border-radius:9px;cursor:pointer;font-weight:500;}
-  .tabbar button.on{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .tabbar-note{margin-left:auto;font-size:11.5px;color:var(--text3);}
+  /* ═══════ 侧边栏（正式版同款） ═══════ */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:218px;background:#fff;border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:40;}
+  .side-brand{padding:16px 16px 14px;border-bottom:1px solid var(--line);}
+  .side-brand h1{font-size:15px;font-weight:700;letter-spacing:-.3px;}
+  .side-brand .sub{font-size:11.5px;color:var(--text3);margin-top:2px;}
+  .side-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+  .side-nav .tab{display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;background:none;border-radius:9px;cursor:pointer;text-align:left;color:var(--text2);}
+  .side-nav .tab:hover{background:#F5F6F8;}
+  .side-nav .tab.active{background:#F3F0FF;}
+  .side-nav .tab-txt{display:flex;flex-direction:column;gap:1px;}
+  .side-nav .tab-txt b{font-size:13.5px;font-weight:600;color:var(--text);}
+  .side-nav .tab-txt small{font-size:11px;color:var(--text3);}
+  .side-nav .tab.active .tab-txt b{color:var(--accent);}
+  .side-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--text3);}
+  .main{margin-left:218px;min-height:100vh;}
+  /* 一键回到顶部 */
+  .backtop{position:fixed;right:22px;bottom:22px;z-index:45;background:var(--accent);color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:12.5px;font-weight:500;cursor:pointer;box-shadow:0 8px 22px -8px rgba(124,92,255,.55);opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .25s,transform .25s;}
+  .backtop.show{opacity:1;transform:none;pointer-events:auto;}
+  .backtop:hover{filter:brightness(1.05);}
 
   /* ═══════ 预警中心 ═══════ */
   .warn-overview{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
@@ -299,14 +313,21 @@
 </style>
 </head>
 <body>
-<div class="tabbar">
-  <button class="on" onclick="switchPreviewTab('overview', this)">概览页</button>
-  <button onclick="switchPreviewTab('warncenter', this)">预警中心</button>
-  <button onclick="switchPreviewTab('compare', this)">厅分析</button>
-  <button id="tab-captains" onclick="switchPreviewTab('captains', this)">姐姐分析</button>
-  <button onclick="switchPreviewTab('uid', this)">UID查询</button>
-  <span class="tabbar-note">预览 · 5 页全部可切</span>
-</div>
+<aside class="sidebar" id="sidebar">
+  <div class="side-brand">
+    <h1>B+ 兔玩大数据</h1>
+    <div class="sub">姐妹团看板 · 预览</div>
+  </div>
+  <nav class="side-nav">
+    <button class="tab active" id="side-overview" onclick="switchPreviewTab('overview', this)"><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
+    <button class="tab" id="side-warncenter" onclick="switchPreviewTab('warncenter', this)"><span class="tab-txt"><b>预警中心</b><small>规则 · 下钻</small></span></button>
+    <button class="tab" id="side-compare" onclick="switchPreviewTab('compare', this)"><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
+    <button class="tab" id="side-captains" onclick="switchPreviewTab('captains', this)"><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
+    <button class="tab" id="side-uid" onclick="switchPreviewTab('uid', this)"><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
+  </nav>
+  <div class="side-foot">预览 · 5 页全部可切</div>
+</aside>
+<div class="main">
 <div class="page" id="view-overview">
 
   <div class="page-head">
@@ -818,7 +839,7 @@
 
   <!-- 各大厅数据对比 -->
   <div class="section-head">
-    <h2>🏠 各大厅数据对比</h2>
+    <h2>各大厅数据对比</h2>
     <span class="hint">按进行中团数降序 · 点行 / 点图钻取单厅</span>
   </div>
   <div class="card">
@@ -879,7 +900,7 @@
       </div>
     </div>
     <div class="wd-subhead" style="cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="toggleWoW(this)">
-      <span>📊 本周 vs 上周</span>
+      <span>本周 vs 上周</span>
       <span style="font-size:11px;color:var(--text3);font-weight:400;">小框见上方 KPI · 点击展开完整明细</span>
       <span class="wow-arrow" style="margin-left:auto;font-size:12px;color:var(--text3);">▾</span>
     </div>
@@ -958,7 +979,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>🔧 待落地</b>：后端 <code>/api/hall-stats</code> 路由重复定义（app.py 1908 vs 1954）需去重、排行改实时聚合；揭示面板趋势图实例未进全局 <code>charts</code>，resize 需并入统一重绘；趋势折线加「平台均值」灰色参考虚线（需后端补全平台均值序列）；团明细复用 <code>/api/detail-table?hall=xxx</code>；团明细列排序「姐姐等级 / 妹妹等级」后置到状态之后（留存 / 成团 / 状态前置、等级 / 流水后置）；数据说明文案随落地同步进源码。</div>
+  <div class="todo-note"><b>待落地</b>：后端 <code>/api/hall-stats</code> 路由重复定义（app.py 1908 vs 1954）需去重、排行改实时聚合；揭示面板趋势图实例未进全局 <code>charts</code>，resize 需并入统一重绘；趋势折线加「平台均值」灰色参考虚线（需后端补全平台均值序列）；团明细复用 <code>/api/detail-table?hall=xxx</code>；团明细列排序「姐姐等级 / 妹妹等级」后置到状态之后（留存 / 成团 / 状态前置、等级 / 流水后置）；数据说明文案随落地同步进源码。</div>
 </div>
 
 <!-- ═══════ 姐姐分析（captains） ═══════ -->
@@ -978,20 +999,20 @@
   <div id="captains-main">
     <div class="chart-grid">
       <div class="card">
-        <h3>🏷️ 打标分布</h3>
+        <h3>打标分布</h3>
         <div class="src">头牌 / 风险 / 正常 · 姐姐总数</div>
         <div class="chart-box" id="cap-tag"></div>
         <div class="chart-insight">头牌 <b>42</b> 位占比 21%，风险 <b>18</b> 位需重点跟进。</div>
       </div>
       <div class="card">
-        <h3>🌱 带团存活率分布</h3>
+        <h3>带团存活率分布</h3>
         <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）</div>
         <div class="chart-box" id="cap-ret"></div>
         <div class="chart-insight">存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
       </div>
     </div>
 
-    <div class="section-head"><h2>👤 姐姐总览（画像 + 排行）</h2><span class="hint">点行下钻 · 排名随奖励口径切换</span>
+    <div class="section-head"><h2>姐姐总览（画像 + 排行）</h2><span class="hint">点行下钻 · 排名随奖励口径切换</span>
       <div class="seg" style="margin-left:auto;">
         <button class="on" onclick="setCapPeriod('day', this)">当日</button>
         <button onclick="setCapPeriod('week', this)">当周</button>
@@ -1030,16 +1051,16 @@
       <button class="expand-btn">查看全部姐姐（100+）→</button>
     </div>
 
-    <div class="section-head" style="margin-top:24px;"><h2>🎓 毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 最近一周名单</span></div>
+    <div class="section-head" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 最近一周名单</span></div>
     <div class="chart-grid">
       <div class="card">
-        <h3>📈 近 8 周毕业趋势</h3>
+        <h3>近 8 周毕业趋势</h3>
         <div class="src">每周满 30 天自动毕业的妹妹数</div>
         <div class="chart-box" id="cap-grad-line"></div>
         <div class="chart-insight">近 8 周每周毕业 <b>4~7</b> 位，节奏平稳，本周 <b>6</b> 位处于均值附近。</div>
       </div>
       <div class="card">
-        <h3>🎓 最近一周毕业的妹妹</h3>
+        <h3>最近一周毕业的妹妹</h3>
         <div class="src">满 30 天自动毕业 · 点行查看配对姐姐</div>
         <ul class="rank-mini">
           <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
@@ -1053,7 +1074,21 @@
 
   <!-- 候选池视图 -->
   <div id="captains-pool" style="display:none;">
-    <div class="section-head" style="margin-top:0;"><h2>🎯 培养力候选池</h2><span class="hint">并列展示 · 不做权威排序 · 记录输送 / 提拔</span></div>
+    <div class="section-head" style="margin-top:0;"><h2>培养力候选池</h2><span class="hint">并列展示 · 不做权威排序 · 记录输送 / 提拔</span></div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">培养力指标口径</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
+        <span class="dni"><b>存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+        <span class="dni"><b>妹妹成长</b><code>妹妹等级月均升级数</code><span>培养速度</span></span>
+        <span class="dni"><b>共同成长</b><code>妹妹升级且团存活的团占比</code><span>共赢度</span></span>
+        <span class="dni"><b>候选判定</b><code>存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>妹妹成长 =（妹妹最高等级 − 最低等级）÷ 团龄，按月折算（×30）取平均；共同成长 = 妹妹有成长且团仍在进行的团数占比。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。</span>
+      </div>
+    </div>
     <div class="card">
       <table class="list">
         <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>状态</th><th>操作</th></tr></thead>
@@ -1065,7 +1100,7 @@
       </table>
     </div>
 
-    <div class="section-head" style="margin-top:24px;"><h2>📝 结果记录</h2><span class="hint">输送妹妹 / 提拔管理</span></div>
+    <div class="section-head" style="margin-top:24px;"><h2>结果记录</h2><span class="hint">输送妹妹 / 提拔管理</span></div>
     <div class="card">
       <table class="list">
         <thead><tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr></thead>
@@ -1077,7 +1112,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>🔧 待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 存活率前置），候选池「牌子等级」后置。</div>
+  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 存活率前置），候选池「牌子等级」后置。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -1132,7 +1167,7 @@
         <div class="u-title">雪儿 <span class="st active" style="margin-left:6px;">精英队长</span></div>
         <div class="u-sub">UID 100234567 · 类型：新队长-游戏</div>
         <div class="uid-tags">
-          <span class="chip">🏠 王者荣耀·恰逢今月</span>
+          <span class="chip">王者荣耀·恰逢今月</span>
           <span class="chip">等级 王牌</span>
         </div>
       </div>
@@ -1142,7 +1177,7 @@
           <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
           <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
         </div>
-        <button class="btn ghost" onclick="switchPreviewTab('captains', document.getElementById('tab-captains'))">👤 查看姐姐画像 →</button>
+        <button class="btn ghost" onclick="switchPreviewTab('captains', document.getElementById('side-captains'))">查看姐姐画像 →</button>
       </div>
     </div>
     <div class="dn-notes" style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);">
@@ -1153,7 +1188,7 @@
 
   <!-- 周对比 -->
   <div class="card" style="margin-bottom:14px;">
-    <h3>📊 本周 vs 上周 对比分析</h3>
+    <h3>本周 vs 上周 对比分析</h3>
     <div class="src">指标 / 本周 / 上周 / 环比 / 变化率 / 趋势</div>
     <div style="margin-top:10px;">
       <table class="list">
@@ -1174,7 +1209,7 @@
 
   <!-- 姐妹团参与明细（已合并原「绑定妹妹列表」） -->
   <div class="card" style="margin-bottom:14px;">
-    <h3>🔗 姐妹团参与明细</h3>
+    <h3>姐妹团参与明细</h3>
     <div class="src">历史配对团 · 已合并原「绑定妹妹列表」· 点团ID跳转团队明细</div>
     <div style="margin-top:10px;">
       <table class="list">
@@ -1190,7 +1225,7 @@
 
   <!-- 姐 vs 妹 对比 -->
   <div class="card" style="margin-bottom:14px;">
-    <h3>👭 姐姐 vs 妹妹 本周数据对比</h3>
+    <h3>姐姐 vs 妹妹 本周数据对比</h3>
     <div class="src">本周礼物流水 · 分组柱状对比 · 妹妹爬虫缺失时回退本地流水</div>
     <div class="chart-box" id="uid-partner" style="height:150px;"></div>
     <div class="wd-subhead">累计对比</div>
@@ -1204,8 +1239,10 @@
     </table>
   </div>
 
-  <div class="todo-note"><b>🔧 待落地（本页方案已定）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水；⑦ 参与明细与绑定妹妹列表合并去重（原两表字段重复），团ID 点击跳转团队明细（复用概览页明细落点）；⑧ 姐 vs 妹图由折线改回分组柱状（正式版原为柱状）；⑨ 全站字段排序统一：留存 / 解散 / 成团 / 进行中前置，流水 / 等级 / 牌子后置。</div>
+  <div class="todo-note"><b>待落地（本页方案已定）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水；⑦ 参与明细与绑定妹妹列表合并去重（原两表字段重复），团ID 点击跳转团队明细（复用概览页明细落点）；⑧ 姐 vs 妹图由折线改回分组柱状（正式版原为柱状）；⑨ 全站字段排序统一：留存 / 解散 / 成团 / 进行中前置，流水 / 等级 / 牌子后置。</div>
 </div>
+</div><!-- /.main -->
+<button class="backtop" id="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ 回到顶部</button>
 
 <!-- ═══════ 弹窗：数量类指标名单 ═══════ -->
 <div class="modal" id="list-modal">
@@ -1496,11 +1533,12 @@ svgGroupBar(document.getElementById('uid-partner'), [
 /* 预览 tab 切换 */
 const PREVIEW_VIEWS = ['overview', 'warncenter', 'compare', 'captains', 'uid'];
 function switchPreviewTab(tab, btn) {
-  document.querySelectorAll('.tabbar button').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
+  document.querySelectorAll('.side-nav .tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
   PREVIEW_VIEWS.forEach(v => {
     document.getElementById('view-' + v).style.display = v === tab ? '' : 'none';
   });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ── 姐姐分析 · 画像/候选池切换 ── */
@@ -1672,7 +1710,7 @@ function openKpiDetail(metric) {
 }
 function closeKpiDetail() { document.getElementById('kpi-detail').classList.remove('open'); }
 function openWarn(metric) {
-  switchPreviewTab('warncenter', document.querySelectorAll('.tabbar button')[1]);
+  switchPreviewTab('warncenter', document.getElementById('side-warncenter'));
   const map = { retention: 'wc-ret', activediss: 'wc-diss', newteam: 'wc-new', activity: 'wc-activity' };
   const el = document.getElementById(map[metric]);
   const card = el ? el.closest('.warn-detail') : null;
@@ -1742,7 +1780,7 @@ function lmPage(d) {
   lmRender();
 }
 function jumpToTeamDetail(tid) {
-  switchPreviewTab('overview', document.querySelectorAll('.tabbar button')[0]);
+  switchPreviewTab('overview', document.getElementById('side-overview'));
   setTimeout(() => {
     document.getElementById('detail-sec').scrollIntoView({ behavior: 'smooth', block: 'start' });
     document.querySelectorAll('#detail-body tr').forEach(tr => tr.classList.remove('flash'));
@@ -1769,6 +1807,12 @@ function jumpAll() {
 }
 function closeList() { document.getElementById('list-modal').classList.remove('open'); }
 document.getElementById('list-modal').addEventListener('click', e => { if (e.target.id === 'list-modal') closeList(); });
+
+/* 一键回到顶部：滚动超过一屏后显示 */
+window.addEventListener('scroll', () => {
+  const bt = document.getElementById('backtop');
+  if (bt) bt.classList.toggle('show', window.scrollY > 400);
+});
 
 /* 默认展开「全部大厅」提示 */
 onHallInput('');
