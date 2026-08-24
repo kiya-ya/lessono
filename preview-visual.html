@@ -580,6 +580,11 @@
     <span class="hint">全量团明细 · 筛选 / 排序 / 导出</span>
   </div>
   <div class="card" id="detail-card">
+    <div id="detail-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
+      <span style="flex-shrink:0;font-size:10.5px;font-weight:600;color:#fff;background:#7C5CFF;border-radius:6px;padding:2px 7px;">预警下钻</span>
+      <span id="dfb-note" style="flex:1;font-size:12px;color:#4B3B8F;line-height:1.7;"></span>
+      <button class="reset-btn" onclick="clearDetailFilter()">清除筛选</button>
+    </div>
     <div class="filters">
       <span class="f">全部状态 ▾</span>
       <span class="f">全部原因 ▾</span>
@@ -694,7 +699,7 @@
           <tr><td>王者荣耀·橙心如意</td><td style="color:#DC2626;font-weight:600;">55%</td><td style="color:#DC2626;">↓9pp</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn">下钻明细 →</button>
+      <button class="expand-btn" onclick="drillWarn('retention')">下钻明细 →</button>
     </div>
 
     <div class="card warn-detail warning">
@@ -710,7 +715,7 @@
           <tr><td>王者荣耀·迷鹿之森</td><td style="color:#D97706;font-weight:600;">38%</td><td style="color:#D97706;">↑ 连续 2 周</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn">下钻明细 →</button>
+      <button class="expand-btn" onclick="drillWarn('activediss')">下钻明细 →</button>
     </div>
 
     <div class="card warn-detail notice">
@@ -726,7 +731,7 @@
           <tr><td>王者荣耀·半糖心事</td><td style="font-weight:600;">2 个</td><td style="color:#D97706;">↓ 连续 2 周</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn">查看名单 →</button>
+      <button class="expand-btn" onclick="drillWarn('newteam')">查看名单 →</button>
     </div>
 
     <div class="card warn-detail warning">
@@ -742,7 +747,7 @@
           <tr><td>王者荣耀·少女心事</td><td style="color:#D97706;font-weight:600;">24%</td><td style="color:#D97706;">↓ 波动</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn">下钻明细 →</button>
+      <button class="expand-btn" onclick="drillWarn('activity')">下钻明细 →</button>
     </div>
   </div>
 
@@ -883,11 +888,13 @@
         <h3>留存率趋势</h3>
         <div class="src">近 8 周 · 单厅 vs 平台均值</div>
         <div class="chart-box" id="cmp-hf-ret"></div>
+        <div class="chart-insight">本厅留存 <b>72%</b>，略高于平台均值（灰虚线 <b>70%</b>），近 8 周始终贴线——说明该厅留存处于平台平均水平附近，无优势也未见恶化。均值口径 = 全平台 (期末进行中 − 本周新成团) ÷ 期初进行中。</div>
       </div>
       <div class="card">
         <h3>周礼物流水趋势</h3>
         <div class="src">近 8 周 · 单厅 vs 平台均值</div>
         <div class="chart-box" id="cmp-hf-rev"></div>
+        <div class="chart-insight">本厅周流水 <b>¥12.8w</b>，从第 1 周略低于平台均值（灰虚线），一路拉升到领先约 <b>2 成</b>——说明该厅流水增长跑赢大盘。均值口径 = 全平台当周礼物流水总和 ÷ 有数据厅数。</div>
       </div>
     </div>
     <div class="wd-subhead" style="cursor:pointer;display:flex;align-items:center;gap:8px;" onclick="toggleWoW(this)">
@@ -1048,7 +1055,7 @@
         <h3>近 8 周毕业趋势</h3>
         <div class="src">每周满 30 天自动毕业的妹妹数</div>
         <div class="chart-box" id="cap-grad-line"></div>
-        <div class="chart-insight">近 8 周每周毕业 <b>4~7</b> 位，节奏平稳，本周 <b>6</b> 位处于均值附近。</div>
+        <div class="chart-insight">近 8 周每周毕业 <b>4~7</b> 位，8 周均值 ≈ <b>5.8</b> 位（(5+7+4+6+6+5+7+6) ÷ 8），本周 <b>6</b> 位略高于均值——节奏平稳、无异常毕业潮。</div>
       </div>
       <div class="card">
         <h3>最近一周毕业的妹妹</h3>
@@ -1180,7 +1187,7 @@
           <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
           <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
         </div>
-        <button class="btn ghost" onclick="openCaptainProfile(document.getElementById('side-captains'))">查看姐姐画像 →</button>
+        <button class="btn ghost" onclick="openUidCaptain()">查看姐姐画像 →</button>
       </div>
     </div>
     <div class="dn-notes" style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);">
@@ -1620,6 +1627,13 @@ function openCaptainProfile(btn) {
   switchPreviewTab('captains', btn);
   switchCaptainView('profile');
 }
+/* 侧边栏直达：UID 查询「查看姐姐画像」→ 正向联动（跳到姐姐分析并打开该姐姐画像下钻） */
+function openUidCaptain() {
+  switchPreviewTab('captains', document.getElementById('side-captains'));
+  switchCaptainView('profile');
+  /* 示范：固定联动到当前查询的姐姐「雪儿」；落地时按查询结果的姐姐名调用 openSister */
+  openSister('雪儿', '头牌', '王牌', '王者荣耀·恰逢今月');
+}
 /* 侧边栏直达：姐姐分析 → 姐姐筛选 */
 function openCaptainPool() {
   switchPreviewTab('captains', document.getElementById('side-captains'));
@@ -1874,6 +1888,34 @@ function openWarn(metric) {
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => card.classList.remove('flash-card'), 2200);
   }
+}
+
+/* ── 预警中心「下钻明细 →」示范跳转：切到概览页明细数据，高亮受影响厅的团 ── */
+const WARN_DRILL = {
+  retention: { title: '留存率预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·橙心如意'] },
+  activediss: { title: '主动解散占比预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·迷鹿之森'] },
+  newteam: { title: '新成团数预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·半糖心事'] },
+  activity: { title: '任务活跃度预警', halls: ['王者荣耀·怪诞学姐', '王者荣耀·少女心事'] }
+};
+function drillWarn(kind) {
+  const d = WARN_DRILL[kind];
+  switchPreviewTab('overview', document.getElementById('side-overview'));
+  let hit = 0;
+  document.querySelectorAll('#detail-body tr').forEach(tr => {
+    const hall = tr.cells[2] ? tr.cells[2].textContent : '';
+    const match = d.halls.some(h => hall.includes(h));
+    if (match) { tr.style.opacity = ''; tr.style.background = '#F3F0FF'; hit++; }
+    else { tr.style.opacity = '.35'; tr.style.background = ''; }
+  });
+  document.getElementById('dfb-note').innerHTML =
+    `按「${d.title}」受影响厅筛选：<b>${d.halls.join(' / ')}</b>，命中 <b>${hit}</b> 个团（高亮 = 命中，半透明 = 非命中）。` +
+    (hit === 0 ? '演示数据中该厅暂无团，落地后按厅过滤 <code>/api/detail-table?hall=xxx</code> 返回真实名单。' : '');
+  document.getElementById('detail-filter-bar').style.display = 'flex';
+  setTimeout(() => document.getElementById('detail-sec').scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+function clearDetailFilter() {
+  document.querySelectorAll('#detail-body tr').forEach(tr => { tr.style.opacity = ''; tr.style.background = ''; });
+  document.getElementById('detail-filter-bar').style.display = 'none';
 }
 
 /* ── 数量类指标名单弹窗（全字段 + 分页） ── */
