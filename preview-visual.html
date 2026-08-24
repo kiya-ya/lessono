@@ -570,7 +570,7 @@
         <li><span class="mp-rank top">2</span><span class="mp-name">若曦<span class="mp-sub">王者荣耀·迷鹿之森</span></span><span class="mp-val">¥9,800</span></li>
         <li><span class="mp-rank top">3</span><span class="mp-name">琳琳<span class="mp-sub">和平精英•幸运星</span></span><span class="mp-val">¥8,600</span></li>
       </ul>
-      <button class="expand-btn">查看全部姐姐 →</button>
+      <button class="expand-btn" onclick="openCaptainProfile(document.getElementById('side-captains'))">查看全部姐姐 →</button>
     </div>
   </div>
 
@@ -820,7 +820,7 @@
         <tr><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>28 天</td><td>王牌</td></tr>
       </tbody>
     </table>
-    <button class="expand-btn">查看全部躺平名单（194 个）→</button>
+    <button class="expand-btn" onclick="openFull('lying')">查看全部躺平名单（194 个）→</button>
   </div>
 </div>
 
@@ -952,7 +952,7 @@
         <tr><td>沈知微</td><td>草莓布丁</td><td>07-21</td><td>30 天</td><td><span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span></td><td>大神</td><td>金牌</td><td>¥3,300</td></tr>
       </tbody>
     </table>
-    <button class="expand-btn">查看全部 12 个团 →</button>
+    <button class="expand-btn" onclick="openFull('hallteams')">查看全部 12 个团 →</button>
   </div>
 
   <!-- 数据说明（指标口径与公式） -->
@@ -1046,7 +1046,7 @@
           <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn">查看全部姐姐（100+）→</button>
+      <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
     </div>
 
     <div class="section-head" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 最近一周名单</span></div>
@@ -1065,7 +1065,7 @@
           <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
           <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
         </ul>
-        <button class="expand-btn">查看全部毕业妹妹 →</button>
+        <button class="expand-btn" onclick="openFull('graduated')">查看全部毕业妹妹 →</button>
       </div>
     </div>
   </div>
@@ -1326,6 +1326,25 @@
         <tbody id="tm-body"></tbody>
       </table>
       <div class="chart-insight" id="tm-insight"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 弹窗：全量名单（「查看全部」类按钮） ═══════ -->
+<div class="modal" id="full-modal">
+  <div class="modal-box" style="width:920px;max-width:94vw;">
+    <div class="modal-head">
+      <h3 id="fm-title">全量名单</h3>
+      <button class="close" onclick="closeFull()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sub" id="fm-sub"></div>
+      <div style="overflow-x:auto;">
+        <table class="list">
+          <thead id="fm-head"></thead>
+          <tbody id="fm-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -1917,6 +1936,83 @@ function clearDetailFilter() {
   document.querySelectorAll('#detail-body tr').forEach(tr => { tr.style.opacity = ''; tr.style.background = ''; });
   document.getElementById('detail-filter-bar').style.display = 'none';
 }
+
+/* ── 全量名单弹窗（「查看全部」类按钮） ── */
+const FULL_LISTS = {
+  lying: {
+    title: '躺平团名单（全量）', sub: '共 194 个躺平团 · 演示节选 10 条（按连续未陪档天数降序）',
+    cols: ['大厅','妹妹','连续未陪档','已成团天数','等级'],
+    rows: [
+      ['三角洲★黄金海岸','大晓姐͜','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','王牌'],
+      ['王者·回家的诱惑','水漾漾⋆｡˚','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','银牌'],
+      ['王者荣耀·秋日私语','u.uও˖⊹','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
+      ['王者荣耀·浪漫有约','蔷薇小白兔ෆᐝ','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
+      ['王者荣耀·星晴少女','✨礼礼蝶影成双呢','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','金牌'],
+      ['王者荣耀天才少女','Tc.小稀-贴贴','<span style="color:#DC2626;font-weight:600;">17 天</span>','28 天','王牌'],
+      ['王者荣耀·恰逢今月','甜心小鹿','<span style="color:#DC2626;font-weight:600;">6 天</span>','12 天','金牌'],
+      ['王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">5 天</span>','9 天','银牌'],
+      ['和平精英•幸运星','奶糖','<span style="color:#DC2626;font-weight:600;">4 天</span>','29 天','王牌'],
+      ['王者荣耀·怪诞学姐','阿梨','<span style="color:#DC2626;font-weight:600;">4 天</span>','8 天','铜牌']
+    ]
+  },
+  hallteams: {
+    title: '该厅团明细（全量）', sub: '王者荣耀·恰逢今月 · 共 12 个团',
+    cols: ['姐姐','妹妹','成团日','天数','状态','姐姐等级','妹妹等级','妹妹流水'],
+    rows: [
+      ['苏念','星野みう','08-10','10 天','<span class="chip up">进行中</span>','王牌','金牌','¥2,480'],
+      ['白桃','奶盖啵啵','08-07','13 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,930'],
+      ['顾青梧','月下独酌','08-03','17 天','<span class="chip up">进行中</span>','大神','金牌','¥4,120'],
+      ['江辞','小熊软糖','07-25','26 天','<span class="chip down">已解散</span>','王牌','金牌','¥1,540'],
+      ['林晚','糖豆豆','07-28','23 天','<span class="chip down">已解散</span>','金牌','银牌','¥860'],
+      ['沈知微','草莓布丁','07-21','30 天','<span class="chip" style="color:#B45309;background:#FDF0D8;">已毕业</span>','大神','金牌','¥3,300'],
+      ['沈知微','蜜桃','08-15','5 天','<span class="chip up">进行中</span>','大神','银牌','¥1,120'],
+      ['江辞','洛洛','08-12','8 天','<span class="chip up">进行中</span>','王牌','铜牌','¥720'],
+      ['顾青梧','晚晚','08-01','19 天','<span class="chip up">进行中</span>','大神','金牌','¥3,860'],
+      ['林晚','苏苏','07-26','25 天','<span class="chip down">已解散</span>','金牌','银牌','¥940'],
+      ['苏念','小葵','08-08','12 天','<span class="chip up">进行中</span>','王牌','银牌','¥1,580'],
+      ['白桃','芝芝','07-30','21 天','<span class="chip down">已解散</span>','王牌','金牌','¥2,030']
+    ]
+  },
+  sisters: {
+    title: '姐姐总览（全量）', sub: '共 100+ 位姐姐 · 演示节选 10 条（按当日奖励降序）',
+    cols: ['#','姐姐','标签','带团','进行中','存活率','所在大厅','等级','当日奖励'],
+    rows: [
+      ['1','雪儿','<span class="tg hero">头牌</span>','6','5','72%','王者荣耀·恰逢今月','王牌','<b>¥12,400</b>'],
+      ['2','若曦','<span class="tg hero">头牌</span>','5','4','69%','王者荣耀·迷鹿之森','王牌','<b>¥9,800</b>'],
+      ['3','琳琳','<span class="tg normal">正常</span>','5','3','64%','和平精英•幸运星','金牌','<b>¥8,600</b>'],
+      ['4','悦悦','<span class="tg risk">风险</span>','4','2','58%','王者荣耀·半糖心事','银牌','<b>¥6,200</b>'],
+      ['5','甜甜','<span class="tg risk">风险</span>','3','1','51%','王者荣耀·橙心如意','铜牌','<b>¥5,600</b>'],
+      ['6','依依','<span class="tg hero">头牌</span>','4','3','68%','王者荣耀·迷鹿之森','王牌','¥7,600'],
+      ['7','娜娜','<span class="tg normal">正常</span>','3','2','60%','王者荣耀·怪诞学姐','银牌','¥4,800'],
+      ['8','小玉','<span class="tg normal">正常</span>','2','2','65%','王者荣耀·恰逢今月','金牌','¥4,200'],
+      ['9','雨欣','<span class="tg risk">风险</span>','3','1','49%','和平精英•幸运星','银牌','¥3,900'],
+      ['10','晨晨','<span class="tg normal">正常</span>','2','1','55%','王者荣耀·半糖心事','铜牌','¥3,100']
+    ]
+  },
+  graduated: {
+    title: '最近一周毕业妹妹（全量）', sub: '满 30 天自动毕业 · 演示节选 7 条',
+    cols: ['#','妹妹','姐姐','毕业日期'],
+    rows: [
+      ['1','灵儿','雪儿','08-17'],
+      ['2','沐晴','若曦','08-15'],
+      ['3','婷婷','琳琳','08-14'],
+      ['4','微微','甜甜','08-12'],
+      ['5','思思','悦悦','08-11'],
+      ['6','可欣','琳琳','08-09'],
+      ['7','诗涵','小玉','08-08']
+    ]
+  }
+};
+function openFull(key) {
+  const L = FULL_LISTS[key];
+  document.getElementById('fm-title').textContent = L.title;
+  document.getElementById('fm-sub').textContent = L.sub;
+  document.getElementById('fm-head').innerHTML = '<tr>' + L.cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  document.getElementById('fm-body').innerHTML = L.rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
+  document.getElementById('full-modal').classList.add('open');
+}
+function closeFull() { document.getElementById('full-modal').classList.remove('open'); }
+document.getElementById('full-modal').addEventListener('click', e => { if (e.target.id === 'full-modal') closeFull(); });
 
 /* ── 数量类指标名单弹窗（全字段 + 分页） ── */
 const LISTS = {
