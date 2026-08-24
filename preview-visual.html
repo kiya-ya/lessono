@@ -205,6 +205,8 @@
   .st{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;}
   .st.active{background:#EAF6EF;color:#16A34A;}
   .st.diss{background:#FCEBEB;color:#DC2626;}
+  .st.off{background:#F3F4F6;color:#6B7280;}
+  .why-not{display:block;font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;white-space:normal;}
   .flash td{background:#F3F0FF !important;}
   .tg{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;}
   .tg.hero{background:#F3F0FF;color:#7C5CFF;}
@@ -1036,6 +1038,10 @@
         <span class="dn-tag">风险口径</span>
         <span>「环比暴跌」= 周流水环比 ≤ -50% 且上周流水 ≥ ¥1000（排除小额波动）；「带团多但留存低」= 带团总数 ≥ 3 且留存 &lt; 50%。奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
       </div>
+      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+        <span class="dn-tag">牌子≠画像</span>
+        <span><b>「牌子等级」（铜/银/金/王牌/大神）衡量的是姐姐自身的等级经验，与「画像」（头牌/风险/正常）是两码事</b>：高牌子的姐姐不一定是带妹妹的好姐姐，好姐姐的牌子也未必高。牌子升级难度非线性——<b>铜牌→银牌很容易，王牌→大神极难</b>，所以「大神」比「银牌」高一档的实际含金量远超一档。画像打标看的是「流水 P80 + 留存」，与牌子解耦，请勿把「高牌子」直接等同于「优秀姐姐」。</span>
+      </div>
     </div>
     <div class="card">
       <table class="list">
@@ -1088,14 +1094,26 @@
         <span class="dn-tag">口径</span>
         <span>妹妹成长 =（妹妹最高等级 − 最低等级）÷ 团龄，按月折算（×30）取平均；共同成长 = 妹妹有成长且团仍在进行的团数占比。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。</span>
       </div>
+      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+        <span class="dn-tag">未入选原因</span>
+        <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>存活率 &lt; 50%</b>（带团留存不稳）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px;">
+      <h3>培养力象限</h3>
+      <div class="src">X 轴 = 妹妹成长（级/月） · Y 轴 = 共同成长 · 气泡大小 = 带团总数</div>
+      <div class="chart-box" id="pool-quad" style="height:200px;"></div>
+      <div class="chart-insight">右上角 = 妹妹成长快且共赢度高，是最该投入的培养对象；左下角 = 双低。紫点 = 候选、灰点 = 未入选——注意「悦悦」牌子（银牌）高于「甜甜」（铜牌），却因妹妹零成长而未入选，说明<b>牌子 ≠ 培养力</b>。</div>
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>状态</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>雪儿</td><td>6 / 5</td><td>72%</td><td>1.8</td><td>0.6</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
           <tr><td>2</td><td>若曦</td><td>5 / 4</td><td>69%</td><td>1.5</td><td>0.5</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>3</td><td>琳琳</td><td>5 / 3</td><td>64%</td><td>1.2</td><td>0.4</td><td>金牌</td><td><span class="st active">培养中</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>3</td><td>琳琳</td><td>5 / 3</td><td>64%</td><td>1.2</td><td>0.4</td><td>金牌</td><td><span class="st active">候选</span><span class="why-not">已输送培养</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>4</td><td>悦悦</td><td>4 / 2</td><td>58%</td><td>0.0</td><td>0.2</td><td>银牌</td><td><span class="st off">未入选</span><span class="why-not">妹妹成长 = 0（妹妹无升级）</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>5</td><td>甜甜</td><td>3 / 1</td><td>51%</td><td>0.6</td><td>0.2</td><td>铜牌</td><td><span class="st off">未入选</span><span class="why-not">牌子不足：铜牌 &lt; 银牌</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1459,6 +1477,40 @@ function svgFunnel(el, parts) {
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${body}${labels}</svg>`;
 }
 
+/* 培养力象限散点图（X=妹妹成长，Y=共同成长，气泡=带团总数） */
+function svgScatter(el, points, opts) {
+  const W = 460, H = 180, pad = 30;
+  const xMax = opts.xMax, yMax = opts.yMax;
+  const px = v => pad + (v / xMax) * (W - pad * 2);
+  const py = v => H - pad - (v / yMax) * (H - pad * 2);
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gx = pad + g * ((W - pad * 2) / 4);
+    const gy = pad + g * ((H - pad * 2) / 4);
+    grid += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H-pad}" stroke="#F0F1F4" stroke-width="1"/>`;
+    grid += `<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  const mx = px(xMax / 2), my = py(yMax / 2);
+  const cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+  const corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共赢高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共赢低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共赢高</text>
+    <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
+  const dots = points.map(p => {
+    const cx = px(p.x), cy = py(p.y);
+    const r = 6 + p.size * 1.3;
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="${p.c}" opacity=".5"/>
+      <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="${p.c}" stroke-width="1.6"/>
+      <text x="${cx.toFixed(1)}" y="${(cy - r - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#1A1D26">${p.name}</text>`;
+  }).join('');
+  const ax = `<text x="${W-pad}" y="${H-2}" text-anchor="end" font-size="9" fill="#9CA3AF">妹妹成长（级/月）→</text>
+    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 共同成长</text>`;
+  const legend = `<circle cx="${W*0.64}" cy="14" r="5" fill="#7C5CFF" opacity=".6"/><text x="${W*0.64+10}" y="17.5" font-size="10" fill="#6B7280">候选</text>
+    <circle cx="${W*0.74}" cy="14" r="5" fill="#D1D5DB" opacity=".6"/><text x="${W*0.74+10}" y="17.5" font-size="10" fill="#6B7280">未入选</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
+}
+
 /* 图表数据 */
 const RET = [72,70,68,66,64,62,60,58];
 const DISS = [26,24,22,21,20,22,21,18];
@@ -1523,6 +1575,13 @@ svgDonut(document.getElementById('cap-tag'), [
 ], '姐姐总数');
 svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0');
 svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)');
+svgScatter(document.getElementById('pool-quad'), [
+  { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF' },
+  { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF' },
+  { name:'琳琳', x:1.2, y:0.40, size:5, c:'#7C5CFF' },
+  { name:'悦悦', x:0.0, y:0.20, size:4, c:'#D1D5DB' },
+  { name:'甜甜', x:0.6, y:0.20, size:3, c:'#D1D5DB' },
+], { xMax:3, yMax:1 });
 
 /* UID · 姐 vs 妹 本周流水（分组柱状） */
 svgGroupBar(document.getElementById('uid-partner'), [
