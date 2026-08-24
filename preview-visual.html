@@ -550,13 +550,13 @@
     </div>
     <div class="card">
       <h3>大厅对比 TOP</h3>
-      <div class="src">按留存率降序 · 存活率 / 解散率</div>
+      <div class="src">按留存率降序 · 存活率 / 解散率 · 点行进入厅分析</div>
       <div class="hallcmp">
-        <div class="hc-row"><span class="hc-name">王者荣耀·恰逢今月</span><div class="hc-bar"><div class="hc-fill" style="width:72%"></div></div><span class="hc-ret">72%</span><span class="hc-diss">解散 <b>15%</b></span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:69%"></div></div><span class="hc-ret">69%</span><span class="hc-diss">解散 <b>18%</b></span></div>
-        <div class="hc-row"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:66%"></div></div><span class="hc-ret">66%</span><span class="hc-diss">解散 <b>20%</b></span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀·半糖心事</span><div class="hc-bar"><div class="hc-fill" style="width:64%"></div></div><span class="hc-ret">64%</span><span class="hc-diss">解散 <b>22%</b></span></div>
-        <div class="hc-row"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:61%"></div></div><span class="hc-ret">61%</span><span class="hc-diss">解散 <b>24%</b></span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·恰逢今月')"><span class="hc-name">王者荣耀·恰逢今月</span><div class="hc-bar"><div class="hc-fill" style="width:72%"></div></div><span class="hc-ret">72%</span><span class="hc-diss">解散 <b>15%</b></span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·迷鹿之森')"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:69%"></div></div><span class="hc-ret">69%</span><span class="hc-diss">解散 <b>18%</b></span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('和平精英•幸运星')"><span class="hc-name">和平精英•幸运星</span><div class="hc-bar"><div class="hc-fill" style="width:66%"></div></div><span class="hc-ret">66%</span><span class="hc-diss">解散 <b>20%</b></span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·半糖心事')"><span class="hc-name">王者荣耀·半糖心事</span><div class="hc-bar"><div class="hc-fill" style="width:64%"></div></div><span class="hc-ret">64%</span><span class="hc-diss">解散 <b>22%</b></span></div>
+        <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·橙心如意')"><span class="hc-name">王者荣耀·橙心如意</span><div class="hc-bar"><div class="hc-fill" style="width:61%"></div></div><span class="hc-ret">61%</span><span class="hc-diss">解散 <b>24%</b></span></div>
       </div>
       <div class="chart-insight">恰逢今月留存 <b>72%</b> 最高、解散 <b>15%</b> 最低；橙心如意留存 <b>61%</b> 逼近 60% 红线。</div>
     </div>
@@ -1417,7 +1417,7 @@ function svgMultiLine(el, series, threshold, onPick) {
   const lines = series.map(s => {
     const pts = s.data.map((v, i) => [pad + i * ((W - pad * 2) / (s.data.length - 1)), y(v)]);
     const poly = `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const dots = pts.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#fff" stroke="${s.color}" stroke-width="1.8"/>`).join('');
+    const dots = pts.map((p, i) => `<circle cx="${p[0]}" cy="${p[1]}" r="2.6" fill="#fff" stroke="${s.color}" stroke-width="1.8"><title>${s.name} · 第 ${i+1} 周 · ${s.data[i]}</title></circle>`).join('');
     return poly + dots;
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${thresholdLine}${legend}${lines}</svg>`;
@@ -1601,18 +1601,18 @@ svgDonut(document.getElementById('c-diss-reason'), [
 svgMultiLine(document.getElementById('wc-ret'), [
   { name: '恰逢今月', data: [74,72,69,66,63,61,60,58], color: '#DC2626' },
   { name: '橙心如意', data: [71,69,66,63,60,58,56,55], color: '#F08A8A' }
-], 60, () => drillWarn('retention'));
+], 60);
 svgMultiLine(document.getElementById('wc-diss'), [
   { name: '恰逢今月', data: [33,34,35,34,36,37,40,42], color: '#D97706' },
   { name: '迷鹿之森', data: [30,31,32,32,34,35,37,38], color: '#E8A44A' }
-], null, () => drillWarn('activediss'));
-svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null, () => drillWarn('newteam'));
-svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null, () => drillWarn('activity'));
+], null);
+svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
+svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
 svgBar(document.getElementById('ly-days'), [18, 34, 43, 24, 75], '#DC2626', '#F08A8A', ['4天','5天','6天','7天','8天+'], (idx, v, label) => drillLyDays(label));
 
 /* 厅分析 · 揭示面板趋势 */
-svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'}, (i, v) => toast('留存率 第 ' + (i+1) + ' 周 <b>' + v + '%</b>（平台均值 70%）'));
-svgLine(document.getElementById('cmp-hf-rev'), [96,100,104,101,110,116,119,128], '#D9A13F', 'rgba(217,161,63,.14)', null, {v:104, label:'平台均值 ¥104'}, (i, v) => toast('周流水 第 ' + (i+1) + ' 周 <b>¥' + v + '</b>（平台均值 ¥104）'));
+svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'});
+svgLine(document.getElementById('cmp-hf-rev'), [96,100,104,101,110,116,119,128], '#D9A13F', 'rgba(217,161,63,.14)', null, {v:104, label:'平台均值 ¥104'});
 svgDonut(document.getElementById('hall-share'), [
   { n:'恰逢今月', full:'王者荣耀·恰逢今月', v:12, c:'#3B82F6' },
   { n:'迷鹿之森', full:'王者荣耀·迷鹿之森', v:11, c:'#0EA5E9' },
@@ -1645,7 +1645,7 @@ svgDonut(document.getElementById('cap-tag'), [
   { n:'正常', v:140, c:'#C0C4CC', match:'正常' }
 ], '姐姐总数', (name, part) => drillCapTag(part));
 svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0', ['0-20%','20-40%','40-60%','60-80%','80-100%'], (idx, v, label) => drillCapRet(label));
-svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)', null, null, (i, v) => toast('毕业 第 ' + (i+1) + ' 周 <b>' + v + '</b> 位'));
+svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)', null, null);
 svgScatter(document.getElementById('pool-quad'), [
   { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·恰逢今月' },
   { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·迷鹿之森' },
@@ -1791,6 +1791,12 @@ function closeTeam() { document.getElementById('team-modal').classList.remove('o
 document.getElementById('team-modal').addEventListener('click', e => { if (e.target.id === 'team-modal') closeTeam(); });
 
 /* ── 厅分析 · 点行钻取单厅 ── */
+/* ── 概览页「大厅对比 TOP」点行 → 切到厅分析并定位该厅 ── */
+function openHallFromOverview(hall) {
+  switchPreviewTab('compare', document.getElementById('side-compare'));
+  focusHall(hall, null, true);
+}
+
 function focusHall(hall, rowEl, doScroll) {
   document.querySelectorAll('#view-compare .hc-row').forEach(r => r.style.background = '');
   const row = Array.from(document.querySelectorAll('#view-compare .hc-row')).find(r => r.querySelector('.hc-name') && r.querySelector('.hc-name').textContent === hall);
@@ -2006,19 +2012,6 @@ function showBar(barId, labelId, noteId, labelText, noteHtml, targetId) {
   document.getElementById(noteId).innerHTML = noteHtml;
   document.getElementById(barId).style.display = 'flex';
   if (targetId) setTimeout(() => document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
-}
-function toast(msg) {
-  let t = document.getElementById('toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;max-width:360px;padding:11px 15px;background:#1A1D26;color:#fff;font-size:12.5px;line-height:1.6;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.22);opacity:0;transition:opacity .25s;pointer-events:none;';
-    document.body.appendChild(t);
-  }
-  t.innerHTML = msg;
-  t.style.opacity = '1';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => t.style.opacity = '0', 2600);
 }
 
 /* 概览 · 天数分布 → 明细数据（已成团天数） */
