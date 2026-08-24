@@ -1000,14 +1000,18 @@
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">打标口径与指标计算</span></div>
       <div class="dn-line">
-        <span class="dni"><b>头牌</b><code>流水高于八成非零姐姐 且 留存 ≥50%</code><span>头部核心</span></span>
-        <span class="dni"><b>风险</b><code>环比暴跌 或 带团多但留存低</code><span>重点跟进</span></span>
+        <span class="dni"><b>头牌</b><code>周流水 ≥ P80 分位 且 留存 ≥50%</code><span>头部核心</span></span>
+        <span class="dni"><b>风险</b><code>环比 ≤-50% 且上周≥¥1000，或带团≥3 且留存&lt;50%</code><span>重点跟进</span></span>
         <span class="dni"><b>正常</b><code>其余姐姐</code><span>常规观察</span></span>
         <span class="dni"><b>存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
       </div>
       <div class="dn-notes">
-        <span class="dn-tag">口径</span>
-        <span>奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除（此前已定不启用该指标）。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
+        <span class="dn-tag">头牌口径</span>
+        <span>「高于八成非零姐姐」= 本周流水 &gt; 0 的姐姐按周流水排序，取第 <b>80 百分位（P80）</b> 作门槛，周流水 ≥ 该值即排进前 20%。留存 = 进行中团 ÷ 带团总数，两条须同时满足。人少时（有流水姐姐 &lt; 约 5 位）P80 会退化成「近似全场最高」，头牌名额自然缩水。</span>
+      </div>
+      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+        <span class="dn-tag">风险口径</span>
+        <span>「环比暴跌」= 周流水环比 ≤ -50% 且上周流水 ≥ ¥1000（排除小额波动）；「带团多但留存低」= 带团总数 ≥ 3 且留存 &lt; 50%。奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
       </div>
     </div>
     <div class="card">
@@ -1091,6 +1095,20 @@
         <input type="text" placeholder="输入 UID…" style="border:none;outline:none;font-size:14px;background:transparent;width:100%;min-width:0;">
       </div>
       <button class="btn primary">查询</button>
+    </div>
+  </div>
+
+  <!-- 数据说明（流水口径） -->
+  <div class="dn-footer" style="margin-bottom:14px;">
+    <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">流水口径与字段对照</span></div>
+    <div class="dn-line">
+      <span class="dni"><b>姐妹团累计流水</b><code>姐姐本人累计流水</code><span>顶部卡片 · team_total_revenue</span></span>
+      <span class="dni"><b>当周礼物流水</b><code>本周礼物流水</code><span>周对比表行</span></span>
+      <span class="dni"><b>妹妹累计流水</b><code>团内妹妹的流水</code><span>参与明细列 · sister_revenue</span></span>
+    </div>
+    <div class="dn-notes">
+      <span class="dn-tag">口径</span>
+      <span>本页出现三处「流水」，口径不同勿混读：顶部「姐妹团累计流水」是 <b>姐姐本人</b> 的累计；周对比表「当周礼物流水」是 <b>本周</b> 礼物；参与明细「妹妹累计流水」是 <b>团内妹妹</b> 的累计（历史字段 <code>team_info.total_revenue</code> 实为 <code>sister_revenue</code>）。环比 = 本周 vs 上周的差值或变化率。</span>
     </div>
   </div>
 
