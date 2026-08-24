@@ -849,7 +849,7 @@
   </div>
   <div class="card">
     <div class="filters">
-      <span class="f">搜索大厅…</span>
+      <input type="text" id="cmp-hall-search" class="tbl-search" placeholder="搜索大厅…" oninput="searchHallList('cmp-hall-search','#view-compare .hallcmp')">
       <span class="f">进行中团数 ▾</span>
     </div>
     <div class="hallcmp">
@@ -2018,6 +2018,15 @@ function searchTable(inputId, tbodyId) {
   const q = document.getElementById(inputId).value.trim().toLowerCase();
   document.querySelectorAll('#' + tbodyId + ' tr').forEach(tr => {
     tr.style.display = (!q || tr.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
+/* ── 厅分析排行列表搜索：按厅名隐藏不匹配行 ── */
+function searchHallList(inputId, listSel) {
+  const q = document.getElementById(inputId).value.trim().toLowerCase();
+  document.querySelectorAll(listSel + ' .hc-row').forEach(r => {
+    const name = r.querySelector('.hc-name');
+    const t = name ? name.textContent.toLowerCase() : '';
+    r.style.display = (!q || t.includes(q)) ? '' : 'none';
   });
 }
 function showBar(barId, labelId, noteId, labelText, noteHtml, targetId) {
