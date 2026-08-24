@@ -303,7 +303,7 @@
   <button class="on" onclick="switchPreviewTab('overview', this)">概览页</button>
   <button onclick="switchPreviewTab('warncenter', this)">预警中心</button>
   <button onclick="switchPreviewTab('compare', this)">厅分析</button>
-  <button onclick="switchPreviewTab('captains', this)">姐姐分析</button>
+  <button id="tab-captains" onclick="switchPreviewTab('captains', this)">姐姐分析</button>
   <button onclick="switchPreviewTab('uid', this)">UID查询</button>
   <span class="tabbar-note">预览 · 5 页全部可切</span>
 </div>
@@ -1134,11 +1134,18 @@
           <span class="chip">等级 王牌</span>
         </div>
       </div>
-      <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap;">
-        <div class="kv-cell"><div class="k">保护状态</div><div class="v">已保护</div></div>
-        <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
-        <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;gap:10px;align-items:flex-end;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="kv-cell"><div class="k">保护状态</div><div class="v">已保护</div></div>
+          <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
+          <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
+        </div>
+        <button class="btn ghost" onclick="switchPreviewTab('captains', document.getElementById('tab-captains'))">👤 查看姐姐画像 →</button>
       </div>
+    </div>
+    <div class="dn-notes" style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);">
+      <span class="dn-tag">数据来源</span>
+      <span>个人字段（保护状态 / 累计流水 / 周对比 / 4 周最高等级）来自外部爬虫，<b>需有效 Cookie</b>；本地团队数据（参与明细 / 绑定妹妹 / 姐 vs 妹）来自 <code>team_detail</code>。爬虫不可用时本地数据照常显示，个人字段标「需更新 Cookie」，不再整页报错。</span>
     </div>
   </div>
 
@@ -1184,7 +1191,7 @@
   <!-- 姐 vs 妹 对比 -->
   <div class="card" style="margin-top:14px;">
     <h3>👭 姐姐 vs 妹妹 本周数据对比</h3>
-    <div class="src">近 7 日礼物流水 · 双线对比</div>
+    <div class="src">近 7 日礼物流水 · 双线对比 · 妹妹爬虫缺失时回退本地流水</div>
     <div class="chart-box" id="uid-partner" style="height:150px;"></div>
     <div class="wd-subhead">累计对比</div>
     <table class="list">
@@ -1210,7 +1217,7 @@
     </table>
   </div>
 
-  <div class="todo-note"><b>🔧 待落地</b>：<code>#uid-type</code> 类型下拉硬编码在 HTML（后端 <code>/api/uid-query/types</code> 为死接口），落地时改由接口驱动；导出 CSV 的「累计流水」字段对不上（读 <code>compare.total_revenue</code>，实际应是顶层 <code>team_total_revenue</code>，现恒为 0），需修；<code>team_info.total_revenue</code> 实为 <code>sister_revenue</code>（妹妹累计流水），口径已在上表标正。该页依赖外部爬虫 + Cookie，无凭据时后端返回 500。</div>
+  <div class="todo-note"><b>🔧 待落地（本页 6 项已定方案）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水。</div>
 </div>
 
 <!-- ═══════ 弹窗：数量类指标名单 ═══════ -->
