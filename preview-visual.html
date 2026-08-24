@@ -938,8 +938,8 @@
   <div class="dn-footer" style="margin-top:14px;">
     <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">指标口径与计算公式</span></div>
     <div class="dn-line">
-      <span class="dni"><b>留存率</b><code>周末存活团 ÷ 周初进行中团</code><span>周指标</span></span>
-      <span class="dni"><b>解散率</b><code>本周解散数 ÷ 周初进行中团</code><span>周指标</span></span>
+      <span class="dni"><b>留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存</span></span>
+      <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
       <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>手动+离职含换厅+注销</span></span>
     </div>
     <div class="dn-line">
@@ -952,7 +952,7 @@
     </div>
     <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
       <span class="dn-tag">平台均值</span>
-      <span>趋势折线里的灰色虚线 = <b>全平台同指标当周均值</b>，用作单厅对比基准。口径：留存率取「全平台周末存活团 ÷ 周初进行中团」，流水取「全平台当周礼物流水总和 ÷ 有数据厅数」。单厅折线在虚线上方 = 领先平台，下方 = 落后平台。该序列落地时需后端在 <code>/api/weekly-report</code> 增补 <code>hall=all</code> 均值列。</span>
+      <span>趋势折线里的灰色虚线 = <b>全平台同指标当周均值</b>，用作单厅对比基准。口径：留存率取「全平台 (期末进行中 − 本周新成团) ÷ 期初进行中」，流水取「全平台当周礼物流水总和 ÷ 有数据厅数」。单厅折线在虚线上方 = 领先平台，下方 = 落后平台。该序列落地时需后端在 <code>/api/weekly-report</code> 增补 <code>hall=all</code> 均值列。</span>
     </div>
   </div>
 
