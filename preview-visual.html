@@ -242,6 +242,11 @@
   .side-nav .tab-txt b{font-size:13.5px;font-weight:600;color:var(--text);}
   .side-nav .tab-txt small{font-size:11px;color:var(--text3);}
   .side-nav .tab.active .tab-txt b{color:var(--accent);}
+  .side-nav .tab.sub{padding:6px 12px 6px 26px;gap:8px;}
+  .side-nav .tab.sub .tab-txt b{font-size:12px;font-weight:500;color:var(--text2);}
+  .side-nav .tab.sub:hover .tab-txt b{color:var(--text);}
+  .side-nav .tab.sub.sub-on{background:#F3F0FF;}
+  .side-nav .tab.sub.sub-on .tab-txt b{color:var(--accent);font-weight:600;}
   .side-foot{padding:12px 16px;border-top:1px solid var(--line);font-size:11px;color:var(--text3);}
   .main{margin-left:218px;min-height:100vh;}
   /* 一键回到顶部 */
@@ -324,7 +329,8 @@
     <button class="tab active" id="side-overview" onclick="switchPreviewTab('overview', this)"><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
     <button class="tab" id="side-warncenter" onclick="switchPreviewTab('warncenter', this)"><span class="tab-txt"><b>预警中心</b><small>规则 · 下钻</small></span></button>
     <button class="tab" id="side-compare" onclick="switchPreviewTab('compare', this)"><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
-    <button class="tab" id="side-captains" onclick="switchPreviewTab('captains', this)"><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
+    <button class="tab" id="side-captains" onclick="openCaptainProfile(this)"><span class="tab-txt"><b>姐姐分析</b><small>画像 · 姐姐筛选</small></span></button>
+    <button class="tab sub" id="side-filter" onclick="openCaptainPool()"><span class="tab-txt"><b>姐姐筛选</b></span></button>
     <button class="tab" id="side-uid" onclick="switchPreviewTab('uid', this)"><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
   </nav>
   <div class="side-foot">预览 · 5 页全部可切</div>
@@ -989,11 +995,11 @@
   <div class="page-head">
     <div>
       <h1>姐姐分析</h1>
-      <p>画像 / 候选池 · 打标分布 · 带团存活率 · 排行榜 · 毕业妹妹</p>
+      <p>画像 / 姐姐筛选 · 打标分布 · 带团存活率 · 排行榜 · 毕业妹妹</p>
     </div>
     <div class="seg" id="cap-seg">
       <button class="on" onclick="switchCaptainView('profile', this)">画像</button>
-      <button onclick="switchCaptainView('pool', this)">候选池</button>
+      <button onclick="switchCaptainView('pool', this)">姐姐筛选</button>
     </div>
   </div>
 
@@ -1080,7 +1086,7 @@
 
   <!-- 候选池视图 -->
   <div id="captains-pool" style="display:none;">
-    <div class="section-head" style="margin-top:0;"><h2>培养力候选池</h2><span class="hint">并列展示 · 不做权威排序 · 记录输送 / 提拔</span></div>
+    <div class="section-head" style="margin-top:0;"><h2>姐姐筛选</h2><span class="hint">并列展示 · 不做权威排序 · 记录输送 / 提拔</span></div>
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">培养力指标口径</span></div>
       <div class="dn-line">
@@ -1130,7 +1136,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；候选池口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 存活率前置），候选池「牌子等级」后置。</div>
+  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 存活率前置），姐姐筛选「牌子等级」后置。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -1195,7 +1201,7 @@
           <div class="kv-cell"><div class="k">姐妹团累计流水</div><div class="v">¥86,400</div></div>
           <div class="kv-cell"><div class="k">4 周最高等级</div><div class="v">大神</div></div>
         </div>
-        <button class="btn ghost" onclick="switchPreviewTab('captains', document.getElementById('side-captains'))">查看姐姐画像 →</button>
+        <button class="btn ghost" onclick="openCaptainProfile(document.getElementById('side-captains'))">查看姐姐画像 →</button>
       </div>
     </div>
     <div class="dn-notes" style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);">
@@ -1592,7 +1598,7 @@ svgGroupBar(document.getElementById('uid-partner'), [
 /* 预览 tab 切换 */
 const PREVIEW_VIEWS = ['overview', 'warncenter', 'compare', 'captains', 'uid'];
 function switchPreviewTab(tab, btn) {
-  document.querySelectorAll('.side-nav .tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.side-nav .tab').forEach(b => { b.classList.remove('active'); b.classList.remove('sub-on'); });
   btn.classList.add('active');
   PREVIEW_VIEWS.forEach(v => {
     document.getElementById('view-' + v).style.display = v === tab ? '' : 'none';
@@ -1606,6 +1612,19 @@ function switchCaptainView(view, btn) {
   btn.classList.add('on');
   document.getElementById('captains-main').style.display = view === 'profile' ? '' : 'none';
   document.getElementById('captains-pool').style.display = view === 'pool' ? '' : 'none';
+}
+/* 侧边栏直达：姐姐分析 → 画像 */
+function openCaptainProfile(btn) {
+  switchPreviewTab('captains', btn);
+  const seg = document.getElementById('cap-seg');
+  switchCaptainView('profile', seg.querySelectorAll('button')[0]);
+}
+/* 侧边栏直达：姐姐分析 → 姐姐筛选 */
+function openCaptainPool() {
+  switchPreviewTab('captains', document.getElementById('side-captains'));
+  const seg = document.getElementById('cap-seg');
+  switchCaptainView('pool', seg.querySelectorAll('button')[1]);
+  document.getElementById('side-filter').classList.add('sub-on');
 }
 const CAP_PERIOD = { day: '当日奖励', week: '当周奖励', month: '当月奖励' };
 function setCapPeriod(p, btn) {
