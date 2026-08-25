@@ -462,7 +462,7 @@
       <span class="go">进入预警中心 →</span>
     </div>
     <div class="warn-card warning" onclick="openWarn('activity')">
-      <div class="top"><span class="dot amber"></span>任务活跃度预警<span class="lvl">警告</span></div>
+      <div class="top"><span class="dot amber"></span>陪档活跃率预警<span class="lvl">警告</span></div>
       <div class="val">33.8%</div>
       <div class="foot">陪档率整体偏低 · 近 8 日剧烈波动</div>
       <span class="go">进入预警中心 →</span>
@@ -488,7 +488,7 @@
       </div>
       <div class="dn-notes">
         <span class="dn-tag">注意</span>
-        <span>主动解散占比 ≠ 解散率；毕业 = 满 30 天正常流程、不计入流失；主动解散 = 手动 / 离职(含换厅) / 注销。数据对齐搜索栏所选时间，对比口径均为较上一周。</span>
+        <span>主动解散占比 ≠ 解散率；毕业 = 满 30 天正常流程、不计入流失；主动解散 = 手动 / 离职(含换厅) / 注销；任务未完成自动解散 = 系统在连续 5 日未陪档后自动解散。数据对齐搜索栏所选时间，对比口径均为较上一周。</span>
       </div>
     </div>
     <div class="kpi-row">
@@ -547,14 +547,14 @@
   <div class="dn-footer">
     <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">团分析口径与计算方式</span></div>
     <div class="dn-line">
-      <span class="dni"><b>存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+      <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
       <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
       <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
       <span class="dni"><b>大厅对比 TOP</b><code>留存率降序前 5</code><span>解散率 = 同周期占比</span></span>
     </div>
     <div class="dn-notes">
       <span class="dn-tag">注意</span>
-      <span>上方 chips（存活率）与下方柱状图（天数分布）是两套指标，请勿混读；解散原因含「毕业」（满 30 天正常流程）与流失类原因，毕业不计入解散率。</span>
+      <span>上方 chips（团存活率）与下方柱状图（天数分布）是两套指标，请勿混读；解散原因含「毕业」（满 30 天正常流程）与流失类原因，毕业不计入解散率。</span>
     </div>
   </div>
   <div class="chart-grid">
@@ -577,7 +577,7 @@
     </div>
     <div class="card">
       <h3>大厅对比 TOP</h3>
-      <div class="src">按留存率降序 · 存活率 / 解散率 · 点行进入厅分析</div>
+      <div class="src">按留存率降序 · 留存率 / 解散率 · 点行进入厅分析</div>
       <div class="hallcmp">
         <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·恰逢今月')"><span class="hc-name">王者荣耀·恰逢今月</span><div class="hc-bar"><div class="hc-fill" style="width:72%"></div></div><span class="hc-ret">72%</span><span class="hc-diss">解散 <b>15%</b></span></div>
         <div class="hc-row" style="cursor:pointer;" onclick="openHallFromOverview('王者荣耀·迷鹿之森')"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:69%"></div></div><span class="hc-ret">69%</span><span class="hc-diss">解散 <b>18%</b></span></div>
@@ -629,9 +629,9 @@
         <tr data-tid="SJ20260802"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260802')">SJ20260802</td><td>08-09</td><td>王者荣耀·迷鹿之森</td><td>若曦</td><td>沐晴</td><td>9天</td><td><span class="st active">进行中</span></td><td>—</td><td>—</td><td>¥9,800</td></tr>
         <tr data-tid="SJ20260715"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260715')">SJ20260715</td><td>07-20</td><td>和平精英•幸运星</td><td>琳琳</td><td>婷婷</td><td>29天</td><td><span class="st active">进行中</span></td><td>—</td><td>—</td><td>¥8,600</td></tr>
         <tr data-tid="SJ20260701"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260701')">SJ20260701</td><td>07-05</td><td>王者荣耀·半糖心事</td><td>悦悦</td><td>思思</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-02</td><td>任务未完成自动解散</td><td>¥6,200</td></tr>
-        <tr data-tid="SJ20260618"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260618')">SJ20260618</td><td>06-22</td><td>王者荣耀·橙心如意</td><td>甜甜</td><td>微微</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>满月自动解散</td><td>¥5,600</td></tr>
-        <tr data-tid="SJ20260720"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260720')">SJ20260720</td><td>07-25</td><td>王者荣耀·恰逢今月</td><td>雪儿</td><td>沐晴</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>满月自动解散</td><td>¥18,400</td></tr>
-        <tr data-tid="SJ20260615"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260615')">SJ20260615</td><td>06-20</td><td>王者荣耀·迷鹿之森</td><td>雪儿</td><td>婷婷</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>满月自动解散</td><td>¥22,100</td></tr>
+        <tr data-tid="SJ20260618"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260618')">SJ20260618</td><td>06-22</td><td>王者荣耀·橙心如意</td><td>甜甜</td><td>微微</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>毕业</td><td>¥5,600</td></tr>
+        <tr data-tid="SJ20260720"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260720')">SJ20260720</td><td>07-25</td><td>王者荣耀·恰逢今月</td><td>雪儿</td><td>沐晴</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>毕业</td><td>¥18,400</td></tr>
+        <tr data-tid="SJ20260615"><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260615')">SJ20260615</td><td>06-20</td><td>王者荣耀·迷鹿之森</td><td>雪儿</td><td>婷婷</td><td>—</td><td><span class="st diss">已解散</span></td><td>08-17</td><td>毕业</td><td>¥22,100</td></tr>
       </tbody>
     </table>
   </div>
@@ -690,9 +690,9 @@
           <td><code>team_detail.form_date</code></td>
         </tr>
         <tr>
-          <td>任务活跃度</td>
+          <td>陪档活跃率</td>
           <td><span class="wn-tag warning">警告</span></td>
-          <td>陪档完成率 = 最新快照日有陪档团 ÷ 进行中团 × 100%</td>
+          <td>陪档活跃率 = 最新快照日有陪档团 ÷ 进行中团 × 100%</td>
           <td>陪档率 &lt; 40% 或近 8 个快照日波动 &gt; 20pp</td>
           <td><code>team_detail.accompany_task_count</code></td>
         </tr>
@@ -762,11 +762,11 @@
     </div>
 
     <div class="card warn-detail warning">
-      <div class="wd-head"><h3>任务活跃度预警</h3><span class="wn-tag warning">警告</span></div>
-      <div class="src">近 8 个快照日陪档完成率 · 整体偏低且剧烈波动</div>
+      <div class="wd-head"><h3>陪档活跃率预警</h3><span class="wn-tag warning">警告</span></div>
+      <div class="src">近 8 个快照日陪档活跃率 · 整体偏低且剧烈波动</div>
       <div class="chart-box" id="wc-activity"></div>
       <div class="chart-insight">最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。</div>
-      <div class="wd-subhead">活跃度偏低的厅</div>
+      <div class="wd-subhead">活跃率偏低的厅</div>
       <table class="list">
         <thead><tr><th>大厅</th><th>陪档率</th><th>趋势</th></tr></thead>
         <tbody>
@@ -959,7 +959,7 @@
         <div class="chart-box" id="cmp-diss"></div>
       </div>
       <div class="card">
-        <div class="src">近 8 周各解散原因数量 · 主动 / 毕业 / 系统自动</div>
+        <div class="src">近 8 周各解散原因数量 · 主动 / 毕业 / 任务未完成自动</div>
         <div class="chart-box" id="cmp-diss-trend"></div>
       </div>
     </div>
@@ -1004,7 +1004,7 @@
     </div>
     <div class="dn-line">
       <span class="dni"><b>躺平</b><code>进行中团连续 ≥4 天未陪档</code><span>预警</span></span>
-      <span class="dni"><b>任务活跃度</b><code>最新快照日有陪档团 ÷ 进行中团</code><span>预警</span></span>
+      <span class="dni"><b>陪档活跃率</b><code>最新快照日有陪档团 ÷ 进行中团</code><span>预警</span></span>
     </div>
     <div class="dn-notes">
       <span class="dn-tag">来源</span>
@@ -1041,7 +1041,7 @@
         <h3>带团存活率分布</h3>
         <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）· 点柱下钻</div>
         <div class="chart-box" id="cap-ret"></div>
-        <div class="chart-insight">存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
+        <div class="chart-insight">带团存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
       </div>
     </div>
 
@@ -1059,7 +1059,7 @@
         <span class="dni"><b>头牌</b><code>周流水 ≥ P80 分位 且 留存 ≥50%</code><span>头部核心</span></span>
         <span class="dni"><b>风险</b><code>环比 ≤-50% 且上周≥¥1000，或带团≥3 且留存&lt;50%</code><span>重点跟进</span></span>
         <span class="dni"><b>正常</b><code>其余姐姐</code><span>常规观察</span></span>
-        <span class="dni"><b>存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+        <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">头牌口径</span>
@@ -1082,7 +1082,7 @@
       </div>
       <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>标签</th><th>带团</th><th>进行中</th><th>存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>标签</th><th>带团</th><th>进行中</th><th>带团存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
           <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
           <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
@@ -1122,10 +1122,10 @@
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">培养力指标口径</span></div>
       <div class="dn-line">
         <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
-        <span class="dni"><b>存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+        <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
         <span class="dni"><b>妹妹成长</b><code>妹妹等级月均升级数</code><span>培养速度</span></span>
         <span class="dni"><b>共同成长</b><code>妹妹升级且团存活的团占比</code><span>共赢度</span></span>
-        <span class="dni"><b>候选判定</b><code>存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
+        <span class="dni"><b>候选判定</b><code>带团存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
@@ -1133,7 +1133,7 @@
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
-        <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>存活率 &lt; 50%</b>（带团留存不稳）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
+        <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>带团存活率 &lt; 50%</b>（带团留存不稳）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
@@ -1144,7 +1144,7 @@
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>雪儿</td><td>6 / 5</td><td>72%</td><td>1.8</td><td>0.6</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
           <tr><td>2</td><td>若曦</td><td>5 / 4</td><td>69%</td><td>1.5</td><td>0.5</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
@@ -1167,7 +1167,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 存活率前置），姐姐筛选「牌子等级」后置。</div>
+  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 带团存活率前置），姐姐筛选「牌子等级」后置。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -1333,7 +1333,7 @@
       <div class="modal-sub" id="sm-sub"></div>
       <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
         <div class="kv-cell"><div class="k">带团 / 进行中</div><div class="v" id="sm-teams">—</div></div>
-        <div class="kv-cell"><div class="k">存活率</div><div class="v" id="sm-ret">—</div></div>
+        <div class="kv-cell"><div class="k">带团存活率</div><div class="v" id="sm-ret">—</div></div>
         <div class="kv-cell"><div class="k">本周流水</div><div class="v" id="sm-rev">—</div></div>
         <div class="kv-cell"><div class="k">标签</div><div class="v" id="sm-tag">—</div></div>
       </div>
@@ -1621,7 +1621,7 @@ svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C', ['≤7天'
 svgDonut(document.getElementById('c-diss-reason'), [
   { n:'离职解散（含换厅）', v:314, c:'#E08A5A', match:'离职' },
   { n:'手动解散', v:248, c:'#D56060', match:'手动' },
-  { n:'毕业', v:234, c:'#16A34A', match:'满月' },
+  { n:'毕业', v:234, c:'#16A34A', match:'毕业' },
   { n:'任务未完成自动解散', v:178, c:'#C98A2D', match:'任务未完成' },
   { n:'注销', v:5, c:'#9CA3AF', match:'注销' },
   { n:'其他', v:3, c:'#C0C4CC', match:'其他' },
@@ -1660,15 +1660,15 @@ svgMultiLine(document.getElementById('hall-trend'), [
 svgDonut(document.getElementById('cmp-diss'), [
   { n:'主动解散', v:6, c:'#C2410C', match:'已解散' },
   { n:'毕业', v:3, c:'#F97316', match:'已毕业' },
-  { n:'系统自动解散', v:1, c:'#FDBA74', match:'已解散' },
+  { n:'任务未完成自动解散', v:1, c:'#FDBA74', match:'已解散' },
 ], '已解散', (name, part) => drillCmpDiss(part));
 svgMultiLine(document.getElementById('cmp-diss-trend'), [
   { name:'主动解散', data:[5,6,5,7,6,7,6,6], color:'#C2410C', match:'已解散' },
   { name:'毕业', data:[2,3,2,3,3,4,3,3], color:'#F97316', match:'已毕业' },
-  { name:'系统自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74', match:'已解散' }
+  { name:'任务未完成自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74', match:'已解散' }
 ], null, (name, s) => drillCmpDiss(s));
 
-/* 姐姐分析 · 打标分布 + 存活率分布 */
+/* 姐姐分析 · 打标分布 + 带团存活率分布 */
 svgDonut(document.getElementById('cap-tag'), [
   { n:'头牌', v:42, c:'#7C5CFF', match:'头牌' },
   { n:'风险', v:18, c:'#D97706', match:'风险' },
@@ -1782,9 +1782,9 @@ const TEAM_EXTRA = {
   'SJ20260715': { sis:'琳琳', mate:'婷婷', hall:'和平精英•幸运星', form:'07-20', age:'29天', status:'进行中', reward:'¥8,600',
     days:[['08-17','—','—','—'],['08-16','—','—','✓'],['08-14','—','—','—'],['08-13','✓','—','—'],['08-12','—','—','—']] },
   'SJ20260701': { sis:'悦悦', mate:'思思', hall:'王者荣耀·半糖心事', form:'07-05', age:'—', status:'已解散', reward:'¥6,200', diss:'08-02 任务未完成自动解散' },
-  'SJ20260618': { sis:'甜甜', mate:'微微', hall:'王者荣耀·橙心如意', form:'06-22', age:'—', status:'已解散', reward:'¥5,600', diss:'08-17 满月自动解散' },
-  'SJ20260720': { sis:'雪儿', mate:'沐晴', hall:'王者荣耀·恰逢今月', form:'07-25', age:'—', status:'已解散', reward:'¥18,400', diss:'08-17 满月自动解散' },
-  'SJ20260615': { sis:'雪儿', mate:'婷婷', hall:'王者荣耀·迷鹿之森', form:'06-20', age:'—', status:'已解散', reward:'¥22,100', diss:'08-17 满月自动解散' }
+  'SJ20260618': { sis:'甜甜', mate:'微微', hall:'王者荣耀·橙心如意', form:'06-22', age:'—', status:'已解散', reward:'¥5,600', diss:'08-17 毕业' },
+  'SJ20260720': { sis:'雪儿', mate:'沐晴', hall:'王者荣耀·恰逢今月', form:'07-25', age:'—', status:'已解散', reward:'¥18,400', diss:'08-17 毕业' },
+  'SJ20260615': { sis:'雪儿', mate:'婷婷', hall:'王者荣耀·迷鹿之森', form:'06-20', age:'—', status:'已解散', reward:'¥22,100', diss:'08-17 毕业' }
 };
 function openTeam(tid) {
   const d = TEAM_EXTRA[tid];
@@ -1971,7 +1971,7 @@ function openKpiDetail(metric) {
     svgBar(chart, REV, '#D9A13F', '#B07A1F');
     insight.innerHTML = '本周 <b>¥1.28M</b>（环比 <b>+12%</b>）· 增长。';
   } else if (metric === 'activity') {
-    title.textContent = '任务活跃度 · 近 8 个快照日趋势';
+    title.textContent = '陪档活跃率 · 近 8 个快照日趋势';
     svgLine(chart, [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)');
     insight.innerHTML = '最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。';
   } else {
@@ -2000,7 +2000,7 @@ const WARN_DRILL = {
   retention: { title: '留存率预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·橙心如意'] },
   activediss: { title: '主动解散占比预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·迷鹿之森'] },
   newteam: { title: '新成团数预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·半糖心事'] },
-  activity: { title: '任务活跃度预警', halls: ['王者荣耀·怪诞学姐', '王者荣耀·少女心事'] }
+  activity: { title: '陪档活跃率预警', halls: ['王者荣耀·怪诞学姐', '王者荣耀·少女心事'] }
 };
 function drillWarn(kind) {
   const d = WARN_DRILL[kind];
@@ -2103,13 +2103,13 @@ function drillCmpDiss(part) {
   const label = part.n || part.name;
   const hit = dimMatch('#cmp-team-body', tr => tr.cells[5] ? tr.cells[5].textContent.includes(part.match) : false);
   const note = part.match === '已解散'
-    ? `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行（主动/系统自动演示均归「已解散」，细分原因落地后由明细表区分）。`
+    ? `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行（主动/任务未完成自动演示均归「已解散」，细分原因落地后由明细表区分）。`
     : `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行。`;
   showBar('cmp-filter-bar', 'cmp-flabel', 'cmp-fnote', '解散原因下钻', note, null);
 }
 function clearCmpFilter() { clearDim('#cmp-team-body'); document.getElementById('cmp-filter-bar').style.display = 'none'; }
 
-/* 姐姐分析 · 打标分布 / 存活率分布 → 姐姐总览 */
+/* 姐姐分析 · 打标分布 / 带团存活率分布 → 姐姐总览 */
 function drillCapTag(part) {
   const hit = dimMatch('#cap-table-body', tr => tr.cells[2] ? tr.cells[2].textContent.includes(part.match) : false);
   showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '画像下钻',
@@ -2122,8 +2122,8 @@ function drillCapRet(label) {
     const p = parseInt(tr.cells[5] ? tr.cells[5].textContent : '');
     return !isNaN(p) && p >= lo && p < hi;
   });
-  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '存活率下钻',
-    `按「存活率 <b>${label}</b>」过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?surv=</code> 返回真实名单）。`, null);
+  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '带团存活率下钻',
+    `按「带团存活率 <b>${label}</b>」过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?surv=</code> 返回真实名单）。`, null);
 }
 function clearCapFilter() { clearDim('#cap-table-body'); document.getElementById('cap-filter-bar').style.display = 'none'; }
 
@@ -2165,7 +2165,7 @@ const FULL_LISTS = {
   },
   sisters: {
     title: '姐姐总览（全量）', sub: '共 100+ 位姐姐 · 演示节选 10 条（按当日奖励降序）',
-    cols: ['#','姐姐','标签','带团','进行中','存活率','所在大厅','等级','当日奖励'],
+    cols: ['#','姐姐','标签','带团','进行中','带团存活率','所在大厅','等级','当日奖励'],
     rows: [
       ['1','雪儿','<span class="tg hero">头牌</span>','6','5','72%','王者荣耀·恰逢今月','王牌','<b>¥12,400</b>'],
       ['2','若曦','<span class="tg hero">头牌</span>','5','4','69%','王者荣耀·迷鹿之森','王牌','<b>¥9,800</b>'],
