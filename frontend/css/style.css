@@ -764,6 +764,22 @@ body { background: var(--wb-bg); }
 .ss-txt b { font-size: 12px; font-weight: 600; color: var(--wb-text); }
 .ss-txt small { font-size: 10.5px; color: #6B7280; margin-top: 1px; }
 @keyframes ssPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,.35); } 50% { box-shadow: 0 0 0 4px rgba(220,38,38,0); } }
+
+/* ── Toast 轻提示（Cookie 刷新结果等，替代 alert） ── */
+#wb-toast { position: fixed; top: 18px; right: 18px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.wb-toast-item {
+  min-width: 240px; max-width: 360px; background: #fff; border: 1px solid var(--wb-line);
+  border-radius: 12px; box-shadow: 0 8px 24px rgba(26,29,38,.14); padding: 12px 16px 12px 14px;
+  display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--wb-text); line-height: 1.5;
+  animation: wbToastIn .22s ease; pointer-events: auto;
+}
+.wb-toast-item.success { border-left: 3px solid var(--wb-up); }
+.wb-toast-item.error { border-left: 3px solid var(--wb-down); }
+.wb-toast-item.info { border-left: 3px solid var(--wb-accent); }
+.wb-toast-item.leaving { opacity: 0; transform: translateX(8px); transition: opacity .25s, transform .25s; }
+.wb-toast-ico { flex-shrink: 0; font-size: 15px; line-height: 1.4; }
+.wb-toast-txt { flex: 1; min-width: 0; white-space: pre-line; }
+@keyframes wbToastIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
 .side-toggle { color: var(--wb-text-3); }
 .side-toggle:hover { color: var(--wb-text); background: rgba(124,92,255,.08); }
 .side-user-uid { color: var(--wb-text); }

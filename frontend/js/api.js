@@ -260,6 +260,31 @@ function renderPanelStatus(key, info, lastRun) {
   }
 }
 
+// ── Toast 轻提示（替代 alert，用于 Cookie 刷新等非阻断反馈） ──
+function showToast(message, type = 'info', duration = 3200) {
+  let wrap = document.getElementById('wb-toast');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'wb-toast';
+    document.body.appendChild(wrap);
+  }
+  const el = document.createElement('div');
+  el.className = 'wb-toast-item ' + (type || 'info');
+  const ico = document.createElement('span');
+  ico.className = 'wb-toast-ico';
+  ico.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+  const txt = document.createElement('span');
+  txt.className = 'wb-toast-txt';
+  txt.textContent = message;
+  el.appendChild(ico);
+  el.appendChild(txt);
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 260);
+  }, duration);
+}
+
 async function manualRefreshCookie(target) {
   const label = target === 'bigdata' ? '数据抓取' : target === 'uid' ? 'UID查询' : '全部';
   const btn = document.getElementById('refresh-btn-' + target);
@@ -274,16 +299,16 @@ async function manualRefreshCookie(target) {
     await refreshCookieStatus();
     updateCookiePanelStatus();
     if (data.error) {
-      alert('❌ 自动重登失败：' + data.error);
+      showToast('自动重登失败：' + data.error, 'error');
     } else {
       const ka = data.keepalive || {};
       const parts = [];
-      if (ka.uid) parts.push('UID查询 ' + (ka.uid.ok ? '✅有效' : '❌' + (ka.uid.msg || '失效')));
-      if (ka.bigdata) parts.push('数据抓取 ' + (ka.bigdata.ok ? '✅有效' : '❌' + (ka.bigdata.msg || '失效')));
-      alert('自动重登「' + label + '」完成\n' + (parts.join(' · ') || '已刷新'));
+      if (ka.uid) parts.push('UID查询 ' + (ka.uid.ok ? '有效' : (ka.uid.msg || '失效')));
+      if (ka.bigdata) parts.push('数据抓取 ' + (ka.bigdata.ok ? '有效' : (ka.bigdata.msg || '失效')));
+      showToast('自动重登「' + label + '」完成\n' + (parts.join(' · ') || '已刷新'), 'success');
     }
   } catch (e) {
-    alert('❌ 请求失败: ' + (e.message || '请确认后端已启动'));
+    showToast('请求失败: ' + (e.message || '请确认后端已启动'), 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🔄 立即刷新（自动重登）'; }
   }

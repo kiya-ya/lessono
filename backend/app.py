@@ -209,10 +209,9 @@ DISSOLVE_REASON_CASE = """
     CASE
       WHEN dissolve_reason LIKE '%手动%' THEN '手动解散'
       WHEN dissolve_reason LIKE '%未完成%' THEN '任务未完成自动解散'
-      WHEN dissolve_reason LIKE '%一个月%' THEN '满月自动解散'
-      WHEN dissolve_reason LIKE '%铜牌%' THEN '等级自动解散'
+      WHEN dissolve_reason LIKE '%毕业%' THEN '毕业'
       WHEN dissolve_reason LIKE '%注销%' THEN '注销'
-      WHEN dissolve_reason LIKE '%离职%' THEN '离职'
+      WHEN dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' THEN '离职'
       ELSE '其他'
     END
 """
@@ -234,8 +233,8 @@ def _level_rank_sql(col):
 # 主动解散占比 = 主动解散 ÷ 非毕业解散。
 # 周 = 周一 → 周日；期初/期末 = 该周最早/最晚快照。
 
-# 主动解散（用户侧发起）：手动解散 / 离职 / 不在同一个大厅
-ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%')"
+# 主动解散（用户侧发起）：手动解散 / 离职(含换厅) / 注销
+ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' OR dissolve_reason LIKE '%注销%')"
 
 
 def week_metrics_from_detail(conn, hall, ws, we):
