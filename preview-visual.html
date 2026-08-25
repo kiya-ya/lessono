@@ -1194,7 +1194,7 @@
       <div class="vdivider"></div>
       <div class="combo" style="flex:1;">
         <span class="lbl">UID</span>
-        <input type="text" placeholder="输入 UID…" style="border:none;outline:none;font-size:14px;background:transparent;width:100%;min-width:0;">
+        <input type="text" id="pv-uid-input" placeholder="输入 UID…" style="border:none;outline:none;font-size:14px;background:transparent;width:100%;min-width:0;">
       </div>
       <button class="btn primary">查询</button>
     </div>
@@ -1360,8 +1360,8 @@
     <div class="modal-body">
       <div class="modal-sub" id="tm-sub"></div>
       <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
-        <div class="kv-cell"><div class="k">姐姐</div><div class="v" id="tm-sis">—</div></div>
-        <div class="kv-cell"><div class="k">妹妹</div><div class="v" id="tm-mate">—</div></div>
+        <div class="kv-cell"><div class="k">姐姐</div><div class="v" id="tm-sis">—</div><a id="tm-sis-uid" data-uid="" data-name="" onclick="jumpUidFromTeam(this.getAttribute('data-uid'),this.getAttribute('data-name'))" style="display:block;margin-top:3px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:500;text-decoration:none;">UID —</a></div>
+        <div class="kv-cell"><div class="k">妹妹</div><div class="v" id="tm-mate">—</div><a id="tm-mate-uid" data-uid="" data-name="" onclick="jumpUidFromTeam(this.getAttribute('data-uid'),this.getAttribute('data-name'))" style="display:block;margin-top:3px;font-size:11px;color:var(--accent);cursor:pointer;font-weight:500;text-decoration:none;">UID —</a></div>
         <div class="kv-cell"><div class="k">已成团天数</div><div class="v" id="tm-age">—</div></div>
         <div class="kv-cell"><div class="k">奖励金额</div><div class="v" id="tm-reward">—</div></div>
       </div>
@@ -1775,16 +1775,16 @@ document.getElementById('sister-modal').addEventListener('click', e => { if (e.t
 
 /* ── 团队明细弹窗（团ID 点击跳转） ── */
 const TEAM_EXTRA = {
-  'SJ20260801': { sis:'雪儿', mate:'灵儿', hall:'王者荣耀·恰逢今月', form:'08-06', age:'12天', status:'进行中', reward:'¥12,400',
+  'SJ20260801': { sis:'雪儿', sisUid:'100234567', mate:'灵儿', mateUid:'200111001', hall:'王者荣耀·恰逢今月', form:'08-06', age:'12天', status:'进行中', reward:'¥12,400',
     days:[['08-17','✓','✓','—'],['08-16','✓','—','✓'],['08-14','—','✓','✓'],['08-13','✓','✓','✓'],['08-12','✓','—','—']] },
-  'SJ20260802': { sis:'若曦', mate:'沐晴', hall:'王者荣耀·迷鹿之森', form:'08-09', age:'9天', status:'进行中', reward:'¥9,800',
+  'SJ20260802': { sis:'若曦', sisUid:'100234568', mate:'沐晴', mateUid:'200111002', hall:'王者荣耀·迷鹿之森', form:'08-09', age:'9天', status:'进行中', reward:'¥9,800',
     days:[['08-17','✓','—','✓'],['08-16','✓','✓','—'],['08-14','✓','—','—'],['08-13','—','✓','✓'],['08-12','✓','✓','✓']] },
-  'SJ20260715': { sis:'琳琳', mate:'婷婷', hall:'和平精英•幸运星', form:'07-20', age:'29天', status:'进行中', reward:'¥8,600',
+  'SJ20260715': { sis:'琳琳', sisUid:'100234569', mate:'婷婷', mateUid:'200111003', hall:'和平精英•幸运星', form:'07-20', age:'29天', status:'进行中', reward:'¥8,600',
     days:[['08-17','—','—','—'],['08-16','—','—','✓'],['08-14','—','—','—'],['08-13','✓','—','—'],['08-12','—','—','—']] },
-  'SJ20260701': { sis:'悦悦', mate:'思思', hall:'王者荣耀·半糖心事', form:'07-05', age:'—', status:'已解散', reward:'¥6,200', diss:'08-02 任务未完成自动解散' },
-  'SJ20260618': { sis:'甜甜', mate:'微微', hall:'王者荣耀·橙心如意', form:'06-22', age:'—', status:'已解散', reward:'¥5,600', diss:'08-17 毕业' },
-  'SJ20260720': { sis:'雪儿', mate:'沐晴', hall:'王者荣耀·恰逢今月', form:'07-25', age:'—', status:'已解散', reward:'¥18,400', diss:'08-17 毕业' },
-  'SJ20260615': { sis:'雪儿', mate:'婷婷', hall:'王者荣耀·迷鹿之森', form:'06-20', age:'—', status:'已解散', reward:'¥22,100', diss:'08-17 毕业' }
+  'SJ20260701': { sis:'悦悦', sisUid:'100234570', mate:'思思', mateUid:'200111004', hall:'王者荣耀·半糖心事', form:'07-05', age:'—', status:'已解散', reward:'¥6,200', diss:'08-02 任务未完成自动解散' },
+  'SJ20260618': { sis:'甜甜', sisUid:'100234571', mate:'微微', mateUid:'200111005', hall:'王者荣耀·橙心如意', form:'06-22', age:'—', status:'已解散', reward:'¥5,600', diss:'08-17 毕业' },
+  'SJ20260720': { sis:'雪儿', sisUid:'100234567', mate:'沐晴', mateUid:'200111002', hall:'王者荣耀·恰逢今月', form:'07-25', age:'—', status:'已解散', reward:'¥18,400', diss:'08-17 毕业' },
+  'SJ20260615': { sis:'雪儿', sisUid:'100234567', mate:'婷婷', mateUid:'200111003', hall:'王者荣耀·迷鹿之森', form:'06-20', age:'—', status:'已解散', reward:'¥22,100', diss:'08-17 毕业' }
 };
 function openTeam(tid) {
   const d = TEAM_EXTRA[tid];
@@ -1792,6 +1792,7 @@ function openTeam(tid) {
   if (!d) {
     document.getElementById('tm-sub').textContent = tid + ' · 该团明细待接入';
     ['tm-sis','tm-mate','tm-age','tm-reward'].forEach(id => document.getElementById(id).textContent = '—');
+    ['tm-sis-uid','tm-mate-uid'].forEach(id => { const el = document.getElementById(id); el.textContent = 'UID —'; el.setAttribute('data-uid',''); el.setAttribute('data-name',''); });
     document.getElementById('tm-task-head').style.display = 'none';
     document.getElementById('tm-body').innerHTML = '';
     document.getElementById('tm-insight').textContent = '该团明细尚未接入正式数据源。';
@@ -1803,6 +1804,12 @@ function openTeam(tid) {
   document.getElementById('tm-mate').textContent = d.mate;
   document.getElementById('tm-age').textContent = d.age;
   document.getElementById('tm-reward').textContent = d.reward;
+  const _su = document.getElementById('tm-sis-uid');
+  _su.textContent = d.sisUid ? 'UID ' + d.sisUid : 'UID —';
+  _su.setAttribute('data-uid', d.sisUid || ''); _su.setAttribute('data-name', d.sis || '');
+  const _mu = document.getElementById('tm-mate-uid');
+  _mu.textContent = d.mateUid ? 'UID ' + d.mateUid : 'UID —';
+  _mu.setAttribute('data-uid', d.mateUid || ''); _mu.setAttribute('data-name', d.mate || '');
   if (d.days) {
     document.getElementById('tm-task-head').style.display = '';
     document.getElementById('tm-body').innerHTML = d.days.map(r =>
@@ -1819,6 +1826,22 @@ function openTeam(tid) {
 }
 function closeTeam() { document.getElementById('team-modal').classList.remove('open'); }
 document.getElementById('team-modal').addEventListener('click', e => { if (e.target.id === 'team-modal') closeTeam(); });
+
+/* ── 团队明细弹窗 · 姐姐/妹妹 UID → 跳转 UID 查询 ── */
+function jumpUidFromTeam(uid, name) {
+  if (!uid) return;
+  closeTeam();
+  switchPreviewTab('uid', document.getElementById('side-uid'));
+  const inp = document.getElementById('pv-uid-input');
+  if (inp) inp.value = uid;
+  // 演示：回填 UID 页用户信息卡，模拟「跳转到该 UID 的查询结果」
+  const av = document.querySelector('#view-uid .uid-avatar');
+  const t = document.querySelector('#view-uid .u-title');
+  const s = document.querySelector('#view-uid .u-sub');
+  if (av) av.textContent = (name || uid).charAt(0);
+  if (t) t.innerHTML = (name || '—') + ' <span class="st active" style="margin-left:6px;">精英队长</span>';
+  if (s) s.textContent = 'UID ' + uid + ' · 类型：新队长-游戏';
+}
 
 /* ── 厅分析 · 点行钻取单厅 ── */
 /* ── 概览页「大厅对比 TOP」点行 → 切到厅分析并定位该厅 ── */
