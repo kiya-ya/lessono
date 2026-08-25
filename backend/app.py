@@ -1060,13 +1060,15 @@ def api_sister2_profile():
     rank_sql = _level_rank_sql('sister_max_level2')
     for r in conn.execute(f"""
         SELECT CAST(sister_uid2 AS TEXT) AS su, MAX(sister_nickname2) AS nickname, MAX({rank_sql}) AS rank,
-               COUNT(DISTINCT team_id) AS team_count, COUNT(DISTINCT snapshot_date) AS presence_days
+               COUNT(DISTINCT team_id) AS team_count, COUNT(DISTINCT snapshot_date) AS presence_days,
+               MAX(days_since_formed) AS max_days
         FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc} GROUP BY su
     """, hp).fetchall():
         base[r['su']] = {
             'sister_uid': r['su'], 'sister_nickname': r['nickname'], 'level': LEVEL_NAMES.get(r['rank'], '无'),
             'level_rank': r['rank'],
             'team_count': r['team_count'], 'presence_days': r['presence_days'],
+            'max_days': r['max_days'] or 0,
             'promoted': r['su'] in promoted_set,
         }
 
@@ -1086,7 +1088,7 @@ def api_sister2_profile():
     for x in list_out:
         if x['promoted']:
             x['tag'] = 'promoted'
-        elif x['level_rank'] >= 6:  # 王牌/大神已到毕业线
+        elif x['max_days'] >= 30:  # 满30天=毕业线（与牌子/等级无关）
             x['tag'] = 'promotable'
         else:
             x['tag'] = 'normal'
@@ -1605,13 +1607,13 @@ def api_dissolve_reasons():
 @app.route('/api/lying-flat')
 @login_required
 def api_lying_flat():
-    """躺平预警名单：进行中团里连续多日零任务（三类任务全为0）的团，接近自动解散"""
+    """躺平预警名单：进行中团里连续≥4天未完成「陪档」的团，接近自动解散（自动解散线=连续5日未陪档）"""
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
     dates = [r['snapshot_date'] for r in conn.execute('SELECT DISTINCT snapshot_date FROM team_detail ORDER BY snapshot_date').fetchall()]
     if len(dates) < 2:
         conn.close()
-        return jsonify({'ref_date': dates[-1] if dates else '', 'prev_date': '', 'total': 0, 'coverage': 0, 'list': []})
+        return jsonify({'ref_date': dates[-1] if dates else '', 'prev_date': '', 'summary': {'lying': 0, 'warning': 0, 'accompany_rate': 0}, 'days_dist': [], 'hall_dist': [], 'list': []})
     latest, prev = dates[-1], dates[-2]
     hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
     hp = [] if hall == 'all' else [hall]
@@ -1622,11 +1624,11 @@ def api_lying_flat():
           AND (dissolve_date IS NULL OR dissolve_date = '')
           {hall_cond}
     """, hp).fetchall()
-    # 每个团在每个快照日是否做过任意任务（同日多行取 MAX）
+    # 每个团在每个快照日是否完成过「陪档」（同日多行取 MAX；只盯陪档单项，不看开车/收送礼）
     tm = {}
     for r in conn.execute("""
             SELECT team_id, snapshot_date,
-                   MAX(drive_task_count > 0 OR accompany_task_count > 0 OR gift_task_count > 0) AS a
+                   MAX(accompany_task_count > 0) AS a
             FROM team_detail GROUP BY team_id, snapshot_date
         """).fetchall():
         tm[(r['team_id'], r['snapshot_date'])] = r['a']
@@ -1635,7 +1637,7 @@ def api_lying_flat():
         tid = t['team_id']
         fd = t['form_date']
         streak, i = 0, len(dates) - 1
-        # 从最新快照日往前数连续零任务天数；成团日（form_date）之前的快照不计入，避免新团被误判为长期躺平
+        # 从最新快照日往前数连续未陪档天数；成团日（form_date）之前的快照不计入，避免新团被误判为长期躺平
         while i >= 0 and not tm.get((tid, dates[i]), 0):
             if fd and dates[i] < fd:
                 break
@@ -1649,18 +1651,35 @@ def api_lying_flat():
             'sister_nickname': t['sister_nickname'],
             'sister_uid': t['sister_uid'],
             'days_since_formed': t['days_since_formed'],
-            'zero_streak': streak,
+            'accompany_streak': streak,
             'last_active': dates[i] if (i >= 0 and tm.get((tid, dates[i]), 0)) else None,
-            'level': 'lying' if streak >= 2 else 'warning',
+            'level': 'lying' if streak >= 4 else 'warning',
         })
-    lst.sort(key=lambda x: (-x['zero_streak'], x['days_since_formed'] or 0))
+    lst.sort(key=lambda x: (-x['accompany_streak'], x['days_since_formed'] or 0))
     cov = conn.execute("""
-        SELECT COUNT(*) total, SUM(drive_task_count > 0 OR accompany_task_count > 0 OR gift_task_count > 0) a
-        FROM team_detail WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+        SELECT COUNT(*) total, SUM(accompany_task_count > 0) a
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+          AND (dissolve_date IS NULL OR dissolve_date = '')
     """).fetchone()
-    coverage = round(cov['a'] / cov['total'] * 100, 1) if cov['total'] else 0
+    accompany_rate = round(cov['a'] / cov['total'] * 100, 1) if cov['total'] else 0
+    # 汇总：躺平(≥4) / 提醒(1~3) / 陪档活跃率 + 连续未陪档天数分布 + 大厅分布（供预警中心下钻）
+    lying_n = sum(1 for x in lst if x['level'] == 'lying')
+    warning_n = sum(1 for x in lst if x['level'] == 'warning')
+    days_dist = []
+    for lo, hi, label in ((4, 4, '4天'), (5, 5, '5天'), (6, 6, '6天'), (7, 7, '7天'), (8, 10 ** 9, '8天及以上')):
+        days_dist.append({'label': label, 'count': sum(1 for x in lst if lo <= x['accompany_streak'] <= hi)})
+    hall_counter = {}
+    for x in lst:
+        hall_counter[x['hall_name']] = hall_counter.get(x['hall_name'], 0) + 1
+    hall_dist = sorted(({'hall': h, 'count': c} for h, c in hall_counter.items()), key=lambda x: -x['count'])
     conn.close()
-    return jsonify({'ref_date': latest, 'prev_date': prev, 'total': len(lst), 'coverage': coverage, 'list': lst})
+    return jsonify({
+        'ref_date': latest, 'prev_date': prev,
+        'summary': {'lying': lying_n, 'warning': warning_n, 'accompany_rate': accompany_rate},
+        'days_dist': days_dist, 'hall_dist': hall_dist,
+        'list': lst,
+    })
 
 
 @app.route('/api/lying-detail')
@@ -1703,6 +1722,150 @@ def api_lying_detail():
         'days_since_formed': info['days_since_formed'],
         'status': 'active' if (not info['dissolve_date'] or info['dissolve_date'] == '') else 'dissolved',
         'daily': daily,
+    })
+
+
+@app.route('/api/warncenter')
+@login_required
+def api_warncenter():
+    """预警中心：平台级预警 4 卡（留存率 / 主动解散占比 / 新成团数 / 陪档活跃率）。
+    每卡返回近 8 周（陪档活跃率为近 8 快照日）趋势 + 当前值 + 环比 + 触发判定 + 受影响厅 Top10。"""
+    conn = get_db_conn()
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+    rows = week_rows_all(conn, limit=8)  # 全平台逐周重算（升序）
+
+    def trend_of(key):
+        return [{'week': r['week_label'], 'value': r[key]} for r in rows if r.get(key) is not None]
+
+    cur = rows[-1] if rows else None
+    prev = rows[-2] if len(rows) >= 2 else None
+    cur_ws, cur_we = (cur['week_start'], cur['week_end']) if cur else (None, None)
+    prev_ws, prev_we = (prev['week_start'], prev['week_end']) if prev else (None, None)
+
+    # ---- 卡1：留存率（< 60% 健康线） ----
+    ret_trend = trend_of('retention_rate')
+    ret_cur = ret_trend[-1]['value'] if ret_trend else None
+    ret_prev = ret_trend[-2]['value'] if len(ret_trend) >= 2 else None
+    ret_wow = round(ret_cur - ret_prev, 2) if (ret_cur is not None and ret_prev is not None) else None
+    ret_triggered = ret_cur is not None and ret_cur < 60
+    ret_halls = []
+    if cur_ws and prev_ws:
+        cur_map = retention_by_hall(conn, cur_ws, cur_we)
+        prev_map = retention_by_hall(conn, prev_ws, prev_we)
+        ret_halls = sorted(
+            ({'hall': h, 'current': v, 'wow': round(v - prev_map[h], 2) if h in prev_map else None}
+             for h, v in cur_map.items() if v < 60),
+            key=lambda x: x['current'])[:10]
+
+    # ---- 卡2：主动解散占比（连续 2 周环比升高） ----
+    ad_trend = trend_of('active_dissolved_pct')
+    ad_cur = ad_trend[-1]['value'] if ad_trend else None
+    ad_prev = ad_trend[-2]['value'] if len(ad_trend) >= 2 else None
+    ad_prev2 = ad_trend[-3]['value'] if len(ad_trend) >= 3 else None
+    ad_wow = round(ad_cur - ad_prev, 2) if (ad_cur is not None and ad_prev is not None) else None
+    ad_triggered = (ad_cur is not None and ad_prev is not None and ad_prev2 is not None
+                    and ad_cur > ad_prev > ad_prev2)
+    ad_halls = []
+    if cur_ws and prev_ws:
+        def ad_map(ws, we):
+            q = f"""SELECT hall_name,
+                       COUNT(DISTINCT team_id) AS diss,
+                       COUNT(DISTINCT CASE WHEN {ACTIVE_DISS_REASON_SQL} THEN team_id END) AS active_diss
+                    FROM team_detail
+                    WHERE dissolve_date >= ? AND dissolve_date <= ? AND dissolve_reason != '毕业'
+                      AND hall_name IS NOT NULL AND hall_name != ''
+                    GROUP BY hall_name"""
+            m = {}
+            for r in conn.execute(q, (ws, we)).fetchall():
+                if r['diss']:
+                    m[r['hall_name']] = round(r['active_diss'] / r['diss'] * 100, 2)
+            return m
+        ad_cur_map = ad_map(cur_ws, cur_we)
+        ad_prev_map = ad_map(prev_ws, prev_we)
+        ad_halls = sorted(
+            ({'hall': h, 'current': v, 'wow': round(v - ad_prev_map[h], 2) if h in ad_prev_map else None}
+             for h, v in ad_cur_map.items() if v > ad_prev_map.get(h, 0)),
+            key=lambda x: -x['current'])[:10]
+
+    # ---- 卡3：新成团数（连续 2 周环比下降） ----
+    nt_trend = trend_of('new_team_count')
+    nt_cur = nt_trend[-1]['value'] if nt_trend else None
+    nt_prev = nt_trend[-2]['value'] if len(nt_trend) >= 2 else None
+    nt_prev2 = nt_trend[-3]['value'] if len(nt_trend) >= 3 else None
+    nt_wow = nt_cur - nt_prev if (nt_cur is not None and nt_prev is not None) else None
+    nt_triggered = (nt_cur is not None and nt_prev is not None and nt_prev2 is not None
+                    and nt_cur < nt_prev < nt_prev2)
+    nt_halls = []
+    if cur_ws and prev_ws:
+        def nt_map(ws, we):
+            m = {}
+            for r in conn.execute("""SELECT hall_name, COUNT(DISTINCT team_id) AS n FROM team_detail
+                                     WHERE form_date >= ? AND form_date <= ? AND hall_name IS NOT NULL AND hall_name != ''
+                                     GROUP BY hall_name""", (ws, we)).fetchall():
+                m[r['hall_name']] = r['n']
+            return m
+        nt_cur_map = nt_map(cur_ws, cur_we)
+        nt_prev_map = nt_map(prev_ws, prev_we)
+        nt_halls = sorted(
+            ({'hall': h, 'current': v, 'wow': v - nt_prev_map[h] if h in nt_prev_map else None}
+             for h, v in nt_cur_map.items() if v < nt_prev_map.get(h, 0)),
+            key=lambda x: x['current'])[:10]
+
+    # ---- 卡4：陪档活跃率（< 40% 或近 8 快照日波动 > 20pp） ----
+    snap_dates = [r['snapshot_date'] for r in conn.execute(
+        'SELECT DISTINCT snapshot_date FROM team_detail ORDER BY snapshot_date').fetchall()][-8:]
+
+    def accompany_rate_at(d):
+        r = conn.execute("""SELECT COUNT(DISTINCT team_id) AS total,
+                                   COUNT(DISTINCT CASE WHEN accompany_task_count > 0 THEN team_id END) AS acc
+                            FROM team_detail
+                            WHERE rowid IN (SELECT MAX(rowid) FROM team_detail WHERE snapshot_date = ? GROUP BY team_id)
+                              AND (dissolve_date IS NULL OR dissolve_date = '')""", (d,)).fetchone()
+        return round(r['acc'] / r['total'] * 100, 2) if r['total'] else None
+    act_trend = [{'week': d, 'value': accompany_rate_at(d)} for d in snap_dates]
+    act_vals = [x['value'] for x in act_trend if x['value'] is not None]
+    act_cur = act_vals[-1] if act_vals else None
+    act_swing = round(max(act_vals) - min(act_vals), 2) if act_vals else None
+    act_triggered = act_cur is not None and (act_cur < 40 or (act_swing is not None and act_swing > 20))
+    act_halls = []
+    if ref:
+        q = """SELECT hall_name,
+                 COUNT(DISTINCT team_id) AS total,
+                 COUNT(DISTINCT CASE WHEN accompany_task_count > 0 THEN team_id END) AS acc
+               FROM team_detail
+               WHERE rowid IN (SELECT MAX(rowid) FROM team_detail WHERE snapshot_date = ? GROUP BY team_id)
+                 AND (dissolve_date IS NULL OR dissolve_date = '')
+                 AND hall_name IS NOT NULL AND hall_name != ''
+               GROUP BY hall_name"""
+        for r in conn.execute(q, (ref,)).fetchall():
+            if r['total']:
+                rate = round(r['acc'] / r['total'] * 100, 2)
+                if rate < 40:
+                    act_halls.append({'hall': r['hall_name'], 'current': rate})
+        act_halls.sort(key=lambda x: x['current'])
+        act_halls = act_halls[:10]
+    conn.close()
+
+    return jsonify({
+        'ref_date': ref,
+        'cards': [
+            {'key': 'retention', 'title': '留存率预警', 'level': 'severe',
+             'metric_note': '(期末进行中 − 本周新成团) ÷ 期初进行中', 'threshold': '< 60% 健康线',
+             'trend': ret_trend, 'current': ret_cur, 'wow': ret_wow, 'triggered': ret_triggered,
+             'affected_halls': ret_halls},
+            {'key': 'active_diss', 'title': '主动解散占比预警', 'level': 'warning',
+             'metric_note': '主动解散 ÷ 非毕业解散；主动 = 手动/离职(含换厅)/注销', 'threshold': '连续 2 周环比升高',
+             'trend': ad_trend, 'current': ad_cur, 'wow': ad_wow, 'triggered': ad_triggered,
+             'affected_halls': ad_halls},
+            {'key': 'new_team', 'title': '新成团数预警', 'level': 'notice',
+             'metric_note': 'form_date 落在本周的团计数', 'threshold': '连续 2 周环比下降',
+             'trend': nt_trend, 'current': nt_cur, 'wow': nt_wow, 'triggered': nt_triggered,
+             'affected_halls': nt_halls},
+            {'key': 'activity', 'title': '陪档活跃率预警', 'level': 'warning',
+             'metric_note': '最新快照日有陪档团 ÷ 进行中团', 'threshold': '< 40% 或近 8 个快照日波动 > 20pp',
+             'trend': act_trend, 'current': act_cur, 'wow': None, 'triggered': act_triggered,
+             'affected_halls': act_halls},
+        ],
     })
 
 
@@ -1946,22 +2109,6 @@ def api_hall_stats():
                 "FROM hall_stats WHERE 1=0"
             )
     
-    rows = cursor.fetchall()
-    conn.close()
-    
-    return jsonify({'data': rows})
-@login_required
-def api_hall_stats():
-    limit = int(request.args.get('limit', 10))
-    
-    conn = get_db_conn()
-    cursor = conn.execute(
-        "SELECT hall_name, team_count, active_count, dissolved_count, total_revenue "
-        "FROM hall_stats "
-        "WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM hall_stats) "
-        "ORDER BY team_count DESC LIMIT ?",
-        (limit,)
-    )
     rows = cursor.fetchall()
     conn.close()
     
