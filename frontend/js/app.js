@@ -285,6 +285,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadHalls();
   await loadWeeks();
   loadLastUpdate();
+  // Cookie 有效性状态灯（侧边栏 + header 综合点），由 keepalive 真实活性驱动；每 60s 刷新一次
+  if (typeof refreshCookieStatus === 'function') refreshCookieStatus();
+  setInterval(() => { if (typeof refreshCookieStatus === 'function') refreshCookieStatus(); }, 60000);
   // 工作台初始化（卡墙/排行榜 + KPI + 趋势图）
   if (typeof initWorkbench === 'function') await initWorkbench();
   loadDetailTable();

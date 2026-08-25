@@ -2893,6 +2893,47 @@ def api_cookie_bigdata_update():
 
 
 
+@app.route('/api/cookie/auto-login', methods=['POST'])
+@login_required
+def api_cookie_auto_login():
+    """手动兜底：立即自动重登刷新 Cookie（复用 crawler/auto_login.py 的 OCR 登录）
+    请求体: { target: 'uid' | 'bigdata' | 'all' }（默认 all）
+    重登后跑一次保活复查，把真实活性写回 keepalive_status.json，前端状态灯即时更新。
+    """
+    body = request.get_json() or {}
+    target = body.get('target', 'all')
+    if target not in ('uid', 'bigdata', 'all'):
+        return jsonify({'error': 'target 必须是 uid / bigdata / all'}), 400
+
+    try:
+        from auto_login import refresh_uid_cookie, refresh_bigdata_cookie, refresh_all
+    except Exception as e:
+        return jsonify({'error': f'auto_login 模块加载失败: {e}'}), 500
+
+    result = {}
+    try:
+        if target == 'uid':
+            refresh_uid_cookie()
+            result['uid'] = {'ok': True}
+        elif target == 'bigdata':
+            refresh_bigdata_cookie()
+            result['bigdata'] = {'ok': True}
+        else:
+            result.update(refresh_all())
+    except Exception as e:
+        key = 'uid' if target == 'uid' else ('bigdata' if target == 'bigdata' else 'all')
+        result[key] = {'ok': False, 'msg': str(e)}
+
+    # 重登后立即保活复查：写入真实活性，前端状态灯即时刷新
+    try:
+        from cookie_keepalive import run_keepalive
+        result['keepalive'] = run_keepalive()
+    except Exception as e:
+        result['keepalive'] = {'error': str(e)}
+
+    return jsonify(result)
+
+
 @app.route('/api/last-update')
 @login_required
 def api_last_update():

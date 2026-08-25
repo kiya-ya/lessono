@@ -185,80 +185,108 @@ function tdGoUID() {
   if (_tdSisterUid) { closeTeamDetail(); jumpToUID(_tdSisterUid, _tdTeamId); }
 }
 
-async function checkCookieStatus() {
-  let uidOk = false, bigOk = false;
-  let uidStatus = 'unknown', bigStatus = 'unknown';
+async function checkCookieStatus() { refreshCookieStatus(); }
 
+// 顶部 header 综合点 + 侧边栏底部「数据连接」状态灯，均由 keepalive 真实活性驱动
+async function refreshCookieStatus() {
+  let ka = null;
   try {
-    const resp1 = await fetch(API_BASE + '/api/cookie');
-    const data1 = await resp1.json();
-    uidOk = data1.status === 'valid';
-    uidStatus = data1.status;
-  } catch (e) { console.log('UID Cookie 检测失败:', e); }
+    const resp = await fetch(API_BASE + '/api/keepalive-status');
+    ka = await resp.json();
+  } catch (e) { console.log('保活状态获取失败:', e); }
+  const lastRun = ka && ka.last_run ? ka.last_run.slice(11, 16) : '';
+  const uid = ka && ka.uid;
+  const big = ka && ka.bigdata;
 
-  try {
-    const resp2 = await fetch(API_BASE + '/api/cookie/bigdata');
-    const data2 = await resp2.json();
-    bigOk = data2.status === 'valid';
-    bigStatus = data2.status;
-  } catch (e) { console.log('抓取 Cookie 检测失败:', e); }
+  renderSideLight('uid', uid, lastRun);
+  renderSideLight('bigdata', big, lastRun);
 
-  // 综合状态显示在 header 按钮上
   const mainDot = document.getElementById('cookie-dot-main');
   const mainText = document.getElementById('cookie-text-main');
-  if (uidOk && bigOk) {
-    mainDot.className = 'cookie-dot valid'; mainText.textContent = 'Cookie 全部有效';
-  } else if (!uidOk && !bigOk) {
-    mainDot.className = 'cookie-dot invalid'; mainText.textContent = 'Cookie 全部无效';
-  } else {
-    mainDot.className = 'cookie-dot unknown'; mainText.textContent = '部分 Cookie 需更新';
+  if (mainDot && mainText) {
+    if (uid && big && uid.ok && big.ok) {
+      mainDot.className = 'cookie-dot valid'; mainText.textContent = 'Cookie 全部有效';
+    } else if ((uid && !uid.ok) && (big && !big.ok)) {
+      mainDot.className = 'cookie-dot invalid'; mainText.textContent = 'Cookie 失效 · 点击刷新';
+    } else if (uid || big) {
+      mainDot.className = 'cookie-dot unknown'; mainText.textContent = '部分 Cookie 失效';
+    } else {
+      mainDot.className = 'cookie-dot unknown'; mainText.textContent = 'Cookie 未检测';
+    }
   }
+}
 
-  // 缓存状态供弹窗使用
-  window._cookieStatus = { uid: uidStatus, bigdata: bigStatus };
+function renderSideLight(key, info, lastRun) {
+  const dot = document.getElementById('ss-dot-' + key);
+  const txt = document.getElementById('ss-' + key + '-txt');
+  if (!dot) return;
+  let cls = 'unknown', label = '检测中…';
+  if (info) {
+    if (info.ok) { cls = 'ok'; label = '有效' + (lastRun ? ' · ' + lastRun + ' 保活' : ''); }
+    else { cls = 'bad'; label = '失效 · 自动重登中'; }
+  }
+  dot.className = 'ss-dot ' + cls;
+  if (txt) txt.textContent = label;
 }
 
 async function updateCookiePanelStatus() {
-  try {
-    const resp1 = await fetch(API_BASE + '/api/cookie');
-    const data1 = await resp1.json();
-    const dot1 = document.getElementById('panel-dot-uid');
-    const status1 = document.getElementById('panel-status-uid');
-    if (data1.status === 'valid') {
-      dot1.style.background = '#3D9A6C'; status1.textContent = '✅ 状态：有效（' + (data1.updated_at || '未知') + ' 更新）';
-    } else if (data1.status === 'invalid') {
-      dot1.style.background = '#D56060'; status1.textContent = '❌ 状态：无效，请重新粘贴';
-    } else {
-      dot1.style.background = '#C98A2D'; status1.textContent = '⚠️ 状态：未知';
-    }
-  } catch (e) { console.log('UID panel 检测失败:', e); }
-
-  try {
-    const resp2 = await fetch(API_BASE + '/api/cookie/bigdata');
-    const data2 = await resp2.json();
-    const dot2 = document.getElementById('panel-dot-bigdata');
-    const status2 = document.getElementById('panel-status-bigdata');
-    if (data2.status === 'valid') {
-      dot2.style.background = '#3D9A6C'; status2.textContent = '✅ 状态：有效（' + (data2.updated_at || '未知') + ' 更新）';
-    } else if (data2.status === 'invalid') {
-      dot2.style.background = '#D56060'; status2.textContent = '❌ 状态：无效，请重新粘贴';
-    } else {
-      dot2.style.background = '#C98A2D'; status2.textContent = '⚠️ 状态：未知';
-    }
-  } catch (e) { console.log('抓取 panel 检测失败:', e); }
-
-  // Cookie 保活状态
+  let ka = null;
   try {
     const resp = await fetch(API_BASE + '/api/keepalive-status');
-    const ka = await resp.json();
-    if (ka && ka.last_run) {
-      const fmt = (o) => o ? (o.ok ? `保活正常 · ${ka.last_run.slice(5, 16)}` : `⚠️ ${o.msg || '保活失败'}`) : '保活未运行';
-      const el1 = document.getElementById('panel-status-uid');
-      const el2 = document.getElementById('panel-status-bigdata');
-      if (el1) el1.innerHTML += `<div style="font-size:11px;color:#9AA0AB;margin-top:4px;">🫀 ${fmt(ka.uid)}</div>`;
-      if (el2) el2.innerHTML += `<div style="font-size:11px;color:#9AA0AB;margin-top:4px;">🫀 ${fmt(ka.bigdata)}</div>`;
-    }
+    ka = await resp.json();
   } catch (e) { console.log('保活状态获取失败:', e); }
+  const lastRun = ka && ka.last_run ? ka.last_run.slice(11, 16) : '';
+
+  renderPanelStatus('uid', ka && ka.uid, lastRun);
+  renderPanelStatus('bigdata', ka && ka.bigdata, lastRun);
+}
+
+function renderPanelStatus(key, info, lastRun) {
+  const dot = document.getElementById('panel-dot-' + key);
+  const status = document.getElementById('panel-status-' + key);
+  if (!dot || !status) return;
+  const label = key === 'uid' ? 'UID 查询' : '数据抓取';
+  if (info) {
+    if (info.ok) {
+      dot.style.background = '#3D9A6C';
+      status.textContent = '✅ ' + label + ' Cookie 有效' + (lastRun ? ' · ' + lastRun + ' 保活' : '');
+    } else {
+      dot.style.background = '#D56060';
+      status.textContent = '❌ ' + label + ' Cookie 失效，自动重登中（可点「立即刷新」兜底）';
+    }
+  } else {
+    dot.style.background = '#C98A2D';
+    status.textContent = '⚠️ ' + label + ' Cookie 未检测';
+  }
+}
+
+async function manualRefreshCookie(target) {
+  const label = target === 'bigdata' ? '数据抓取' : target === 'uid' ? 'UID查询' : '全部';
+  const btn = document.getElementById('refresh-btn-' + target);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 重登中…（OCR 验证码，约 10~30 秒）'; }
+  try {
+    const resp = await fetch(API_BASE + '/api/cookie/auto-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: target })
+    });
+    const data = await resp.json();
+    await refreshCookieStatus();
+    updateCookiePanelStatus();
+    if (data.error) {
+      alert('❌ 自动重登失败：' + data.error);
+    } else {
+      const ka = data.keepalive || {};
+      const parts = [];
+      if (ka.uid) parts.push('UID查询 ' + (ka.uid.ok ? '✅有效' : '❌' + (ka.uid.msg || '失效')));
+      if (ka.bigdata) parts.push('数据抓取 ' + (ka.bigdata.ok ? '✅有效' : '❌' + (ka.bigdata.msg || '失效')));
+      alert('自动重登「' + label + '」完成\n' + (parts.join(' · ') || '已刷新'));
+    }
+  } catch (e) {
+    alert('❌ 请求失败: ' + (e.message || '请确认后端已启动'));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 立即刷新（自动重登）'; }
+  }
 }
 
 async function saveCookie(target) {

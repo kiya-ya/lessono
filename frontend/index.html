@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=39">
+<link rel="stylesheet" href="css/style.css?v=40">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -52,6 +52,17 @@
       <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
+    <div class="side-status" id="side-status" title="Cookie 有效性：绿=有效，红=失效（自动重登中），点击手动兜底刷新">
+      <div class="ss-head">数据连接<span class="ss-auto">自动刷新</span></div>
+      <div class="ss-row" onclick="openCookieModal()">
+        <span class="ss-dot unknown" id="ss-dot-uid"></span>
+        <div class="ss-txt"><b>UID 查询</b><small id="ss-uid-txt">检测中…</small></div>
+      </div>
+      <div class="ss-row" onclick="openCookieModal()">
+        <span class="ss-dot unknown" id="ss-dot-bigdata"></span>
+        <div class="ss-txt"><b>数据抓取</b><small id="ss-bigdata-txt">检测中…</small></div>
+      </div>
+    </div>
     <div class="side-foot">
       <div class="cookie-status" id="cookie-status-main" onclick="openCookieModal()" title="点击管理 Cookie">
         <span class="cookie-dot unknown" id="cookie-dot-main"></span>
@@ -579,11 +590,16 @@
           <span class="cookie-panel-sub">server1.tuwan.com:10010</span>
         </div>
         <div class="cookie-panel-status" id="panel-status-uid">检测中...</div>
-        <textarea id="cookie-input-uid" placeholder="在此粘贴 UID 查询页面的完整 Cookie..."></textarea>
-        <div class="hint">💡 获取方式：打开 UID 查询页 → F12 → Network → 点击查询 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
-        <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
-          <button class="btn-save" onclick="saveCookie('uid')">保存 UID 查询 Cookie</button>
-        </div>
+        <button class="btn-refresh" id="refresh-btn-uid" onclick="manualRefreshCookie('uid')">🔄 立即刷新（自动重登）</button>
+        <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
+        <details class="cookie-advanced">
+          <summary>手动粘贴（高级）</summary>
+          <textarea id="cookie-input-uid" placeholder="在此粘贴 UID 查询页面的完整 Cookie..."></textarea>
+          <div class="hint">💡 获取方式：打开 UID 查询页 → F12 → Network → 点击查询 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
+          <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
+            <button class="btn-save" onclick="saveCookie('uid')">保存 UID 查询 Cookie</button>
+          </div>
+        </details>
       </div>
       <!-- 右栏：数据抓取 -->
       <div class="cookie-panel">
@@ -593,14 +609,21 @@
           <span class="cookie-panel-sub">bigdata.tuwan.com</span>
         </div>
         <div class="cookie-panel-status" id="panel-status-bigdata">检测中...</div>
-        <textarea id="cookie-input-bigdata" placeholder="在此粘贴 bigdata 统计页的完整 Cookie..."></textarea>
-        <div class="hint">💡 获取方式：打开 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新 → 找到 sisters/tj → Headers → 复制 Cookie</div>
-        <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
-          <button class="btn-save" onclick="saveCookie('bigdata')">保存抓取 Cookie</button>
-        </div>
+        <button class="btn-refresh" id="refresh-btn-bigdata" onclick="manualRefreshCookie('bigdata')">🔄 立即刷新（自动重登）</button>
+        <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
+        <details class="cookie-advanced">
+          <summary>手动粘贴（高级）</summary>
+          <textarea id="cookie-input-bigdata" placeholder="在此粘贴 bigdata 统计页的完整 Cookie..."></textarea>
+          <div class="hint">💡 获取方式：打开 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新 → 找到 sisters/tj → Headers → 复制 Cookie</div>
+          <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
+            <button class="btn-save" onclick="saveCookie('bigdata')">保存抓取 Cookie</button>
+          </div>
+        </details>
       </div>
     </div>
     <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-refresh" id="refresh-btn-all" onclick="manualRefreshCookie('all')">🔄 一键重登全部</button>
+      <span style="flex:1;"></span>
       <button class="btn-cancel" onclick="closeCookieModal()">关闭</button>
     </div>
   </div>
@@ -756,10 +779,10 @@
 
 <script src="js/config.js?v=44"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=51"></script>
+<script src="js/api.js?v=52"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=50"></script>
-<script src="js/app.js?v=53"></script>
+<script src="js/app.js?v=54"></script>
 <script src="js/workbench.js?v=53"></script>
 <script src="js/insight.js?v=50"></script>
 </body>
