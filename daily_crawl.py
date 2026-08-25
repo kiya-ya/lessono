@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(PROJECT_ROOT, 'crawler'))
 
 from db import init_db
 from crawler import run_all
+from auto_login import refresh_all
 
 
 def show_notification(title: str, message: str, timeout: int = 5):
@@ -51,6 +52,17 @@ def main():
     msg = '未知错误'
 
     try:
+        # 0. 自动刷新两套 Cookie（每日兜底，防止会话过期导致抓取失败）
+        try:
+            res = refresh_all()
+            for key, val in res.items():
+                if val.get('ok'):
+                    print(f'[AutoLogin] {key} Cookie 已自动刷新')
+                else:
+                    print(f'[AutoLogin-WARN] {key} 刷新失败: {val.get("msg")}')
+        except Exception as ae:
+            print(f'[AutoLogin-WARN] 自动刷新失败: {ae}')
+
         run_all()
         status = 'success'
         msg = '数据抓取成功'
