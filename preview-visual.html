@@ -560,7 +560,7 @@
   <div class="chart-grid">
     <div class="card">
       <h3>姐妹团存活分析</h3>
-      <div class="src">快照日期 2026-08-18 · 已成团天数分布 · 点柱下钻明细</div>
+      <div class="src">快照日期 2026-08-18 · 已成团天数分布（≤30天，满30天毕业）· 点柱下钻明细</div>
       <div class="chips">
         <span class="c-chip">7日存活 <strong>82%</strong></span>
         <span class="c-chip">14日存活 <strong>74%</strong></span>
@@ -864,6 +864,16 @@
       <h1>厅分析</h1>
       <p>厅排行 → 点行钻取单厅揭示 · 单厅 vs 平台均值</p>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--text3);">时间</span>
+      <select id="cmp-time-select" onchange="onPageTimeChange('compare', this.value)" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13px;color:var(--text2);cursor:pointer;">
+        <option value="本周">本周 (08-11 ~ 08-17)</option>
+        <option value="上周">上周 (08-04 ~ 08-10)</option>
+        <option value="08-04~08-10">08-04 ~ 08-10</option>
+        <option value="07-28~08-03">07-28 ~ 08-03</option>
+      </select>
+      <span id="cmp-time-note" style="font-size:12px;color:var(--accent);"></span>
+    </div>
   </div>
 
   <!-- 各大厅数据对比 -->
@@ -1025,6 +1035,16 @@
     <div>
       <h1>姐姐分析</h1>
       <p>画像 / 姐姐筛选 · 打标分布 · 带团存活率 · 排行榜 · 毕业妹妹</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--text3);">时间</span>
+      <select id="cap-time-select" onchange="onPageTimeChange('captains', this.value)" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:13px;color:var(--text2);cursor:pointer;">
+        <option value="本周">本周 (08-11 ~ 08-17)</option>
+        <option value="上周">上周 (08-04 ~ 08-10)</option>
+        <option value="08-04~08-10">08-04 ~ 08-10</option>
+        <option value="07-28~08-03">07-28 ~ 08-03</option>
+      </select>
+      <span id="cap-time-note" style="font-size:12px;color:var(--accent);"></span>
     </div>
   </div>
 
@@ -1616,8 +1636,8 @@ function svgScatter(el, points, opts, onPick) {
 const RET = [72,70,68,66,64,62,60,58];
 const DISS = [26,24,22,21,20,22,21,18];
 const REV = [88,92,96,90,102,108,114,128];
-const SURV = [12,9,7,5,3,2,1];
-svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C', ['≤7天','8-14天','15-21天','22-28天','29-35天','36-42天','43天+'], (idx, v, label) => drillSurv(label));
+const SURV = [11, 12, 10, 6];
+svgBar(document.getElementById('c-surv'), SURV, '#3D9A6C', '#3D9A6C', ['0-3天','4-7天','8-14天','15-30天'], (idx, v, label) => drillSurv(label));
 svgDonut(document.getElementById('c-diss-reason'), [
   { n:'离职解散（含换厅）', v:314, c:'#E08A5A', match:'离职' },
   { n:'手动解散', v:248, c:'#D56060', match:'手动' },
@@ -2081,6 +2101,15 @@ function showBar(barId, labelId, noteId, labelText, noteHtml, targetId) {
   document.getElementById(noteId).innerHTML = noteHtml;
   document.getElementById(barId).style.display = 'flex';
   if (targetId) setTimeout(() => document.getElementById(targetId).scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+}
+
+/* ── 页头时间选择器（厅分析 / 姐姐分析）：演示回填，落地后按所选周重新拉数据 ── */
+function onPageTimeChange(page, val) {
+  const id = (page === 'compare' ? 'cmp' : 'cap') + '-time-note';
+  const el = document.getElementById(id);
+  if (!el) return;
+  const label = val === '本周' ? '本周 08-11 ~ 08-17' : val === '上周' ? '上周 08-04 ~ 08-10' : val;
+  el.textContent = '· 数据周期 ' + label;
 }
 
 /* 概览 · 天数分布 → 明细数据（已成团天数） */
