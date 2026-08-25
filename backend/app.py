@@ -226,12 +226,27 @@ def _level_rank_sql(col):
             f"WHEN '初级铜牌' THEN 1 ELSE 0 END")
 
 
+def _level_score_sql(col):
+    """等级成长分（难度加权，指数 2^(秩-1)），仅用于「妹妹成长」的 Δscore 计算。
+    姐妹团从铜牌→王牌的升级难度非线性：每升一级难度约翻倍，故分值按指数而非等差，
+    避免「铜牌→银牌」和「王牌→大神」被当成等量成长。
+    分值表：大神 64 / 王牌 32 / 金牌 16 / 银牌 8 / 初级银牌 4 / 铜牌 2 / 初级铜牌 1 / 无 0。
+    排序/展示/门槛仍用 _level_rank_sql 的线性秩，二者不混用。"""
+    return (f"CASE {col} WHEN '大神' THEN 64 WHEN '王牌' THEN 32 WHEN '金牌' THEN 16 "
+            f"WHEN '银牌' THEN 8 WHEN '初级银牌' THEN 4 WHEN '铜牌' THEN 2 "
+            f"WHEN '初级铜牌' THEN 1 ELSE 0 END")
+
+
 # ========== 指标重算（口径定稿 2026-08-17）==========
 # 真值源 = team_detail 明细快照重算；stats_daily 仅保留「官方发放奖励」与成就。
 # 留存率 = (期末进行中 − 本周新成团) ÷ 期初进行中（老团留存）
 # 解散率 = 非毕业解散 ÷ 期初进行中；毕业（满30天）不算流失。
 # 主动解散占比 = 主动解散 ÷ 非毕业解散。
-# 周 = 周一 → 周日；期初/期末 = 该周最早/最晚快照。
+# 周 = 周一 → 周日（ws/we 为日历周界）。
+# 期初/期末 = 该周 [ws, we] 内最早/最晚的 snapshot_date（首个/末个有快照的日期）。
+#   快照按日抓取（team_detail 每日一版）；若周一/周日缺快照（如节假日、断更），
+#   则期初/期末自动退到该周内最近一次快照，而非强行取周一/周日。
+#   期初进行中 = 期初快照日 dissolve_date 为空（进行中）的团数，期末进行中同理。
 
 # 主动解散（用户侧发起）：手动解散 / 离职(含换厅) / 注销
 ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' OR dissolve_reason LIKE '%注销%')"
@@ -239,7 +254,9 @@ ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LI
 
 def week_metrics_from_detail(conn, hall, ws, we):
     """按 team_detail 快照重算单周指标，返回与 weekly_report 行同构 dict（或 None）。
-    所有团级计数均按 team_id 去重，规避快照重复行。"""
+    所有团级计数均按 team_id 去重，规避快照重复行。
+    期初/期末 = 该周 [ws, we] 内 MIN/MAX(snapshot_date)（周内最早/最晚快照日）；
+    留存率 = (期末进行中 − 本周新成团) ÷ 期初进行中。"""
     hc = '' if hall == 'all' else 'AND hall_name = ?'
     hp = () if hall == 'all' else (hall,)
     snap = conn.execute(
@@ -319,7 +336,7 @@ def retention_by_hall(conn, ws, we):
     """单次聚合计算所有厅的留存率，供趋势结论层「最好/最差厅」使用。
     替代逐厅循环 week_metrics_from_detail（178 厅 × ~9 查询 → 7s 卡顿）。
     口径与 week_metrics_from_detail 完全一致：留存 = (期末进行中 − 本周新成团) ÷ 期初进行中，
-    期初/期末 = 各厅在该周最早/最晚快照。仅返回期初在榜 ≥5 团的厅。"""
+    期初/期末 = 各厅在该周 MIN/MAX(snapshot_date)（周内最早/最晚快照日）。仅返回期初在榜 ≥5 团的厅。"""
     base = "AND hall_name IS NOT NULL AND hall_name != ''"
 
     def _active(agg):
@@ -1117,7 +1134,7 @@ def api_talent_pool():
     hp = [] if hall == 'all' else [hall]
     latest = 'rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)'
     rank_sql = _level_rank_sql('sister_level')
-    rank2_sql = _level_rank_sql('sister_max_level2')
+    score2_sql = _level_score_sql('sister_max_level2')  # 妹妹成长用难度加权分
 
     # 基础：昵称 + 牌子等级（最新快照）
     base = {}
@@ -1143,11 +1160,11 @@ def api_talent_pool():
         d = base.setdefault(r['su'], {'sister_uid': r['su'], 'sister_nickname': None, 'level': None, 'level_rank': 0})
         d['active_teams'] = r['active_teams'] or 0
 
-    # 妹妹成长（按团：妹妹最高等级 Δrank / 团龄）+ 共同成长（妹妹有成长且团存活的团占比）
+    # 妹妹成长（按团：妹妹最高等级 Δscore / 团龄，score 为难度加权分）+ 共同成长（妹妹有成长且团存活的团占比）
     growth = {}
     for r in conn.execute(f"""
         SELECT CAST(sister_uid AS TEXT) AS su,
-               MAX({rank2_sql}) - MIN({rank2_sql}) AS gr,
+               MAX({score2_sql}) - MIN({score2_sql}) AS gr,
                MAX(days_since_formed) AS days,
                MAX(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS alive
         FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc}
@@ -1167,7 +1184,7 @@ def api_talent_pool():
     for su, g in growth.items():
         d = base.setdefault(su, {'sister_uid': su, 'sister_nickname': None, 'level': None, 'level_rank': 0})
         d['grew_teams'] = g['grew']
-        d['sister_growth'] = round(g['gr_sum'] / g['teams'] * 30, 2) if g['teams'] else 0  # 每月升级数
+        d['sister_growth'] = round(g['gr_sum'] / g['teams'] * 30, 2) if g['teams'] else 0  # 每月成长分（难度加权）
         d['joint_growth'] = round(g['joint'] / g['teams'] * 100, 1) if g['teams'] else 0
 
     list_out = []
@@ -1850,7 +1867,7 @@ def api_warncenter():
         'ref_date': ref,
         'cards': [
             {'key': 'retention', 'title': '留存率预警', 'level': 'severe',
-             'metric_note': '(期末进行中 − 本周新成团) ÷ 期初进行中', 'threshold': '< 60% 健康线',
+             'metric_note': '(期末进行中 − 本周新成团) ÷ 期初进行中；期初/期末 = 周内最早/最晚快照日', 'threshold': '< 60% 健康线',
              'trend': ret_trend, 'current': ret_cur, 'wow': ret_wow, 'triggered': ret_triggered,
              'affected_halls': ret_halls},
             {'key': 'active_diss', 'title': '主动解散占比预警', 'level': 'warning',

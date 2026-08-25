@@ -476,7 +476,7 @@ function renderTalentPool() {
   const page = list.slice(start, start + poolPerPage);
   const cand = c => c ? '<span class="chip up">候选</span>' : '<span class="chip flat">待观察</span>';
   document.getElementById('pool-table').innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>牌子等级</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>状态</th><th>操作</th></tr>
+    <tr><th>#</th><th>姐姐</th><th>牌子等级</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(成长分/月)</th><th>共同成长</th><th>状态</th><th>操作</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
