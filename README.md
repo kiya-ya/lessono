@@ -17,7 +17,7 @@
 | 🔔 预警中心 | 历史预警列表、未处理计数、标记已处理/恢复 |
 | 📋 明细数据 | 姐妹团存活分析（天数分布+7/14/30日存活率+政策前后）、搜索/排序/分页/状态筛选 |
 | 👤 UID查询 | 本周vs上周对比、姐妹团参与信息、累计流水（server1 合计）、姐姐vs妹妹对比图、CSV导出 |
-| 🍪 Cookie管理 | 双Cookie分别管理，更新后立即生效（热加载） |
+| 🍪 Cookie管理 | 双Cookie分别管理，热加载立即生效；后台保活 + 失效自动重登（OCR 识别验证码） |
 | 📱 手机适配 | 侧栏折叠为顶部横条，全页面响应式 |
 | 🎨 界面 | 侧边栏布局（可折叠）、靛蓝单品牌色降饱和配色、粒子交互登录页 |
 
@@ -90,13 +90,15 @@ docker-compose logs -f
 
 ## 首次使用
 
-### 1. 更新 Cookie
+### 1. 配置登录（Cookie / 账号密码二选一）
 
-点击页面右上角 **🍪 Cookie 管理**，分别粘贴：
-- **UID 查询 Cookie**: 从 `server1.tuwan.com:10010` 页面复制
-- **数据抓取 Cookie**: 从 `bigdata.tuwan.com` 页面复制
+Cookie 现在会**自动保活**（每 30 分钟心跳）并在失效时**自动重登**，正常情况无需手动维护：
 
-Cookie 格式要求包含 `PHPSESSID`。
+- **自动重登**（推荐）：复制 `data/login_credentials.json.example` 为 `data/login_credentials.json`，填入账号密码（`userid` / `pwd`）。Cookie 失效时自动用 OCR 识别验证码重新登录两个系统（server1 / bigdata）。
+- **手动兜底**：点击页面右上角 **🍪 Cookie 管理**，分别粘贴：
+  - **UID 查询 Cookie**: 从 `server1.tuwan.com:10010` 页面复制
+  - **数据抓取 Cookie**: 从 `bigdata.tuwan.com` 页面复制
+  - Cookie 格式要求包含 `PHPSESSID`。
 
 ### 2. 抓取数据
 
@@ -132,11 +134,16 @@ python setup_task.py
 │   ├── uid_crawler.py      # UID查询抓取（Cookie 热加载）
 │   ├── metrics.py          # 指标计算
 │   ├── alerts.py           # 预警引擎
+│   ├── auto_login.py       # Cookie 自动登录（OCR 验证码 + server1/bigdata 双系统）
+│   ├── cookie_keepalive.py # Cookie 保活（每 30 分钟心跳）
+│   ├── scheduler.py        # 定时任务调度
 │   └── hall_manager_crawler.py  # 厅运营UID抓取
 ├── data/
 │   ├── stats.db            # SQLite 主数据库（唯一使用中的库）
 │   ├── cookie.json         # UID查询Cookie
 │   ├── cookie_bigdata.json # 数据抓取Cookie
+│   ├── login_credentials.json  # 自动登录账号密码（gitignored，模板见 .example）
+│   ├── last_update.json    # 最近一次抓取时间/状态
 │   └── exports/            # 导出文件
 ├── frontend/
 │   ├── index.html          # 主页面（侧边栏布局）
@@ -158,8 +165,12 @@ python setup_task.py
 │   ├── backfill_hall_revenue.py  # 厅流水历史回填（一次性）
 │   └── make_logo.py              # LOGO 主题色生成
 ├── daily_crawl.py          # 定时抓取入口（含预警检测）
+├── start.py                # 开发启动（自动打开浏览器）
+├── init_db.py              # 初始化数据库
+├── setup_task.py           # 配置 Windows 定时任务
 ├── deploy.bat              # Windows一键部署
 ├── requirements.txt        # Python依赖
+├── CONTEXT.md              # 领域术语表（姐妹团/姐姐/妹妹/倾斜等）
 └── 项目上下文记忆.md        # 会话上下文与排障记录
 ```
 
@@ -172,7 +183,7 @@ python setup_task.py
 | 统计数据 | T+1 | `daily_crawl.py` 定时抓取 |
 | 基础数据 | T+1 | 随统计数据一起更新 |
 | UID数据 | 按需 | 手动查询或批量查询 |
-| Cookie | 按需 | 前端粘贴更新 |
+| Cookie | 自动 | 每 30 分钟保活、失效自动重登（OCR）；仍可前端手动粘贴兜底 |
 
 ---
 
@@ -242,9 +253,16 @@ python setup_task.py
 
 ### 快照与团生命周期
 
+**快照日（`snapshot_date`）是什么？** 把 bigdata 每天在榜的姐妹团，像拍照片一样整版存一份，照片的「拍摄日期」就是快照日。
+
+- **每天一张、一版「当天在榜」**：`team_detail` 不是「事件流水」（不会只在成团/解散时记一笔），而是每天抓取一次**当天还在榜的团**，一个团一条记录。某团 08-12 成团、08-16 解散，就会在 08-12 ~ 08-16 的每个快照日各留一条记录。
+- **只拍当天在榜，不拍历史**：快照里只有抓取当天仍存在的团；已解散的团不再出现在后续快照。所以「某快照日」≈ 那一天「进行中 + 当天刚解散」的团。
+- **断档回不来**：某天抓取失败（如 Cookie 过期），那一整天的照片就永久缺失——bigdata 只返回当前状态、无历史回放，事后补不回该日的团状态。
+- **统计时按团去重**：同一团跨多个快照日有多行，算「当前进行中团数」等指标时按 `team_id` 取最新一行（`MAX(rowid) … GROUP BY team_id`）。
+
 | 名词 | 含义 |
 |------|------|
-| **快照 / 快照日** | `team_detail` 是「当日快照」性质——每天抓取一版当前在榜团的状态，记作 `snapshot_date`。同一团在不同快照日各有一条记录，统计时按 `team_id` 去重 |
+| **快照 / 快照日** | 见上：每天抓取一版「当天在榜团」的状态，抓取日期记作 `snapshot_date` |
 | **成团** | 姐姐与妹妹配对成功、团建立（按 `form_date` 计） |
 | **毕业** | 团满 30 天正常结束（`dissolve_reason='毕业'`），与牌子/等级无关；**不算流失、不计入解散率** |
 | **解散** | 团未满 30 天就结束（`dissolve_reason≠'毕业'`），即真正的流失，又称「非毕业解散」 |
@@ -282,6 +300,14 @@ python setup_task.py
 ---
 
 ## 版本历史
+
+### v1.7.0 (2026-08-25) — Cookie 自动登录
+
+- ✅ 新增 `auto_login` 模块：Cookie 失效时自动重登两个系统——server1 织梦登录 + bigdata SSO 令牌登录，验证码用 ddddocr OCR 自动识别
+- ✅ Cookie 保活升级为「失效自愈」：keepalive 检测到失效后触发自动重登，而非只报失败
+- ✅ 每日抓取前兜底重登，抓取更不容易因 Cookie 过期中断
+- ✅ 侧栏新增「数据连接」状态灯（UID查询 / 数据抓取，绿=有效 / 红=失效）+ 手动立即刷新兜底
+- ✅ 登录凭据独立存放于 `data/login_credentials.json`（gitignored），不入库
 
 ### v1.6.0 (2026-08-14) — 培养力候选池 + 结果记录
 
@@ -435,4 +461,4 @@ A: 确保使用 `.venv311\Scripts\python.exe` 运行，而不是系统 Python。
 ---
 
 > 项目路径: `D:\姐妹团看板系统`
-> 当前版本: `v1.4.x`（详见上方版本历史）
+> 当前版本: `v1.7.0`（详见上方版本历史）
