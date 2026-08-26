@@ -1157,7 +1157,7 @@
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
-        <span>妹妹成长 = 每个团「妹妹最高等级的难度加权分」成长幅度 ÷ 团龄天数，按月折算（×30）再对全部团取平均；难度分按 铜牌2→银牌8→金牌16→王牌32→大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。共同成长 = 「妹妹有成长（难度分提升&gt;0）且团仍进行中」的团数 ÷ 历史带团总数 × 100%（共赢度占比，非打分）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。</span>
+        <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN，做减法），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。难度分按 铜牌2→银牌8→金牌16→王牌32→大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）<b>且团仍进行中</b>（最新快照无解散日期）」的团数 ÷ 历史带团总数 × 100%（共赢度占比，非打分）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。</span>
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
@@ -1203,10 +1203,10 @@
     <div class="section-head" style="margin-top:24px;"><h2>结果记录</h2><span class="hint">输送妹妹 / 提拔管理</span></div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr></thead>
+        <thead><tr><th>日期</th><th>姐姐</th><th>姐姐UID</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr></thead>
         <tbody>
-          <tr><td>08-18</td><td>雪儿</td><td>王者荣耀·恰逢今月</td><td>输送妹妹</td><td><span class="st active">成功</span></td><td>灵儿毕业配对</td><td>08-18 14:20</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
-          <tr><td>08-16</td><td>若曦</td><td>王者荣耀·迷鹿之森</td><td>提拔管理</td><td><span class="st active">成功</span></td><td>升为厅管</td><td>08-16 10:05</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
+          <tr><td>08-18</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>王者荣耀·恰逢今月</td><td>输送妹妹</td><td><span class="st active">成功</span></td><td>灵儿毕业配对</td><td>08-18 14:20</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
+          <tr><td>08-16</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>王者荣耀·迷鹿之森</td><td>提拔管理</td><td><span class="st active">成功</span></td><td>升为厅管</td><td>08-16 10:05</td><td><span class="f" style="cursor:pointer;color:var(--accent);">改</span></td></tr>
         </tbody>
       </table>
     </div>
