@@ -1157,7 +1157,7 @@
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
-        <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN，做减法），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。难度分按 铜牌2→银牌8→金牌16→王牌32→大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）<b>且团仍进行中</b>（最新快照无解散日期）」的团数 ÷ 历史带团总数 × 100%（共赢度占比，非打分）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。</span>
+          <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）<b>且团仍进行中</b>（最新快照无解散日期）」的团数 ÷ 历史带团总数 × 100%（共赢度占比，非打分）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。难度分按 铜牌2→初银4→银牌8→金牌16→王牌32→大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。</span>  
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
@@ -1325,22 +1325,59 @@
 
   <!-- 姐 vs 妹 对比 -->
   <div class="card" style="margin-bottom:14px;">
-    <h3>姐姐 vs 妹妹 本周数据对比</h3>
-    <div class="src">本周礼物流水 · 组合双轴图（柱=流水 / 线=差额 姐−妹） · 妹妹爬虫缺失时回退本地流水</div>
+    <h3>姐姐 vs 妹妹 近 7 周数据对比</h3>
+    <div class="src">近 7 周礼物流水 · 组合双轴图（柱=流水 / 线=差额 姐−妹，零轴上方绿=姐姐领先、下方红=妹妹反超） · 妹妹爬虫缺失时回退本地流水</div>
     <div class="chart-box" id="uid-partner" style="height:170px;"></div>
+    <div class="src" id="uid-partner-insight" style="margin-top:4px;"></div>
     <div class="wd-subhead">多维度对比</div>
-    <table class="list">
-      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹</th></tr></thead>
-      <tbody>
-        <tr><td>本周流水</td><td style="color:#16A34A;font-weight:600;">¥12,400</td><td>¥8,900</td></tr>
-        <tr><td>本周礼物数</td><td style="color:#16A34A;font-weight:600;">86</td><td>64</td></tr>
-        <tr><td>累计流水</td><td style="color:#16A34A;font-weight:600;">¥86,400</td><td>¥62,300</td></tr>
-        <tr><td>陪档时长</td><td style="color:#16A34A;font-weight:600;">2.4h</td><td>2.2h</td></tr>
-        <tr><td>陪档天数</td><td style="color:#16A34A;font-weight:600;">5 天</td><td>4 天</td></tr>
-        <tr><td>当前等级</td><td style="color:#16A34A;font-weight:600;">王牌</td><td>金牌</td></tr>
-        <tr><td>任务完成率</td><td style="color:#16A34A;font-weight:600;">88%</td><td>76%</td></tr>
-      </tbody>
-    </table>
+    <div class="src" style="margin-bottom:8px;">左紫=姐姐 · 右绿=妹妹 · 条长按本行最高值折算，谁长谁领先</div>
+    <style>
+      .cmp-wrap{display:flex;flex-direction:column;gap:10px;}
+      .cmp-row{display:flex;align-items:center;gap:12px;}
+      .cmp-name{width:86px;flex-shrink:0;font-size:12.5px;color:var(--text2);}
+      .cmp-bars{flex:1;display:flex;flex-direction:column;gap:4px;}
+      .cmp-line{display:flex;align-items:center;gap:6px;}
+      .cmp-tag{width:18px;font-size:10px;text-align:center;border-radius:4px;line-height:16px;flex-shrink:0;}
+      .cmp-tag.sis{background:#7C5CFF1A;color:#5B3EC4;}
+      .cmp-tag.mate{background:#16A34A1A;color:#16A34A;}
+      .cmp-track{flex:1;height:10px;background:#F0F1F4;border-radius:5px;overflow:hidden;}
+      .cmp-fill{height:100%;border-radius:5px;}
+      .cmp-fill.sis{background:#7C5CFF;}
+      .cmp-fill.mate{background:#16A34A;}
+      .cmp-num{width:62px;font-size:11.5px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;flex-shrink:0;}
+      .cmp-badge{font-size:11px;padding:2px 9px;border-radius:5px;font-weight:600;}
+      .cmp-badge.sis{background:#7C5CFF1A;color:#5B3EC4;border:1px solid #DDD3FF;}
+      .cmp-badge.mate{background:#16A34A1A;color:#16A34A;border:1px solid #BFE8CF;}
+    </style>
+    <div class="cmp-wrap">
+      <div class="cmp-row"><div class="cmp-name">本周流水</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">¥12,400</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:72%"></div></div><span class="cmp-num">¥8,900</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">本周礼物数</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">86</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:74%"></div></div><span class="cmp-num">64</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">累计流水</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">¥86,400</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:72%"></div></div><span class="cmp-num">¥62,300</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">陪档时长</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">2.4h</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:92%"></div></div><span class="cmp-num">2.2h</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">陪档天数</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">5 天</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:80%"></div></div><span class="cmp-num">4 天</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">任务完成率</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-tag sis">姐</span><div class="cmp-track"><div class="cmp-fill sis" style="width:100%"></div></div><span class="cmp-num">88%</span></div>
+        <div class="cmp-line"><span class="cmp-tag mate">妹</span><div class="cmp-track"><div class="cmp-fill mate" style="width:86%"></div></div><span class="cmp-num">76%</span></div>
+      </div></div>
+      <div class="cmp-row"><div class="cmp-name">当前等级</div><div class="cmp-bars">
+        <div class="cmp-line"><span class="cmp-badge sis">王牌</span><span class="cmp-badge mate">金牌</span></div>
+      </div></div>
+    </div>
   </div>
 
   <div class="todo-note"><b>待落地（本页方案已定）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水；⑦ 参与明细与绑定妹妹列表合并去重（原两表字段重复），团ID 点击跳转团队明细（复用概览页明细落点）；⑧ 姐 vs 妹图改为「组合双轴图」：左轴=姐姐/妹妹流水柱，右轴=差额折线（姐−妹）；⑨ 全站字段排序统一：留存 / 解散 / 成团 / 进行中前置，流水 / 等级 / 牌子后置。</div>
@@ -1565,7 +1602,7 @@ function svgGroupBar(el, series, colors) {
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${legend}${bars}</svg>`;
 }
-/* 组合双轴图：左轴=分组柱（姐姐/妹妹流水，同单位），右轴=差额折线（姐−妹，独立刻度） */
+/* 组合双轴图：左轴=分组柱（姐姐/妹妹流水，同单位），右轴=差额折线（姐−妹，独立刻度，零轴上方绿/下方红） */
 function svgComboDual(el, bars, line, colors) {
   const W = 460, H = 170, padL = 30, padR = 30, padT = 26, padB = 22;
   const n = bars[0].data.length;
@@ -1591,11 +1628,36 @@ function svgComboDual(el, bars, line, colors) {
     });
   });
   const zeroY = yLine(0);
-  const pts = line.data.map((v, i) => `${(padL + i * groupW + groupW / 2).toFixed(1)},${yLine(v).toFixed(1)}`).join(' ');
+  const xs = line.data.map((v, i) => padL + i * groupW + groupW / 2);
+  const ys = line.data.map(v => yLine(v));
+  // 零轴填充：上方(姐姐领先)=绿，下方(妹妹反超)=红
+  const areaPts = (above) => {
+    const keep = above ? (y) => y <= zeroY : (y) => y >= zeroY;
+    const pts = [[xs[0], zeroY]];
+    let px = xs[0], py = ys[0];
+    if (keep(py)) pts.push([px, py]);
+    for (let i = 1; i < xs.length; i++) {
+      const x = xs[i], y = ys[i];
+      if (keep(py) !== keep(y)) {
+        const t = (zeroY - py) / (y - py);
+        pts.push([px + t * (x - px), zeroY]);
+      }
+      if (keep(y)) pts.push([x, y]);
+      px = x; py = y;
+    }
+    pts.push([xs[xs.length - 1], zeroY]);
+    return pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  };
+  const fillSvg = `<polygon points="${areaPts(true)}" fill="#16A34A" opacity=".13"/>
+    <polygon points="${areaPts(false)}" fill="#D56060" opacity=".20"/>`;
+  const pts = ys.map((y, i) => `${xs[i].toFixed(1)},${y.toFixed(1)}`).join(' ');
   const dots = line.data.map((v, i) => {
-    const cx = padL + i * groupW + groupW / 2;
-    const cy = yLine(v);
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="#fff" stroke="${line.color}" stroke-width="2"><title>差额 · 周${i+1} · ${v>=0?'+':''}¥${v}</title></circle>`;
+    const cx = xs[i], cy = ys[i];
+    const neg = v < 0;
+    const fill = neg ? '#D56060' : '#fff';
+    const stroke = neg ? '#D56060' : line.color;
+    const label = neg ? `<text x="${cx.toFixed(1)}" y="${(cy - 8).toFixed(1)}" text-anchor="middle" font-size="8" fill="#D56060">反超</text>` : '';
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${fill}" stroke="${stroke}" stroke-width="2"><title>差额 · 周${i+1} · ${v>=0?'+':''}¥${v}</title></circle>${label}`;
   }).join('');
   const lineSvg = `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
     <polyline points="${pts}" fill="none" stroke="${line.color}" stroke-width="2"/>${dots}`;
@@ -1604,7 +1666,7 @@ function svgComboDual(el, bars, line, colors) {
   const legend = `<circle cx="${padL}" cy="12" r="5" fill="${colors[0]}"/><text x="${padL+9}" y="15.5" font-size="10" fill="#6B7280">姐姐</text>
     <circle cx="${padL+52}" cy="12" r="5" fill="${colors[1]}"/><text x="${padL+61}" y="15.5" font-size="10" fill="#6B7280">妹妹</text>
     <line x1="${padL+110}" y1="12" x2="${padL+130}" y2="12" stroke="${line.color}" stroke-width="2"/><text x="${padL+135}" y="15.5" font-size="10" fill="#6B7280">差额（姐−妹）</text>`;
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${barsSvg}${lineSvg}${axL}${axR}${legend}</svg>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${fillSvg}${barsSvg}${lineSvg}${axL}${axR}${legend}</svg>`;
 }
 function svgDonut(el, parts, centerLabel, onSlice) {
   const W = 460, H = 180;
@@ -1942,11 +2004,16 @@ function initSorts() {
 }
 initSorts();
 
-/* UID · 姐 vs 妹 本周流水（组合双轴：柱=流水 / 线=差额） */
+/* UID · 姐 vs 妹 近 7 周流水（组合双轴：柱=流水 / 线=差额，零轴填充） */
+const UID_DIFF = [30,10,-5,20,35,15,40];
 svgComboDual(document.getElementById('uid-partner'), [
   { name:'姐姐', data:[120,180,150,200,170,220,190] },
-  { name:'妹妹', data:[90,140,120,160,130,180,150] }
-], { name:'差额', data:[30,40,30,40,40,40,40], color:'#D97706' }, ['#7C5CFF', '#16A34A']);
+  { name:'妹妹', data:[90,170,155,180,135,205,150] }
+], { name:'差额', data:UID_DIFF, color:'#D97706' }, ['#7C5CFF', '#16A34A']);
+const _lead = UID_DIFF.filter(v => v > 0).length, _trail = UID_DIFF.filter(v => v < 0).length, _pos = UID_DIFF.filter(v => v > 0);
+document.getElementById('uid-partner-insight').textContent = _trail === 0
+  ? `洞察：近 7 周姐姐领先 ${_lead}/7 周，差距 ¥${Math.min(..._pos)}~¥${Math.max(..._pos)} 稳定，无被反超。`
+  : `洞察：近 7 周姐姐领先 ${_lead}/7 周，差距 ¥${Math.min(..._pos)}~¥${Math.max(..._pos)} 波动，其中 ${_trail} 周妹妹短暂反超，随后姐姐重新拉开。`;
 
 /* 预览 tab 切换 */
 const PREVIEW_VIEWS = ['overview', 'warncenter', 'compare', 'captains', 'uid'];
