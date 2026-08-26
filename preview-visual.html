@@ -65,6 +65,9 @@
   .section-head .seg{margin-left:auto;display:flex;background:#F1F2F5;border-radius:9px;padding:3px;}
   .section-head .seg button{border:none;background:none;padding:5px 12px;font-size:12px;color:var(--text2);border-radius:7px;cursor:pointer;font-weight:500;}
   .section-head .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.1);}
+  .seg{display:inline-flex;align-items:center;background:#F1F2F5;border-radius:9px;padding:3px;}
+  .seg button{border:none;background:none;padding:5px 12px;font-size:12px;color:var(--text2);border-radius:7px;cursor:pointer;font-weight:500;}
+  .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.1);}
 
   /* ═══════ 1. 搜索栏（一体化：大厅输入补全 + 时间下拉） ═══════ */
   .searchbar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -1114,7 +1117,7 @@
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
     </div>
 
-    <div class="section-head" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 最近一周名单</span></div>
+    <div class="section-head" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 名单按「今天 / 一周 / 一个月」切换</span></div>
     <div class="chart-grid">
       <div class="card">
         <h3>近 8 周毕业趋势</h3>
@@ -1123,14 +1126,16 @@
         <div class="chart-insight">近 8 周每周毕业 <b>4~7</b> 位，8 周均值 ≈ <b>5.8</b> 位（(5+7+4+6+6+5+7+6) ÷ 8），本周 <b>6</b> 位略高于均值——节奏平稳、无异常毕业潮。</div>
       </div>
       <div class="card">
-        <h3>最近一周毕业的妹妹</h3>
+        <h3>毕业妹妹名单</h3>
         <div class="src">满 30 天自动毕业 · 点行查看配对姐姐</div>
-        <ul class="rank-mini">
-          <li><span class="mp-rank top">1</span><span class="mp-name">灵儿<span class="mp-sub">姐姐 雪儿</span></span><span class="mp-val">08-17</span></li>
-          <li><span class="mp-rank top">2</span><span class="mp-name">沐晴<span class="mp-sub">姐姐 若曦</span></span><span class="mp-val">08-15</span></li>
-          <li><span class="mp-rank top">3</span><span class="mp-name">婷婷<span class="mp-sub">姐姐 琳琳</span></span><span class="mp-val">08-14</span></li>
-        </ul>
-        <button class="expand-btn" onclick="openFull('graduated')">查看全部毕业妹妹 →</button>
+        <div class="seg" style="margin:10px 0 6px;">
+          <button onclick="setGradPeriod('today', this)">今天</button>
+          <button class="on" onclick="setGradPeriod('week', this)">一周</button>
+          <button onclick="setGradPeriod('month', this)">一个月</button>
+        </div>
+        <ul class="rank-mini" id="grad-preview"></ul>
+        <div class="src" id="grad-count" style="margin-top:6px;"></div>
+        <button class="expand-btn" id="grad-expand" onclick="openFull('graduated')">查看全部毕业妹妹 →</button>
       </div>
     </div>
   </div>
@@ -2231,28 +2236,88 @@ const FULL_LISTS = {
       ['10','晨晨','<span class="tg normal">正常</span>','2','1','55%','王者荣耀·半糖心事','铜牌','¥3,100']
     ]
   },
-  graduated: {
-    title: '最近一周毕业妹妹（全量）', sub: '满 30 天自动毕业 · 演示节选 7 条',
-    cols: ['#','妹妹','姐姐','毕业日期'],
-    rows: [
-      ['1','灵儿','雪儿','08-17'],
-      ['2','沐晴','若曦','08-15'],
-      ['3','婷婷','琳琳','08-14'],
-      ['4','微微','甜甜','08-12'],
-      ['5','思思','悦悦','08-11'],
-      ['6','可欣','琳琳','08-09'],
-      ['7','诗涵','小玉','08-08']
-    ]
-  }
 };
+/* ── 毕业妹妹名单：时间范围（今天/一周/一个月）+ 富字段（UID/最后牌子/流水） ── */
+const GRAD_BADGE_COLOR = { '大神':'#7C3AED', '王牌':'#5B3EC4', '金牌':'#B45309', '银牌':'#64748B', '初级银牌':'#94A3B8', '铜牌':'#A16207', '初级铜牌':'#A16207', '无':'#9CA3AF' };
+const GRAD_ALL = [
+  { name:'灵儿', uid:'200111001', sis:'雪儿', sisUid:'100234567', hall:'王者荣耀·恰逢今月', badge:'金牌', rev:'¥3,300', date:'08-26' },
+  { name:'思思', uid:'200111004', sis:'悦悦', sisUid:'100234570', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,150', date:'08-26' },
+  { name:'沐晴', uid:'200111002', sis:'若曦', sisUid:'100234568', hall:'王者荣耀·迷鹿之森', badge:'金牌', rev:'¥4,120', date:'08-25' },
+  { name:'婷婷', uid:'200111003', sis:'琳琳', sisUid:'100234569', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,860', date:'08-24' },
+  { name:'微微', uid:'200111005', sis:'甜甜', sisUid:'100234571', hall:'王者荣耀·橙心如意', badge:'铜牌', rev:'¥1,540', date:'08-23' },
+  { name:'可欣', uid:'200111006', sis:'琳琳', sisUid:'100234569', hall:'和平精英•幸运星', badge:'王牌', rev:'¥5,600', date:'08-22' },
+  { name:'诗涵', uid:'200111007', sis:'小玉', sisUid:'100234573', hall:'王者荣耀·恰逢今月', badge:'银牌', rev:'¥2,480', date:'08-21' },
+  { name:'梦琪', uid:'200111008', sis:'雨欣', sisUid:'100234574', hall:'和平精英•幸运星', badge:'铜牌', rev:'¥1,930', date:'08-20' },
+  { name:'雨桐', uid:'200111009', sis:'晨晨', sisUid:'100234575', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,030', date:'08-18' },
+  { name:'可可', uid:'200111010', sis:'娜娜', sisUid:'100234572', hall:'王者荣耀·怪诞学姐', badge:'金牌', rev:'¥3,120', date:'08-16' },
+  { name:'乐乐', uid:'200111011', sis:'娜娜', sisUid:'100234572', hall:'王者荣耀·怪诞学姐', badge:'银牌', rev:'¥2,260', date:'08-14' },
+  { name:'雨彤', uid:'200111012', sis:'若曦', sisUid:'100234568', hall:'王者荣耀·迷鹿之森', badge:'铜牌', rev:'¥1,680', date:'08-12' },
+  { name:'星野みう', uid:'200111013', sis:'苏念', sisUid:'100234576', hall:'王者荣耀·恰逢今月', badge:'王牌', rev:'¥6,200', date:'08-09' },
+  { name:'奶糖', uid:'200111014', sis:'江辞', sisUid:'100234577', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,540', date:'08-05' },
+  { name:'草莓布丁', uid:'200111015', sis:'沈知微', sisUid:'100234578', hall:'王者荣耀·恰逢今月', badge:'大神', rev:'¥8,600', date:'08-01' }
+];
+const GRAD_RANGE = {
+  today: { label: '今天 (08-26)', filter: g => g.date === '08-26' },
+  week: { label: '一周 (08-20 ~ 08-26)', filter: g => g.date >= '08-20' },
+  month: { label: '一个月 (07-27 ~ 08-26)', filter: g => true }
+};
+let GRAD_PERIOD = 'week';
+function gradList() { return GRAD_ALL.filter(GRAD_RANGE[GRAD_PERIOD].filter); }
+function gradBadgeChip(badge) {
+  const c = GRAD_BADGE_COLOR[badge] || '#64748B';
+  return `<span class="chip" style="color:${c};background:${c}1A;">${badge}</span>`;
+}
+function renderGradPreview() {
+  const list = gradList();
+  const el = document.getElementById('grad-preview');
+  el.innerHTML = list.length
+    ? list.slice(0, 3).map((g, i) => `<li>
+        <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
+        <span class="mp-name">${g.name}<span class="mp-sub">姐姐 ${g.sis} · ${g.badge} · ${g.rev}</span></span>
+        <span class="mp-val">${g.date}</span>
+      </li>`).join('')
+    : '<div class="src" style="padding:8px 0;">该时段暂无毕业妹妹</div>';
+  const cnt = document.getElementById('grad-count');
+  if (cnt) cnt.textContent = GRAD_RANGE[GRAD_PERIOD].label + ' · 共 ' + list.length + ' 位毕业';
+  const exp = document.getElementById('grad-expand');
+  if (exp) exp.textContent = '查看全部毕业妹妹（' + list.length + ' 位）→';
+}
+function setGradPeriod(p, btn) {
+  GRAD_PERIOD = p;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderGradPreview();
+}
 function openFull(key) {
-  const L = FULL_LISTS[key];
+  let L;
+  if (key === 'graduated') {
+    const list = gradList();
+    L = {
+      title: '毕业妹妹名单（' + GRAD_RANGE[GRAD_PERIOD].label + '）',
+      sub: '满 30 天自动毕业 · 妹妹 UID + 最后牌子 + 累计流水',
+      cols: ['#','妹妹','妹妹UID','姐姐','姐姐UID','大厅','最后牌子','流水','毕业日期'],
+      rows: list.map((g, i) => [
+        String(i + 1),
+        g.name,
+        `<span style="color:var(--text3);">${g.uid}</span>`,
+        g.sis,
+        `<span style="color:var(--text3);">${g.sisUid}</span>`,
+        g.hall,
+        gradBadgeChip(g.badge),
+        g.rev,
+        g.date
+      ])
+    };
+  } else {
+    L = FULL_LISTS[key];
+  }
   document.getElementById('fm-title').textContent = L.title;
   document.getElementById('fm-sub').textContent = L.sub;
   document.getElementById('fm-head').innerHTML = '<tr>' + L.cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
   document.getElementById('fm-body').innerHTML = L.rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('');
   document.getElementById('full-modal').classList.add('open');
 }
+renderGradPreview();
 function closeFull() { document.getElementById('full-modal').classList.remove('open'); }
 document.getElementById('full-modal').addEventListener('click', e => { if (e.target.id === 'full-modal') closeFull(); });
 
