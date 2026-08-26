@@ -68,6 +68,8 @@
   .seg{display:inline-flex;align-items:center;background:#F1F2F5;border-radius:9px;padding:3px;}
   .seg button{border:none;background:none;padding:5px 12px;font-size:12px;color:var(--text2);border-radius:7px;cursor:pointer;font-weight:500;}
   .seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 3px rgba(16,24,40,.1);}
+  .uid-link{color:#5B3EC4;cursor:pointer;font-weight:500;}
+  .uid-link:hover{text-decoration:underline;}
 
   /* ═══════ 1. 搜索栏（一体化：大厅输入补全 + 时间下拉） ═══════ */
   .searchbar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -791,9 +793,9 @@
   <div class="dn-footer">
     <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">日常任务与预警口径</span></div>
     <div class="dn-line">
-      <span class="dni"><b>陪档</b><code>姐姐主持时妹妹陪档 20 分钟</code><span>日任务 ①</span></span>
-      <span class="dni"><b>开车</b><code>共同和老板开车打游戏一局</code><span>日任务 ②</span></span>
-      <span class="dni"><b>收送礼</b><code>姐妹共同收到或送出礼物</code><span>日任务 ③</span></span>
+      <span class="dni"><b>陪档任务</b><code>姐姐主持档时妹妹陪档 20 分钟</code><span>日任务 ①</span></span>
+      <span class="dni"><b>开车任务</b><code>姐妹一起共同和老板有效开车打一局</code><span>日任务 ②</span></span>
+      <span class="dni"><b>收送礼任务</b><code>姐妹总共收到10个用户礼物或姐妹一起总共送出20个老板礼物</code><span>日任务 ③</span></span>
     </div>
     <div class="dn-notes">
       <span class="dn-tag">规则</span>
@@ -1105,13 +1107,13 @@
       </div>
       <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>标签</th><th>带团</th><th>进行中</th><th>带团存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
-          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
         </tbody>
       </table>
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
@@ -1169,13 +1171,13 @@
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(级/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>雪儿</td><td>6 / 5</td><td>72%</td><td>1.8</td><td>0.6</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>2</td><td>若曦</td><td>5 / 4</td><td>69%</td><td>1.5</td><td>0.5</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>3</td><td>琳琳</td><td>5 / 3</td><td>64%</td><td>1.2</td><td>0.4</td><td>金牌</td><td><span class="st active">候选</span><span class="why-not">已输送培养</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>4</td><td>悦悦</td><td>4 / 2</td><td>58%</td><td>0.0</td><td>0.2</td><td>银牌</td><td><span class="st off">未入选</span><span class="why-not">妹妹成长 = 0（妹妹无升级）</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>5</td><td>甜甜</td><td>3 / 1</td><td>51%</td><td>0.6</td><td>0.2</td><td>铜牌</td><td><span class="st off">未入选</span><span class="why-not">牌子不足：铜牌 &lt; 银牌</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>6 / 5</td><td>72%</td><td>1.8</td><td>0.6</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>5 / 4</td><td>69%</td><td>1.5</td><td>0.5</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td>5 / 3</td><td>64%</td><td>1.2</td><td>0.4</td><td>金牌</td><td><span class="st active">候选</span><span class="why-not">已输送培养</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td>4 / 2</td><td>58%</td><td>0.0</td><td>0.2</td><td>银牌</td><td><span class="st off">未入选</span><span class="why-not">妹妹成长 = 0（妹妹无升级）</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td>3 / 1</td><td>51%</td><td>0.6</td><td>0.2</td><td>铜牌</td><td><span class="st off">未入选</span><span class="why-not">牌子不足：铜牌 &lt; 银牌</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1856,6 +1858,11 @@ document.getElementById('team-modal').addEventListener('click', e => { if (e.tar
 function jumpUidFromTeam(uid, name) {
   if (!uid) return;
   closeTeam();
+  jumpToUID(uid, name);
+}
+/* ── 通用 UID 跳转：姐姐总览 / 姐姐筛选 / 毕业妹妹 等处的 UID 点击 → 跳 UID 查询 ── */
+function jumpToUID(uid, name) {
+  if (!uid) return;
   switchPreviewTab('uid', document.getElementById('side-uid'));
   const inp = document.getElementById('pv-uid-input');
   if (inp) inp.value = uid;
@@ -1866,6 +1873,10 @@ function jumpUidFromTeam(uid, name) {
   if (av) av.textContent = (name || uid).charAt(0);
   if (t) t.innerHTML = (name || '—') + ' <span class="st active" style="margin-left:6px;">精英队长</span>';
   if (s) s.textContent = 'UID ' + uid + ' · 类型：新队长-游戏';
+}
+function gotoUID(e, uid, name) { e.stopPropagation(); jumpToUID(uid, name); }
+function uidLink(uid, name) {
+  return `<span class="uid-link" onclick="gotoUID(event,'${uid}','${name}')">${uid}</span>`;
 }
 
 /* ── 厅分析 · 点行钻取单厅 ── */
@@ -2222,18 +2233,18 @@ const FULL_LISTS = {
   },
   sisters: {
     title: '姐姐总览（全量）', sub: '共 100+ 位姐姐 · 演示节选 10 条（按当日奖励降序）',
-    cols: ['#','姐姐','标签','带团','进行中','带团存活率','所在大厅','等级','当日奖励'],
+    cols: ['#','姐姐','姐姐UID','标签','带团','进行中','带团存活率','所在大厅','等级','当日奖励'],
     rows: [
-      ['1','雪儿','<span class="tg hero">头牌</span>','6','5','72%','王者荣耀·恰逢今月','王牌','<b>¥12,400</b>'],
-      ['2','若曦','<span class="tg hero">头牌</span>','5','4','69%','王者荣耀·迷鹿之森','王牌','<b>¥9,800</b>'],
-      ['3','琳琳','<span class="tg normal">正常</span>','5','3','64%','和平精英•幸运星','金牌','<b>¥8,600</b>'],
-      ['4','悦悦','<span class="tg risk">风险</span>','4','2','58%','王者荣耀·半糖心事','银牌','<b>¥6,200</b>'],
-      ['5','甜甜','<span class="tg risk">风险</span>','3','1','51%','王者荣耀·橙心如意','铜牌','<b>¥5,600</b>'],
-      ['6','依依','<span class="tg hero">头牌</span>','4','3','68%','王者荣耀·迷鹿之森','王牌','¥7,600'],
-      ['7','娜娜','<span class="tg normal">正常</span>','3','2','60%','王者荣耀·怪诞学姐','银牌','¥4,800'],
-      ['8','小玉','<span class="tg normal">正常</span>','2','2','65%','王者荣耀·恰逢今月','金牌','¥4,200'],
-      ['9','雨欣','<span class="tg risk">风险</span>','3','1','49%','和平精英•幸运星','银牌','¥3,900'],
-      ['10','晨晨','<span class="tg normal">正常</span>','2','1','55%','王者荣耀·半糖心事','铜牌','¥3,100']
+      ['1','雪儿',uidLink('100234567','雪儿'),'<span class="tg hero">头牌</span>','6','5','72%','王者荣耀·恰逢今月','王牌','<b>¥12,400</b>'],
+      ['2','若曦',uidLink('100234568','若曦'),'<span class="tg hero">头牌</span>','5','4','69%','王者荣耀·迷鹿之森','王牌','<b>¥9,800</b>'],
+      ['3','琳琳',uidLink('100234569','琳琳'),'<span class="tg normal">正常</span>','5','3','64%','和平精英•幸运星','金牌','<b>¥8,600</b>'],
+      ['4','悦悦',uidLink('100234570','悦悦'),'<span class="tg risk">风险</span>','4','2','58%','王者荣耀·半糖心事','银牌','<b>¥6,200</b>'],
+      ['5','甜甜',uidLink('100234571','甜甜'),'<span class="tg risk">风险</span>','3','1','51%','王者荣耀·橙心如意','铜牌','<b>¥5,600</b>'],
+      ['6','依依',uidLink('100234579','依依'),'<span class="tg hero">头牌</span>','4','3','68%','王者荣耀·迷鹿之森','王牌','¥7,600'],
+      ['7','娜娜',uidLink('100234572','娜娜'),'<span class="tg normal">正常</span>','3','2','60%','王者荣耀·怪诞学姐','银牌','¥4,800'],
+      ['8','小玉',uidLink('100234573','小玉'),'<span class="tg normal">正常</span>','2','2','65%','王者荣耀·恰逢今月','金牌','¥4,200'],
+      ['9','雨欣',uidLink('100234574','雨欣'),'<span class="tg risk">风险</span>','3','1','49%','和平精英•幸运星','银牌','¥3,900'],
+      ['10','晨晨',uidLink('100234575','晨晨'),'<span class="tg normal">正常</span>','2','1','55%','王者荣耀·半糖心事','铜牌','¥3,100']
     ]
   },
 };
@@ -2299,9 +2310,9 @@ function openFull(key) {
       rows: list.map((g, i) => [
         String(i + 1),
         g.name,
-        `<span style="color:var(--text3);">${g.uid}</span>`,
+        uidLink(g.uid, g.name),
         g.sis,
-        `<span style="color:var(--text3);">${g.sisUid}</span>`,
+        uidLink(g.sisUid, g.sis),
         g.hall,
         gradBadgeChip(g.badge),
         g.rev,
