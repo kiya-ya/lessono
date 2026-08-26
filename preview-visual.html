@@ -1152,6 +1152,7 @@
         <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
         <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
         <span class="dni"><b>共同成长</b><code>妹妹升级且团存活的团占比 %</code><span>共赢度</span></span>
+        <span class="dni"><b>培养力总分</b><code>0.4×存活率 + 0.35×妹妹成长(归一) + 0.25×共同成长</code><span>加权综合分</span></span>
         <span class="dni"><b>候选判定</b><code>带团存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
       </div>
       <div class="dn-notes">
@@ -1161,6 +1162,10 @@
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
         <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>带团存活率 &lt; 50%</b>（带团留存不稳）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
+      </div>
+      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+        <span class="dn-tag">总分</span>
+        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×共同成长</b>，满分 100。妹妹成长归一化 = 成长分/月 ÷ 3 × 100（按满分 3 分折算，1.8 分→60）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），共同成长（共赢）最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
@@ -1184,13 +1189,13 @@
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(成长分/月)</th><th>共同成长</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(成长分/月)</th><th>共同成长</th><th>培养力总分</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>6 / 5</td><td>72%</td><td>1.8</td><td>60%</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>5 / 4</td><td>69%</td><td>1.5</td><td>50%</td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td>5 / 3</td><td>64%</td><td>1.2</td><td>40%</td><td>金牌</td><td><span class="st active">候选</span><span class="why-not">已输送培养</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td>4 / 2</td><td>58%</td><td>0.0</td><td>20%</td><td>银牌</td><td><span class="st off">未入选</span><span class="why-not">妹妹成长 = 0（妹妹无升级）</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
-          <tr><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td>3 / 1</td><td>51%</td><td>0.6</td><td>20%</td><td>铜牌</td><td><span class="st off">未入选</span><span class="why-not">牌子不足：铜牌 &lt; 银牌</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>6 / 5</td><td>72%</td><td>1.8</td><td>60%</td><td><span style="font-weight:700;color:#5B3EC4;">65</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:65%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>5 / 4</td><td>69%</td><td>1.5</td><td>50%</td><td><span style="font-weight:700;color:#5B3EC4;">58</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:58%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td>5 / 3</td><td>64%</td><td>1.2</td><td>40%</td><td><span style="font-weight:700;color:#5B3EC4;">50</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:50%;height:100%;background:#7C5CFF;"></div></div></td><td>金牌</td><td><span class="st active">候选</span><span class="why-not">已输送培养</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td>4 / 2</td><td>58%</td><td>0.0</td><td>20%</td><td><span style="font-weight:700;color:#9CA3AF;">28</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:28%;height:100%;background:#C4B5FD;"></div></div></td><td>银牌</td><td><span class="st off">未入选</span><span class="why-not">妹妹成长 = 0（妹妹无升级）</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
+          <tr><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td>3 / 1</td><td>51%</td><td>0.6</td><td>20%</td><td><span style="font-weight:700;color:#9CA3AF;">32</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:32%;height:100%;background:#C4B5FD;"></div></div></td><td>铜牌</td><td><span class="st off">未入选</span><span class="why-not">牌子不足：铜牌 &lt; 银牌</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
         </tbody>
       </table>
     </div>
@@ -1321,20 +1326,24 @@
   <!-- 姐 vs 妹 对比 -->
   <div class="card" style="margin-bottom:14px;">
     <h3>姐姐 vs 妹妹 本周数据对比</h3>
-    <div class="src">本周礼物流水 · 分组柱状对比 · 妹妹爬虫缺失时回退本地流水</div>
-    <div class="chart-box" id="uid-partner" style="height:150px;"></div>
-    <div class="wd-subhead">累计对比</div>
+    <div class="src">本周礼物流水 · 组合双轴图（柱=流水 / 线=差额 姐−妹） · 妹妹爬虫缺失时回退本地流水</div>
+    <div class="chart-box" id="uid-partner" style="height:170px;"></div>
+    <div class="wd-subhead">多维度对比</div>
     <table class="list">
-      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹</th><th>差值</th></tr></thead>
+      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹</th></tr></thead>
       <tbody>
-        <tr><td>本周流水</td><td>¥12,400</td><td>¥8,900</td><td style="color:#16A34A;">姐 +¥3,500</td></tr>
-        <tr><td>累计流水</td><td>¥86,400</td><td>¥62,300</td><td style="color:#16A34A;">姐 +¥24,100</td></tr>
-        <tr><td>陪档时长</td><td>2.4h</td><td>2.2h</td><td style="color:#16A34A;">姐 +0.2h</td></tr>
+        <tr><td>本周流水</td><td style="color:#16A34A;font-weight:600;">¥12,400</td><td>¥8,900</td></tr>
+        <tr><td>本周礼物数</td><td style="color:#16A34A;font-weight:600;">86</td><td>64</td></tr>
+        <tr><td>累计流水</td><td style="color:#16A34A;font-weight:600;">¥86,400</td><td>¥62,300</td></tr>
+        <tr><td>陪档时长</td><td style="color:#16A34A;font-weight:600;">2.4h</td><td>2.2h</td></tr>
+        <tr><td>陪档天数</td><td style="color:#16A34A;font-weight:600;">5 天</td><td>4 天</td></tr>
+        <tr><td>当前等级</td><td style="color:#16A34A;font-weight:600;">王牌</td><td>金牌</td></tr>
+        <tr><td>任务完成率</td><td style="color:#16A34A;font-weight:600;">88%</td><td>76%</td></tr>
       </tbody>
     </table>
   </div>
 
-  <div class="todo-note"><b>待落地（本页方案已定）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水；⑦ 参与明细与绑定妹妹列表合并去重（原两表字段重复），团ID 点击跳转团队明细（复用概览页明细落点）；⑧ 姐 vs 妹图由折线改回分组柱状（正式版原为柱状）；⑨ 全站字段排序统一：留存 / 解散 / 成团 / 进行中前置，流水 / 等级 / 牌子后置。</div>
+  <div class="todo-note"><b>待落地（本页方案已定）</b>：① 导出 CSV「累计流水」改读顶层 <code>d.team_total_revenue</code>（render.js 现读 <code>compare.total_revenue</code> 恒为 0）；② <code>_get_team_info_by_uid</code> / <code>_get_bound_sisters</code> 的 <code>total_revenue</code> 字段改名 <code>sister_revenue</code>（app.py:2432 / 2477），前端渲染只认 <code>team_total_revenue</code>；③ 类型下拉由 <code>/api/uid-query/types</code> 接口驱动（去 index.html 硬编码）；④ 补「查看姐姐画像 →」正向联动（跳姐姐分析下钻）；⑤ <code>api_uid_query</code> 无 Cookie 时不整页 500，本地 team_info / bound_sisters 照常返回、个人字段标「需 Cookie」；⑥ 姐 vs 妹对比妹妹查询失败回退本地 team_detail 妹妹流水；⑦ 参与明细与绑定妹妹列表合并去重（原两表字段重复），团ID 点击跳转团队明细（复用概览页明细落点）；⑧ 姐 vs 妹图改为「组合双轴图」：左轴=姐姐/妹妹流水柱，右轴=差额折线（姐−妹）；⑨ 全站字段排序统一：留存 / 解散 / 成团 / 进行中前置，流水 / 等级 / 牌子后置。</div>
 </div>
 </div><!-- /.main -->
 <button class="backtop" id="backtop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ 回到顶部</button>
@@ -1555,6 +1564,47 @@ function svgGroupBar(el, series, colors) {
     return `<circle cx="${lx}" cy="12" r="5" fill="${colors[i]}"/><text x="${lx+9}" y="15.5" font-size="10" fill="#6B7280">${s.name}</text>`;
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${legend}${bars}</svg>`;
+}
+/* 组合双轴图：左轴=分组柱（姐姐/妹妹流水，同单位），右轴=差额折线（姐−妹，独立刻度） */
+function svgComboDual(el, bars, line, colors) {
+  const W = 460, H = 170, padL = 30, padR = 30, padT = 26, padB = 22;
+  const n = bars[0].data.length;
+  const barMax = Math.max(...bars.flatMap(s => s.data)) * 1.12;
+  const lineAbsMax = Math.max(...line.data.map(v => Math.abs(v))) * 1.35;
+  const yBar = v => H - padB - (v / barMax) * (H - padT - padB);
+  const yLine = v => H - padB - ((v + lineAbsMax) / (2 * lineAbsMax)) * (H - padT - padB);
+  const groupW = (W - padL - padR) / n;
+  const bw = Math.min(groupW * 0.30, 22);
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + g * ((H - padT - padB) / 4);
+    grid += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${W-padR}" y2="${gy.toFixed(1)}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  let barsSvg = '';
+  bars.forEach((s, si) => {
+    s.data.forEach((v, i) => {
+      const cx = padL + i * groupW + groupW / 2;
+      const offset = (si - 0.5) * (bw + 2);
+      const x = cx + offset - bw / 2;
+      const yv = yBar(v);
+      barsSvg += `<rect x="${x.toFixed(1)}" y="${yv.toFixed(1)}" width="${bw.toFixed(1)}" height="${(H-padB-yv).toFixed(1)}" rx="3" fill="${colors[si]}" opacity=".9"><title>${s.name} · 周${i+1} · ¥${v}</title></rect>`;
+    });
+  });
+  const zeroY = yLine(0);
+  const pts = line.data.map((v, i) => `${(padL + i * groupW + groupW / 2).toFixed(1)},${yLine(v).toFixed(1)}`).join(' ');
+  const dots = line.data.map((v, i) => {
+    const cx = padL + i * groupW + groupW / 2;
+    const cy = yLine(v);
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="#fff" stroke="${line.color}" stroke-width="2"><title>差额 · 周${i+1} · ${v>=0?'+':''}¥${v}</title></circle>`;
+  }).join('');
+  const lineSvg = `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
+    <polyline points="${pts}" fill="none" stroke="${line.color}" stroke-width="2"/>${dots}`;
+  const axL = `<text x="${padL}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9CA3AF">← 礼物流水（¥，柱）</text>`;
+  const axR = `<text x="${W-padR}" y="${H-4}" text-anchor="middle" font-size="9" fill="#D97706">差额（¥，线）→</text>`;
+  const legend = `<circle cx="${padL}" cy="12" r="5" fill="${colors[0]}"/><text x="${padL+9}" y="15.5" font-size="10" fill="#6B7280">姐姐</text>
+    <circle cx="${padL+52}" cy="12" r="5" fill="${colors[1]}"/><text x="${padL+61}" y="15.5" font-size="10" fill="#6B7280">妹妹</text>
+    <line x1="${padL+110}" y1="12" x2="${padL+130}" y2="12" stroke="${line.color}" stroke-width="2"/><text x="${padL+135}" y="15.5" font-size="10" fill="#6B7280">差额（姐−妹）</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${barsSvg}${lineSvg}${axL}${axR}${legend}</svg>`;
 }
 function svgDonut(el, parts, centerLabel, onSlice) {
   const W = 460, H = 180;
@@ -1892,11 +1942,11 @@ function initSorts() {
 }
 initSorts();
 
-/* UID · 姐 vs 妹 本周流水（分组柱状） */
-svgGroupBar(document.getElementById('uid-partner'), [
+/* UID · 姐 vs 妹 本周流水（组合双轴：柱=流水 / 线=差额） */
+svgComboDual(document.getElementById('uid-partner'), [
   { name:'姐姐', data:[120,180,150,200,170,220,190] },
   { name:'妹妹', data:[90,140,120,160,130,180,150] }
-], ['#7C5CFF', '#16A34A']);
+], { name:'差额', data:[30,40,30,40,40,40,40], color:'#D97706' }, ['#7C5CFF', '#16A34A']);
 
 /* 预览 tab 切换 */
 const PREVIEW_VIEWS = ['overview', 'warncenter', 'compare', 'captains', 'uid'];
