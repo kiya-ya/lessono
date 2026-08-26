@@ -1165,9 +1165,22 @@
     </div>
     <div class="card" style="margin-top:14px;">
       <h3>培养力象限</h3>
-      <div class="src">X 轴 = 妹妹成长（级/月） · Y 轴 = 共同成长 · 气泡大小 = 带团总数</div>
-      <div class="chart-box" id="pool-quad" style="height:200px;"></div>
-      <div class="chart-insight">右上角 = 妹妹成长快且共赢度高，是最该投入的培养对象；左下角 = 双低。紫点 = 候选、灰点 = 未入选——注意「悦悦」牌子（银牌）高于「甜甜」（铜牌），却因妹妹零成长而未入选，说明<b>牌子 ≠ 培养力</b>。</div>
+      <div class="src" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span>X 轴 = 妹妹成长（级/月） · Y 轴 = 共同成长 · 气泡大小 = 带团总数</span>
+        <label style="font-size:12px;color:var(--text2);">按厅筛选
+          <select id="quad-hall" onchange="setQuadHall(this.value)" style="margin-left:6px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:#fff;color:var(--text);">
+            <option value="all">全部大厅</option>
+            <option value="恰逢今月">恰逢今月</option>
+            <option value="迷鹿之森">迷鹿之森</option>
+            <option value="幸运星">幸运星</option>
+            <option value="半糖心事">半糖心事</option>
+            <option value="橙心如意">橙心如意</option>
+          </select>
+        </label>
+      </div>
+      <div class="chart-box" id="pool-quad" style="height:220px;"></div>
+      <div class="src" id="quad-cluster-detail" style="margin-top:4px;min-height:16px;"></div>
+      <div class="chart-insight">只显示<b>候选</b>姐姐（三条全过），未入选已隐藏、可在下方表格查看。右上角 = 妹妹成长快且共赢高（高潜）；左下角 = 双低。密集区自动聚合成<b>「N 位」气泡</b>，点开可展开该格名单——避免全量姐姐全画糊成一团。</div>
     </div>
     <div class="card">
       <table class="list">
@@ -1703,13 +1716,127 @@ svgDonut(document.getElementById('cap-tag'), [
 ], '姐姐总数', (name, part) => drillCapTag(part));
 svgBar(document.getElementById('cap-ret'), [28,34,52,47,39], '#7C5CFF', '#6D4FE0', ['0-20%','20-40%','40-60%','60-80%','80-100%'], (idx, v, label) => drillCapRet(label));
 svgLine(document.getElementById('cap-grad-line'), [5,7,4,6,6,5,7,6], '#F97316', 'rgba(249,115,22,.12)', null, null);
-svgScatter(document.getElementById('pool-quad'), [
-  { name:'雪儿', x:1.8, y:0.60, size:6, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·恰逢今月' },
-  { name:'若曦', x:1.5, y:0.50, size:5, c:'#7C5CFF', tag:'头牌', level:'王牌', hall:'王者荣耀·迷鹿之森' },
-  { name:'琳琳', x:1.2, y:0.40, size:5, c:'#7C5CFF', tag:'正常', level:'金牌', hall:'和平精英•幸运星' },
-  { name:'悦悦', x:0.0, y:0.20, size:4, c:'#D1D5DB', tag:'风险', level:'银牌', hall:'王者荣耀·半糖心事' },
-  { name:'甜甜', x:0.6, y:0.20, size:3, c:'#D1D5DB', tag:'风险', level:'铜牌', hall:'王者荣耀·橙心如意' },
-], { xMax:3, yMax:1 }, (p) => openSister(p.name, p.tag, p.level, p.hall));
+/* ── 培养力象限：只显示候选 + 密集区聚合 + 按厅筛选 ── */
+const QUAD_SISTERS = [
+  { name:'雪儿', hall:'恰逢今月', x:1.8, y:0.60, size:6, level:'王牌' },
+  { name:'沈知微', hall:'恰逢今月', x:1.9, y:0.55, size:7, level:'大神' },
+  { name:'依依', hall:'恰逢今月', x:1.7, y:0.62, size:4, level:'金牌' },
+  { name:'苏念', hall:'恰逢今月', x:1.2, y:0.45, size:5, level:'王牌' },
+  { name:'语嫣', hall:'恰逢今月', x:1.4, y:0.52, size:3, level:'金牌' },
+  { name:'曼妮', hall:'迷鹿之森', x:1.6, y:0.58, size:5, level:'金牌' },
+  { name:'若曦', hall:'迷鹿之森', x:1.5, y:0.50, size:5, level:'王牌' },
+  { name:'佳琪', hall:'迷鹿之森', x:1.5, y:0.55, size:4, level:'银牌' },
+  { name:'静怡', hall:'迷鹿之森', x:1.1, y:0.40, size:4, level:'银牌' },
+  { name:'晓彤', hall:'迷鹿之森', x:1.3, y:0.48, size:3, level:'银牌' },
+  { name:'思彤', hall:'迷鹿之森', x:0.8, y:0.55, size:3, level:'银牌' },
+  { name:'琳琳', hall:'幸运星', x:1.2, y:0.40, size:5, level:'金牌' },
+  { name:'雨欣', hall:'幸运星', x:1.0, y:0.35, size:4, level:'金牌' },
+  { name:'江辞', hall:'幸运星', x:1.4, y:0.42, size:5, level:'金牌' },
+  { name:'可儿', hall:'幸运星', x:1.1, y:0.38, size:4, level:'银牌' },
+  { name:'欣怡', hall:'幸运星', x:1.3, y:0.41, size:3, level:'银牌' },
+  { name:'雨晴', hall:'幸运星', x:0.9, y:0.60, size:3, level:'银牌' },
+  { name:'梦洁', hall:'半糖心事', x:1.0, y:0.32, size:3, level:'银牌' },
+  { name:'思雨', hall:'半糖心事', x:1.2, y:0.36, size:4, level:'金牌' },
+  { name:'心怡', hall:'半糖心事', x:0.7, y:0.25, size:2, level:'银牌' },
+  { name:'晨晨', hall:'半糖心事', x:0.8, y:0.28, size:3, level:'银牌' },
+  { name:'妙妙', hall:'橙心如意', x:0.6, y:0.50, size:3, level:'银牌' },
+  { name:'琪琪', hall:'橙心如意', x:0.7, y:0.48, size:3, level:'银牌' },
+  { name:'安安', hall:'橙心如意', x:1.0, y:0.52, size:3, level:'金牌' },
+  { name:'乐乐', hall:'橙心如意', x:0.5, y:0.45, size:2, level:'银牌' },
+  { name:'小雨', hall:'橙心如意', x:0.6, y:0.30, size:3, level:'银牌' }
+];
+let QUAD_HALL = 'all';
+let QUAD_EXPANDED = null;
+function setQuadHall(h) {
+  QUAD_HALL = h;
+  QUAD_EXPANDED = null;
+  renderQuad();
+}
+function renderQuad() {
+  const el = document.getElementById('pool-quad');
+  const detail = document.getElementById('quad-cluster-detail');
+  const cands = QUAD_SISTERS.filter(s => QUAD_HALL === 'all' || s.hall === QUAD_HALL);
+  if (!cands.length) {
+    el.innerHTML = '<div class="src" style="padding:16px 0;text-align:center;">该厅暂无候选姐姐</div>';
+    if (detail) detail.innerHTML = '';
+    return;
+  }
+  const W = 460, H = 200, pad = 30;
+  const xMax = 3, yMax = 1;
+  const px = v => pad + (v / xMax) * (W - pad * 2);
+  const py = v => H - pad - (v / yMax) * (H - pad * 2);
+  const GX = 6, GY = 4;
+  const cells = {};
+  cands.forEach(s => {
+    const gx = Math.min(GX - 1, Math.max(0, Math.floor(s.x / (xMax / GX))));
+    const gy = Math.min(GY - 1, Math.max(0, Math.floor(s.y / (yMax / GY))));
+    const k = gx + ',' + gy;
+    (cells[k] = cells[k] || []).push(s);
+  });
+  let grid = '', cross, corners, dots = '';
+  for (let g = 0; g <= 4; g++) {
+    const gx = pad + g * ((W - pad * 2) / 4);
+    const gy = pad + g * ((H - pad * 2) / 4);
+    grid += `<line x1="${gx}" y1="${pad}" x2="${gx}" y2="${H-pad}" stroke="#F0F1F4" stroke-width="1"/>`;
+    grid += `<line x1="${pad}" y1="${gy}" x2="${W-pad}" y2="${gy}" stroke="#F0F1F4" stroke-width="1"/>`;
+  }
+  const mx = px(xMax / 2), my = py(yMax / 2);
+  cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
+    <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+  corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共赢高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共赢低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共赢高</text>
+    <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
+  const clusters = [];
+  Object.keys(cells).forEach(k => {
+    const pts = cells[k];
+    if (pts.length === 1) {
+      const s = pts[0];
+      const cx = px(s.x), cy = py(s.y), r = 6 + s.size * 1.1;
+      dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="#7C5CFF" opacity=".5"><title>${s.name} · ${s.level}</title></circle>
+        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="#7C5CFF" stroke-width="1.6"/>
+        <text x="${cx.toFixed(1)}" y="${(cy - r - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#1A1D26">${s.name}</text>`;
+    } else {
+      const gxy = k.split(',').map(Number);
+      const cx = pad + (gxy[0] + 0.5) * ((W - pad * 2) / GX);
+      const cy = H - pad - (gxy[1] + 0.5) * ((H - pad * 2) / GY);
+      const r = 10 + pts.length * 2;
+      clusters.push({ k, pts, cx, cy });
+      dots += `<g class="quad-cluster" data-k="${k}" style="cursor:pointer;">
+        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="#7C5CFF" opacity=".35"/>
+        <circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="#7C5CFF" stroke-width="1.6" stroke-dasharray="4 3"/>
+        <text x="${cx.toFixed(1)}" y="${(cy+4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#5B3EC4">${pts.length}位</text>
+        <text x="${cx.toFixed(1)}" y="${(cy - r - 3).toFixed(1)}" text-anchor="middle" font-size="8.5" fill="#9CA3AF">点开看名单</text>
+      </g>`;
+    }
+  });
+  const ax = `<text x="${W-pad}" y="${H-2}" text-anchor="end" font-size="9" fill="#9CA3AF">妹妹成长（级/月）→</text>
+    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 共同成长</text>`;
+  const legend = `<circle cx="${W*0.60}" cy="14" r="5" fill="#7C5CFF" opacity=".5"/><text x="${W*0.60+10}" y="17.5" font-size="10" fill="#6B7280">候选</text>
+    <circle cx="${W*0.72}" cy="14" r="5" fill="none" stroke="#7C5CFF" stroke-width="1.4" stroke-dasharray="4 3"/><text x="${W*0.72+10}" y="17.5" font-size="10" fill="#6B7280">聚合（N位）</text>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
+  el.querySelectorAll('.quad-cluster').forEach(g => {
+    g.addEventListener('click', () => {
+      const k = g.getAttribute('data-k');
+      QUAD_EXPANDED = (QUAD_EXPANDED === k) ? null : k;
+      renderClusterDetail(clusters, QUAD_EXPANDED, cands.length);
+    });
+  });
+  renderClusterDetail(clusters, QUAD_EXPANDED, cands.length);
+}
+function renderClusterDetail(clusters, expandedKey, total) {
+  const detail = document.getElementById('quad-cluster-detail');
+  if (!detail) return;
+  if (!expandedKey) {
+    detail.innerHTML = `<span style="color:var(--text3);">${QUAD_HALL === 'all' ? '全部' : QUAD_HALL} · 共 <b style="color:var(--text);">${total}</b> 位候选，<b style="color:var(--text);">${clusters.length}</b> 处密集区已聚合（点「N 位」气泡展开名单）。</span>`;
+    return;
+  }
+  const c = clusters.find(c => c.k === expandedKey);
+  if (!c) return;
+  detail.innerHTML = `<span style="color:var(--text2);">聚合格（${c.pts.length} 位）：</span> ` +
+    c.pts.map(s => `<span class="chip" style="margin-right:6px;color:#5B3EC4;background:#7C5CFF1A;">${s.name} · ${s.level}</span>`).join('');
+}
+renderQuad();
 
 /* UID · 姐 vs 妹 本周流水（分组柱状） */
 svgGroupBar(document.getElementById('uid-partner'), [
@@ -2248,24 +2375,24 @@ const FULL_LISTS = {
     ]
   },
 };
-/* ── 毕业妹妹名单：时间范围（今天/一周/一个月）+ 富字段（UID/最后牌子/流水） ── */
+/* ── 毕业妹妹名单：时间范围（今天/一周/一个月）+ 富字段（UID/姐姐最高牌子/妹妹最高牌子/流水） ── */
 const GRAD_BADGE_COLOR = { '大神':'#7C3AED', '王牌':'#5B3EC4', '金牌':'#B45309', '银牌':'#64748B', '初级银牌':'#94A3B8', '铜牌':'#A16207', '初级铜牌':'#A16207', '无':'#9CA3AF' };
 const GRAD_ALL = [
-  { name:'灵儿', uid:'200111001', sis:'雪儿', sisUid:'100234567', hall:'王者荣耀·恰逢今月', badge:'金牌', rev:'¥3,300', date:'08-26' },
-  { name:'思思', uid:'200111004', sis:'悦悦', sisUid:'100234570', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,150', date:'08-26' },
-  { name:'沐晴', uid:'200111002', sis:'若曦', sisUid:'100234568', hall:'王者荣耀·迷鹿之森', badge:'金牌', rev:'¥4,120', date:'08-25' },
-  { name:'婷婷', uid:'200111003', sis:'琳琳', sisUid:'100234569', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,860', date:'08-24' },
-  { name:'微微', uid:'200111005', sis:'甜甜', sisUid:'100234571', hall:'王者荣耀·橙心如意', badge:'铜牌', rev:'¥1,540', date:'08-23' },
-  { name:'可欣', uid:'200111006', sis:'琳琳', sisUid:'100234569', hall:'和平精英•幸运星', badge:'王牌', rev:'¥5,600', date:'08-22' },
-  { name:'诗涵', uid:'200111007', sis:'小玉', sisUid:'100234573', hall:'王者荣耀·恰逢今月', badge:'银牌', rev:'¥2,480', date:'08-21' },
-  { name:'梦琪', uid:'200111008', sis:'雨欣', sisUid:'100234574', hall:'和平精英•幸运星', badge:'铜牌', rev:'¥1,930', date:'08-20' },
-  { name:'雨桐', uid:'200111009', sis:'晨晨', sisUid:'100234575', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,030', date:'08-18' },
-  { name:'可可', uid:'200111010', sis:'娜娜', sisUid:'100234572', hall:'王者荣耀·怪诞学姐', badge:'金牌', rev:'¥3,120', date:'08-16' },
-  { name:'乐乐', uid:'200111011', sis:'娜娜', sisUid:'100234572', hall:'王者荣耀·怪诞学姐', badge:'银牌', rev:'¥2,260', date:'08-14' },
-  { name:'雨彤', uid:'200111012', sis:'若曦', sisUid:'100234568', hall:'王者荣耀·迷鹿之森', badge:'铜牌', rev:'¥1,680', date:'08-12' },
-  { name:'星野みう', uid:'200111013', sis:'苏念', sisUid:'100234576', hall:'王者荣耀·恰逢今月', badge:'王牌', rev:'¥6,200', date:'08-09' },
-  { name:'奶糖', uid:'200111014', sis:'江辞', sisUid:'100234577', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,540', date:'08-05' },
-  { name:'草莓布丁', uid:'200111015', sis:'沈知微', sisUid:'100234578', hall:'王者荣耀·恰逢今月', badge:'大神', rev:'¥8,600', date:'08-01' }
+  { name:'灵儿', uid:'200111001', sis:'雪儿', sisUid:'100234567', sisBadge:'王牌', hall:'王者荣耀·恰逢今月', badge:'金牌', rev:'¥3,300', date:'08-26' },
+  { name:'思思', uid:'200111004', sis:'悦悦', sisUid:'100234570', sisBadge:'银牌', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,150', date:'08-26' },
+  { name:'沐晴', uid:'200111002', sis:'若曦', sisUid:'100234568', sisBadge:'王牌', hall:'王者荣耀·迷鹿之森', badge:'金牌', rev:'¥4,120', date:'08-25' },
+  { name:'婷婷', uid:'200111003', sis:'琳琳', sisUid:'100234569', sisBadge:'金牌', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,860', date:'08-24' },
+  { name:'微微', uid:'200111005', sis:'甜甜', sisUid:'100234571', sisBadge:'铜牌', hall:'王者荣耀·橙心如意', badge:'铜牌', rev:'¥1,540', date:'08-23' },
+  { name:'可欣', uid:'200111006', sis:'琳琳', sisUid:'100234569', sisBadge:'金牌', hall:'和平精英•幸运星', badge:'王牌', rev:'¥5,600', date:'08-22' },
+  { name:'诗涵', uid:'200111007', sis:'小玉', sisUid:'100234573', sisBadge:'银牌', hall:'王者荣耀·恰逢今月', badge:'银牌', rev:'¥2,480', date:'08-21' },
+  { name:'梦琪', uid:'200111008', sis:'雨欣', sisUid:'100234574', sisBadge:'金牌', hall:'和平精英•幸运星', badge:'铜牌', rev:'¥1,930', date:'08-20' },
+  { name:'雨桐', uid:'200111009', sis:'晨晨', sisUid:'100234575', sisBadge:'银牌', hall:'王者荣耀·半糖心事', badge:'银牌', rev:'¥2,030', date:'08-18' },
+  { name:'可可', uid:'200111010', sis:'娜娜', sisUid:'100234572', sisBadge:'金牌', hall:'王者荣耀·怪诞学姐', badge:'金牌', rev:'¥3,120', date:'08-16' },
+  { name:'乐乐', uid:'200111011', sis:'娜娜', sisUid:'100234572', sisBadge:'金牌', hall:'王者荣耀·怪诞学姐', badge:'银牌', rev:'¥2,260', date:'08-14' },
+  { name:'雨彤', uid:'200111012', sis:'若曦', sisUid:'100234568', sisBadge:'王牌', hall:'王者荣耀·迷鹿之森', badge:'铜牌', rev:'¥1,680', date:'08-12' },
+  { name:'星野みう', uid:'200111013', sis:'苏念', sisUid:'100234576', sisBadge:'王牌', hall:'王者荣耀·恰逢今月', badge:'王牌', rev:'¥6,200', date:'08-09' },
+  { name:'奶糖', uid:'200111014', sis:'江辞', sisUid:'100234577', sisBadge:'金牌', hall:'和平精英•幸运星', badge:'金牌', rev:'¥3,540', date:'08-05' },
+  { name:'草莓布丁', uid:'200111015', sis:'沈知微', sisUid:'100234578', sisBadge:'大神', hall:'王者荣耀·恰逢今月', badge:'大神', rev:'¥8,600', date:'08-01' }
 ];
 const GRAD_RANGE = {
   today: { label: '今天 (08-26)', filter: g => g.date === '08-26' },
@@ -2284,7 +2411,7 @@ function renderGradPreview() {
   el.innerHTML = list.length
     ? list.slice(0, 3).map((g, i) => `<li>
         <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
-        <span class="mp-name">${g.name}<span class="mp-sub">姐姐 ${g.sis} · ${g.badge} · ${g.rev}</span></span>
+        <span class="mp-name">${g.name}<span class="mp-sub">姐姐 ${g.sis}（${g.sisBadge}）· 妹妹${g.badge} · ${g.rev}</span></span>
         <span class="mp-val">${g.date}</span>
       </li>`).join('')
     : '<div class="src" style="padding:8px 0;">该时段暂无毕业妹妹</div>';
@@ -2305,8 +2432,8 @@ function openFull(key) {
     const list = gradList();
     L = {
       title: '毕业妹妹名单（' + GRAD_RANGE[GRAD_PERIOD].label + '）',
-      sub: '满 30 天自动毕业 · 妹妹 UID + 最后牌子 + 累计流水',
-      cols: ['#','妹妹','妹妹UID','姐姐','姐姐UID','大厅','最后牌子','流水','毕业日期'],
+      sub: '满 30 天自动毕业 · 妹妹 UID + 姐姐最高牌子 + 妹妹最高牌子 + 累计流水',
+      cols: ['#','妹妹','妹妹UID','姐姐','姐姐UID','大厅','姐姐最高牌子','妹妹最高牌子','流水','毕业日期'],
       rows: list.map((g, i) => [
         String(i + 1),
         g.name,
@@ -2314,6 +2441,7 @@ function openFull(key) {
         g.sis,
         uidLink(g.sisUid, g.sis),
         g.hall,
+        gradBadgeChip(g.sisBadge),
         gradBadgeChip(g.badge),
         g.rev,
         g.date
