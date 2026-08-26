@@ -1326,7 +1326,7 @@
   <!-- 姐 vs 妹 对比 -->
   <div class="card" style="margin-bottom:14px;">
     <h3>姐姐 vs 妹妹 近 4 周数据对比</h3>
-    <div class="src">近 4 周（≈成团 30 天内） · 组合双轴图：柱=姐姐/妹妹，线=差额 姐−妹，零轴上方绿=领先、下方红=反超 · 顶部切换对比指标 · 妹妹爬虫缺失时回退本地流水</div>
+    <div class="src">近 4 周（≈成团 30 天内） · 组合双轴图：柱=姐姐/妹妹A/妹妹B，线=差额（姐−妹A、姐−妹B） · 一个姐姐最多同时带 2 个妹妹，并列展示 · 妹妹爬虫缺失时回退本地流水</div>
     <div class="seg" style="margin:6px 0 10px;" id="uid-dim-seg">
       <button class="on" onclick="setUidDim('revenue', this)">礼物流水</button>
       <button onclick="setUidDim('gifts', this)">礼物数</button>
@@ -1337,15 +1337,15 @@
     <div class="src" id="uid-partner-insight" style="margin-top:4px;"></div>
     <div class="wd-subhead">多维度对比</div>
     <table class="list">
-      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹</th></tr></thead>
+      <thead><tr><th>指标</th><th>姐姐</th><th>妹妹A</th><th>妹妹B</th></tr></thead>
       <tbody>
-        <tr><td>本周流水</td><td style="color:#16A34A;font-weight:600;">¥12,400</td><td>¥8,900</td></tr>
-        <tr><td>本周礼物数</td><td style="color:#16A34A;font-weight:600;">86</td><td>64</td></tr>
-        <tr><td>累计流水</td><td style="color:#16A34A;font-weight:600;">¥86,400</td><td>¥62,300</td></tr>
-        <tr><td>陪档时长</td><td style="color:#16A34A;font-weight:600;">2.4h</td><td>2.2h</td></tr>
-        <tr><td>陪档天数</td><td style="color:#16A34A;font-weight:600;">5 天</td><td>4 天</td></tr>
-        <tr><td>当前等级</td><td style="color:#16A34A;font-weight:600;">王牌</td><td>金牌</td></tr>
-        <tr><td>任务完成率</td><td style="color:#16A34A;font-weight:600;">88%</td><td>76%</td></tr>
+        <tr><td>本周流水</td><td style="color:#16A34A;font-weight:600;">¥12,400</td><td>¥8,900</td><td>¥7,200</td></tr>
+        <tr><td>本周礼物数</td><td style="color:#16A34A;font-weight:600;">86</td><td>64</td><td>55</td></tr>
+        <tr><td>累计流水</td><td style="color:#16A34A;font-weight:600;">¥86,400</td><td>¥62,300</td><td>¥51,800</td></tr>
+        <tr><td>陪档时长</td><td style="color:#16A34A;font-weight:600;">2.4h</td><td>2.2h</td><td>1.9h</td></tr>
+        <tr><td>陪档天数</td><td style="color:#16A34A;font-weight:600;">5 天</td><td>4 天</td><td>3 天</td></tr>
+        <tr><td>当前等级</td><td style="color:#16A34A;font-weight:600;">王牌</td><td>金牌</td><td>银牌</td></tr>
+        <tr><td>任务完成率</td><td style="color:#16A34A;font-weight:600;">88%</td><td>76%</td><td>68%</td></tr>
       </tbody>
     </table>
   </div>
@@ -1572,20 +1572,22 @@ function svgGroupBar(el, series, colors) {
   }).join('');
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${legend}${bars}</svg>`;
 }
-/* 组合双轴图：左轴=分组柱（姐姐/妹妹流水，同单位），右轴=差额折线（姐−妹，独立刻度，零轴上方绿/下方红） */
-function svgComboDual(el, bars, line, colors, cfg) {
+/* 组合双轴图：左轴=分组柱（姐姐/妹妹A/妹妹B，同单位），右轴=差额折线（多条，独立刻度） */
+function svgComboDual(el, bars, lines, colors, cfg) {
   cfg = cfg || {};
   const unit = cfg.unit || '¥';
   const label = cfg.label || '礼物流水';
   const fmtU = v => unit === '¥' ? `¥${v}` : `${v}${unit}`;
+  const lineArr = Array.isArray(lines) ? lines : [lines];
   const W = 460, H = 170, padL = 30, padR = 30, padT = 26, padB = 22;
   const n = bars[0].data.length;
+  const nb = bars.length;
   const barMax = Math.max(...bars.flatMap(s => s.data)) * 1.12;
-  const lineAbsMax = Math.max(...line.data.map(v => Math.abs(v))) * 1.35;
+  const lineAbsMax = Math.max(...lineArr.flatMap(l => l.data.map(v => Math.abs(v)))) * 1.35;
   const yBar = v => H - padB - (v / barMax) * (H - padT - padB);
   const yLine = v => H - padB - ((v + lineAbsMax) / (2 * lineAbsMax)) * (H - padT - padB);
   const groupW = (W - padL - padR) / n;
-  const bw = Math.min(groupW * 0.30, 22);
+  const bw = Math.min(groupW * 0.22, 16);
   let grid = '';
   for (let g = 0; g <= 4; g++) {
     const gy = padT + g * ((H - padT - padB) / 4);
@@ -1595,52 +1597,40 @@ function svgComboDual(el, bars, line, colors, cfg) {
   bars.forEach((s, si) => {
     s.data.forEach((v, i) => {
       const cx = padL + i * groupW + groupW / 2;
-      const offset = (si - 0.5) * (bw + 2);
+      const offset = (si - (nb - 1) / 2) * (bw + 2);
       const x = cx + offset - bw / 2;
       const yv = yBar(v);
       barsSvg += `<rect x="${x.toFixed(1)}" y="${yv.toFixed(1)}" width="${bw.toFixed(1)}" height="${(H-padB-yv).toFixed(1)}" rx="3" fill="${colors[si]}" opacity=".9"><title>${s.name} · 周${i+1} · ${fmtU(v)}</title></rect>`;
     });
   });
   const zeroY = yLine(0);
-  const xs = line.data.map((v, i) => padL + i * groupW + groupW / 2);
-  const ys = line.data.map(v => yLine(v));
-  // 零轴填充：上方(姐姐领先)=绿，下方(妹妹反超)=红
-  const areaPts = (above) => {
-    const keep = above ? (y) => y <= zeroY : (y) => y >= zeroY;
-    const pts = [[xs[0], zeroY]];
-    let px = xs[0], py = ys[0];
-    if (keep(py)) pts.push([px, py]);
-    for (let i = 1; i < xs.length; i++) {
-      const x = xs[i], y = ys[i];
-      if (keep(py) !== keep(y)) {
-        const t = (zeroY - py) / (y - py);
-        pts.push([px + t * (x - px), zeroY]);
-      }
-      if (keep(y)) pts.push([x, y]);
-      px = x; py = y;
-    }
-    pts.push([xs[xs.length - 1], zeroY]);
-    return pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  };
-  const fillSvg = `<polygon points="${areaPts(true)}" fill="#16A34A" opacity=".13"/>
-    <polygon points="${areaPts(false)}" fill="#D56060" opacity=".20"/>`;
-  const pts = ys.map((y, i) => `${xs[i].toFixed(1)},${y.toFixed(1)}`).join(' ');
-  const dots = line.data.map((v, i) => {
-    const cx = xs[i], cy = ys[i];
-    const neg = v < 0;
-    const fill = neg ? '#D56060' : '#fff';
-    const stroke = neg ? '#D56060' : line.color;
-    const label = neg ? `<text x="${cx.toFixed(1)}" y="${(cy - 8).toFixed(1)}" text-anchor="middle" font-size="8" fill="#D56060">反超</text>` : '';
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${fill}" stroke="${stroke}" stroke-width="2"><title>差额 · 周${i+1} · ${v>=0?'+':''}${fmtU(v)}</title></circle>${label}`;
-  }).join('');
-  const lineSvg = `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>
-    <polyline points="${pts}" fill="none" stroke="${line.color}" stroke-width="2"/>${dots}`;
+  // 多条差额线：不做零轴大块填充（重叠易花眼），只留零轴虚线 + 负值红点标「反超」
+  let lineSvg = `<line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W-padR}" y2="${zeroY.toFixed(1)}" stroke="#9CA3AF" stroke-width="1" stroke-dasharray="4 4"/>`;
+  lineArr.forEach(ln => {
+    const xs = ln.data.map((v, i) => padL + i * groupW + groupW / 2);
+    const ys = ln.data.map(v => yLine(v));
+    const pts = ys.map((y, i) => `${xs[i].toFixed(1)},${y.toFixed(1)}`).join(' ');
+    lineSvg += `<polyline points="${pts}" fill="none" stroke="${ln.color}" stroke-width="2"/>`;
+    ln.data.forEach((v, i) => {
+      const cx = xs[i], cy = ys[i];
+      const neg = v < 0;
+      lineSvg += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="${neg ? '#D56060' : '#fff'}" stroke="${neg ? '#D56060' : ln.color}" stroke-width="2"><title>${ln.name} · 周${i+1} · ${v>=0?'+':''}${fmtU(v)}</title></circle>` +
+        (neg ? `<text x="${cx.toFixed(1)}" y="${(cy - 8).toFixed(1)}" text-anchor="middle" font-size="8" fill="#D56060">反超</text>` : '');
+    });
+  });
   const axL = `<text x="${padL}" y="${H-4}" text-anchor="middle" font-size="9" fill="#9CA3AF">← ${label}（${unit}，柱）</text>`;
-  const axR = `<text x="${W-padR}" y="${H-4}" text-anchor="middle" font-size="9" fill="#D97706">差额（${unit}，线）→</text>`;
-  const legend = `<circle cx="${padL}" cy="12" r="5" fill="${colors[0]}"/><text x="${padL+9}" y="15.5" font-size="10" fill="#6B7280">姐姐</text>
-    <circle cx="${padL+52}" cy="12" r="5" fill="${colors[1]}"/><text x="${padL+61}" y="15.5" font-size="10" fill="#6B7280">妹妹</text>
-    <line x1="${padL+110}" y1="12" x2="${padL+130}" y2="12" stroke="${line.color}" stroke-width="2"/><text x="${padL+135}" y="15.5" font-size="10" fill="#6B7280">差额（姐−妹）</text>`;
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${fillSvg}${barsSvg}${lineSvg}${axL}${axR}${legend}</svg>`;
+  const axR = `<text x="${W-padR}" y="${H-4}" text-anchor="middle" font-size="9" fill="#6B7280">差额（${unit}，线）→</text>`;
+  let legend = '';
+  bars.forEach((s, i) => {
+    const lx = padL + i * 56;
+    legend += `<circle cx="${lx}" cy="12" r="5" fill="${colors[i]}"/><text x="${lx+9}" y="15.5" font-size="10" fill="#6B7280">${s.name}</text>`;
+  });
+  const lBase = padL + nb * 56 + 6;
+  lineArr.forEach((ln, i) => {
+    const lx = lBase + i * 74;
+    legend += `<line x1="${lx}" y1="12" x2="${lx+16}" y2="12" stroke="${ln.color}" stroke-width="2"/><text x="${lx+20}" y="15.5" font-size="10" fill="#6B7280">${ln.name}</text>`;
+  });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${barsSvg}${lineSvg}${axL}${axR}${legend}</svg>`;
 }
 function svgDonut(el, parts, centerLabel, onSlice) {
   const W = 460, H = 180;
@@ -1978,27 +1968,31 @@ function initSorts() {
 }
 initSorts();
 
-/* UID · 姐 vs 妹 近 4 周多维对比（组合双轴：柱=姐姐/妹妹，线=差额，零轴填充；成团≤30天≈4周） */
+/* UID · 姐 vs 妹 近 4 周多维对比（组合双轴：柱=姐姐/妹妹A/妹妹B，线=差额；成团≤30天≈4周，1姐最多2妹并列） */
 const UID_DIMS = {
-  revenue: { label:'礼物流水', unit:'¥',  sis:[180,200,150,210], mate:[160,170,165,185] },
-  gifts:   { label:'礼物数',   unit:'个', sis:[86,92,70,95],     mate:[72,80,78,84] },
-  hours:   { label:'陪档时长', unit:'h',  sis:[2.4,2.6,1.8,2.8], mate:[2.2,2.3,2.0,2.5] },
-  days:    { label:'陪档天数', unit:'天', sis:[5,6,4,7],         mate:[4,5,5,4] },
+  revenue: { label:'礼物流水', unit:'¥',  sis:[180,200,150,210], mateA:[160,170,165,185], mateB:[120,135,110,140] },
+  gifts:   { label:'礼物数',   unit:'个', sis:[86,92,70,95],     mateA:[72,80,78,84],     mateB:[58,60,52,66] },
+  hours:   { label:'陪档时长', unit:'h',  sis:[2.4,2.6,1.8,2.8], mateA:[2.2,2.3,2.0,2.5], mateB:[1.7,1.8,1.5,1.9] },
+  days:    { label:'陪档天数', unit:'天', sis:[5,6,4,7],         mateA:[4,5,5,4],         mateB:[3,4,3,5] },
 };
 let UID_DIM = 'revenue';
 const _fmtU = (v, u) => u === '¥' ? `¥${v}` : `${v}${u}`;
 function drawUidPartner() {
   const d = UID_DIMS[UID_DIM];
-  const diff = d.sis.map((v, i) => +(v - d.mate[i]).toFixed(2));
+  const diffA = d.sis.map((v, i) => +(v - d.mateA[i]).toFixed(2));
+  const diffB = d.sis.map((v, i) => +(v - d.mateB[i]).toFixed(2));
   svgComboDual(document.getElementById('uid-partner'),
-    [{ name:'姐姐', data:d.sis }, { name:'妹妹', data:d.mate }],
-    { name:'差额', data:diff, color:'#D97706' },
-    ['#7C5CFF', '#16A34A'],
+    [{ name:'姐姐', data:d.sis }, { name:'妹妹A', data:d.mateA }, { name:'妹妹B', data:d.mateB }],
+    [{ name:'姐−妹A', data:diffA, color:'#D97706' }, { name:'姐−妹B', data:diffB, color:'#DB2777' }],
+    ['#7C5CFF', '#16A34A', '#0EA5E9'],
     { unit:d.unit, label:d.label });
-  const lead = diff.filter(v => v > 0).length, trail = diff.filter(v => v < 0).length, pos = diff.filter(v => v > 0);
-  document.getElementById('uid-partner-insight').textContent = trail === 0
-    ? `洞察：近 4 周姐姐领先 ${lead}/4 周，差距 ${_fmtU(Math.min(...pos), d.unit)}~${_fmtU(Math.max(...pos), d.unit)} 稳定，无被反超。`
-    : `洞察：近 4 周姐姐领先 ${lead}/4 周，差距 ${_fmtU(Math.min(...pos), d.unit)}~${_fmtU(Math.max(...pos), d.unit)} 波动，其中 ${trail} 周妹妹短暂反超，随后姐姐重新拉开。`;
+  const desc = (diff) => {
+    const lead = diff.filter(v => v > 0).length, trail = diff.filter(v => v < 0).length, pos = diff.filter(v => v > 0);
+    return trail === 0
+      ? `全领先（差距 ${_fmtU(Math.min(...pos), d.unit)}~${_fmtU(Math.max(...pos), d.unit)}）`
+      : `领先 ${lead}/4 周（差距 ${_fmtU(Math.min(...pos), d.unit)}~${_fmtU(Math.max(...pos), d.unit)}，${trail} 周被反超）`;
+  };
+  document.getElementById('uid-partner-insight').textContent = `洞察：近 4 周姐姐对妹妹A ${desc(diffA)}，对妹妹B ${desc(diffB)}。`;
 }
 function setUidDim(key, btn) {
   UID_DIM = key;
