@@ -1039,7 +1039,7 @@
   <div class="page-head">
     <div>
       <h1>姐姐分析</h1>
-      <p>画像 / 姐姐筛选 · 打标分布 · 带团存活率 · 排行榜 · 毕业妹妹</p>
+      <p>画像 / 姐姐筛选 · 打标分布 · 带团毕业率 · 排行榜 · 毕业妹妹</p>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <span style="font-size:12px;color:var(--text3);">时间</span>
@@ -1063,10 +1063,10 @@
         <div class="chart-insight">头牌 <b>42</b> 位占比 21%，风险 <b>18</b> 位需重点跟进。</div>
       </div>
       <div class="card">
-        <h3>带团存活率分布</h3>
-        <div class="src">按带团存活率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）· 点柱下钻</div>
+        <h3>带团毕业率分布</h3>
+        <div class="src">按带团毕业率分段（0-20% / 20-40 / 40-60 / 60-80 / 80-100）· 点柱下钻</div>
         <div class="chart-box" id="cap-ret"></div>
-        <div class="chart-insight">带团存活率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
+        <div class="chart-insight">带团毕业率 40~60% 段最集中（<b>52</b> 位），80% 以上 <b>39</b> 位。</div>
       </div>
     </div>
 
@@ -1081,22 +1081,22 @@
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">打标口径与指标计算</span></div>
       <div class="dn-line">
-        <span class="dni"><b>头牌</b><code>周流水 ≥ P80 分位 且 留存 ≥50%</code><span>头部核心</span></span>
-        <span class="dni"><b>风险</b><code>环比 ≤-50% 且上周≥¥1000，或带团≥3 且留存&lt;50%</code><span>重点跟进</span></span>
+        <span class="dni"><b>头牌</b><code>周流水 ≥ P80 分位 且 带团毕业率 ≥50%</code><span>头部核心</span></span>
+        <span class="dni"><b>风险</b><code>环比 ≤-50% 且上周≥¥1000，或带团≥3 且带团毕业率&lt;50%</code><span>重点跟进</span></span>
         <span class="dni"><b>正常</b><code>其余姐姐</code><span>常规观察</span></span>
-        <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+        <span class="dni"><b>带团毕业率</b><code>自然毕业团 ÷ 已结束团</code><span>善终率</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">头牌口径</span>
-        <span>「高于八成非零姐姐」= 本周流水 &gt; 0 的姐姐按周流水排序，取第 <b>80 百分位（P80）</b> 作门槛，周流水 ≥ 该值即排进前 20%。留存 = 进行中团 ÷ 带团总数，两条须同时满足。人少时（有流水姐姐 &lt; 约 5 位）P80 会退化成「近似全场最高」，头牌名额自然缩水。</span>
+        <span>「高于八成非零姐姐」= 本周流水 &gt; 0 的姐姐按周流水排序，取第 <b>80 百分位（P80）</b> 作门槛，周流水 ≥ 该值即排进前 20%。带团毕业率 = 自然毕业团 ÷ 已结束团，两条须同时满足。人少时（有流水姐姐 &lt; 约 5 位）P80 会退化成「近似全场最高」，头牌名额自然缩水。</span>
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">风险口径</span>
-        <span>「环比暴跌」= 周流水环比 ≤ -50% 且上周流水 ≥ ¥1000（排除小额波动）；「带团多但留存低」= 带团总数 ≥ 3 且留存 &lt; 50%。奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
+        <span>「环比暴跌」= 周流水环比 ≤ -50% 且上周流水 ≥ ¥1000（排除小额波动）；「带团多但毕业率低」= 带团总数 ≥ 3 且带团毕业率 &lt; 50%。奖励 = <code>reward_amount</code> 快照当日发放的礼物奖励，非累计总流水（累计流水见 UID 查询）。原「头牌依赖度」字段已移除。排名随「当日 / 当周 / 当月」切换，默认按奖励降序。</span>
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">牌子≠画像</span>
-        <span><b>「牌子等级」（铜/银/金/王牌/大神）衡量的是姐姐自身的等级经验，与「画像」（头牌/风险/正常）是两码事</b>：高牌子的姐姐不一定是带妹妹的好姐姐，好姐姐的牌子也未必高。牌子升级难度非线性——<b>铜牌→银牌很容易，王牌→大神极难</b>，所以「大神」比「银牌」高一档的实际含金量远超一档。画像打标看的是「流水 P80 + 留存」，与牌子解耦，请勿把「高牌子」直接等同于「优秀姐姐」。</span>
+        <span><b>「牌子等级」（铜/银/金/王牌/大神）衡量的是姐姐自身的等级经验，与「画像」（头牌/风险/正常）是两码事</b>：高牌子的姐姐不一定是带妹妹的好姐姐，好姐姐的牌子也未必高。牌子升级难度非线性——<b>铜牌→银牌很容易，王牌→大神极难</b>，所以「大神」比「银牌」高一档的实际含金量远超一档。画像打标看的是「流水 P80 + 带团毕业率」，与牌子解耦，请勿把「高牌子」直接等同于「优秀姐姐」。</span>
       </div>
     </div>
     <div class="card">
@@ -1107,7 +1107,7 @@
       </div>
       <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团存活率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团毕业率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
           <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
           <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
@@ -1149,11 +1149,11 @@
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">培养力指标口径</span></div>
       <div class="dn-line">
         <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
-        <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
+        <span class="dni"><b>带团毕业率</b><code>自然毕业团 ÷ 已结束团</code><span>善终率</span></span>
         <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
         <span class="dni"><b>培养成功率</b><code>妹妹有成长的团占比 %</code><span>升级覆盖</span></span>
-        <span class="dni"><b>培养力总分</b><code>0.4×存活率 + 0.35×妹妹成长(归一) + 0.25×培养成功率</code><span>加权综合分</span></span>
-        <span class="dni"><b>候选判定</b><code>带团存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
+        <span class="dni"><b>培养力总分</b><code>0.4×带团毕业率 + 0.35×妹妹成长(归一) + 0.25×培养成功率</code><span>加权综合分</span></span>
+        <span class="dni"><b>候选判定</b><code>带团毕业率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
@@ -1161,11 +1161,11 @@
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
-        <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>带团存活率 &lt; 50%</b>（带团留存不稳）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
+        <span>未入选的姐姐会在「候选判定」列标注差在哪一条：<b>带团毕业率 &lt; 50%</b>（团多夭折）、<b>妹妹成长 = 0</b>（带不动妹妹、没升级）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛（≥银牌即可）、不参与打分排序——一个银牌但妹妹成长快的姐姐，比一个王牌但妹妹不成长的姐姐更值得培养，这正是「培养力」与「牌子」解耦的意思。</span>
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">总分</span>
-        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×培养成功率</b>，满分 100。妹妹成长归一化 = min(成长分/月, 30) / 30 × 100（30≈全体妹妹成长分/月 95 分位，达线给满分 100）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），培养成功率最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
+        <span>培养力总分 = <b>0.4×带团毕业率 + 0.35×妹妹成长(归一化) + 0.25×培养成功率</b>，满分 100。妹妹成长归一化 = min(成长分/月, 30) / 30 × 100（30≈全体妹妹成长分/月 95 分位，达线给满分 100）。权重是初值、可后台调参：<b>毕业率给最高权重</b>（先善终），妹妹成长次之（带得动人），培养成功率最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
@@ -1189,7 +1189,7 @@
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(成长分/月)</th><th>培养成功率</th><th>培养力总分</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团毕业率</th><th>妹妹成长(成长分/月)</th><th>培养成功率</th><th>培养力总分</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>6 / 5</td><td>72%</td><td>1.8</td><td>60%</td><td><span style="font-weight:700;color:#5B3EC4;">65</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:65%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
           <tr><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>5 / 4</td><td>69%</td><td>1.5</td><td>50%</td><td><span style="font-weight:700;color:#5B3EC4;">58</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:58%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
@@ -1212,7 +1212,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 带团存活率前置），姐姐筛选「牌子等级」后置。</div>
+  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 带团毕业率前置），姐姐筛选「牌子等级」后置。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -1389,7 +1389,7 @@
       <div class="modal-sub" id="sm-sub"></div>
       <div class="kpi-row" style="grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
         <div class="kv-cell"><div class="k">带团 / 进行中</div><div class="v" id="sm-teams">—</div></div>
-        <div class="kv-cell"><div class="k">带团存活率</div><div class="v" id="sm-ret">—</div></div>
+        <div class="kv-cell"><div class="k">带团毕业率</div><div class="v" id="sm-ret">—</div></div>
         <div class="kv-cell"><div class="k">本周流水</div><div class="v" id="sm-rev">—</div></div>
         <div class="kv-cell"><div class="k">标签</div><div class="v" id="sm-tag">—</div></div>
       </div>
@@ -1784,7 +1784,7 @@ svgMultiLine(document.getElementById('cmp-diss-trend'), [
   { name:'任务未完成自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74', match:'已解散' }
 ], null, (name, s) => drillCmpDiss(s));
 
-/* 姐姐分析 · 打标分布 + 带团存活率分布 */
+/* 姐姐分析 · 打标分布 + 带团毕业率分布 */
 svgDonut(document.getElementById('cap-tag'), [
   { n:'头牌', v:42, c:'#7C5CFF', match:'头牌' },
   { n:'风险', v:18, c:'#D97706', match:'风险' },
@@ -2462,7 +2462,7 @@ function drillCmpDiss(part) {
 }
 function clearCmpFilter() { clearDim('#cmp-team-body'); document.getElementById('cmp-filter-bar').style.display = 'none'; }
 
-/* 姐姐分析 · 打标分布 / 带团存活率分布 → 姐姐总览 */
+/* 姐姐分析 · 打标分布 / 带团毕业率分布 → 姐姐总览 */
 function drillCapTag(part) {
   const hit = dimMatch('#cap-table-body', tr => tr.cells[2] ? tr.cells[2].textContent.includes(part.match) : false);
   showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '画像下钻',
@@ -2475,8 +2475,8 @@ function drillCapRet(label) {
     const p = parseInt(tr.cells[5] ? tr.cells[5].textContent : '');
     return !isNaN(p) && p >= lo && p < hi;
   });
-  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '带团存活率下钻',
-    `按「带团存活率 <b>${label}</b>」过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?surv=</code> 返回真实名单）。`, null);
+  showBar('cap-filter-bar', 'cap-flabel', 'cap-fnote', '带团毕业率下钻',
+    `按「带团毕业率 <b>${label}</b>」过滤姐姐总览：命中 <b>${hit}</b> 行（演示仅节选 5 位，落地后按 <code>/api/captains?surv=</code> 返回真实名单）。`, null);
 }
 function clearCapFilter() { clearDim('#cap-table-body'); document.getElementById('cap-filter-bar').style.display = 'none'; }
 
@@ -2518,7 +2518,7 @@ const FULL_LISTS = {
   },
   sisters: {
     title: '姐姐总览（全量）', sub: '共 100+ 位姐姐 · 演示节选 10 条（按当日奖励降序）',
-    cols: ['#','姐姐','姐姐UID','标签','带团','进行中','带团存活率','所在大厅','等级','当日奖励'],
+    cols: ['#','姐姐','姐姐UID','标签','带团','进行中','带团毕业率','所在大厅','等级','当日奖励'],
     rows: [
       ['1','雪儿',uidLink('100234567','雪儿'),'<span class="tg hero">头牌</span>','6','5','72%','王者荣耀·恰逢今月','王牌','<b>¥12,400</b>'],
       ['2','若曦',uidLink('100234568','若曦'),'<span class="tg hero">头牌</span>','5','4','69%','王者荣耀·迷鹿之森','王牌','<b>¥9,800</b>'],
