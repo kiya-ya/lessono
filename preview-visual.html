@@ -1151,13 +1151,13 @@
         <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
         <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
         <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
-        <span class="dni"><b>共同成长</b><code>妹妹升级且团存活的团占比 %</code><span>共赢度</span></span>
+        <span class="dni"><b>共同成长</b><code>妹妹有成长的团占比 %</code><span>培养成功率</span></span>
         <span class="dni"><b>培养力总分</b><code>0.4×存活率 + 0.35×妹妹成长(归一) + 0.25×共同成长</code><span>加权综合分</span></span>
         <span class="dni"><b>候选判定</b><code>带团存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
-          <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）<b>且团仍进行中</b>（最新快照无解散日期）」的团数 ÷ 历史带团总数 × 100%（共赢度占比，非打分）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。难度分按 铜牌2→初银4→银牌8→金牌16→王牌32→大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。</span>  
+          <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）」的团数 ÷ 历史带团总数 × 100%（<b>培养成功率</b>/妹妹成长覆盖率，非打分；<b>不要求团仍进行中</b>——进行中团最多 2 个，若加「团存活」则分子封顶 2、值随带团数趋 0）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。难度分按 铜牌2<wbr>→<wbr>初银4<wbr>→<wbr>银牌8<wbr>→<wbr>金牌16<wbr>→<wbr>王牌32<wbr>→<wbr>大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。</span>  
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
@@ -1165,7 +1165,7 @@
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">总分</span>
-        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×共同成长</b>，满分 100。妹妹成长归一化 = 成长分/月 ÷ 3 × 100（按满分 3 分折算，1.8 分→60）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），共同成长（共赢）最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
+        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×共同成长</b>，满分 100。妹妹成长归一化 = min(成长分/月, 30) / 30 × 100（30≈全体妹妹成长分/月 95 分位，达线给满分 100）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），共同成长（培养成功率）最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
@@ -1185,7 +1185,7 @@
       </div>
       <div class="chart-box" id="pool-quad" style="height:220px;"></div>
       <div class="src" id="quad-cluster-detail" style="margin-top:4px;min-height:16px;"></div>
-      <div class="chart-insight">只显示<b>候选</b>姐姐（三条全过），未入选已隐藏、可在下方表格查看。右上角 = 妹妹成长快且共赢高（高潜）；左下角 = 双低。密集区自动聚合成<b>「N 位」气泡</b>，点开可展开该格名单——避免全量姐姐全画糊成一团。</div>
+      <div class="chart-insight">只显示<b>候选</b>姐姐（三条全过），未入选已隐藏、可在下方表格查看。右上角 = 妹妹成长快且共同成长高（高潜）；左下角 = 双低。密集区自动聚合成<b>「N 位」气泡</b>，点开可展开该格名单——避免全量姐姐全画糊成一团。</div>
     </div>
     <div class="card">
       <table class="list">
@@ -1704,9 +1704,9 @@ function svgScatter(el, points, opts, onPick) {
   const mx = px(xMax / 2), my = py(yMax / 2);
   const cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
     <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
-  const corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共赢高（高潜）</text>
-    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共赢低</text>
-    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共赢高</text>
+  const corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共同成长高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共同成长低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共同成长高</text>
     <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
   const dots = points.map((p, i) => {
     const cx = px(p.x), cy = py(p.y);
@@ -1859,9 +1859,9 @@ function renderQuad() {
   const mx = px(xMax / 2), my = py(yMax / 2);
   cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
     <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
-  corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共赢高（高潜）</text>
-    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共赢低</text>
-    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共赢高</text>
+  corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共同成长高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共同成长低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共同成长高</text>
     <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
   const clusters = [];
   Object.keys(cells).forEach(k => {
