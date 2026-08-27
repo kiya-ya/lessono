@@ -1151,13 +1151,13 @@
         <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
         <span class="dni"><b>带团存活率</b><code>进行中团 ÷ 带团总数</code><span>带团留存</span></span>
         <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
-        <span class="dni"><b>共同成长</b><code>妹妹有成长的团占比 %</code><span>培养成功率</span></span>
-        <span class="dni"><b>培养力总分</b><code>0.4×存活率 + 0.35×妹妹成长(归一) + 0.25×共同成长</code><span>加权综合分</span></span>
+        <span class="dni"><b>培养成功率</b><code>妹妹有成长的团占比 %</code><span>升级覆盖</span></span>
+        <span class="dni"><b>培养力总分</b><code>0.4×存活率 + 0.35×妹妹成长(归一) + 0.25×培养成功率</code><span>加权综合分</span></span>
         <span class="dni"><b>候选判定</b><code>带团存活率≥50% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">口径</span>
-          <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>，即 MAX−MIN），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；全部团取平均后 <b>×30</b>，折算成「每月涨多少难度分」。共同成长 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）」的团数 ÷ 历史带团总数 × 100%（<b>培养成功率</b>/妹妹成长覆盖率，非打分；<b>不要求团仍进行中</b>——进行中团最多 2 个，若加「团存活」则分子封顶 2、值随带团数趋 0）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。难度分按 铜牌2<wbr>→<wbr>初银4<wbr>→<wbr>银牌8<wbr>→<wbr>金牌16<wbr>→<wbr>王牌32<wbr>→<wbr>大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。</span>  
+          <span>妹妹成长 = 每个团取「妹妹最高等级的难度加权分」<b>末期 − 初期</b>（该团<b>末次快照难度分 − 首次快照难度分</b>），得到该团难度分总成长幅度；再 <b>÷ 团龄天数</b> 得到「每天涨多少难度分」；<b>只对有成长的团取平均</b>（÷ 有成长团数、不含没升级的团）后 <b>×30</b>，折算成「每月涨多少难度分」。培养成功率 = 「<b>妹妹有成长</b>（末期难度分 &gt; 初期难度分，即 MAX−MIN &gt; 0，妹妹至少升过一级）」的团数 ÷ 历史带团总数 × 100%（妹妹成长覆盖率）。三条同时满足才算「候选」：留存稳、带得动妹妹、牌子有基础。本表并列展示、不做权威排序，仅按候选优先 + 牌子等级分组。难度分按 铜牌2<wbr>→<wbr>初银4<wbr>→<wbr>银牌8<wbr>→<wbr>金牌16<wbr>→<wbr>王牌32<wbr>→<wbr>大神64 指数递增（升级难度翻倍，避免把「铜牌→银牌」和「王牌→大神」当成等量成长）。</span>  
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">未入选原因</span>
@@ -1165,13 +1165,13 @@
       </div>
       <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
         <span class="dn-tag">总分</span>
-        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×共同成长</b>，满分 100。妹妹成长归一化 = min(成长分/月, 30) / 30 × 100（30≈全体妹妹成长分/月 95 分位，达线给满分 100）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），共同成长（培养成功率）最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
+        <span>培养力总分 = <b>0.4×带团存活率 + 0.35×妹妹成长(归一化) + 0.25×培养成功率</b>，满分 100。妹妹成长归一化 = min(成长分/月, 30) / 30 × 100（30≈全体妹妹成长分/月 95 分位，达线给满分 100）。权重是初值、可后台调参：<b>留存给最高权重</b>（先留得住人），妹妹成长次之（带得动人），培养成功率最次。总分<b>仅作排序参考、不进候选硬门槛</b>，候选判定仍按三条硬规则。</span>
       </div>
     </div>
     <div class="card" style="margin-top:14px;">
       <h3>培养力象限</h3>
       <div class="src" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <span>X 轴 = 妹妹成长（成长分/月） · Y 轴 = 共同成长（%） · 气泡大小 = 带团总数</span>
+        <span>X 轴 = 妹妹成长（成长分/月） · Y 轴 = 培养成功率（%） · 气泡大小 = 带团总数</span>
         <label style="font-size:12px;color:var(--text2);">按厅筛选
           <select id="quad-hall" onchange="setQuadHall(this.value)" style="margin-left:6px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;background:#fff;color:var(--text);">
             <option value="all">全部大厅</option>
@@ -1185,11 +1185,11 @@
       </div>
       <div class="chart-box" id="pool-quad" style="height:220px;"></div>
       <div class="src" id="quad-cluster-detail" style="margin-top:4px;min-height:16px;"></div>
-      <div class="chart-insight">只显示<b>候选</b>姐姐（三条全过），未入选已隐藏、可在下方表格查看。右上角 = 妹妹成长快且共同成长高（高潜）；左下角 = 双低。密集区自动聚合成<b>「N 位」气泡</b>，点开可展开该格名单——避免全量姐姐全画糊成一团。</div>
+      <div class="chart-insight">只显示<b>候选</b>姐姐（三条全过），未入选已隐藏、可在下方表格查看。右上角 = 妹妹成长快且培养成功率高（高潜）；左下角 = 双低。密集区自动聚合成<b>「N 位」气泡</b>，点开可展开该格名单——避免全量姐姐全画糊成一团。</div>
     </div>
     <div class="card">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(成长分/月)</th><th>共同成长</th><th>培养力总分</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>带团(总/进行)</th><th>带团存活率</th><th>妹妹成长(成长分/月)</th><th>培养成功率</th><th>培养力总分</th><th>牌子等级</th><th>候选判定</th><th>操作</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td>6 / 5</td><td>72%</td><td>1.8</td><td>60%</td><td><span style="font-weight:700;color:#5B3EC4;">65</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:65%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
           <tr><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td>5 / 4</td><td>69%</td><td>1.5</td><td>50%</td><td><span style="font-weight:700;color:#5B3EC4;">58</span><div style="height:4px;background:#F0F1F4;border-radius:2px;margin-top:3px;overflow:hidden;"><div style="width:58%;height:100%;background:#7C5CFF;"></div></div></td><td>王牌</td><td><span class="st active">候选</span></td><td><span class="f" style="cursor:pointer;color:var(--accent);">记录</span></td></tr>
@@ -1688,7 +1688,7 @@ function svgFunnel(el, parts) {
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${body}${labels}</svg>`;
 }
 
-/* 培养力象限散点图（X=妹妹成长，Y=共同成长，气泡=带团总数） */
+/* 培养力象限散点图（X=妹妹成长，Y=培养成功率，气泡=带团总数） */
 function svgScatter(el, points, opts, onPick) {
   const W = 460, H = 180, pad = 30;
   const xMax = opts.xMax, yMax = opts.yMax;
@@ -1704,9 +1704,9 @@ function svgScatter(el, points, opts, onPick) {
   const mx = px(xMax / 2), my = py(yMax / 2);
   const cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
     <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
-  const corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共同成长高（高潜）</text>
-    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共同成长低</text>
-    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共同成长高</text>
+  const corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 培养成功率高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 培养成功率低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 培养成功率高</text>
     <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
   const dots = points.map((p, i) => {
     const cx = px(p.x), cy = py(p.y);
@@ -1716,7 +1716,7 @@ function svgScatter(el, points, opts, onPick) {
       <text x="${cx.toFixed(1)}" y="${(cy - r - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#1A1D26">${p.name}</text>`;
   }).join('');
   const ax = `<text x="${W-pad}" y="${H-2}" text-anchor="end" font-size="9" fill="#9CA3AF">妹妹成长（成长分/月）→</text>
-    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 共同成长（%）</text>`;
+    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 培养成功率（%）</text>`;
   const legend = `<circle cx="${W*0.64}" cy="14" r="5" fill="#7C5CFF" opacity=".6"/><text x="${W*0.64+10}" y="17.5" font-size="10" fill="#6B7280">候选</text>
     <circle cx="${W*0.74}" cy="14" r="5" fill="#D1D5DB" opacity=".6"/><text x="${W*0.74+10}" y="17.5" font-size="10" fill="#6B7280">未入选</text>`;
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
@@ -1859,9 +1859,9 @@ function renderQuad() {
   const mx = px(xMax / 2), my = py(yMax / 2);
   cross = `<line x1="${mx}" y1="${pad}" x2="${mx}" y2="${H-pad}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>
     <line x1="${pad}" y1="${my}" x2="${W-pad}" y2="${my}" stroke="#9CA3AF" stroke-width="1.2" stroke-dasharray="5 4"/>`;
-  corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 共同成长高（高潜）</text>
-    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 共同成长低</text>
-    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 共同成长高</text>
+  corners = `<text x="${mx+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长快 · 培养成功率高（高潜）</text>
+    <text x="${mx+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">成长快 · 培养成功率低</text>
+    <text x="${pad+5}" y="${pad+12}" font-size="9" fill="#9CA3AF">成长慢 · 培养成功率高</text>
     <text x="${pad+5}" y="${H-pad-4}" font-size="9" fill="#9CA3AF">双低</text>`;
   const clusters = [];
   Object.keys(cells).forEach(k => {
@@ -1889,7 +1889,7 @@ function renderQuad() {
     }
   });
   const ax = `<text x="${W-pad}" y="${H-2}" text-anchor="end" font-size="9" fill="#9CA3AF">妹妹成长（成长分/月）→</text>
-    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 共同成长（%）</text>`;
+    <text x="${pad-2}" y="${pad-8}" font-size="9" fill="#9CA3AF">↑ 培养成功率（%）</text>`;
   const legend = `<circle cx="${W*0.60}" cy="14" r="5" fill="#7C5CFF" opacity=".5"/><text x="${W*0.60+10}" y="17.5" font-size="10" fill="#6B7280">候选</text>
     <circle cx="${W*0.72}" cy="14" r="5" fill="none" stroke="#7C5CFF" stroke-width="1.4" stroke-dasharray="4 3"/><text x="${W*0.72+10}" y="17.5" font-size="10" fill="#6B7280">聚合（N位）</text>`;
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="100%" preserveAspectRatio="none">${grid}${cross}${corners}${dots}${ax}${legend}</svg>`;
