@@ -101,7 +101,7 @@
   .gchip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:12.5px;background:#fff;border:1px solid var(--line);color:var(--text2);cursor:pointer;transition:all .15s;}
   .gchip:hover{background:#F3F0FF;color:#5B3EC4;border-color:#DDD3FF;}
   .group-halls{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;}
-  #searchbar{max-width:720px;}
+  #searchbar{max-width:920px;}
 
   /* ═══════ 厅体检卡墙（厅运营） ═══════ */
   .hall-wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
@@ -425,6 +425,15 @@
   <!-- ═══════ 1. 搜索栏 ═══════ -->
   <div class="searchbar" id="searchbar">
     <div class="search-main">
+      <div class="combo hall-combo" id="type-combo">
+        <span class="lbl">类型</span>
+        <input type="text" id="type-input" placeholder="搜索类型…" autocomplete="off"
+          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
+          oninput="onTypeInput(this.value)">
+        <div class="hall-suggest" id="type-suggest"></div>
+      </div>
+      <div class="vdivider"></div>
       <div class="combo hall-combo" id="group-combo">
         <span class="lbl">组</span>
         <input type="text" id="group-input" placeholder="搜索组…" autocomplete="off"
@@ -2348,23 +2357,400 @@ function openCompareKpi(metric, el) {
 }
 
 /* ── 搜索栏：大厅输入补全 ── */
-const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐','王者荣耀·城南花开'];
-const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐', '王者荣耀·城南花开':'10 个团 · 19 位姐姐' };
-const GROUPS = {
-  '王者奋斗组': ['王者荣耀·城南花开','王者荣耀·半糖心事'],
-  '王者荣耀组': ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','王者荣耀·橙心如意','王者荣耀·怪诞学姐'],
-  '和平精英组': ['和平精英•幸运星'],
+const TYPE_GROUPS = {
+  "王者队长周排行": {
+    "王者奋斗组": [
+      "王者荣耀·城南花开",
+      "王者荣耀·半糖心事",
+      "王者荣耀·财神降临",
+      "王者荣耀·旺旺仙贝",
+      "王者荣耀·室外桃源",
+      "❀王者荣耀·甜音女团❀",
+      "王者荣耀·微醺千金",
+      "王者荣耀·星夜之语",
+      "王者荣耀·雲夢澤",
+      "王者荣耀·Kiss me",
+      "王者荣耀·熊熊乐园",
+      "王者·大成都（新）",
+      "王者荣耀·今熹阁",
+      "王者·大四川",
+      "王者荣耀·醉月听风",
+      "王者荣耀·爱意随风起"
+    ],
+    "王者登峰组": [
+      "王者·赤壁之战",
+      "王者荣耀·超辣甜心",
+      "王者荣耀·无忧小筑",
+      "王者荣耀·惊鸿一面",
+      "王者荣耀·青竹阁",
+      "王者荣耀·一千零一夜",
+      "王者荣耀.浪漫约定",
+      "成都·BabyFace",
+      "王者荣耀·摘星少女",
+      "王者荣耀·无忧苑",
+      "王者荣耀·黄金之树",
+      "王者荣耀·橙心如意",
+      "王者荣耀·恋习生",
+      "王者荣耀雲水谣厅",
+      "王者荣耀·西楼别序",
+      "王者荣耀·心动频率",
+      "王者荣耀·萤火电竞社",
+      "北京·三斤俱乐部",
+      "王者荣耀·音你停留",
+      "王者荣耀·天官赐福",
+      "成都LiveHouse♬",
+      "王者荣耀·花满楼",
+      "王者荣耀顶流女神厅",
+      "王者荣耀·雲上熠光",
+      "王者荣耀·福来运转"
+    ],
+    "王者顽趣1组": [
+      "王者荣耀·疯狂星期四",
+      "王者荣耀·满分女友",
+      "王者荣耀·真爱降临",
+      "王者荣耀·满分轻语",
+      "王者荣耀·北极星",
+      "王者荣耀·笨蛋小姐",
+      "王者荣耀·心动信号",
+      "王者荣耀·手机开胶",
+      "王者荣耀·怪诞学姐",
+      "王者荣耀·恋语星河",
+      "西安·长安月下",
+      "王者荣耀·馥梦繁花",
+      "王者荣耀·童话艺术家",
+      "王者荣耀·秋日私语",
+      "王者荣耀·爱慕未停",
+      "王者荣耀·浪漫有约",
+      "王者荣耀·搞钱吧",
+      "王者·星有所属",
+      "王者荣耀·向阳而生",
+      "王者荣耀·生椰拿铁",
+      "王者荣耀·拂晓佳人"
+    ],
+    "王者拂晓1组": [
+      "王者荣耀·心想事橙",
+      "王者荣耀·特别的人",
+      "王者荣耀·情投意合",
+      "王者荣耀·心跳恋人",
+      "王者荣耀·梦幻伊人",
+      "王者荣耀·心动恋人",
+      "王者荣耀·做我的猫",
+      "王者荣耀·国宝少女",
+      "王者荣耀·星落情话",
+      "王者荣耀·迷鹿之森",
+      "王者荣耀✨甜次方",
+      "王者荣耀·盛世佳人",
+      "王者荣耀·凌晨三点",
+      "王者荣耀♥​拍拖✧˖°",
+      "王者荣耀·锦鲤予你",
+      "王者·回家的诱惑",
+      "♛王者荣耀在逃公主厅♛",
+      "王者♪玛卡巴卡小精灵",
+      "深圳·巅峰娱乐",
+      "王者·冰城完美邂逅",
+      "王者荣耀·人间月",
+      "王者荣耀·岁岁念安",
+      "王者·春日邂逅",
+      "王者·乐山Stunner",
+      "王者☁要山要海要自由",
+      "王者荣耀·蜜恋女友",
+      "王者荣耀·人间尤物",
+      "王者荣耀·我们恋爱吧",
+      "王者荣耀·招财进寳",
+      "王者荣耀·浮生若梦（新）",
+      "王者荣耀·心动泡泡",
+      "王者荣耀·风华绝代"
+    ],
+    "星火": [
+      "王者荣耀·恰逢今月",
+      "王者荣耀·月光之恋",
+      "王者荣耀❤附近的人",
+      "王者荣耀·绝代有佳人",
+      "王者荣耀·红尘客栈",
+      "王者荣耀·危险派对",
+      "王者荣耀星穹之恋",
+      "王者荣耀·星晴少女",
+      "王者荣耀·秘密日记",
+      "王者荣耀·枕边女友",
+      "王者荣耀·微醺爱意",
+      "王者荣耀·与你相遇",
+      "王者荣耀·汤臣一品（新）",
+      "王者荣耀·心动情绪",
+      "王者HelloKitty",
+      "王者荣耀·快乐星球",
+      "王者·铭记于心男神团（新）",
+      "王者荣耀·吉时已到"
+    ],
+    "王者乘风组": [
+      "王者荣耀·花间一壶酒",
+      "王者荣耀·白水鉴心",
+      "王者荣耀·萬萬没想到",
+      "王者荣耀·海棠醉日",
+      "王者荣耀·绯红公馆",
+      "王者荣耀·仙女情报局",
+      "王者荣耀·银翎春语",
+      "广州·梦之恋",
+      "王者荣耀·翩翩喜欢你",
+      "王者荣耀·花漾甜心",
+      "王者荣耀·花间醉",
+      "王者荣耀·淡淡春山",
+      "王者荣耀·浪漫雾都",
+      "王者荣耀天才少女",
+      "王者荣耀•山海知意",
+      "王者·青梧茶话",
+      "王者荣耀·非诚勿扰",
+      "王者荣耀·子夜笙歌",
+      "王者荣耀·清棠鉴月",
+      "王者荣耀·巴黎圣母院",
+      "王者荣耀·告白风铃",
+      "王者荣耀·椿风几许"
+    ],
+    "和平1": [
+      "王者荣耀·水星阁",
+      "王者荣耀·天赐良缘"
+    ],
+    "王者星辰组": [
+      "❃成都۰Space❃",
+      "王者荣耀·少女心事"
+    ],
+    "王者9": [
+      "手游萌新训练营002",
+      "手游萌新训练营001"
+    ]
+  },
+  "和平队长周排行": {
+    "三角洲组": [
+      "和平精英·北极光",
+      "和平精英·小鹿乱撞",
+      "和平精英•幸运星",
+      "【和平烟雨❥不夜城】",
+      "和平精英·初恋女友",
+      "❀和平精英·吉星高照❀",
+      "和平精英·蝴蝶少女",
+      "和平精英·开黑赛事厅",
+      "ღ和平Sweet宝贝厅ღ",
+      "上海·吉光片羽",
+      "和平精英·金栀玉叶"
+    ],
+    "王者9": [
+      "手游萌新训练营003"
+    ]
+  },
+  "娱乐队长周排行": {
+    "北京唱见1组": [
+      "步步高点读机",
+      "奇遇乐章",
+      "♫ 雕刻时光 ♩",
+      "双叶✧幼稚园",
+      "天天·麦当劳",
+      "桃夭·音乐会（新）",
+      "华灯初上♪夜未央",
+      "华灯初上♪桃花坞",
+      "FM星星不闪"
+    ],
+    "成都唱见": [
+      "心动专线",
+      "歌尽欢",
+      "想开了",
+      "鹿港小镇",
+      "飞花令·春暮游小园",
+      "TOP俱乐部",
+      "巴比我甜",
+      "倚月✧听雪楼",
+      "老地方",
+      "新希腊·掌管唱歌的神",
+      "8090CLUB"
+    ],
+    "北京唱见3组": [
+      "华灯初上♪听风吟",
+      "华灯初上​♪百乐门",
+      "华灯初上♪绮梦高校",
+      "渔乐圈Music",
+      "关键词",
+      "华灯初上♪俏佳人",
+      "只为✧伊人",
+      "声优CLUB",
+      "华灯初上♪云知月",
+      "华灯初上♪清风寨",
+      "鲸喜派",
+      "第七页序",
+      "音梦拾光",
+      "FM加泰罗尼亚电波"
+    ],
+    "北京唱见2组": [
+      "༢全国各地༢",
+      "偶像✧歌手",
+      "谜之音（新）",
+      "璀璨回响",
+      "华灯初上♪雲水涧",
+      "嗨唱club♫一生所爱",
+      "今夜不回家（新）",
+      "808CLUB♬",
+      "小鹿乱撞",
+      "好久FM"
+    ]
+  },
+  "其他": {
+    "银河": [
+      "LOL祈愿少女",
+      "LOL 心动予你",
+      "官方开黑大厅",
+      "金铲铲今晚通宵",
+      "金铲铲·呤雪踏梦",
+      "金铲铲铁甲小宝",
+      "金铲铲相见欢厅",
+      "金铲铲甜心教主",
+      "金铲铲纯爱庄园",
+      "金铲铲春日宴",
+      "金铲铲福星高照",
+      "金铲铲FS·派对",
+      "金铲铲糖衣炮弹厅",
+      "金铲铲KDA女团厅",
+      "金铲铲绿野仙踪厅",
+      "金铲铲人生海海",
+      "金铲铲财运加载中",
+      "金铲铲·情绪馆",
+      "金铲铲拒绝蕉绿",
+      "金铲铲誮屋藏娇",
+      "金铲铲宝宝契约",
+      "金铲铲迪士尼Park"
+    ],
+    "直管(端游)": [
+      "非洲之心全能游戏",
+      "LOL养鱼基地",
+      "官方端游厅"
+    ],
+    "破局(端游)": [
+      "LOL灵魂莲华"
+    ],
+    "苍穹(端游)": [
+      "ღLOL黑色玫瑰厅ღ",
+      "LOL娇糖布丁厅",
+      "LOL人间有雾",
+      "LOL萌新训练营"
+    ],
+    "破局": [
+      "兔玩君のLOL手游厅",
+      "金铲铲·樱花树下",
+      "金铲铲秋日暖暖",
+      "金铲铲朝夕相伴",
+      "金铲铲花颜悦色",
+      "金铲铲满满金",
+      "金铲铲独家私宠",
+      "金铲铲声声慢厅",
+      "金铲铲恭喜发财厅",
+      "金铲铲甘之如饴",
+      "花开富贵LOL手游厅",
+      "兔小盟のLOL手游厅",
+      "金铲铲零次元",
+      "金铲铲纯白夜曲",
+      "金铲铲红浪漫",
+      "金铲铲草莓甜心",
+      "猪猪乱跑のLOL手游厅（新）",
+      "金铲铲·不是例外（新）",
+      "兔小铲の开黑手游厅",
+      "金铲铲·童话梦境",
+      "金铲铲恋爱循环",
+      "金铲铲许我知意",
+      "金铲铲柑橘乌云"
+    ],
+    "苍穹": [
+      "金铲铲甜音物语",
+      "金铲铲摘星阁",
+      "小猫日记の全能游戏厅",
+      "金铲铲告白诗（新）",
+      "金铲铲揽月楼（新）",
+      "LOL手游二次心动厅"
+    ],
+    "直管": [
+      "金铲铲宝宝巴士",
+      "金铲铲旧时光厅",
+      "金铲铲珍宝阁",
+      "金铲铲青青草原",
+      "金铲铲你是唯一",
+      "金铲铲御见你",
+      "金铲铲岁岁欢",
+      "金铲铲の夏日",
+      "金铲铲星之守护厅"
+    ],
+    "三角洲组": [
+      "三角洲★黄金海岸",
+      "三角洲★我帅得要命",
+      "三角洲★揽月之恋",
+      "三角洲★秘密基地（新）",
+      "三角洲★一曲相思",
+      "三角洲★莓妳不行",
+      "三角洲★水墨云图",
+      "三角洲行动★浅野寻峰（新）",
+      "三角洲★破格玩家",
+      "三角洲★甜蜜诱惑",
+      "三角洲★一吻定心",
+      "三角洲★DD开红（新）",
+      "三角洲★新干员学院"
+    ]
+  }
 };
+const TYPES = Object.keys(TYPE_GROUPS);
+const HALLS = Array.from(new Set(TYPES.flatMap(t => Object.values(TYPE_GROUPS[t]).flat())));
+let currentType = null;
 let currentGroup = null;
+function groupOfHall(h) {
+  for (const t of TYPES) for (const g in TYPE_GROUPS[t]) if (TYPE_GROUPS[t][g].includes(h)) return g;
+  return '';
+}
+function groupsFor(type) {
+  if (type) return Object.keys(TYPE_GROUPS[type]);
+  return Array.from(new Set(TYPES.flatMap(t => Object.keys(TYPE_GROUPS[t]))));
+}
+function hallsForGroup(g) {
+  if (currentType) return TYPE_GROUPS[currentType][g] || [];
+  const out = [], seen = new Set();
+  for (const t of TYPES) for (const h of (TYPE_GROUPS[t][g] || [])) if (!seen.has(h)) { seen.add(h); out.push(h); }
+  return out;
+}
+function hallsFor(type) {
+  if (type) return Array.from(new Set(Object.values(TYPE_GROUPS[type]).flat()));
+  return HALLS;
+}
+function onTypeInput(v) {
+  const sug = document.getElementById('type-suggest');
+  const t = v.trim();
+  const matches = TYPES.filter(x => x.includes(t));
+  const mk = x => `<div class="sg" onclick="pickType('${x}')"><span>${x}</span><span class="cnt">${Object.keys(TYPE_GROUPS[x]).length} 组</span></div>`;
+  if (!t) {
+    sug.innerHTML = `<div class="sg all" onclick="resetType()">全部类型</div>` + matches.map(mk).join('');
+    sug.classList.add('open');
+    return;
+  }
+  if (!matches.length) {
+    sug.innerHTML = `<div class="sg" style="color:var(--text3);cursor:default;">无匹配类型</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  sug.innerHTML = `<div class="sg all" onclick="resetType()">全部类型</div>` + matches.map(mk).join('');
+  sug.classList.add('open');
+}
+function pickType(x) {
+  currentType = x;
+  document.getElementById('type-input').value = x;
+  document.getElementById('type-suggest').classList.remove('open');
+  resetGroup(); resetHall();
+}
+function resetType() {
+  currentType = null;
+  document.getElementById('type-input').value = '';
+  document.getElementById('type-suggest').classList.remove('open');
+  resetGroup(); resetHall();
+}
 function onHallInput(v) {
   const sug = document.getElementById('hall-suggest');
   const t = v.trim();
-  const pool = currentGroup ? GROUPS[currentGroup] : HALLS;
+  const pool = currentGroup ? hallsForGroup(currentGroup) : hallsFor(currentType);
   const matches = pool.filter(h => h.includes(t));
-  const allLabel = currentGroup ? '全部大厅（' + currentGroup + '）' : '全部大厅';
+  const allLabel = currentGroup ? '全部大厅（' + currentGroup + '）' : (currentType ? '全部大厅（' + currentType + '）' : '全部大厅');
+  const mk = h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span></div>`;
   if (!t) {
-    sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` +
-      matches.map(h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
+    sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` + matches.map(mk).join('');
     sug.classList.add('open');
     return;
   }
@@ -2373,18 +2759,18 @@ function onHallInput(v) {
     sug.classList.add('open');
     return;
   }
-  sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` +
-    matches.map(h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
+  sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` + matches.map(mk).join('');
   sug.classList.add('open');
 }
 function onGroupInput(v) {
   const sug = document.getElementById('group-suggest');
   const t = v.trim();
-  const keys = Object.keys(GROUPS);
-  const matches = keys.filter(g => g.includes(t));
+  const pool = groupsFor(currentType);
+  const matches = pool.filter(g => g.includes(t));
+  const allLabel = currentType ? '全部组（' + currentType + '）' : '全部组';
+  const mk = g => `<div class="sg" onclick="pickGroup('${g}')"><span>${g}</span><span class="cnt">${hallsForGroup(g).length} 个厅</span></div>`;
   if (!t) {
-    sug.innerHTML = `<div class="sg all" onclick="resetGroup()">全部组</div>` +
-      keys.map(g => `<div class="sg" onclick="pickGroup('${g}')"><span>${g}</span><span class="cnt">${GROUPS[g].length} 个厅</span></div>`).join('');
+    sug.innerHTML = `<div class="sg all" onclick="resetGroup()">${allLabel}</div>` + matches.map(mk).join('');
     sug.classList.add('open');
     return;
   }
@@ -2393,8 +2779,7 @@ function onGroupInput(v) {
     sug.classList.add('open');
     return;
   }
-  sug.innerHTML = `<div class="sg all" onclick="resetGroup()">全部组</div>` +
-    matches.map(g => `<div class="sg" onclick="pickGroup('${g}')"><span>${g}</span><span class="cnt">${GROUPS[g].length} 个厅</span></div>`).join('');
+  sug.innerHTML = `<div class="sg all" onclick="resetGroup()">${allLabel}</div>` + matches.map(mk).join('');
   sug.classList.add('open');
 }
 function pickGroup(g) {
@@ -2403,11 +2788,11 @@ function pickGroup(g) {
   document.getElementById('group-suggest').classList.remove('open');
   document.getElementById('group-expand').classList.add('open');
   document.getElementById('pill-group').textContent = g;
-  document.getElementById('group-halls').innerHTML = GROUPS[g].map(h =>
+  document.getElementById('group-halls').innerHTML = hallsForGroup(g).map(h =>
     `<span class="gchip" onclick="pickHall('${h}')">${h}</span>`).join('');
-  document.getElementById('group-stat').textContent = '共 ' + GROUPS[g].length + ' 个厅';
+  document.getElementById('group-stat').textContent = '共 ' + hallsForGroup(g).length + ' 个厅';
   const curHall = document.getElementById('hall-input').value;
-  if (curHall && !GROUPS[g].includes(curHall)) resetHall();
+  if (curHall && !hallsForGroup(g).includes(curHall)) resetHall();
 }
 function resetGroup() {
   currentGroup = null;
@@ -2421,7 +2806,7 @@ function pickHall(hall, cardEl) {
   document.getElementById('hall-suggest').classList.remove('open');
   document.getElementById('search-expand').classList.add('open');
   document.getElementById('pill-hall').textContent = hall;
-  document.getElementById('expand-stat').textContent = '该厅 ' + HALL_STAT[hall];
+  document.getElementById('expand-stat').textContent = '所属组 · ' + (groupOfHall(hall) || '—');
   document.getElementById('kpi-title').textContent = '核心指标 · ' + hall;
   if (cardEl) {
     document.querySelectorAll('.hall-card').forEach(c => c.classList.remove('active'));
@@ -2457,7 +2842,7 @@ function onWcHallInput(v) {
     return;
   }
   sug.innerHTML = `<div class="sg all" onclick="resetWcHall()">全部大厅</div>` +
-    matches.map(h => `<div class="sg" onclick="pickWcHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
+    matches.map(h => `<div class="sg" onclick="pickWcHall('${h}')"><span>${h}</span></div>`).join('');
   sug.classList.add('open');
 }
 function pickWcHall(hall) {
