@@ -98,6 +98,10 @@
   .reset-btn{border:1px dashed #DDD3FF;background:transparent;color:var(--accent);border-radius:20px;padding:6px 12px;font-size:12.5px;cursor:pointer;}
   .reset-btn:hover{background:#F3F0FF;}
   .expand-stat{margin-left:auto;font-size:12px;color:var(--text3);}
+  .gchip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:20px;font-size:12.5px;background:#fff;border:1px solid var(--line);color:var(--text2);cursor:pointer;transition:all .15s;}
+  .gchip:hover{background:#F3F0FF;color:#5B3EC4;border-color:#DDD3FF;}
+  .group-halls{display:inline-flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  #searchbar{max-width:720px;}
 
   /* ═══════ 厅体检卡墙（厅运营） ═══════ */
   .hall-wall{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
@@ -421,6 +425,15 @@
   <!-- ═══════ 1. 搜索栏 ═══════ -->
   <div class="searchbar" id="searchbar">
     <div class="search-main">
+      <div class="combo hall-combo" id="group-combo">
+        <span class="lbl">组</span>
+        <input type="text" id="group-input" placeholder="搜索组…" autocomplete="off"
+          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
+          oninput="onGroupInput(this.value)">
+        <div class="hall-suggest" id="group-suggest"></div>
+      </div>
+      <div class="vdivider"></div>
       <div class="combo hall-combo" id="hall-combo">
         <span class="lbl">大厅</span>
         <input type="text" id="hall-input" placeholder="搜索大厅…" autocomplete="off"
@@ -439,6 +452,13 @@
           <option value="07-28~08-03">07-28 ~ 08-03</option>
         </select>
       </div>
+    </div>
+    <!-- 选组后展开的厅列表 -->
+    <div class="search-expand" id="group-expand">
+      <span class="pill"><span id="pill-group">王者奋斗组</span></span>
+      <span class="group-halls" id="group-halls"></span>
+      <button class="reset-btn" onclick="resetGroup()">清除组</button>
+      <span class="expand-stat" id="group-stat"></span>
     </div>
     <!-- 选厅后展开的筛选条 -->
     <div class="search-expand" id="search-expand">
@@ -1126,10 +1146,6 @@
         <span class="dn-tag">牌子≠画像</span>
         <span><b>「牌子等级」（铜/银/金/王牌/大神）衡量的是姐姐自身的等级经验，与「画像」（头牌/风险/正常）是两码事</b>：高牌子的姐姐不一定是带妹妹的好姐姐，好姐姐的牌子也未必高。牌子升级难度非线性——<b>铜牌→银牌很容易，王牌→大神极难</b>，所以「大神」比「银牌」高一档的实际含金量远超一档。画像打标看的是「流水 P80 + 带团毕业率」，与牌子解耦，请勿把「高牌子」直接等同于「优秀姐姐」。</span>
       </div>
-      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
-        <span class="dn-tag">传承链</span>
-        <span><b>传承链</b> = 该姐姐直接带出的毕业妹妹数（<b>M 位</b>）· 最长传承代数（<b>N 代</b>）。「代」= 妹妹毕业后当姐姐、她带的妹妹又毕业、逐代回溯的深度，<b>3 代</b> 说明培养力已被复制两层。<b>M 位</b> = 毕业妹妹按配对姐姐归集后该姐姐的毕业妹妹数；<b>N 代</b> = 其中最长一条链的代数。</span>
-      </div>
     </div>
     <div class="card">
       <div id="cap-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
@@ -1139,13 +1155,13 @@
       </div>
       <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团毕业率</th><th title="带出毕业妹妹数 · 最长传承代数">传承链</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团毕业率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
-          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td><span style="color:#7C5CFF;font-weight:600;">1 位 · 3 代</span></td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td><span style="color:#7C5CFF;font-weight:600;">2 位 · 2 代</span></td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>—</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>1 位 · 1 代</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>—</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
         </tbody>
       </table>
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
@@ -2332,14 +2348,23 @@ function openCompareKpi(metric, el) {
 }
 
 /* ── 搜索栏：大厅输入补全 ── */
-const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐'];
-const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐' };
+const HALLS = ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','和平精英•幸运星','王者荣耀·半糖心事','王者荣耀·橙心如意','王者荣耀·怪诞学姐','王者荣耀·城南花开'];
+const HALL_STAT = { '王者荣耀·恰逢今月':'12 个团 · 23 位姐姐', '王者荣耀·迷鹿之森':'11 个团 · 20 位姐姐', '和平精英•幸运星':'9 个团 · 18 位姐姐', '王者荣耀·半糖心事':'8 个团 · 16 位姐姐', '王者荣耀·橙心如意':'7 个团 · 15 位姐姐', '王者荣耀·怪诞学姐':'6 个团 · 13 位姐姐', '王者荣耀·城南花开':'10 个团 · 19 位姐姐' };
+const GROUPS = {
+  '王者奋斗组': ['王者荣耀·城南花开','王者荣耀·半糖心事'],
+  '王者荣耀组': ['王者荣耀·恰逢今月','王者荣耀·迷鹿之森','王者荣耀·橙心如意','王者荣耀·怪诞学姐'],
+  '和平精英组': ['和平精英•幸运星'],
+};
+let currentGroup = null;
 function onHallInput(v) {
   const sug = document.getElementById('hall-suggest');
   const t = v.trim();
-  const matches = HALLS.filter(h => h.includes(t));
+  const pool = currentGroup ? GROUPS[currentGroup] : HALLS;
+  const matches = pool.filter(h => h.includes(t));
+  const allLabel = currentGroup ? '全部大厅（' + currentGroup + '）' : '全部大厅';
   if (!t) {
-    sug.innerHTML = `<div class="sg all" onclick="resetHall()">全部大厅</div>`;
+    sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` +
+      matches.map(h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
     sug.classList.add('open');
     return;
   }
@@ -2348,9 +2373,47 @@ function onHallInput(v) {
     sug.classList.add('open');
     return;
   }
-  sug.innerHTML = `<div class="sg all" onclick="resetHall()">全部大厅</div>` +
+  sug.innerHTML = `<div class="sg all" onclick="resetHall()">${allLabel}</div>` +
     matches.map(h => `<div class="sg" onclick="pickHall('${h}')"><span>${h}</span><span class="cnt">${HALL_STAT[h]}</span></div>`).join('');
   sug.classList.add('open');
+}
+function onGroupInput(v) {
+  const sug = document.getElementById('group-suggest');
+  const t = v.trim();
+  const keys = Object.keys(GROUPS);
+  const matches = keys.filter(g => g.includes(t));
+  if (!t) {
+    sug.innerHTML = `<div class="sg all" onclick="resetGroup()">全部组</div>` +
+      keys.map(g => `<div class="sg" onclick="pickGroup('${g}')"><span>${g}</span><span class="cnt">${GROUPS[g].length} 个厅</span></div>`).join('');
+    sug.classList.add('open');
+    return;
+  }
+  if (!matches.length) {
+    sug.innerHTML = `<div class="sg" style="color:var(--text3);cursor:default;">无匹配组</div>`;
+    sug.classList.add('open');
+    return;
+  }
+  sug.innerHTML = `<div class="sg all" onclick="resetGroup()">全部组</div>` +
+    matches.map(g => `<div class="sg" onclick="pickGroup('${g}')"><span>${g}</span><span class="cnt">${GROUPS[g].length} 个厅</span></div>`).join('');
+  sug.classList.add('open');
+}
+function pickGroup(g) {
+  currentGroup = g;
+  document.getElementById('group-input').value = g;
+  document.getElementById('group-suggest').classList.remove('open');
+  document.getElementById('group-expand').classList.add('open');
+  document.getElementById('pill-group').textContent = g;
+  document.getElementById('group-halls').innerHTML = GROUPS[g].map(h =>
+    `<span class="gchip" onclick="pickHall('${h}')">${h}</span>`).join('');
+  document.getElementById('group-stat').textContent = '共 ' + GROUPS[g].length + ' 个厅';
+  const curHall = document.getElementById('hall-input').value;
+  if (curHall && !GROUPS[g].includes(curHall)) resetHall();
+}
+function resetGroup() {
+  currentGroup = null;
+  document.getElementById('group-input').value = '';
+  document.getElementById('group-suggest').classList.remove('open');
+  document.getElementById('group-expand').classList.remove('open');
 }
 function pickHall(hall, cardEl) {
   const input = document.getElementById('hall-input');
