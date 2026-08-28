@@ -474,6 +474,21 @@
     </div>
   </div>
 
+  <!-- ═══════ 1.9 毕业妹妹沉淀（跳转入口） ═══════ -->
+  <div class="section-head" style="margin-top:18px;">
+    <h2>毕业妹妹沉淀</h2>
+    <span class="hint">毕业后仍留存且优秀的妹妹占比 · 点击进入姐姐分析毕业妹妹模块</span>
+  </div>
+  <div class="card" style="cursor:pointer;margin-bottom:16px;" onclick="jumpToGrad()">
+    <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+      <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">沉淀率</div><div style="font-size:26px;font-weight:700;color:#16A34A;">62%</div></div>
+      <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">毕业后 T+30 留存</div><div style="font-size:26px;font-weight:700;">71%</div></div>
+      <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">晋升为姐姐</div><div style="font-size:26px;font-weight:700;">38 人</div></div>
+      <div style="flex:1;min-width:220px;font-size:12px;color:var(--text2);line-height:1.7;">补「带团毕业率」只看善终、不看善终后价值的缺口。<b style="color:var(--text);">口径：回访为主、近似兜底</b></div>
+      <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap;">查看毕业妹妹 →</span>
+    </div>
+  </div>
+
   <!-- ═══════ 2. 核心指标 · 全部大厅 ═══════ -->
   <div class="card kpi-panel">
     <div class="section-head">
@@ -1119,7 +1134,7 @@
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
     </div>
 
-    <div class="section-head" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 名单按「今天 / 一周 / 一个月」切换</span></div>
+    <div class="section-head" id="grad-sec" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 名单切换 · 沉淀率与毕业后轨迹（回访为主、近似兜底）</span></div>
     <div class="chart-grid">
       <div class="card">
         <h3>近 8 周毕业趋势</h3>
@@ -1138,6 +1153,34 @@
         <ul class="rank-mini" id="grad-preview"></ul>
         <div class="src" id="grad-count" style="margin-top:6px;"></div>
         <button class="expand-btn" id="grad-expand" onclick="openFull('graduated')">查看全部毕业妹妹 →</button>
+      </div>
+    </div>
+
+    <!-- 毕业妹妹沉淀：沉淀率 + 毕业后轨迹明细 -->
+    <div class="card" style="margin-top:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <h3 style="margin:0;">毕业妹妹沉淀<span class="todo-badge">待落地</span></h3>
+        <span class="hint">毕业后「留存 + 持续优秀」追踪 · 口径：回访为主、近似兜底</span>
+      </div>
+      <div class="src" style="margin-top:6px;">沉淀率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补「带团毕业率」只看善终、不看善终后价值的缺口</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div class="card kpi"><div class="top"><span class="dot green"></span>沉淀率</div><div class="val">62%</div><div class="foot"><span class="chip up">↑4pp</span><span>近 8 周</span></div></div>
+        <div class="card kpi"><div class="top"><span class="dot green"></span>毕业后 T+30 留存</div><div class="val">71%</div><div class="foot">毕业后 30 天仍在平台</div></div>
+        <div class="card kpi"><div class="top"><span class="dot violet"></span>晋升为姐姐</div><div class="val">38 人</div><div class="foot">毕业妹妹中已当姐姐</div></div>
+        <div class="card kpi"><div class="top"><span class="dot amber"></span>毕业后产出</div><div class="val">¥8.4万</div><div class="foot">毕业妹妹累计流水</div></div>
+      </div>
+      <table class="list" style="margin-top:12px;">
+        <thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>毕业后产出</th><th>等级增量</th><th>是否晋升</th><th>来源</th></tr></thead>
+        <tbody>
+          <tr><td>沐晴</td><td><span class="uid-link" onclick="gotoUID(event,'100300001','沐晴')">100300001</span></td><td>07-25</td><td>雪儿</td><td>T+30 在 · T+90 在</td><td>¥2,100</td><td>—</td><td>已晋升（T+45）</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
+          <tr><td>婷婷</td><td><span class="uid-link" onclick="gotoUID(event,'100300002','婷婷')">100300002</span></td><td>06-20</td><td>雪儿</td><td>T+30 在 · T+90 在</td><td>¥5,600</td><td>银→金</td><td>未晋升 · 仍高产</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
+          <tr><td>灵儿</td><td><span class="uid-link" onclick="gotoUID(event,'100300003','灵儿')">100300003</span></td><td>08-12</td><td>若曦</td><td>T+30 未到</td><td>—</td><td>—</td><td>—</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
+          <tr><td>小雨</td><td><span class="uid-link" onclick="gotoUID(event,'100300004','小雨')">100300004</span></td><td>05-30</td><td>悦悦</td><td>毕业后失联</td><td>¥0</td><td>—</td><td>未晋升</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
+        </tbody>
+      </table>
+      <div class="dn-notes" style="margin-top:10px;">
+        <span class="dn-tag">口径</span>
+        <span><b>毕业妹妹沉淀率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。<b>数据来源双口径</b>：<b>回访为主</b>——新毕业妹妹在 T+30 / T+90 / T+180 用 uid_crawler 回访一次，记录留存、流水、等级增量、是否晋升；<b>近似兜底</b>——回访数据尚未攒够的老毕业妹妹，暂用「毕业后是否再次成团/当姐姐」近似，并标注口径切换点。沉淀率补「带团毕业率」只看善终、不看善终后价值的缺口，回挂到候选池作培养力质量校验。</span>
       </div>
     </div>
   </div>
@@ -2035,6 +2078,15 @@ function openCaptainPool() {
   switchPreviewTab('captains', document.getElementById('side-captains'));
   switchCaptainView('pool');
   document.getElementById('side-filter').classList.add('sub-on');
+}
+/* 概览页跳转入口：毕业妹妹沉淀 → 姐姐分析 · 毕业妹妹模块 */
+function jumpToGrad() {
+  switchPreviewTab('captains', document.getElementById('side-captains'));
+  switchCaptainView('profile');
+  setTimeout(() => {
+    const el = document.getElementById('grad-sec');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
 }
 const CAP_PERIOD = { day: '当日奖励', week: '当周奖励', month: '当月奖励' };
 function setCapPeriod(p, btn) {
