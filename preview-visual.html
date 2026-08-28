@@ -416,7 +416,7 @@
   <div class="guide" id="guide">
     <span class="tag">导览</span>
     <span>姐妹团 = 姐姐 + 妹妹 配对</span>
-    <span>留存率：上周的团还剩多少（↑好）</span>
+    <span>姐妹团留存率：老团还剩多少（↑好）</span>
     <span>解散率：本周解散占比（↓好）</span>
     <span>顶部搜索栏选大厅，点卡片/柱状图联动明细</span>
     <button class="close" onclick="document.getElementById('guide').style.display='none'">✕</button>
@@ -428,7 +428,7 @@
       <div class="combo hall-combo" id="type-combo">
         <span class="lbl">类型</span>
         <input type="text" id="type-input" placeholder="搜索类型…" autocomplete="off"
-          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onfocus="onSearchFocus('type')"
           onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
           oninput="onTypeInput(this.value)">
         <div class="hall-suggest" id="type-suggest"></div>
@@ -437,7 +437,7 @@
       <div class="combo hall-combo" id="group-combo">
         <span class="lbl">组</span>
         <input type="text" id="group-input" placeholder="搜索组…" autocomplete="off"
-          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onfocus="onSearchFocus('group')"
           onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
           oninput="onGroupInput(this.value)">
         <div class="hall-suggest" id="group-suggest"></div>
@@ -446,7 +446,7 @@
       <div class="combo hall-combo" id="hall-combo">
         <span class="lbl">大厅</span>
         <input type="text" id="hall-input" placeholder="搜索大厅…" autocomplete="off"
-          onfocus="document.getElementById('searchbar').classList.add('focus')"
+          onfocus="onSearchFocus('hall')"
           onblur="setTimeout(()=>document.getElementById('searchbar').classList.remove('focus'),120)"
           oninput="onHallInput(this.value)">
         <div class="hall-suggest" id="hall-suggest"></div>
@@ -454,7 +454,7 @@
       <div class="vdivider"></div>
       <div class="combo time-combo">
         <span class="lbl">时间</span>
-        <select id="time-select" onchange="onTimeChange(this.value)">
+        <select id="time-select" onchange="onTimeChange(this.value)" onfocus="closeAllSuggest()">
           <option value="本周">本周 (08-11 ~ 08-17)</option>
           <option value="上周">上周 (08-04 ~ 08-10)</option>
           <option value="08-04~08-10">08-04 ~ 08-10</option>
@@ -516,14 +516,14 @@
     </div>
   </div>
 
-  <!-- ═══════ 1.9 毕业妹妹沉淀（跳转入口） ═══════ -->
+  <!-- ═══════ 1.9 毕业妹妹留存（跳转入口） ═══════ -->
   <div class="section-head" style="margin-top:18px;">
-    <h2>毕业妹妹沉淀</h2>
+    <h2>毕业妹妹留存</h2>
     <span class="hint">毕业后仍留存且优秀的妹妹占比 · 点击进入姐姐分析毕业妹妹模块</span>
   </div>
   <div class="card" style="cursor:pointer;margin-bottom:16px;" onclick="jumpToGrad()">
     <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-      <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">沉淀率</div><div style="font-size:26px;font-weight:700;color:#16A34A;">62%</div></div>
+      <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">妹妹留存率</div><div style="font-size:26px;font-weight:700;color:#16A34A;">62%</div></div>
       <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">毕业后 30 天留存</div><div style="font-size:26px;font-weight:700;">71%</div></div>
       <div style="min-width:110px;"><div style="font-size:11px;color:var(--text3);">晋升为姐姐</div><div style="font-size:26px;font-weight:700;">38 人</div></div>
       <div style="flex:1;min-width:220px;font-size:12px;color:var(--text2);line-height:1.7;">补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口。<b style="color:var(--text);">口径：回访为主、近似兜底</b></div>
@@ -541,23 +541,23 @@
     <div class="dn-footer" id="data-note">
       <div class="dn-foot-head">数据说明<span style="color:var(--text3);font-weight:400;">指标口径与计算方式</span></div>
       <div class="dn-line">
-        <span class="dni"><b>留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>妹妹留存率</b><code>毕业后仍留存/产出的妹妹 ÷ 毕业妹妹总数</code><span>毕业妹妹留存，越高越好</span></span>
         <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
         <span class="dni"><b>新成团数</b><code>周期计数</code><span>新配对成团数</span></span>
         <span class="dni"><b>进行中姐妹团</b><code>期末在榜计数</code><span>未解散团数</span></span>
-        <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>≠解散率</span></span>
-        <span class="dni"><b>礼物奖励金额</b><code>官方发放奖励合计</code><span>reward_amount · 非流水</span></span>
+        <span class="dni"><b>姐妹团留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>毕业妹妹数</b><code>周期内满 30 天自动毕业计数</code><span>毕业节奏</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">注意</span>
-        <span>主动解散占比 ≠ 解散率；毕业 = 满 30 天正常流程、不计入流失；主动解散 = 手动 / 离职(含换厅) / 注销；任务未完成自动解散 = 系统在连续 5 日未陪档后自动解散。数据对齐搜索栏所选时间，对比口径均为较上一周。</span>
+        <span><b>妹妹留存率</b>（毕业妹妹毕业后仍留存/产出的占比，口径：回访为主、近似兜底）与 <b>姐妹团留存率</b>（团口径、老团留存）是两个概念，请勿混读。毕业 = 满 30 天正常流程、不计入流失；数据对齐搜索栏所选时间，对比口径均为较上一周。</span>
       </div>
     </div>
     <div class="kpi-row">
-    <div class="card kpi hover" onclick="openKpiDetail('retention')">
-      <div class="top"><span class="dot green"></span>留存率</div>
-      <div class="val">58%</div>
-      <div class="foot"><span class="chip down">↓12pp</span><span>较上周 · 越高越好</span></div>
+    <div class="card kpi hover" onclick="openKpiDetail('sisretention')">
+      <div class="top"><span class="dot green"></span>妹妹留存率</div>
+      <div class="val">62%</div>
+      <div class="foot"><span class="chip up">↑4pp</span><span>较上周 · 越高越好</span></div>
       <span class="hint-go">查看趋势 →</span>
     </div>
     <div class="card kpi hover" onclick="openKpiDetail('dissolution')">
@@ -578,23 +578,23 @@
       <div class="foot"><span class="chip up">↑9%</span><span>在榜团数 · 较上周</span></div>
       <span class="hint-go">查看名单 →</span>
     </div>
-    <div class="card kpi hover" onclick="openKpiDetail('activediss')">
-      <div class="top"><span class="dot amber"></span>主动解散占比</div>
-      <div class="val">42%</div>
-      <div class="foot"><span class="chip down">↑5pp</span><span>较上周 · 越低越好</span></div>
+    <div class="card kpi hover" onclick="openKpiDetail('retention')">
+      <div class="top"><span class="dot amber"></span>姐妹团留存率</div>
+      <div class="val">58%</div>
+      <div class="foot"><span class="chip down">↓12pp</span><span>较上周 · 越高越好</span></div>
       <span class="hint-go">查看趋势 →</span>
     </div>
-    <div class="card kpi hover" onclick="openKpiDetail('revenue')">
-      <div class="top"><span class="dot gold"></span>礼物奖励金额</div>
-      <div class="val">¥1.28M</div>
-      <div class="foot"><span class="chip up">↑12%</span><span>较上周 · 越高越好</span></div>
-      <span class="hint-go">查看趋势 →</span>
+    <div class="card kpi hover" onclick="openFull('graduated')">
+      <div class="top"><span class="dot gold"></span>毕业妹妹数</div>
+      <div class="val">6 人</div>
+      <div class="foot"><span class="chip down">↓1</span><span>较上周 · 节奏平稳</span></div>
+      <span class="hint-go">查看名单 →</span>
     </div>
   </div>
 
   <!-- KPI 细节图（就地展开） -->
   <div class="kpi-detail" id="kpi-detail">
-    <div class="head"><span id="kd-title">留存率 · 近 8 周趋势</span><button class="close" onclick="closeKpiDetail()">✕</button></div>
+    <div class="head"><span id="kd-title">姐妹团留存率 · 近 8 周趋势</span><button class="close" onclick="closeKpiDetail()">✕</button></div>
     <div class="chart-box" id="kd-chart"></div>
     <div class="chart-insight" id="kd-insight"></div>
   </div>
@@ -1176,7 +1176,7 @@
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
     </div>
 
-    <div class="section-head" id="grad-sec" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 名单切换 · 沉淀率与毕业后轨迹（回访为主、近似兜底）</span></div>
+    <div class="section-head" id="grad-sec" style="margin-top:24px;"><h2>毕业妹妹</h2><span class="hint">近 8 周毕业趋势 · 名单切换 · 妹妹留存率与毕业后轨迹（回访为主、近似兜底）</span></div>
     <div class="chart-grid">
       <div class="card">
         <h3>近 8 周毕业趋势</h3>
@@ -1198,15 +1198,15 @@
       </div>
     </div>
 
-    <!-- 毕业妹妹沉淀：沉淀率 + 毕业后轨迹明细 -->
+    <!-- 毕业妹妹留存：妹妹留存率 + 毕业后轨迹明细 -->
     <div class="card" style="margin-top:14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-        <h3 style="margin:0;">毕业妹妹沉淀<span class="todo-badge">待落地</span></h3>
+        <h3 style="margin:0;">毕业妹妹留存<span class="todo-badge">待落地</span></h3>
         <span class="hint">毕业后「留存 + 持续优秀」追踪 · 口径：回访为主、近似兜底</span>
       </div>
-      <div class="src" style="margin-top:6px;">沉淀率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充说明了关于「带团毕业率」只能看是否顺利毕业、不看毕业后价值的缺口</div>
+      <div class="src" style="margin-top:6px;">妹妹留存率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充说明了关于「带团毕业率」只能看是否顺利毕业、不看毕业后价值的缺口</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
-        <div class="card kpi"><div class="top"><span class="dot green"></span>沉淀率</div><div class="val">62%</div><div class="foot"><span class="chip up">↑4pp</span><span>近 8 周</span></div></div>
+        <div class="card kpi"><div class="top"><span class="dot green"></span>妹妹留存率</div><div class="val">62%</div><div class="foot"><span class="chip up">↑4pp</span><span>近 8 周</span></div></div>
         <div class="card kpi"><div class="top"><span class="dot green"></span>毕业后 30 天留存</div><div class="val">71%</div><div class="foot">毕业后 30 天仍在平台</div></div>
         <div class="card kpi"><div class="top"><span class="dot violet"></span>晋升为姐姐</div><div class="val">38 人</div><div class="foot">毕业妹妹中已当姐姐</div></div>
       </div>
@@ -1221,7 +1221,7 @@
       </table>
       <div class="dn-notes" style="margin-top:10px;">
         <span class="dn-tag">口径</span>
-        <span><b>毕业妹妹沉淀率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。<b>数据来源双口径</b>：<b>回访为主</b>——新毕业妹妹在毕业后 30 / 90 / 180 天用 uid_crawler 回访一次，记录留存、是否开始带妹妹、带妹代数；<b>近似兜底</b>——回访数据尚未攒够的老毕业妹妹，暂用「毕业后是否再次成团/当姐姐」近似，并标注口径切换点。沉淀率补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口，回挂到候选池作培养力质量校验。</span>
+        <span><b>妹妹留存率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。<b>数据来源双口径</b>：<b>回访为主</b>——新毕业妹妹在毕业后 30 / 90 / 180 天用 uid_crawler 回访一次，记录留存、是否开始带妹妹、带妹代数；<b>近似兜底</b>——回访数据尚未攒够的老毕业妹妹，暂用「毕业后是否再次成团/当姐姐」近似，并标注口径切换点。妹妹留存率补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口，回挂到候选池作培养力质量校验。</span>
       </div>
 
       <div class="src" style="margin-top:8px;">点击明细表中「已开始带妹妹」徽标 → 展开该妹妹的传承链（代际传承）</div>
@@ -2146,7 +2146,7 @@ function openCaptainPool() {
   switchCaptainView('pool');
   document.getElementById('side-filter').classList.add('sub-on');
 }
-/* 概览页跳转入口：毕业妹妹沉淀 → 姐姐分析 · 毕业妹妹模块 */
+/* 概览页跳转入口：毕业妹妹留存 → 姐姐分析 · 毕业妹妹模块 */
 function jumpToGrad() {
   switchPreviewTab('captains', document.getElementById('side-captains'));
   switchCaptainView('profile');
@@ -2698,6 +2698,10 @@ function groupOfHall(h) {
   for (const t of TYPES) for (const g in TYPE_GROUPS[t]) if (TYPE_GROUPS[t][g].includes(h)) return g;
   return '';
 }
+function typeOfHall(h) {
+  for (const t of TYPES) for (const g in TYPE_GROUPS[t]) if (TYPE_GROUPS[t][g].includes(h)) return t;
+  return '';
+}
 function groupsFor(type) {
   if (type) return Object.keys(TYPE_GROUPS[type]);
   return Array.from(new Set(TYPES.flatMap(t => Object.keys(TYPE_GROUPS[t]))));
@@ -2804,9 +2808,14 @@ function pickHall(hall, cardEl) {
   const input = document.getElementById('hall-input');
   input.value = hall;
   document.getElementById('hall-suggest').classList.remove('open');
+  // 直接搜厅时，自动回填前两级：类型 + 组
+  const t = typeOfHall(hall);
+  const g = groupOfHall(hall);
+  if (t) { currentType = t; document.getElementById('type-input').value = t; }
+  if (g) { currentGroup = g; document.getElementById('group-input').value = g; }
   document.getElementById('search-expand').classList.add('open');
   document.getElementById('pill-hall').textContent = hall;
-  document.getElementById('expand-stat').textContent = '所属组 · ' + (groupOfHall(hall) || '—');
+  document.getElementById('expand-stat').textContent = (t ? t + ' · ' : '') + (g || '—');
   document.getElementById('kpi-title').textContent = '核心指标 · ' + hall;
   if (cardEl) {
     document.querySelectorAll('.hall-card').forEach(c => c.classList.remove('active'));
@@ -2820,6 +2829,20 @@ function resetHall() {
   document.getElementById('search-expand').classList.remove('open');
   document.getElementById('kpi-title').textContent = '核心指标 · 全部大厅';
 }
+function closeAllSuggest() {
+  ['type', 'group', 'hall'].forEach(k => document.getElementById(k + '-suggest').classList.remove('open'));
+}
+function onSearchFocus(kind) {
+  document.getElementById('searchbar').classList.add('focus');
+  closeAllSuggest();
+  if (kind === 'type') onTypeInput(document.getElementById('type-input').value);
+  else if (kind === 'group') onGroupInput(document.getElementById('group-input').value);
+  else onHallInput(document.getElementById('hall-input').value);
+}
+// 点击搜索栏外时收起所有下拉
+document.addEventListener('click', e => {
+  if (!e.target.closest('#searchbar')) closeAllSuggest();
+});
 function onTimeChange(v) {
   document.getElementById('pill-time').textContent = v;
   const hint = document.getElementById('kpi-hint');
@@ -2877,25 +2900,21 @@ function openKpiDetail(metric) {
   }
   detail.dataset.metric = metric;
   if (metric === 'retention') {
-    title.textContent = '留存率 · 近 8 周趋势';
-    svgLine(chart, RET, '#7C5CFF', 'rgba(124,92,255,.12)');
-    insight.innerHTML = '本周 <b>58%</b>（较上周 <b>↓12pp</b>）· 偏低，已跌破 60% 健康线。';
+    title.textContent = '姐妹团留存率 · 近 8 周趋势';
+    svgLine(chart, RET, '#D97706', 'rgba(217,119,6,.12)');
+    insight.innerHTML = '本周 <b>58%</b>（较上周 <b>↓12pp</b>）· 老团留存，偏低，已跌破 60% 健康线。';
+  } else if (metric === 'sisretention') {
+    title.textContent = '妹妹留存率 · 近 8 周趋势';
+    svgLine(chart, [55,57,56,58,60,59,61,62], '#16A34A', 'rgba(22,163,74,.12)');
+    insight.innerHTML = '本周 <b>62%</b>（较上周 <b>↑4pp</b>）· 毕业后仍留存/产出的妹妹占比，口径回访为主、近似兜底。';
   } else if (metric === 'dissolution') {
     title.textContent = '解散率 · 近 8 周趋势';
     svgBar(chart, DISS, '#E06969', '#D56060');
     insight.innerHTML = '本周 <b>18%</b>（较上周 <b>↓3pp</b>）· 低位健康。';
-  } else if (metric === 'revenue') {
-    title.textContent = '礼物奖励金额 · 近 8 周趋势';
-    svgBar(chart, REV, '#D9A13F', '#B07A1F');
-    insight.innerHTML = '本周 <b>¥1.28M</b>（环比 <b>+12%</b>）· 增长。';
   } else if (metric === 'activity') {
     title.textContent = '陪档活跃率 · 近 8 个快照日趋势';
     svgLine(chart, [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)');
     insight.innerHTML = '最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。';
-  } else {
-    title.textContent = '主动解散占比 · 近 8 周趋势';
-    svgLine(chart, [30,34,36,38,37,40,37,42], '#D97706', 'rgba(217,119,6,.12)');
-    insight.innerHTML = '本周 <b>42%</b>（较上周 <b>↑5pp</b>）· 连续 2 周升高。';
   }
   detail.classList.add('open');
 }
@@ -3284,8 +3303,7 @@ window.addEventListener('scroll', () => {
   if (bt) bt.classList.toggle('show', window.scrollY > 400);
 });
 
-/* 默认展开「全部大厅」提示 */
-onHallInput('');
+/* 搜索下拉改为点击/聚焦触发，页面加载不再自动展开 */
 </script>
 </body>
 </html>
