@@ -355,6 +355,15 @@
 
   @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
   @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:none;}}
+
+  /* ═══════ 师承链路 ═══════ */
+  .chain-node{display:inline-flex;align-items:center;gap:5px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:600;color:#4B3B8F;white-space:nowrap;}
+  .chain-node span{font-size:10px;font-weight:500;color:#7C5CFF;}
+  .chain-node.root{background:#5B3EC4;border-color:#5B3EC4;color:#fff;}
+  .chain-node.root span{color:#E9E2FF;}
+  .chain-node.end{background:#ECFDF5;border-color:#BBF7D0;color:#0F766E;}
+  .chain-node.end span{color:#16A34A;}
+  .chain-arrow{color:var(--text3);font-size:14px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -1162,7 +1171,7 @@
         <h3 style="margin:0;">毕业妹妹沉淀<span class="todo-badge">待落地</span></h3>
         <span class="hint">毕业后「留存 + 持续优秀」追踪 · 口径：回访为主、近似兜底</span>
       </div>
-      <div class="src" style="margin-top:6px;">沉淀率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口</div>
+      <div class="src" style="margin-top:6px;">沉淀率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充说明了关于「带团毕业率」只能看是否顺利毕业、不看毕业后价值的缺口</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
         <div class="card kpi"><div class="top"><span class="dot green"></span>沉淀率</div><div class="val">62%</div><div class="foot"><span class="chip up">↑4pp</span><span>近 8 周</span></div></div>
         <div class="card kpi"><div class="top"><span class="dot green"></span>毕业后 30 天留存</div><div class="val">71%</div><div class="foot">毕业后 30 天仍在平台</div></div>
@@ -1181,6 +1190,46 @@
       <div class="dn-notes" style="margin-top:10px;">
         <span class="dn-tag">口径</span>
         <span><b>毕业妹妹沉淀率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。<b>数据来源双口径</b>：<b>回访为主</b>——新毕业妹妹在毕业后 30 / 90 / 180 天用 uid_crawler 回访一次，记录留存、流水、等级增量、是否晋升；<b>近似兜底</b>——回访数据尚未攒够的老毕业妹妹，暂用「毕业后是否再次成团/当姐姐」近似，并标注口径切换点。沉淀率补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口，回挂到候选池作培养力质量校验。</span>
+      </div>
+    </div>
+
+    <!-- 师承链路：妹妹当姐姐后，她带的妹妹又毕业 -->
+    <div class="card" style="margin-top:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <h3 style="margin:0;">师承链路<span class="todo-badge">待落地</span></h3>
+        <span class="hint">妹妹当姐姐后，她带的妹妹又毕业——「培养力可复制」的代际链条</span>
+      </div>
+      <div class="src" style="margin-top:6px;">追溯「姐姐 → 毕业妹妹 → 妹妹当姐姐 → 她的妹妹…」的代际深度，是培养力可复制的最强证据</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div class="card kpi"><div class="top"><span class="dot violet"></span>师承链路数</div><div class="val">5 条</div><div class="foot">已形成代际链条</div></div>
+        <div class="card kpi"><div class="top"><span class="dot violet"></span>最大代数</div><div class="val">3 代</div><div class="foot">最长链条深度</div></div>
+        <div class="card kpi"><div class="top"><span class="dot green"></span>二代已当姐姐</div><div class="val">38 人</div><div class="foot">毕业妹妹中后来当姐姐</div></div>
+        <div class="card kpi"><div class="top"><span class="dot green"></span>三代孙辈毕业</div><div class="val">2 人</div><div class="foot">再下一辈也毕业</div></div>
+      </div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px;background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--accent);min-width:40px;">3 代</span>
+          <span class="chain-node root">雪儿<span>姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node">沐晴<span>已当姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node">小樱<span>已当姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node end">依然<span>已毕业</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px;background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--accent);min-width:40px;">2 代</span>
+          <span class="chain-node root">若曦<span>姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node">婷婷<span>已当姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node end">佳佳<span>已毕业</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 12px;background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--accent);min-width:40px;">2 代</span>
+          <span class="chain-node root">琳琳<span>姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node">悠悠<span>已当姐姐</span></span><span class="chain-arrow">→</span>
+          <span class="chain-node end">甜甜<span>已毕业</span></span>
+        </div>
+      </div>
+      <div class="dn-notes" style="margin-top:10px;">
+        <span class="dn-tag">口径</span>
+        <span><b>师承链路</b> = 妹妹毕业后当姐姐、她带的妹妹又毕业，逐代回溯形成的代际链条。<b>量化</b>：链路数（已形成链条的条数）+ 最大代数（最长链条深度）。数据基础：毕业妹妹 UID 后续出现在 <code>sister_uid</code>（已当姐姐）→ 她带的团再按「毕业团」判定 → 逐代回溯。是培养力可复制的直接证据，属进阶指标、可选。</span>
       </div>
     </div>
   </div>
