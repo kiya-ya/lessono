@@ -1126,6 +1126,10 @@
         <span class="dn-tag">牌子≠画像</span>
         <span><b>「牌子等级」（铜/银/金/王牌/大神）衡量的是姐姐自身的等级经验，与「画像」（头牌/风险/正常）是两码事</b>：高牌子的姐姐不一定是带妹妹的好姐姐，好姐姐的牌子也未必高。牌子升级难度非线性——<b>铜牌→银牌很容易，王牌→大神极难</b>，所以「大神」比「银牌」高一档的实际含金量远超一档。画像打标看的是「流水 P80 + 带团毕业率」，与牌子解耦，请勿把「高牌子」直接等同于「优秀姐姐」。</span>
       </div>
+      <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);">
+        <span class="dn-tag">传承链</span>
+        <span><b>传承链</b> = 该姐姐直接带出的毕业妹妹数（<b>M 位</b>）· 最长传承代数（<b>N 代</b>）。「代」= 妹妹毕业后当姐姐、她带的妹妹又毕业、逐代回溯的深度，<b>3 代</b> 说明培养力已被复制两层。<b>M 位</b> = 毕业妹妹按配对姐姐归集后该姐姐的毕业妹妹数；<b>N 代</b> = 其中最长一条链的代数。</span>
+      </div>
     </div>
     <div class="card">
       <div id="cap-filter-bar" style="display:none;margin-bottom:12px;padding:9px 12px;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:10px;align-items:center;gap:10px;">
@@ -1135,13 +1139,13 @@
       </div>
       <input type="text" id="cap-search" class="tbl-search" style="display:block;margin-bottom:10px;" placeholder="搜索姐姐 / 大厅 / 等级…" oninput="searchTable('cap-search','cap-table-body')">
       <table class="list">
-        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团毕业率</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
+        <thead><tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>带团毕业率</th><th title="带出毕业妹妹数 · 最长传承代数">传承链</th><th>所在大厅</th><th>等级</th><th id="cap-reward-th">当日奖励</th></tr></thead>
         <tbody id="cap-table-body">
-          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
-          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('雪儿','头牌','王牌','王者荣耀·恰逢今月')"><td>1</td><td>雪儿</td><td><span class="uid-link" onclick="gotoUID(event,'100234567','雪儿')">100234567</span></td><td><span class="tg hero">头牌</span></td><td>6</td><td>5</td><td>72%</td><td><span style="color:#7C5CFF;font-weight:600;">1 位 · 3 代</span></td><td>王者荣耀·恰逢今月</td><td>王牌</td><td style="font-weight:600;">¥12,400</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('若曦','头牌','王牌','王者荣耀·迷鹿之森')"><td>2</td><td>若曦</td><td><span class="uid-link" onclick="gotoUID(event,'100234568','若曦')">100234568</span></td><td><span class="tg hero">头牌</span></td><td>5</td><td>4</td><td>69%</td><td><span style="color:#7C5CFF;font-weight:600;">2 位 · 2 代</span></td><td>王者荣耀·迷鹿之森</td><td>王牌</td><td style="font-weight:600;">¥9,800</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('琳琳','正常','金牌','和平精英•幸运星')"><td>3</td><td>琳琳</td><td><span class="uid-link" onclick="gotoUID(event,'100234569','琳琳')">100234569</span></td><td><span class="tg normal">正常</span></td><td>5</td><td>3</td><td>64%</td><td>—</td><td>和平精英•幸运星</td><td>金牌</td><td style="font-weight:600;">¥8,600</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('悦悦','风险','银牌','王者荣耀·半糖心事')"><td>4</td><td>悦悦</td><td><span class="uid-link" onclick="gotoUID(event,'100234570','悦悦')">100234570</span></td><td><span class="tg risk">风险</span></td><td>4</td><td>2</td><td>58%</td><td>1 位 · 1 代</td><td>王者荣耀·半糖心事</td><td>银牌</td><td style="font-weight:600;">¥6,200</td></tr>
+          <tr style="cursor:pointer;" onclick="openSister('甜甜','风险','铜牌','王者荣耀·橙心如意')"><td>5</td><td>甜甜</td><td><span class="uid-link" onclick="gotoUID(event,'100234571','甜甜')">100234571</span></td><td><span class="tg risk">风险</span></td><td>3</td><td>1</td><td>51%</td><td>—</td><td>王者荣耀·橙心如意</td><td>铜牌</td><td style="font-weight:600;">¥5,600</td></tr>
         </tbody>
       </table>
       <button class="expand-btn" onclick="openFull('sisters')">查看全部姐姐（100+）→</button>
@@ -1185,7 +1189,7 @@
         <thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>
         <tbody>
           <tr><td>沐晴</td><td><span class="uid-link" onclick="gotoUID(event,'100300001','沐晴')">100300001</span></td><td>07-25</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥30 天</span></td><td><span class="chip up" style="cursor:pointer;" onclick="openLineage('沐晴')" title="点击查看传承链">已开始带妹妹 · 看链</span></td><td>2 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
-          <tr><td>婷婷</td><td><span class="uid-link" onclick="gotoUID(event,'100300002','婷婷')">100300002</span></td><td>06-20</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥90 天</span></td><td><span class="chip up" style="cursor:pointer;" onclick="openLineage('婷婷')" title="点击查看传承链">已开始带妹妹 · 看链</span></td><td>1 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
+          <tr><td>婷婷</td><td><span class="uid-link" onclick="gotoUID(event,'100300002','婷婷')">100300002</span></td><td>06-20</td><td>若曦</td><td><span style="color:#16A34A;font-weight:700;">≥90 天</span></td><td><span class="chip up" style="cursor:pointer;" onclick="openLineage('婷婷')" title="点击查看传承链">已开始带妹妹 · 看链</span></td><td>1 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
           <tr><td>灵儿</td><td><span class="uid-link" onclick="gotoUID(event,'100300003','灵儿')">100300003</span></td><td>08-12</td><td>若曦</td><td><span style="color:#B45309;font-weight:700;">&lt;30 天</span></td><td>—</td><td>—</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
           <tr><td>小雨</td><td><span class="uid-link" onclick="gotoUID(event,'100300004','小雨')">100300004</span></td><td>05-30</td><td>悦悦</td><td><span style="color:#6B7280;font-weight:700;">0 天</span></td><td><span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span></td><td>—</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
         </tbody>
