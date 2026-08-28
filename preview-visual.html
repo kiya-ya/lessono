@@ -356,22 +356,18 @@
   @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
   @keyframes pop{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:none;}}
 
-  /* ═══════ 代际传承 ═══════ */
-  .lineage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px;}
-  .lineage-card{background:#FAFBFC;border:1px solid #F0F1F4;border-radius:12px;padding:12px 14px;}
-  .lineage-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
-  .lin-badge{font-size:11px;font-weight:700;color:#5B3EC4;background:#F3F0FF;border:1px solid #DDD3FF;border-radius:6px;padding:2px 8px;white-space:nowrap;}
-  .lin-title{font-size:13px;font-weight:700;color:var(--text1);}
-  .lineage-list{list-style:none;margin:0;padding:0;}
-  .lin-node{display:flex;gap:10px;position:relative;padding-bottom:14px;}
-  .lin-node:last-child{padding-bottom:0;}
-  .lin-node::before{content:'';position:absolute;left:6px;top:16px;bottom:-2px;width:2px;background:#E5E0F7;}
-  .lin-node:last-child::before{display:none;}
-  .lin-dot{flex:none;width:14px;height:14px;border-radius:50%;background:#7C5CFF;border:3px solid #fff;box-shadow:0 0 0 2px #C9BDF5;margin-top:2px;position:relative;z-index:1;}
-  .lin-node.root .lin-dot{background:#5B3EC4;box-shadow:0 0 0 2px #8B7BD6;}
-  .lin-node.end .lin-dot{background:#16A34A;box-shadow:0 0 0 2px #BBF7D0;}
-  .lin-body b{display:block;font-size:13px;font-weight:700;color:var(--text1);line-height:1.3;}
-  .lin-body em{display:block;font-style:normal;font-size:11px;color:var(--text3);line-height:1.4;}
+  /* ═══════ 代际传承 · 下钻师承链 ═══════ */
+  .chain-flow{display:flex;align-items:flex-start;flex-wrap:wrap;padding:16px 8px;}
+  .chain-node{display:inline-flex;flex-direction:column;align-items:center;gap:5px;min-width:66px;}
+  .chain-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;background:#7C5CFF;box-shadow:0 0 0 2px #fff, 0 0 0 4px #C9BDF5;}
+  .chain-node.root .chain-avatar{background:#5B3EC4;box-shadow:0 0 0 2px #fff, 0 0 0 4px #A493E6;}
+  .chain-node.end .chain-avatar{background:#16A34A;box-shadow:0 0 0 2px #fff, 0 0 0 4px #BBF7D0;}
+  .chain-node.self .chain-avatar{background:#5B3EC4;box-shadow:0 0 0 3px #fff, 0 0 0 6px #F59E0B;}
+  .chain-name{font-size:12.5px;font-weight:600;color:var(--text1);line-height:1.2;}
+  .chain-role{font-size:10.5px;color:var(--text3);line-height:1.3;text-align:center;}
+  .chain-node.self .chain-name{color:#5B3EC4;}
+  .chain-node.self .chain-role{color:#B45309;font-weight:700;}
+  .chain-arrow{flex:none;margin:14px 8px 0;color:var(--text3);font-size:16px;font-weight:700;}
 </style>
 </head>
 <body>
@@ -1188,8 +1184,8 @@
       <table class="list" style="margin-top:12px;">
         <thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>
         <tbody>
-          <tr><td>沐晴</td><td><span class="uid-link" onclick="gotoUID(event,'100300001','沐晴')">100300001</span></td><td>07-25</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥30 天</span></td><td><span class="chip up">已开始带妹妹</span></td><td>2 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
-          <tr><td>婷婷</td><td><span class="uid-link" onclick="gotoUID(event,'100300002','婷婷')">100300002</span></td><td>06-20</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥90 天</span></td><td><span class="chip up">已开始带妹妹</span></td><td>1 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
+          <tr><td>沐晴</td><td><span class="uid-link" onclick="gotoUID(event,'100300001','沐晴')">100300001</span></td><td>07-25</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥30 天</span></td><td><span class="chip up" style="cursor:pointer;" onclick="openLineage('沐晴')" title="点击查看师承链">已开始带妹妹 · 看链</span></td><td>2 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
+          <tr><td>婷婷</td><td><span class="uid-link" onclick="gotoUID(event,'100300002','婷婷')">100300002</span></td><td>06-20</td><td>雪儿</td><td><span style="color:#16A34A;font-weight:700;">≥90 天</span></td><td><span class="chip up" style="cursor:pointer;" onclick="openLineage('婷婷')" title="点击查看师承链">已开始带妹妹 · 看链</span></td><td>1 代</td><td><span style="font-size:10.5px;color:#0F766E;background:#ECFDF5;border-radius:6px;padding:2px 6px;">回访</span></td></tr>
           <tr><td>灵儿</td><td><span class="uid-link" onclick="gotoUID(event,'100300003','灵儿')">100300003</span></td><td>08-12</td><td>若曦</td><td><span style="color:#B45309;font-weight:700;">&lt;30 天</span></td><td>—</td><td>—</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
           <tr><td>小雨</td><td><span class="uid-link" onclick="gotoUID(event,'100300004','小雨')">100300004</span></td><td>05-30</td><td>悦悦</td><td><span style="color:#6B7280;font-weight:700;">0 天</span></td><td><span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span></td><td>—</td><td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td></tr>
         </tbody>
@@ -1199,49 +1195,7 @@
         <span><b>毕业妹妹沉淀率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。<b>数据来源双口径</b>：<b>回访为主</b>——新毕业妹妹在毕业后 30 / 90 / 180 天用 uid_crawler 回访一次，记录留存、是否开始带妹妹、带妹代数；<b>近似兜底</b>——回访数据尚未攒够的老毕业妹妹，暂用「毕业后是否再次成团/当姐姐」近似，并标注口径切换点。沉淀率补「带团毕业率」只看能否顺利毕业、不看毕业后价值的缺口，回挂到候选池作培养力质量校验。</span>
       </div>
 
-      <!-- 代际传承：妹妹当姐姐后，她带的妹妹又毕业 -->
-      <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-          <h3 style="margin:0;">代际传承<span class="todo-badge">待落地</span></h3>
-          <span class="hint">妹妹毕业后当姐姐、她带的妹妹又毕业——「培养力可复制」</span>
-        </div>
-        <div class="src" style="margin-top:6px;">追溯「姐姐 → 毕业妹妹 → 妹妹当姐姐 → 她的妹妹…」的代际深度，是培养力可复制的最强证据</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
-          <div class="card kpi"><div class="top"><span class="dot violet"></span>传承链路</div><div class="val">5 条</div><div class="foot">已形成的代际链</div></div>
-          <div class="card kpi"><div class="top"><span class="dot violet"></span>最大代数</div><div class="val">3 代</div><div class="foot">最长链深度</div></div>
-        </div>
-        <div class="lineage-grid">
-          <div class="lineage-card">
-            <div class="lineage-head"><span class="lin-badge">3 代</span><span class="lin-title">雪儿 师门</span></div>
-            <ul class="lineage-list">
-              <li class="lin-node root"><span class="lin-dot"></span><div class="lin-body"><b>雪儿</b><em>姐姐 · 起点</em></div></li>
-              <li class="lin-node"><span class="lin-dot"></span><div class="lin-body"><b>沐晴</b><em>已当姐姐</em></div></li>
-              <li class="lin-node"><span class="lin-dot"></span><div class="lin-body"><b>小樱</b><em>已当姐姐</em></div></li>
-              <li class="lin-node end"><span class="lin-dot"></span><div class="lin-body"><b>依然</b><em>已毕业</em></div></li>
-            </ul>
-          </div>
-          <div class="lineage-card">
-            <div class="lineage-head"><span class="lin-badge">2 代</span><span class="lin-title">若曦 师门</span></div>
-            <ul class="lineage-list">
-              <li class="lin-node root"><span class="lin-dot"></span><div class="lin-body"><b>若曦</b><em>姐姐 · 起点</em></div></li>
-              <li class="lin-node"><span class="lin-dot"></span><div class="lin-body"><b>婷婷</b><em>已当姐姐</em></div></li>
-              <li class="lin-node end"><span class="lin-dot"></span><div class="lin-body"><b>佳佳</b><em>已毕业</em></div></li>
-            </ul>
-          </div>
-          <div class="lineage-card">
-            <div class="lineage-head"><span class="lin-badge">2 代</span><span class="lin-title">琳琳 师门</span></div>
-            <ul class="lineage-list">
-              <li class="lin-node root"><span class="lin-dot"></span><div class="lin-body"><b>琳琳</b><em>姐姐 · 起点</em></div></li>
-              <li class="lin-node"><span class="lin-dot"></span><div class="lin-body"><b>悠悠</b><em>已当姐姐</em></div></li>
-              <li class="lin-node end"><span class="lin-dot"></span><div class="lin-body"><b>甜甜</b><em>已毕业</em></div></li>
-            </ul>
-          </div>
-        </div>
-        <div class="dn-notes" style="margin-top:10px;">
-          <span class="dn-tag">口径</span>
-          <span><b>代际传承</b> = 妹妹毕业后当姐姐、她带的妹妹又毕业，逐代回溯形成的代际链条。<b>量化</b>：链路数（已形成链条的条数）+ 最大代数（最长链条深度）。数据基础：毕业妹妹 UID 后续出现在 <code>sister_uid</code>（已当姐姐）→ 她带的团再按「毕业团」判定 → 逐代回溯。是培养力可复制的直接证据，属进阶指标、可选。</span>
-        </div>
-      </div>
+      <div class="src" style="margin-top:8px;">点击明细表中「已开始带妹妹」徽标 → 展开该妹妹的师承链（代际传承）</div>
     </div>
   </div>
 
@@ -1504,6 +1458,30 @@
       <div class="chart-grid" style="margin-top:14px;">
         <div class="card"><h3>近 8 周流水趋势</h3><div class="src">周礼物流水 · 姐姐本人</div><div class="chart-box" id="sm-rev-line"></div></div>
         <div class="card"><h3>等级轨迹</h3><div class="src">近 8 周牌子等级</div><div class="chart-box" id="sm-level-line"></div><div class="chart-insight" id="sm-lv-note"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ 弹窗：代际传承 · 师承链下钻 ═══════ -->
+<div class="modal" id="lineage-modal">
+  <div class="modal-box" style="width:680px;">
+    <div class="modal-head">
+      <h3 id="lg-title">师承链</h3>
+      <button class="close" onclick="closeLineage()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-sub" id="lg-sub"></div>
+      <div class="kpi-row" style="grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
+        <div class="kv-cell"><div class="k">整链代数</div><div class="v" id="lg-gen">—</div></div>
+        <div class="kv-cell"><div class="k">直接带妹</div><div class="v" id="lg-direct">—</div></div>
+        <div class="kv-cell"><div class="k">再下一辈毕业</div><div class="v" id="lg-next">—</div></div>
+      </div>
+      <div class="wd-subhead">代际链（起点 → 本尊 → 孙辈）</div>
+      <div class="chain-flow" id="lg-flow"></div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span><b>代际传承</b> = 妹妹毕业后当姐姐、她带的妹妹又毕业，逐代回溯形成的代际链条。<b>橙圈</b> = 当前查看的妹妹。数据基础：毕业妹妹 UID 后续出现在 <code>sister_uid</code>（已当姐姐）→ 她带的团再按「毕业团」判定 → 逐代回溯。</span>
       </div>
     </div>
   </div>
@@ -2148,6 +2126,38 @@ function jumpToGrad() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 120);
 }
+/* ── 代际传承 · 师承链下钻 ── */
+const LINEAGE = {
+  '沐晴': { gen: '3 代', direct: '1 人 · 小樱', next: '1 人 · 依然',
+    chain: [
+      { name: '雪儿', role: '姐姐 · 起点', type: 'root' },
+      { name: '沐晴', role: '已当姐姐 · 本尊', type: 'self' },
+      { name: '小樱', role: '已当姐姐', type: '' },
+      { name: '依然', role: '已毕业', type: 'end' },
+    ]},
+  '婷婷': { gen: '2 代', direct: '1 人 · 佳佳', next: '0 人',
+    chain: [
+      { name: '若曦', role: '姐姐 · 起点', type: 'root' },
+      { name: '婷婷', role: '已当姐姐 · 本尊', type: 'self' },
+      { name: '佳佳', role: '已毕业', type: 'end' },
+    ]},
+};
+function openLineage(name) {
+  const d = LINEAGE[name];
+  if (!d) return;
+  document.getElementById('lg-title').textContent = name + ' · 师承链';
+  document.getElementById('lg-sub').textContent = '「' + d.chain[0].name + '」门下毕业 → 已当姐姐 → 带出下一辈妹妹';
+  document.getElementById('lg-gen').textContent = d.gen;
+  document.getElementById('lg-direct').textContent = d.direct;
+  document.getElementById('lg-next').textContent = d.next;
+  document.getElementById('lg-flow').innerHTML = d.chain.map((n, i) =>
+    (i > 0 ? '<span class="chain-arrow">→</span>' : '') +
+    '<div class="chain-node ' + n.type + '"><div class="chain-avatar">' + n.name[0] + '</div><div class="chain-name">' + n.name + '</div><div class="chain-role">' + n.role + '</div></div>'
+  ).join('');
+  document.getElementById('lineage-modal').classList.add('open');
+}
+function closeLineage() { document.getElementById('lineage-modal').classList.remove('open'); }
+document.getElementById('lineage-modal').addEventListener('click', e => { if (e.target.id === 'lineage-modal') closeLineage(); });
 const CAP_PERIOD = { day: '当日奖励', week: '当周奖励', month: '当月奖励' };
 function setCapPeriod(p, btn) {
   btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('on'));
