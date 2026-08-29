@@ -845,18 +845,16 @@
     </div>
 
     <div class="card warn-detail notice">
-      <div class="wd-head"><h3>破裂时间分布</h3><span class="wn-tag notice">分析</span></div>
+      <div class="wd-head"><h3>解散时间分布</h3><span class="wn-tag notice">分析</span></div>
       <div class="src">近 8 周非毕业解散 200 个 · 按「成团 → 解散」存续天数分 4 周 · 点柱下钻明细</div>
       <div class="chart-box" id="wc-rupture"></div>
-      <div class="chart-insight">第 2 周（成团 8~14 天）是破裂高发期——<b>超半数关系在成团前两周内破裂</b>，是运营介入的黄金窗口。该分布正是「姐妹关系持续率」的平台级底座（持续率 = Σ实际存续天数 ÷ 规定天数）。</div>
-      <div class="wd-subhead">各周破裂明细</div>
+      <div class="chart-insight">第 2 周（成团 8~14 天）是解散高发期——<b>超半数关系在成团前两周内解散</b>，是运营介入的黄金窗口。该分布正是「姐妹关系持续率」的平台级底座（持续率 = Σ实际存续天数 ÷ 规定天数）。</div>
+      <div class="wd-subhead">非毕业解散 · 受影响厅</div>
       <table class="list">
-        <thead><tr><th>周次</th><th>破裂数</th><th>占比</th></tr></thead>
+        <thead><tr><th>大厅</th><th>解散数</th><th>高发周</th></tr></thead>
         <tbody>
-          <tr><td>第1周 (1-7天)</td><td>41</td><td>20.5%</td></tr>
-          <tr><td>第2周 (8-14天)</td><td style="color:#D97706;font-weight:600;">62</td><td style="color:#D97706;font-weight:600;">31%</td></tr>
-          <tr><td>第3周 (15-21天)</td><td>47</td><td>23.5%</td></tr>
-          <tr><td>第4周 (22-29天)</td><td>50</td><td>25%</td></tr>
+          <tr><td>王者荣耀·恰逢今月</td><td style="font-weight:600;">4 个</td><td>第2周</td></tr>
+          <tr><td>王者荣耀·迷鹿之森</td><td style="font-weight:600;">3 个</td><td>第1周</td></tr>
         </tbody>
       </table>
       <button class="expand-btn" onclick="drillRupture('全部')">下钻全部非毕业解散 →</button>
@@ -1322,7 +1320,7 @@
     </div>
   </div>
 
-  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 姐妹关系持续率前置），姐姐筛选「牌子等级」后置。带团毕业率改「姐妹关系持续率」（Σ实际存续天数 ÷ 已结束团数×30，毕业团按 30 天、解散团按实际存续天数、进行中团不进），并在预警中心补「破裂时间分布」分周直方图（非毕业解散按存续周分桶）。</div>
+  <div class="todo-note"><b>待落地</b>：本页将「画像表 + 排行榜」合并为一张「姐姐总览」表（需后端合并 <code>/api/captains</code> 与 <code>/api/sister-profile</code> 字段，或前端按 uid join）；删除 <code>dependency</code>（头牌依赖度）死数据字段（此前已定不启用）；补姐姐下钻弹窗 <code>/api/sister-detail</code>（带团明细 + 流水曲线 + 等级轨迹）；姐姐筛选口径改为「并列展示、不做权威排序」；清理 <code>/api/sister2-profile</code>、<code>/api/sister2-detail</code> 死接口；近 8 周毕业趋势折线需后端补「按周毕业数」序列（复用 <code>week_metrics_from_detail</code> 的 <code>graduation_count</code> 按周聚合，或 <code>/api/sister-profile</code> 增补毕业趋势）；姐姐总览列排序「等级 / 当日奖励」后置（带团 / 姐妹关系持续率前置），姐姐筛选「牌子等级」后置。带团毕业率改「姐妹关系持续率」（Σ实际存续天数 ÷ 已结束团数×30，毕业团按 30 天、解散团按实际存续天数、进行中团不进），并在预警中心补「解散时间分布」分周直方图（非毕业解散按存续周分桶）。</div>
 </div>
 
 <!-- ═══════ UID查询（uid） ═══════ -->
@@ -3075,16 +3073,16 @@ function drillWarnDiss(weekIdx, val) {
       : `未找到匹配的团 · 没有数据。`, 'detail-sec');
 }
 
-/* 预警中心 · 破裂时间分布（非毕业解散按存续周分桶）→ 概览明细（非毕业集合） */
+/* 预警中心 · 解散时间分布（非毕业解散按存续周分桶）→ 概览明细（非毕业集合） */
 function drillRupture(label) {
   switchPreviewTab('overview', document.getElementById('side-overview'));
   const hit = dimMatch('#detail-body', tr => {
     const r = tr.dataset.reason || '';
     return r && r !== '毕业';
   });
-  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', hit > 0 ? '破裂时间下钻' : '破裂时间下钻 · 未命中',
+  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', hit > 0 ? '解散时间下钻' : '解散时间下钻 · 未命中',
     hit > 0
-      ? `按「破裂时间 <b>${label}</b>（非毕业解散）」过滤明细数据：命中 <b>${hit}</b> 行（演示按非毕业集合过滤，落地后按存续天数分桶精确下钻）。`
+      ? `按「解散时间 <b>${label}</b>（非毕业解散）」过滤明细数据：命中 <b>${hit}</b> 行（演示按非毕业集合过滤，落地后按存续天数分桶精确下钻）。`
       : `未找到匹配的团 · 没有数据。`, 'detail-sec');
 }
 
