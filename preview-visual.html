@@ -1047,15 +1047,15 @@
     <div class="wd-head"><h3>解散原因构成</h3><span style="font-size:11px;color:var(--text3);">该厅已解散团 · 环形占比 + 近 8 周趋势</span></div>
     <div class="chart-grid">
       <div class="card">
-        <div class="src">占比视角 · 主动 = 手动 + 离职(含换厅) + 注销 · 点扇区下钻</div>
+        <div class="src">占比视角 · 8 类细分 · 主动 = 手动 + 离职(含换厅) + 注销 · 点扇区下钻</div>
         <div class="chart-box" id="cmp-diss"></div>
       </div>
       <div class="card">
-        <div class="src">近 8 周各解散原因数量 · 主动 / 毕业 / 任务未完成自动</div>
+        <div class="src">近 8 周各解散原因数量 · 主动 / 毕业 / 系统解散（任务未完成 + 生态违规 + 等级低于铜牌 + 其他）</div>
         <div class="chart-box" id="cmp-diss-trend"></div>
       </div>
     </div>
-    <div class="chart-insight">主动解散占比 <b>60%</b>（手动 3 + 离职含换厅 2 + 注销 1）；毕业 3 个为满 30 天正常流程、不计入流失。</div>
+    <div class="chart-insight">累计结束 <b>13</b> 个团：主动解散占比 <b>60%</b>（手动 3 + 离职含换厅 2 + 注销 1）；「生态违规 / 等级低于铜牌」为新增系统解散原因；毕业 3 个为满 30 天正常流程、不计入流失。</div>
   </div>
 
   <!-- 该厅团明细 -->
@@ -1778,7 +1778,8 @@ function svgDonut(el, parts, centerLabel, onSlice) {
     return `<path data-idx="${i}" d="${d}" fill="${p.c}"><title>${p.n} ${p.v}个</title></path>`;
   }).join('');
   const legend = parts.map((p, i) => {
-    const ly = 30 + i * 24;
+    const rowH = parts.length > 6 ? 20 : 24;
+    const ly = 22 + i * rowH;
     return `<circle cx="${W*0.78}" cy="${ly}" r="6" fill="${p.c}"/><text x="${W*0.78+12}" y="${ly+3.5}" font-size="10.5" fill="#6B7280">${p.n} <tspan font-weight="600" fill="#1A1D26">${p.v}个</tspan></text>`;
   }).join('');
   const center = `<text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="20" font-weight="700" fill="#1A1D26">${total}</text><text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="10" fill="#9CA3AF">${centerLabel || '累计解散'}</text>`;
@@ -1905,14 +1906,19 @@ svgMultiLine(document.getElementById('hall-trend'), [
   { name: '橙心如意', full:'王者荣耀·橙心如意', data: [65,66,67,68,70,68,64,60], color: '#2DD4BF' },
 ], null, (hall) => focusHall(hall, null, true));
 svgDonut(document.getElementById('cmp-diss'), [
-  { n:'主动解散', v:6, c:'#C2410C', match:'已解散' },
-  { n:'毕业', v:3, c:'#F97316', match:'已毕业' },
-  { n:'任务未完成自动解散', v:1, c:'#FDBA74', match:'已解散' },
-], '已解散', (name, part) => drillCmpDiss(part));
+  { n:'离职解散（含换厅）', v:2, c:'#E08A5A', match:'已解散' },
+  { n:'手动解散', v:3, c:'#D56060', match:'已解散' },
+  { n:'毕业', v:3, c:'#16A34A', match:'已毕业' },
+  { n:'任务未完成自动解散', v:1, c:'#C98A2D', match:'已解散' },
+  { n:'生态违规', v:1, c:'#DB2777', match:'已解散' },
+  { n:'等级低于铜牌', v:1, c:'#F59E0B', match:'已解散' },
+  { n:'注销', v:1, c:'#9CA3AF', match:'已解散' },
+  { n:'其他', v:1, c:'#C0C4CC', match:'已解散' },
+], '累计结束', (name, part) => drillCmpDiss(part));
 svgMultiLine(document.getElementById('cmp-diss-trend'), [
   { name:'主动解散', data:[5,6,5,7,6,7,6,6], color:'#C2410C', match:'已解散' },
   { name:'毕业', data:[2,3,2,3,3,4,3,3], color:'#F97316', match:'已毕业' },
-  { name:'任务未完成自动', data:[1,1,1,1,0,1,1,1], color:'#FDBA74', match:'已解散' }
+  { name:'系统解散', data:[2,2,2,2,1,2,3,3], color:'#FDBA74', match:'已解散' }
 ], null, (name, s) => drillCmpDiss(s));
 
 /* 姐姐分析 · 打标分布 + 带团毕业率分布 */
@@ -3075,7 +3081,7 @@ function drillCmpDiss(part) {
   const label = part.n || part.name;
   const hit = dimMatch('#cmp-team-body', tr => tr.cells[5] ? tr.cells[5].textContent.includes(part.match) : false);
   const note = part.match === '已解散'
-    ? `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行（主动/任务未完成自动演示均归「已解散」，细分原因落地后由明细表区分）。`
+    ? `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行（主动 / 系统解散演示均归「已解散」，细分原因落地后由明细表区分）。`
     : `按「<b>${label}</b>」过滤该厅团明细：命中 <b>${hit}</b> 行。`;
   showBar('cmp-filter-bar', 'cmp-flabel', 'cmp-fnote', '解散原因下钻', note, null);
 }
