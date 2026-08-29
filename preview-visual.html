@@ -498,8 +498,8 @@
     </div>
     <div class="warn-card notice" onclick="openWarn('abnormal')">
       <div class="top"><span class="dot violet"></span>异常解散<span class="lvl">提醒</span></div>
-      <div class="val">4 类</div>
-      <div class="foot">非毕业解散 · 违规 / 资格失效</div>
+      <div class="val">200 个</div>
+      <div class="foot">近 8 周非毕业解散 · 4 类集合</div>
       <span class="go">进入预警中心 →</span>
     </div>
     <div class="warn-card notice" onclick="openWarn('newteam')">
@@ -813,15 +813,15 @@
 
     <div class="card warn-detail notice">
       <div class="wd-head"><h3>异常解散</h3><span class="wn-tag notice">提醒</span></div>
-      <div class="src">近 8 周异常解散数量（非毕业）· 4 类 · 点柱下钻</div>
+      <div class="src">近 8 周异常解散总数（非毕业 · 4 类集合）· 点折线看每周下钻</div>
       <div class="chart-box" id="wc-diss"></div>
-      <div class="chart-insight">近 8 周异常解散（非毕业）共 <b>200</b> 个：资格失效 84（换大厅/离职 · 队长等级低）· 主动解散 66（手动解绑）· 不活跃 47（陪档任务未完成）· 违规 3（生态违规）。</div>
+      <div class="chart-insight">近 8 周异常解散（非毕业）共 <b>200</b> 个，本周 <b>29</b> 个、环比 +2（27 → 29）；按主动解散 / 资格失效 / 违规 / 不活跃 4 类<b>集合</b>统计，不含正常毕业。</div>
       <div class="wd-subhead">异常解散较多的厅</div>
       <table class="list">
-        <thead><tr><th>大厅</th><th>异常类型</th><th>数量</th></tr></thead>
+        <thead><tr><th>大厅</th><th>异常解散总数</th><th>较上周</th></tr></thead>
         <tbody>
-          <tr><td>王者荣耀·恰逢今月</td><td style="color:#DB2777;font-weight:600;">违规</td><td>1</td></tr>
-          <tr><td>王者荣耀·迷鹿之森</td><td style="color:#F59E0B;font-weight:600;">资格失效</td><td>2</td></tr>
+          <tr><td>王者荣耀·恰逢今月</td><td style="font-weight:600;">4 个</td><td style="color:#D97706;">↑ 1</td></tr>
+          <tr><td>王者荣耀·迷鹿之森</td><td style="font-weight:600;">3 个</td><td style="color:#D97706;">↑ 1</td></tr>
         </tbody>
       </table>
       <button class="expand-btn" onclick="drillWarn('abnormal')">下钻明细 →</button>
@@ -1880,7 +1880,7 @@ svgMultiLine(document.getElementById('wc-ret'), [
   { name: '恰逢今月', data: [74,72,69,66,63,61,60,58], color: '#DC2626' },
   { name: '橙心如意', data: [71,69,66,63,60,58,56,55], color: '#F08A8A' }
 ], 60);
-svgBar(document.getElementById('wc-diss'), [84, 66, 47, 3], '#D97706', '#D97706', ['资格失效','主动解散','不活跃','违规'], (idx, v, label) => drillWarnDiss(label));
+svgLine(document.getElementById('wc-diss'), [18, 22, 25, 21, 28, 30, 27, 29], '#D97706', 'rgba(217,119,6,.12)', null, null, (idx, v) => drillWarnDiss(idx, v));
 svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
 svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
 svgBar(document.getElementById('ly-days'), [68, 52, 18, 176], '#DC2626', '#F08A8A', ['2天','3天','4天','5天'], (idx, v, label) => drillLyDays(label));
@@ -3054,21 +3054,17 @@ function drillDissReason(part) {
       : `未找到匹配的团 · 没有数据（「<b>${part.n}</b>」在当前明细中无对应团）。`, 'detail-sec');
 }
 
-/* 预警中心 · 异常解散 4 类 → 概览明细（解散原因） */
-const ABNORMAL_DISS_MAP = {
-  '资格失效': ['离职', '铜牌'],
-  '主动解散': ['手动', '注销'],
-  '不活跃': ['任务未完成'],
-  '违规': ['违规']
-};
-function drillWarnDiss(label) {
+/* 预警中心 · 异常解散总数（非毕业 · 主动解散/资格失效/违规/不活跃 4 类集合）→ 概览明细（解散原因） */
+function drillWarnDiss(weekIdx, val) {
   switchPreviewTab('overview', document.getElementById('side-overview'));
-  const keys = ABNORMAL_DISS_MAP[label] || [label];
-  const hit = dimMatch('#detail-body', tr => keys.some(k => (tr.dataset.reason || '').includes(k)));
+  const hit = dimMatch('#detail-body', tr => {
+    const r = tr.dataset.reason || '';
+    return r && r !== '毕业';
+  });
   showBar('detail-filter-bar', 'dfb-label', 'dfb-note', hit > 0 ? '异常解散下钻' : '异常解散下钻 · 未命中',
     hit > 0
-      ? `按「<b>${label}</b>」过滤明细数据：命中 <b>${hit}</b> 行。`
-      : `未找到匹配的团 · 没有数据（「<b>${label}</b>」在当前明细中无对应团）。`, 'detail-sec');
+      ? `按「异常解散（非毕业 · 第 ${weekIdx + 1} 周 <b>${val}</b> 个）」过滤明细数据：命中 <b>${hit}</b> 行（主动解散 / 资格失效 / 违规 / 不活跃 4 类集合）。`
+      : `未找到匹配的团 · 没有数据。`, 'detail-sec');
 }
 
 /* 预警中心 · 躺平天数分布 / 大厅分布 → 躺平名单 */
