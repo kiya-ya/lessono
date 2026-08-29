@@ -808,6 +808,7 @@
           <tr><td>王者荣耀·橙心如意</td><td style="color:#DC2626;font-weight:600;">55%</td><td style="color:#DC2626;">↓9pp</td></tr>
         </tbody>
       </table>
+      <button class="expand-btn" onclick="openFull('warnRet')">查看全部受影响厅 →</button>
       <button class="expand-btn" onclick="drillWarn('retention')">下钻明细 →</button>
     </div>
 
@@ -824,6 +825,7 @@
           <tr><td>王者荣耀·迷鹿之森</td><td style="font-weight:600;">3 个</td><td style="color:#D97706;">↑ 1</td></tr>
         </tbody>
       </table>
+      <button class="expand-btn" onclick="openFull('warnDiss')">查看全部受影响厅 →</button>
       <button class="expand-btn" onclick="drillWarn('abnormal')">下钻明细 →</button>
     </div>
 
@@ -840,6 +842,7 @@
           <tr><td>王者荣耀·半糖心事</td><td style="font-weight:600;">2 个</td><td style="color:#D97706;">↓ 连续 2 周</td></tr>
         </tbody>
       </table>
+      <button class="expand-btn" onclick="openFull('warnNew')">查看全部受影响厅 →</button>
       <button class="expand-btn" onclick="drillWarn('newteam')">查看名单 →</button>
     </div>
 
@@ -856,6 +859,7 @@
           <tr><td>王者荣耀·少女心事</td><td style="color:#D97706;font-weight:600;">24%</td><td style="color:#D97706;">↓ 波动</td></tr>
         </tbody>
       </table>
+      <button class="expand-btn" onclick="openFull('warnActivity')">查看全部受影响厅 →</button>
       <button class="expand-btn" onclick="drillWarn('activity')">下钻明细 →</button>
     </div>
   </div>
@@ -913,6 +917,7 @@
         <div class="hc-row" style="cursor:pointer;" onclick="drillLyHall('王者荣耀·迷鹿之森')"><span class="hc-name">王者荣耀·迷鹿之森</span><div class="hc-bar"><div class="hc-fill" style="width:80%;background:linear-gradient(90deg,#F08A8A,#DC2626);"></div></div><span class="hc-ret">4</span></div>
       </div>
       <div class="chart-insight">其余 99 厅共 <b>169</b> 个，分布分散、无集中厅；躺平是全局性现象而非个别厅问题。</div>
+      <button class="expand-btn" onclick="openFull('lyHall')">查看全部大厅分布 →</button>
     </div>
   </div>
 
@@ -3131,6 +3136,76 @@ const FULL_LISTS = {
       ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260809\')">SJ20260809</span>','王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">4 天</span>','9 天','银牌'],
       ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260811\')">SJ20260811</span>','和平精英•幸运星','奶糖','<span style="color:#DC2626;font-weight:600;">4 天</span>','29 天','王牌'],
       ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260816\')">SJ20260816</span>','王者荣耀·怪诞学姐','阿梨','<span style="color:#DC2626;font-weight:600;">4 天</span>','8 天','铜牌']
+    ]
+  },
+  warnRet: {
+    title: '跌破健康线的厅（全量）', sub: '姐妹团留存率 < 60% 的厅 · 演示节选 Top 8 · 落地后 /api/warncenter?metric=retention 返回全量',
+    cols: ['大厅','当前留存率','较上周'],
+    rows: [
+      ['王者荣耀·恰逢今月','<span style="color:#DC2626;font-weight:600;">58%</span>','<span style="color:#DC2626;">↓12pp</span>'],
+      ['王者荣耀·橙心如意','<span style="color:#DC2626;font-weight:600;">55%</span>','<span style="color:#DC2626;">↓9pp</span>'],
+      ['王者荣耀·迷鹿之森','<span style="color:#DC2626;font-weight:600;">56%</span>','<span style="color:#DC2626;">↓7pp</span>'],
+      ['和平精英•幸运星','<span style="color:#DC2626;font-weight:600;">57%</span>','<span style="color:#DC2626;">↓5pp</span>'],
+      ['王者荣耀·半糖心事','<span style="color:#DC2626;font-weight:600;">59%</span>','<span style="color:#DC2626;">↓4pp</span>'],
+      ['三角洲★黄金海岸','<span style="color:#DC2626;font-weight:600;">57%</span>','<span style="color:#DC2626;">↓3pp</span>'],
+      ['王者·回家的诱惑','<span style="color:#DC2626;font-weight:600;">59%</span>','<span style="color:#DC2626;">↓3pp</span>'],
+      ['王者荣耀天才少女','<span style="color:#DC2626;font-weight:600;">58%</span>','<span style="color:#DC2626;">↓2pp</span>']
+    ]
+  },
+  warnDiss: {
+    title: '异常解散较多的厅（全量）', sub: '近 8 周异常解散总数（非毕业 4 类集合）· 演示节选 Top 8 · 落地后 /api/warncenter?metric=abnormal 返回全量',
+    cols: ['大厅','异常解散总数','较上周'],
+    rows: [
+      ['王者荣耀·恰逢今月','<span style="font-weight:600;">4 个</span>','<span style="color:#D97706;">↑1</span>'],
+      ['王者荣耀·迷鹿之森','<span style="font-weight:600;">3 个</span>','<span style="color:#D97706;">↑1</span>'],
+      ['王者荣耀·半糖心事','<span style="font-weight:600;">3 个</span>','<span style="color:#16A34A;">—</span>'],
+      ['和平精英•幸运星','<span style="font-weight:600;">2 个</span>','<span style="color:#16A34A;">—</span>'],
+      ['王者荣耀·橙心如意','<span style="font-weight:600;">2 个</span>','<span style="color:#D97706;">↑1</span>'],
+      ['三角洲★黄金海岸','<span style="font-weight:600;">2 个</span>','<span style="color:#16A34A;">↓1</span>'],
+      ['王者荣耀天才少女','<span style="font-weight:600;">1 个</span>','<span style="color:#16A34A;">—</span>'],
+      ['王者·回家的诱惑','<span style="font-weight:600;">1 个</span>','<span style="color:#16A34A;">—</span>']
+    ]
+  },
+  warnNew: {
+    title: '连续下降的厅（全量）', sub: '近 8 周新成团数连续下降的厅 · 演示节选 Top 6 · 落地后 /api/warncenter?metric=newteam 返回全量',
+    cols: ['大厅','本周新成团','趋势'],
+    rows: [
+      ['王者荣耀·恰逢今月','<span style="font-weight:600;">3 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
+      ['王者荣耀·半糖心事','<span style="font-weight:600;">2 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
+      ['王者荣耀·迷鹿之森','<span style="font-weight:600;">1 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
+      ['和平精英•幸运星','<span style="font-weight:600;">1 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
+      ['王者荣耀·橙心如意','<span style="font-weight:600;">1 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
+      ['三角洲★黄金海岸','<span style="font-weight:600;">0 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>']
+    ]
+  },
+  warnActivity: {
+    title: '活跃率偏低的厅（全量）', sub: '陪档活跃率偏低的厅 · 演示节选 Top 6 · 落地后 /api/warncenter?metric=activity 返回全量',
+    cols: ['大厅','陪档率','趋势'],
+    rows: [
+      ['王者荣耀·怪诞学姐','<span style="color:#D97706;font-weight:600;">21%</span>','<span style="color:#D97706;">↓ 波动</span>'],
+      ['王者荣耀·少女心事','<span style="color:#D97706;font-weight:600;">24%</span>','<span style="color:#D97706;">↓ 波动</span>'],
+      ['王者荣耀·迷鹿之森','<span style="color:#D97706;font-weight:600;">26%</span>','<span style="color:#D97706;">↓ 波动</span>'],
+      ['和平精英•幸运星','<span style="color:#D97706;font-weight:600;">28%</span>','<span style="color:#D97706;">↓ 波动</span>'],
+      ['王者荣耀·恰逢今月','<span style="color:#D97706;font-weight:600;">31%</span>','<span style="color:#D97706;">↓ 波动</span>'],
+      ['三角洲★黄金海岸','<span style="color:#D97706;font-weight:600;">32%</span>','<span style="color:#D97706;">↓ 波动</span>']
+    ]
+  },
+  lyHall: {
+    title: '躺平团 · 大厅分布（全量）', sub: '受影响厅按躺平团数降序 · 演示节选 Top 12 · 其余 93 厅共 160 个分布分散 · 落地后 /api/lying-flat?group=hall 返回全量',
+    cols: ['大厅','躺平团数'],
+    rows: [
+      ['王者荣耀·财神降临','<span style="color:#DC2626;font-weight:600;">5</span>'],
+      ['王者荣耀星穹之恋','<span style="color:#DC2626;font-weight:600;">4</span>'],
+      ['王者荣耀天才少女','<span style="color:#DC2626;font-weight:600;">4</span>'],
+      ['和平精英•幸运星','<span style="color:#DC2626;font-weight:600;">4</span>'],
+      ['王者荣耀·橙心如意','<span style="color:#DC2626;font-weight:600;">4</span>'],
+      ['王者荣耀·迷鹿之森','<span style="color:#DC2626;font-weight:600;">4</span>'],
+      ['王者·回家的诱惑','<span style="color:#DC2626;font-weight:600;">3</span>'],
+      ['王者荣耀·恰逢今月','<span style="color:#DC2626;font-weight:600;">3</span>'],
+      ['三角洲★黄金海岸','<span style="color:#DC2626;font-weight:600;">3</span>'],
+      ['王者荣耀·半糖心事','<span style="color:#DC2626;font-weight:600;">2</span>'],
+      ['王者荣耀·怪诞学姐','<span style="color:#DC2626;font-weight:600;">2</span>'],
+      ['王者荣耀·少女心事','<span style="color:#DC2626;font-weight:600;">2</span>']
     ]
   },
   hallteams: {
