@@ -897,9 +897,9 @@
   <div class="chart-grid">
     <div class="card">
       <h3>连续未陪档天数分布</h3>
-      <div class="src">躺平团按连续未陪档天数分组 · 点柱下钻</div>
+      <div class="src">进行中团按连续未陪档天数分组（2~5 天）· 点柱下钻</div>
       <div class="chart-box" id="ly-days"></div>
-      <div class="chart-insight">连续 <b>4天</b> 18 · <b>5天</b> 176。连续 5 日未陪档即触发自动解散，故进行中躺平团最多到 5 天（5 天以上已在快照中归为「已解散」）。</div>
+      <div class="chart-insight">连续 <b>2天</b> 68 · <b>3天</b> 52 · <b>4天</b> 18 · <b>5天</b> 176。2~3 天属提醒区间、4~5 天属躺平；连续 5 日未陪档即触发自动解散，故进行中团最多到 5 天（5 天以上已归为「已解散」）。</div>
     </div>
     <div class="card">
       <h3>躺平团 · 大厅分布</h3>
@@ -1885,7 +1885,7 @@ svgMultiLine(document.getElementById('wc-diss'), [
 ], null);
 svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
 svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
-svgBar(document.getElementById('ly-days'), [18, 176], '#DC2626', '#F08A8A', ['4天','5天'], (idx, v, label) => drillLyDays(label));
+svgBar(document.getElementById('ly-days'), [68, 52, 18, 176], '#DC2626', '#F08A8A', ['2天','3天','4天','5天'], (idx, v, label) => drillLyDays(label));
 
 /* 厅分析 · 揭示面板趋势 */
 svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'});
@@ -3054,13 +3054,14 @@ function drillDissReason(part) {
 /* 预警中心 · 躺平天数分布 / 大厅分布 → 躺平名单 */
 function drillLyDays(label) {
   const day = parseInt(label);
-  const isPlus = label.endsWith('+');
   const hit = dimMatch('#lying-body', tr => {
     const d = parseInt(tr.cells[3] ? tr.cells[3].textContent : '');
-    return isPlus ? d >= day : d === day;
+    return d === day;
   });
-  showBar('lying-filter-bar', 'lying-flabel', 'lying-fnote', '躺平天数下钻',
-    `按「连续未陪档 <b>${label}</b>」过滤躺平名单：命中 <b>${hit}</b> 行（演示名单仅节选 Top6，连续 4~5 天，落地后按 <code>/api/lying-flat?days=</code> 返回真实 194 条）。`, null);
+  showBar('lying-filter-bar', 'lying-flabel', 'lying-fnote', '连续未陪档下钻',
+    hit > 0
+      ? `按「连续未陪档 <b>${label}</b>」过滤名单：命中 <b>${hit}</b> 行（演示名单仅节选 Top6，连续 4~5 天，落地后按 <code>/api/lying-flat?days=</code> 返回真实名单）。`
+      : `未找到匹配的团 · 没有数据（连续未陪档 <b>${label}</b> 属「提醒」区间、不在躺平名单中，落地后按 <code>/api/lying-flat?days=</code> 返回真实名单）。`, null);
 }
 function drillLyHall(hall) {
   const hit = dimMatch('#lying-body', tr => tr.cells[1] ? tr.cells[1].textContent.includes(hall) : false);
