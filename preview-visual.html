@@ -496,10 +496,10 @@
       <div class="foot">跌破 60% 健康线</div>
       <span class="go">进入预警中心 →</span>
     </div>
-    <div class="warn-card warning" onclick="openWarn('activediss')">
-      <div class="top"><span class="dot amber"></span>主动解散占比预警<span class="lvl">警告</span></div>
-      <div class="val">42%</div>
-      <div class="foot">连续 2 周升高</div>
+    <div class="warn-card notice" onclick="openWarn('dissreason')">
+      <div class="top"><span class="dot violet"></span>解散原因构成<span class="lvl">提醒</span></div>
+      <div class="val">8 类</div>
+      <div class="foot">生态违规 / 等级低于铜牌 出现</div>
       <span class="go">进入预警中心 →</span>
     </div>
     <div class="warn-card notice" onclick="openWarn('newteam')">
@@ -758,10 +758,10 @@
           <td><code>team_detail</code> 按 team_id 去重</td>
         </tr>
         <tr>
-          <td>主动解散占比</td>
-          <td><span class="wn-tag warning">警告</span></td>
-          <td>主动解散 ÷ 非毕业解散 × 100%；主动 = 手动 / 离职(含换厅) / 注销</td>
-          <td>连续 2 周环比升高</td>
+          <td>解散原因构成</td>
+          <td><span class="wn-tag notice">提醒</span></td>
+          <td>dissolve_reason 归一化为 8 类占比：毕业 / 手动 / 离职(含换厅) / 注销 / 任务未完成 / 生态违规 / 等级低于铜牌 / 其他</td>
+          <td>生态违规 / 等级低于铜牌 出现</td>
           <td><code>team_detail.dissolve_reason</code></td>
         </tr>
         <tr>
@@ -811,20 +811,20 @@
       <button class="expand-btn" onclick="drillWarn('retention')">下钻明细 →</button>
     </div>
 
-    <div class="card warn-detail warning">
-      <div class="wd-head"><h3>主动解散占比预警</h3><span class="wn-tag warning">警告</span></div>
-      <div class="src">近 8 周主动解散占比 · 连续 2 周升高</div>
+    <div class="card warn-detail notice">
+      <div class="wd-head"><h3>解散原因构成</h3><span class="wn-tag notice">提醒</span></div>
+      <div class="src">近 8 周已结束团解散原因占比 · 8 类 · 点扇区下钻</div>
       <div class="chart-box" id="wc-diss"></div>
-      <div class="chart-insight">本周主动解散占比 <b>42%</b>，连续 2 周升高（37% → 40% → 42%）。</div>
-      <div class="wd-subhead">连续升高的厅</div>
+      <div class="chart-insight">近 8 周已结束 <b>261</b> 个团：主动解散占比 <b>74%</b>（手动 65 + 离职含换厅 82 + 注销 1）；「生态违规 / 等级低于铜牌」为新增系统解散监控项；毕业 61 个不计入流失。</div>
+      <div class="wd-subhead">生态违规 / 等级低于铜牌的厅</div>
       <table class="list">
-        <thead><tr><th>大厅</th><th>当前占比</th><th>趋势</th></tr></thead>
+        <thead><tr><th>大厅</th><th>系统解散原因</th><th>数量</th></tr></thead>
         <tbody>
-          <tr><td>王者荣耀·恰逢今月</td><td style="color:#D97706;font-weight:600;">42%</td><td style="color:#D97706;">↑ 连续 2 周</td></tr>
-          <tr><td>王者荣耀·迷鹿之森</td><td style="color:#D97706;font-weight:600;">38%</td><td style="color:#D97706;">↑ 连续 2 周</td></tr>
+          <tr><td>王者荣耀·恰逢今月</td><td style="color:#DB2777;font-weight:600;">生态违规</td><td>1</td></tr>
+          <tr><td>王者荣耀·迷鹿之森</td><td style="color:#F59E0B;font-weight:600;">等级低于铜牌</td><td>1</td></tr>
         </tbody>
       </table>
-      <button class="expand-btn" onclick="drillWarn('activediss')">下钻明细 →</button>
+      <button class="expand-btn" onclick="drillWarn('dissreason')">下钻明细 →</button>
     </div>
 
     <div class="card warn-detail notice">
@@ -1880,10 +1880,16 @@ svgMultiLine(document.getElementById('wc-ret'), [
   { name: '恰逢今月', data: [74,72,69,66,63,61,60,58], color: '#DC2626' },
   { name: '橙心如意', data: [71,69,66,63,60,58,56,55], color: '#F08A8A' }
 ], 60);
-svgMultiLine(document.getElementById('wc-diss'), [
-  { name: '恰逢今月', data: [33,34,35,34,36,37,40,42], color: '#D97706' },
-  { name: '迷鹿之森', data: [30,31,32,32,34,35,37,38], color: '#E8A44A' }
-], null);
+svgDonut(document.getElementById('wc-diss'), [
+  { n:'离职解散（含换厅）', v:82, c:'#E08A5A', match:'离职' },
+  { n:'手动解散', v:65, c:'#D56060', match:'手动' },
+  { n:'毕业', v:61, c:'#16A34A', match:'毕业' },
+  { n:'任务未完成自动解散', v:47, c:'#C98A2D', match:'任务未完成' },
+  { n:'生态违规', v:2, c:'#DB2777', match:'违规' },
+  { n:'等级低于铜牌', v:2, c:'#F59E0B', match:'铜牌' },
+  { n:'注销', v:1, c:'#9CA3AF', match:'注销' },
+  { n:'其他', v:1, c:'#C0C4CC', match:'其他' },
+], '近8周结束', (name, part) => drillWarnDiss(part));
 svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
 svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
 svgBar(document.getElementById('ly-days'), [68, 52, 18, 176], '#DC2626', '#F08A8A', ['2天','3天','4天','5天'], (idx, v, label) => drillLyDays(label));
@@ -2948,7 +2954,7 @@ function openKpiDetail(metric) {
 function closeKpiDetail() { document.getElementById('kpi-detail').classList.remove('open'); }
 function openWarn(metric) {
   switchPreviewTab('warncenter', document.getElementById('side-warncenter'));
-  const map = { retention: 'wc-ret', activediss: 'wc-diss', newteam: 'wc-new', activity: 'wc-activity' };
+  const map = { retention: 'wc-ret', dissreason: 'wc-diss', newteam: 'wc-new', activity: 'wc-activity' };
   const el = document.getElementById(map[metric]);
   const card = el ? el.closest('.warn-detail') : null;
   if (card) {
@@ -2962,7 +2968,7 @@ function openWarn(metric) {
 /* ── 预警中心「下钻明细 →」示范跳转：切到概览页明细数据，高亮受影响厅的团 ── */
 const WARN_DRILL = {
   retention: { title: '姐妹团留存率预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·橙心如意'] },
-  activediss: { title: '主动解散占比预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·迷鹿之森'] },
+  dissreason: { title: '解散原因构成', halls: ['王者荣耀·恰逢今月', '王者荣耀·迷鹿之森'] },
   newteam: { title: '新成团数预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·半糖心事'] },
   activity: { title: '陪档活跃率预警', halls: ['王者荣耀·怪诞学姐', '王者荣耀·少女心事'] }
 };
@@ -3055,6 +3061,12 @@ function drillDissReason(part) {
     hit > 0
       ? `按「<b>${part.n}</b>」过滤明细数据：命中 <b>${hit}</b> 行。`
       : `未找到匹配的团 · 没有数据（「<b>${part.n}</b>」在当前明细中无对应团）。`, 'detail-sec');
+}
+
+/* 预警中心 · 解散原因构成 → 概览明细（解散原因） */
+function drillWarnDiss(part) {
+  switchPreviewTab('overview', document.getElementById('side-overview'));
+  drillDissReason(part);
 }
 
 /* 预警中心 · 躺平天数分布 / 大厅分布 → 躺平名单 */
