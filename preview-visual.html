@@ -31,7 +31,7 @@
   .guide .close{margin-left:auto;background:none;border:none;color:#8A76D6;cursor:pointer;font-size:15px;line-height:1;}
 
   /* ── 预警卡（小 KPI 窗口，点击跳对应趋势） ── */
-  .warn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .warn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
   @media(max-width:900px){.warn-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:560px){.warn-grid{grid-template-columns:1fr;}}
   .warn-card{border-radius:12px;padding:12px 14px;cursor:pointer;position:relative;transition:transform .22s ease,box-shadow .22s ease;min-height:98px;border:1px solid;border-left-width:3px;}
@@ -508,12 +508,6 @@
       <div class="foot">连续 2 周下降</div>
       <span class="go">进入预警中心 →</span>
     </div>
-    <div class="warn-card warning" onclick="openWarn('activity')">
-      <div class="top"><span class="dot amber"></span>陪档活跃率预警<span class="lvl">警告</span></div>
-      <div class="val">33.8%</div>
-      <div class="foot">陪档率整体偏低 · 近 8 日剧烈波动</div>
-      <span class="go">进入预警中心 →</span>
-    </div>
   </div>
 
   <!-- ═══════ 1.9 毕业妹妹留存（跳转入口） ═══════ -->
@@ -783,13 +777,6 @@
           <td><code>team_detail.form_date</code></td>
         </tr>
         <tr>
-          <td>陪档活跃率</td>
-          <td><span class="wn-tag warning">警告</span></td>
-          <td>陪档活跃率 = 最新快照日有陪档团 ÷ 进行中团 × 100%</td>
-          <td>陪档率 &lt; 40% 或近 8 个快照日波动 &gt; 20pp</td>
-          <td><code>team_detail.accompany_task_count</code></td>
-        </tr>
-        <tr>
           <td>躺平预警</td>
           <td><span class="wn-tag severe">严重</span></td>
           <td>进行中团连续 ≥4 天未完成陪档的团数；提醒 = 连续 1~3 天未陪档</td>
@@ -857,22 +844,6 @@
       <button class="expand-btn" onclick="drillWarn('newteam')">查看名单 →</button>
     </div>
 
-    <div class="card warn-detail warning">
-      <div class="wd-head"><h3>陪档活跃率预警</h3><span class="wn-tag warning">警告</span></div>
-      <div class="src">近 8 个快照日陪档活跃率 · 整体偏低且剧烈波动</div>
-      <div class="chart-box" id="wc-activity"></div>
-      <div class="chart-insight">最新快照日陪档率 <b>33.8%</b>，近 8 个快照日在 <b>17.6%~45.1%</b> 间剧烈波动，整体偏低。</div>
-      <div class="wd-subhead">活跃率偏低的厅</div>
-      <table class="list">
-        <thead><tr><th>大厅</th><th>陪档率</th><th>趋势</th></tr></thead>
-        <tbody>
-          <tr><td>王者荣耀·怪诞学姐</td><td style="color:#D97706;font-weight:600;">21%</td><td style="color:#D97706;">↓ 波动</td></tr>
-          <tr><td>王者荣耀·少女心事</td><td style="color:#D97706;font-weight:600;">24%</td><td style="color:#D97706;">↓ 波动</td></tr>
-        </tbody>
-      </table>
-      <button class="expand-btn" onclick="openFull('warnActivity')">查看全部受影响厅 →</button>
-      <button class="expand-btn" onclick="drillWarn('activity')">下钻明细 →</button>
-    </div>
   </div>
 
   <!-- ═══════ 破裂时间分布（姐妹关系存续时长 · 分周） ═══════ -->
@@ -1910,7 +1881,6 @@ svgMultiLine(document.getElementById('wc-ret'), [
 ], 60);
 svgLine(document.getElementById('wc-diss'), [18, 22, 25, 21, 28, 30, 27, 29], '#D97706', 'rgba(217,119,6,.12)', null, null, (idx, v) => drillWarnDiss(idx, v));
 svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
-svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
 svgBar(document.getElementById('ly-days'), [68, 52, 18, 176], '#DC2626', '#F08A8A', ['2天','3天','4天','5天'], (idx, v, label) => drillLyDays(label));
 svgBar(document.getElementById('wc-rupture'), [41, 62, 47, 50], '#D97706', '#F0B070', ['第1周(1-7天)','第2周(8-14天)','第3周(15-21天)','第4周(22-29天)'], (idx, v, label) => drillRupture(label));
 
@@ -2978,7 +2948,7 @@ function openKpiDetail(metric) {
 function closeKpiDetail() { document.getElementById('kpi-detail').classList.remove('open'); }
 function openWarn(metric) {
   switchPreviewTab('warncenter', document.getElementById('side-warncenter'));
-  const map = { retention: 'wc-ret', abnormal: 'wc-diss', newteam: 'wc-new', activity: 'wc-activity' };
+  const map = { retention: 'wc-ret', abnormal: 'wc-diss', newteam: 'wc-new' };
   const el = document.getElementById(map[metric]);
   const card = el ? el.closest('.warn-detail') : null;
   if (card) {
@@ -2993,8 +2963,7 @@ function openWarn(metric) {
 const WARN_DRILL = {
   retention: { title: '姐妹团留存率预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·橙心如意'] },
   abnormal: { title: '异常解散', halls: ['王者荣耀·恰逢今月', '王者荣耀·迷鹿之森'] },
-  newteam: { title: '新成团数预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·半糖心事'] },
-  activity: { title: '陪档活跃率预警', halls: ['王者荣耀·怪诞学姐', '王者荣耀·少女心事'] }
+  newteam: { title: '新成团数预警', halls: ['王者荣耀·恰逢今月', '王者荣耀·半糖心事'] }
 };
 function drillWarn(kind) {
   const d = WARN_DRILL[kind];
@@ -3217,18 +3186,6 @@ const FULL_LISTS = {
       ['和平精英•幸运星','<span style="font-weight:600;">1 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
       ['王者荣耀·橙心如意','<span style="font-weight:600;">1 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>'],
       ['三角洲★黄金海岸','<span style="font-weight:600;">0 个</span>','<span style="color:#D97706;">↓ 连续 2 周</span>']
-    ]
-  },
-  warnActivity: {
-    title: '活跃率偏低的厅（全量）', sub: '陪档活跃率偏低的厅 · 演示节选 Top 6 · 落地后 /api/warncenter?metric=activity 返回全量',
-    cols: ['大厅','陪档率','趋势'],
-    rows: [
-      ['王者荣耀·怪诞学姐','<span style="color:#D97706;font-weight:600;">21%</span>','<span style="color:#D97706;">↓ 波动</span>'],
-      ['王者荣耀·少女心事','<span style="color:#D97706;font-weight:600;">24%</span>','<span style="color:#D97706;">↓ 波动</span>'],
-      ['王者荣耀·迷鹿之森','<span style="color:#D97706;font-weight:600;">26%</span>','<span style="color:#D97706;">↓ 波动</span>'],
-      ['和平精英•幸运星','<span style="color:#D97706;font-weight:600;">28%</span>','<span style="color:#D97706;">↓ 波动</span>'],
-      ['王者荣耀·恰逢今月','<span style="color:#D97706;font-weight:600;">31%</span>','<span style="color:#D97706;">↓ 波动</span>'],
-      ['三角洲★黄金海岸','<span style="color:#D97706;font-weight:600;">32%</span>','<span style="color:#D97706;">↓ 波动</span>']
     ]
   },
   lyHall: {
