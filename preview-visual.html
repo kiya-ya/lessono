@@ -616,7 +616,7 @@
     </div>
     <div class="dn-notes">
       <span class="dn-tag">注意</span>
-      <span>上方 chips（团存活率）与下方柱状图（天数分布）是两套指标，请勿混读；解散原因含「毕业」（满 30 天正常流程）与流失类原因，毕业不计入解散率。</span>
+      <span>上方 chips（团存活率）与下方柱状图（天数分布）是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
     </div>
   </div>
   <div class="chart-grid">
@@ -633,9 +633,9 @@
     </div>
     <div class="card">
       <h3>解散原因分布</h3>
-      <div class="src">快照日期 2026-08-18 · 累计结束 982 个团（含毕业 234）· 点扇区下钻明细</div>
+      <div class="src">快照日期 2026-08-18 · 累计结束 995 个团（含毕业 234）· 点扇区下钻明细</div>
       <div class="chart-box" id="c-diss-reason"></div>
-      <div class="chart-insight">累计结束 <b>982</b> 个团：主因「<b>离职解散</b>」314 个（32%）；「<b>毕业</b>」234 个为满 30 天正常流程。</div>
+      <div class="chart-insight">累计结束 <b>995</b> 个团：主因「<b>离职解散</b>」314 个（32%）；「<b>毕业</b>」234 个为满 30 天正常流程；「生态违规 / 等级低于铜牌」为新增系统解散原因。</div>
     </div>
     <div class="card">
       <h3>大厅对比 TOP</h3>
@@ -899,7 +899,7 @@
       <h3>连续未陪档天数分布</h3>
       <div class="src">躺平团按连续未陪档天数分组 · 点柱下钻</div>
       <div class="chart-box" id="ly-days"></div>
-      <div class="chart-insight">连续 <b>4天</b> 18 · <b>5天</b> 34 · <b>6天</b> 43 · <b>7天</b> 24 · <b>8天及以上</b> 75。8 天以上多为全程未陪档，接近毕业或已停滞。</div>
+      <div class="chart-insight">连续 <b>4天</b> 18 · <b>5天</b> 176。连续 5 日未陪档即触发自动解散，故进行中躺平团最多到 5 天（5 天以上已在快照中归为「已解散」）。</div>
     </div>
     <div class="card">
       <h3>躺平团 · 大厅分布</h3>
@@ -927,12 +927,12 @@
     <table class="list">
       <thead><tr><th>团ID</th><th>大厅</th><th>妹妹</th><th>连续未陪档</th><th>已成团天数</th><th>等级</th></tr></thead>
       <tbody id="lying-body">
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>王牌</td></tr>
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>30 天</td><td>银牌</td></tr>
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·浪漫有约</td><td>蔷薇小白兔ෆᐝ</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>王牌</td></tr>
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·星晴少女</td><td>✨礼礼蝶影成双呢</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>29 天</td><td>金牌</td></tr>
-        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260720')">SJ20260720</td><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">17 天</td><td>28 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>三角洲★黄金海岸</td><td>大晓姐͜</td><td style="color:#DC2626;font-weight:600;">4 天</td><td>30 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260718')">SJ20260718</td><td>王者·回家的诱惑</td><td>水漾漾⋆｡˚</td><td style="color:#DC2626;font-weight:600;">5 天</td><td>30 天</td><td>银牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·秋日私语</td><td>u.uও˖⊹</td><td style="color:#DC2626;font-weight:600;">4 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·浪漫有约</td><td>蔷薇小白兔ෆᐝ</td><td style="color:#DC2626;font-weight:600;">5 天</td><td>29 天</td><td>王牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260719')">SJ20260719</td><td>王者荣耀·星晴少女</td><td>✨礼礼蝶影成双呢</td><td style="color:#DC2626;font-weight:600;">4 天</td><td>29 天</td><td>金牌</td></tr>
+        <tr><td style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam('SJ20260720')">SJ20260720</td><td>王者荣耀天才少女</td><td>Tc.小稀-贴贴</td><td style="color:#DC2626;font-weight:600;">5 天</td><td>28 天</td><td>王牌</td></tr>
       </tbody>
     </table>
     <button class="expand-btn" onclick="openFull('lying')">查看全部躺平名单（194 个）→</button>
@@ -1868,8 +1868,10 @@ svgDonut(document.getElementById('c-diss-reason'), [
   { n:'手动解散', v:248, c:'#D56060', match:'手动' },
   { n:'毕业', v:234, c:'#16A34A', match:'毕业' },
   { n:'任务未完成自动解散', v:178, c:'#C98A2D', match:'任务未完成' },
+  { n:'生态违规', v:9, c:'#DB2777', match:'违规' },
+  { n:'等级低于铜牌', v:6, c:'#F59E0B', match:'铜牌' },
   { n:'注销', v:5, c:'#9CA3AF', match:'注销' },
-  { n:'其他', v:3, c:'#C0C4CC', match:'其他' },
+  { n:'其他', v:1, c:'#C0C4CC', match:'其他' },
 ], '累计结束', (name, part) => drillDissReason(part));
 
 /* 预警中心图表 */
@@ -1883,7 +1885,7 @@ svgMultiLine(document.getElementById('wc-diss'), [
 ], null);
 svgBar(document.getElementById('wc-new'), [22,20,18,19,17,15,14,12], '#7C5CFF', '#6D4FE0', null);
 svgLine(document.getElementById('wc-activity'), [45, 20, 31, 31, 41, 28, 18, 34], '#16A34A', 'rgba(22,163,74,.12)', null, null);
-svgBar(document.getElementById('ly-days'), [18, 34, 43, 24, 75], '#DC2626', '#F08A8A', ['4天','5天','6天','7天','8天+'], (idx, v, label) => drillLyDays(label));
+svgBar(document.getElementById('ly-days'), [18, 176], '#DC2626', '#F08A8A', ['4天','5天'], (idx, v, label) => drillLyDays(label));
 
 /* 厅分析 · 揭示面板趋势 */
 svgLine(document.getElementById('cmp-hf-ret'), [74,72,71,70,71,72,71,72], '#7C5CFF', 'rgba(124,92,255,.12)', null, {v:70, label:'平台均值 70%'});
@@ -2968,10 +2970,10 @@ function drillWarn(kind) {
     if (match) { tr.style.opacity = ''; tr.style.background = '#F3F0FF'; hit++; }
     else { tr.style.opacity = '.35'; tr.style.background = ''; }
   });
-  document.getElementById('dfb-label').textContent = '预警下钻';
-  document.getElementById('dfb-note').innerHTML =
-    `按「${d.title}」受影响厅筛选：<b>${d.halls.join(' / ')}</b>，命中 <b>${hit}</b> 个团（高亮 = 命中，半透明 = 非命中）。` +
-    (hit === 0 ? '演示数据中该厅暂无团，落地后按厅过滤 <code>/api/detail-table?hall=xxx</code> 返回真实名单。' : '');
+  document.getElementById('dfb-label').textContent = hit > 0 ? '预警下钻' : '预警下钻 · 未命中';
+  document.getElementById('dfb-note').innerHTML = hit > 0
+    ? `按「${d.title}」受影响厅筛选：<b>${d.halls.join(' / ')}</b>，命中 <b>${hit}</b> 个团（高亮 = 命中，半透明 = 非命中）。`
+    : `未找到匹配的团 · 没有数据（${d.halls.join(' / ')} 在当前明细中无对应团，落地后按厅过滤 <code>/api/detail-table?hall=xxx</code> 返回真实名单）。`;
   document.getElementById('detail-filter-bar').style.display = 'flex';
   setTimeout(() => document.getElementById('detail-sec').scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
 }
@@ -3035,14 +3037,18 @@ function drillSurv(label) {
     const d = parseInt(tr.dataset.age || '');
     return !isNaN(d) && d >= lo && d <= hi;
   });
-  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', '天数分布下钻',
-    `按「已成团天数 <b>${label}</b>」过滤明细数据：命中 <b>${hit}</b> 行（演示数据仅节选 7 条，落地后按 <code>/api/detail-table?days=</code> 返回真实名单）。`, 'detail-sec');
+  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', hit > 0 ? '天数分布下钻' : '天数分布下钻 · 未命中',
+    hit > 0
+      ? `按「已成团天数 <b>${label}</b>」过滤明细数据：命中 <b>${hit}</b> 行。`
+      : `未找到匹配的团 · 没有数据（已成团天数 <b>${label}</b> 在当前明细中无对应团）。`, 'detail-sec');
 }
 /* 概览 · 解散原因 → 明细数据（解散原因） */
 function drillDissReason(part) {
   const hit = dimMatch('#detail-body', tr => (tr.dataset.reason || '').includes(part.match));
-  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', '解散原因下钻',
-    `按「<b>${part.n}</b>」过滤明细数据：命中 <b>${hit}</b> 行（演示数据仅节选 7 条，落地后按 <code>/api/detail-table?reason=xxx</code> 返回真实名单）。`, 'detail-sec');
+  showBar('detail-filter-bar', 'dfb-label', 'dfb-note', hit > 0 ? '解散原因下钻' : '解散原因下钻 · 未命中',
+    hit > 0
+      ? `按「<b>${part.n}</b>」过滤明细数据：命中 <b>${hit}</b> 行。`
+      : `未找到匹配的团 · 没有数据（「<b>${part.n}</b>」在当前明细中无对应团）。`, 'detail-sec');
 }
 
 /* 预警中心 · 躺平天数分布 / 大厅分布 → 躺平名单 */
@@ -3054,7 +3060,7 @@ function drillLyDays(label) {
     return isPlus ? d >= day : d === day;
   });
   showBar('lying-filter-bar', 'lying-flabel', 'lying-fnote', '躺平天数下钻',
-    `按「连续未陪档 <b>${label}</b>」过滤躺平名单：命中 <b>${hit}</b> 行（演示名单仅节选 Top6 均 17 天，落地后按 <code>/api/lying-flat?days=</code> 返回真实 194 条）。`, null);
+    `按「连续未陪档 <b>${label}</b>」过滤躺平名单：命中 <b>${hit}</b> 行（演示名单仅节选 Top6，连续 4~5 天，落地后按 <code>/api/lying-flat?days=</code> 返回真实 194 条）。`, null);
 }
 function drillLyHall(hall) {
   const hit = dimMatch('#lying-body', tr => tr.cells[1] ? tr.cells[1].textContent.includes(hall) : false);
@@ -3098,14 +3104,14 @@ const FULL_LISTS = {
     title: '躺平团名单（全量）', sub: '共 194 个躺平团 · 演示节选 10 条（按连续未陪档天数降序）',
     cols: ['团ID','大厅','妹妹','连续未陪档','已成团天数','等级'],
     rows: [
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','三角洲★黄金海岸','大晓姐͜','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','王牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','王者·回家的诱惑','水漾漾⋆｡˚','<span style="color:#DC2626;font-weight:600;">17 天</span>','30 天','银牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·秋日私语','u.uও˖⊹','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·浪漫有约','蔷薇小白兔ෆᐝ','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','王牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·星晴少女','✨礼礼蝶影成双呢','<span style="color:#DC2626;font-weight:600;">17 天</span>','29 天','金牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260720\')">SJ20260720</span>','王者荣耀天才少女','Tc.小稀-贴贴','<span style="color:#DC2626;font-weight:600;">17 天</span>','28 天','王牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260806\')">SJ20260806</span>','王者荣耀·恰逢今月','甜心小鹿','<span style="color:#DC2626;font-weight:600;">6 天</span>','12 天','金牌'],
-      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260809\')">SJ20260809</span>','王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">5 天</span>','9 天','银牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','三角洲★黄金海岸','大晓姐͜','<span style="color:#DC2626;font-weight:600;">5 天</span>','30 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260718\')">SJ20260718</span>','王者·回家的诱惑','水漾漾⋆｡˚','<span style="color:#DC2626;font-weight:600;">5 天</span>','30 天','银牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·秋日私语','u.uও˖⊹','<span style="color:#DC2626;font-weight:600;">5 天</span>','29 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·浪漫有约','蔷薇小白兔ෆᐝ','<span style="color:#DC2626;font-weight:600;">5 天</span>','29 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260719\')">SJ20260719</span>','王者荣耀·星晴少女','✨礼礼蝶影成双呢','<span style="color:#DC2626;font-weight:600;">5 天</span>','29 天','金牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260720\')">SJ20260720</span>','王者荣耀天才少女','Tc.小稀-贴贴','<span style="color:#DC2626;font-weight:600;">5 天</span>','28 天','王牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260806\')">SJ20260806</span>','王者荣耀·恰逢今月','甜心小鹿','<span style="color:#DC2626;font-weight:600;">4 天</span>','12 天','金牌'],
+      ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260809\')">SJ20260809</span>','王者荣耀·迷鹿之森','软软','<span style="color:#DC2626;font-weight:600;">4 天</span>','9 天','银牌'],
       ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260811\')">SJ20260811</span>','和平精英•幸运星','奶糖','<span style="color:#DC2626;font-weight:600;">4 天</span>','29 天','王牌'],
       ['<span style="color:#5B3EC4;font-weight:500;cursor:pointer;" onclick="openTeam(\'SJ20260816\')">SJ20260816</span>','王者荣耀·怪诞学姐','阿梨','<span style="color:#DC2626;font-weight:600;">4 天</span>','8 天','铜牌']
     ]
