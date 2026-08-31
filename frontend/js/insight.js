@@ -73,10 +73,11 @@ function renderCaptainTable() {
     const th = (field, label) =>
       `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
     tableEl.innerHTML = `
-      <tr><th>#</th><th>姐姐</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
+      <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
       ${pageData.map((c, i) => `<tr>
         <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-        <td>${c.nickname} <span style="color:var(--wb-text-3);font-size:11px">(${c.uid})</span></td>
+        <td>${c.nickname}</td>
+        <td>${c.uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${c.uid}')" style="color:#7C5CFF;text-decoration:none;">${c.uid}</a>` : '-'}</td>
         <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
         <td>${wbFmtMoney(c.total_reward)}</td>
       </tr>`).join('')}`;
@@ -325,10 +326,11 @@ function renderSisterProfile() {
   const tag = x => x === 'head' ? '<span class="chip up">头部</span>' : x === 'risk' ? '<span class="chip down">风险</span>' : '<span class="chip flat">普通</span>';
   const wow = v => v == null ? '—' : `<span class="chip ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${v > 0 ? '+' : ''}${v}%</span>`;
   document.getElementById('sister-profile-table').innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>持续率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
+    <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>持续率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td>${x.sister_uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid}')" style="color:#7C5CFF;text-decoration:none;">${x.sister_uid}</a>` : '-'}</td>
       <td>${x.sister_level ?? '-'}</td>
       <td>${wbFmtMoney(x.week_rev)}</td>
       <td>${wow(x.rev_wow)}</td>
@@ -355,6 +357,7 @@ function renderSisterProfile() {
 
 /* 姐姐下钻：带团明细 + 流水曲线 */
 let sdUid = '';
+let sdTeams = [];
 
 async function openSisterDetail(uid) {
   sdUid = uid || '';
@@ -420,14 +423,15 @@ async function openSisterDetail(uid) {
     } else {
       el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9CA3AF;font-size:12px;">暂无流水数据</div>';
     }
+    sdTeams = d.teams || [];
     document.getElementById('sd-table').innerHTML = `
       <tr><th>团ID</th><th>大厅</th><th>成团天</th><th>状态</th><th>妹妹</th><th>奖励</th></tr>
-      ${(d.teams || []).map(t => `<tr>
-        <td>${t.team_id}</td>
+      ${sdTeams.map((t, i) => `<tr>
+        <td><a href="javascript:void(0)" onclick="openSDTeamDetail(${i})" style="color:#7C5CFF;text-decoration:none;">#${t.team_id}</a></td>
         <td>${t.hall_name || '-'}</td>
         <td>${t.days_since_formed ?? '-'}天</td>
         <td>${t.status === 'active' ? '<span class="chip up">进行中</span>' : '<span class="chip flat">已解散</span>'}</td>
-        <td>${t.sister2 || '-'}</td>
+        <td>${t.sister_uid2 ? `<a href="javascript:void(0)" onclick="closeSisterDetail();jumpToUID('${t.sister_uid2}')" style="color:#7C5CFF;text-decoration:none;">${t.sister2 || t.sister_uid2}</a> <span style="color:var(--wb-text-3);font-size:11px">(${t.sister_uid2})</span>` : (t.sister2 || '-')}</td>
         <td>${wbFmtMoney(t.reward_amount)}</td>
       </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#9CA3AF;padding:16px;">暂无带团记录</td></tr>'}`;
   } catch (e) { console.error('姐姐下钻失败:', e); document.getElementById('sd-name').textContent = '加载失败'; }
@@ -440,6 +444,13 @@ function closeSisterDetail() {
 
 function sdGoUID() {
   if (sdUid) { closeSisterDetail(); jumpToUID(sdUid); }
+}
+
+function openSDTeamDetail(i) {
+  const t = sdTeams && sdTeams[i];
+  if (!t) return;
+  closeSisterDetail();
+  if (typeof renderTeamDetailModal === 'function') renderTeamDetailModal(t);
 }
 
 /* ═══════════════ 候选池（阶段B）：并列展示四因子证据 + 结果记录 ═══════════════ */
@@ -524,10 +535,11 @@ function renderTalentPool() {
   const page = list.slice(start, start + poolPerPage);
   const cand = c => c ? '<span class="chip up">候选</span>' : '<span class="chip flat">待观察</span>';
   document.getElementById('pool-table').innerHTML = `
-    <tr><th>#</th>${th(null, '姐姐')}${th('level_rank', '牌子等级')}${th('total_teams', '带团(总/进行)')}${th('retention', '持续率')}${th('sister_growth', '妹妹成长(分/月)')}${th('joint_growth', '培养升牌率')}${th('total_score', '培养力总分')}<th>状态</th><th>操作</th></tr>
+    <tr><th>#</th>${th(null, '姐姐')}${th(null, '姐姐UID')}${th('level_rank', '牌子等级')}${th('total_teams', '带团(总/进行)')}${th('retention', '持续率')}${th('sister_growth', '妹妹成长(分/月)')}${th('joint_growth', '培养升牌率')}${th('total_score', '培养力总分')}<th>状态</th><th>操作</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
+      <td>${x.sister_uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid}')" style="color:#7C5CFF;text-decoration:none;">${x.sister_uid}</a>` : '-'}</td>
       <td>${x.level ?? '-'}</td>
       <td>${x.total_teams} / ${x.active_teams}</td>
       <td>${x.retention == null ? '—' : x.retention + '%'}</td>
@@ -536,7 +548,7 @@ function renderTalentPool() {
       <td style="font-weight:600;">${x.total_score == null ? '—' : x.total_score}</td>
       <td>${cand(x.candidate)}</td>
       <td><button class="mini-btn" onclick="openTalentActionModal('${x.sister_uid || ''}')">记录</button></td>
-    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:#9CA3AF;padding:16px;">暂无数据</td></tr>'}`;
+    </tr>`).join('') || '<tr><td colspan="11" style="text-align:center;color:#9CA3AF;padding:16px;">暂无数据</td></tr>'}`;
   const pg = document.getElementById('pool-pagination');
   if (pg) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${poolPage + 1}/${totalPages} 页</span>`;

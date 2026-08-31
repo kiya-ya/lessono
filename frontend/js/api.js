@@ -165,9 +165,7 @@ function clearDateFilter() {
   loadDetailTable(1);
 }
 
-function openTeamDetail(idx) {
-  const row = _detailRows && _detailRows[idx];
-  if (!row) return;
+function renderTeamDetailModal(row) {
   _tdSisterUid = row.sister_uid || '';
   _tdTeamId = row.team_id || '';
   document.getElementById('td-team-id').textContent = '#' + (row.team_id || '-');
@@ -184,10 +182,16 @@ function openTeamDetail(idx) {
       <div class="team-detail-item"><span class="team-detail-label">💥 解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
     </div>
     <div class="team-members">
-      <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: ${row.sister_uid || '--'}</div></div></div>
-      <div class="team-member"><div class="member-badge" style="background:#f6a6c1;">妹</div><div class="member-info"><div class="member-name">${row.sister_nickname2 || '--'}</div><div class="member-uid">UID: ${row.sister_uid2 || '--'}</div></div></div>
+      <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid || '--'}</a></div></div></div>
+      <div class="team-member"><div class="member-badge" style="background:#f6a6c1;">妹</div><div class="member-info"><div class="member-name">${row.sister_nickname2 || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid2 || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid2 || '--'}</a></div></div></div>
     </div>`;
   document.getElementById('team-detail-modal').classList.add('active');
+}
+
+function openTeamDetail(idx) {
+  const row = _detailRows && _detailRows[idx];
+  if (!row) return;
+  renderTeamDetailModal(row);
 }
 
 function closeTeamDetail() {

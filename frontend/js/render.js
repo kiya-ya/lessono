@@ -388,7 +388,7 @@ function renderTeamInfo(data) {
       <div class="member-badge">姐</div>
       <div class="member-info">
         <div class="member-name">${t.sister_nickname || '--'}</div>
-        <div class="member-uid">UID: ${t.sister_uid || '--'}</div>
+        <div class="member-uid">UID: ${t.sister_uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${t.sister_uid}')" style="color:#7C5CFF;text-decoration:none;">${t.sister_uid}</a>` : '--'}</div>
       </div>
     </div>`;
 
@@ -401,7 +401,7 @@ function renderTeamInfo(data) {
           <div class="member-badge" style="background:#f6a6c1;">妹${i + 1}</div>
           <div class="member-info">
             <div class="member-name">${bs.nickname || bs.team_info?.sister_nickname2 || '--'}</div>
-            <div class="member-uid">UID: ${bs.uid || bs.team_info?.sister_uid2 || '--'}</div>
+            <div class="member-uid">UID: ${(() => { const u = bs.uid || bs.team_info?.sister_uid2; return u ? `<a href="javascript:void(0)" onclick="jumpToUID('${u}')" style="color:#7C5CFF;text-decoration:none;">${u}</a>` : '--'; })()}</div>
           </div>
         </div>`;
     }
@@ -411,7 +411,7 @@ function renderTeamInfo(data) {
         <div class="member-badge" style="background:#f6a6c1;">妹</div>
         <div class="member-info">
           <div class="member-name">${t.sister_nickname2 || '--'}</div>
-          <div class="member-uid">UID: ${t.sister_uid2 || '--'}</div>
+          <div class="member-uid">UID: ${t.sister_uid2 ? `<a href="javascript:void(0)" onclick="jumpToUID('${t.sister_uid2}')" style="color:#7C5CFF;text-decoration:none;">${t.sister_uid2}</a>` : '--'}</div>
         </div>
       </div>`;
   }
@@ -462,7 +462,7 @@ function renderBoundSisters(data) {
     const statusColor = t.status === '进行中' ? '#3D9A6C' : '#D56060';
     html += `<tr>
       <td>${s.nickname || '--'}</td>
-      <td>${s.uid || '--'}</td>
+      <td>${s.uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${s.uid}')" style="color:#7C5CFF;text-decoration:none;">${s.uid}</a>` : '--'}</td>
       <td>${t.hall_name || '--'}</td>
       <td style="color:${statusColor}; font-weight:600;">${t.status || '--'}</td>
       <td>${t.form_date || '--'}</td>

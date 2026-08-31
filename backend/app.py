@@ -1439,7 +1439,9 @@ def api_sister_detail():
     act = conn.execute(f"SELECT SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG({DAYS_SINCE_FORMED_SQL}) AS avg_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}", [uid]).fetchone()
     pres = conn.execute("SELECT COUNT(DISTINCT snapshot_date) AS presence_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ?", [uid]).fetchone()
     teams = conn.execute(f"""
-        SELECT team_id, hall_name, {DAYS_SINCE_FORMED_SQL} AS days_since_formed, reward_amount, dissolve_date, sister_nickname2
+        SELECT team_id, hall_name, {DAYS_SINCE_FORMED_SQL} AS days_since_formed, reward_amount, dissolve_date,
+               sister_uid, sister_nickname, sister_uid2, sister_nickname2, form_date,
+               ({DISSOLVE_REASON_CASE}) AS dissolve_reason
         FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}
         ORDER BY CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 0 ELSE 1 END, days_since_formed DESC
     """, [uid]).fetchall()
@@ -1473,6 +1475,10 @@ def api_sister_detail():
             'days_since_formed': t['days_since_formed'], 'reward_amount': t['reward_amount'],
             'status': 'active' if (not t['dissolve_date'] or t['dissolve_date'] == '') else 'dissolved',
             'sister2': t['sister_nickname2'],
+            'sister_uid': t['sister_uid'], 'sister_nickname': t['sister_nickname'],
+            'sister_uid2': t['sister_uid2'], 'sister_nickname2': t['sister_nickname2'],
+            'form_date': t['form_date'], 'dissolve_date': t['dissolve_date'],
+            'dissolve_reason': t['dissolve_reason'],
         } for t in teams],
         'daily': [{'date': d['snapshot_date'], 'rev': d['rev'] or 0} for d in daily],
         'weekly': [{'week': w['week_start'], 'rev': w['rev'] or 0} for w in weekly],
