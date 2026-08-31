@@ -49,9 +49,9 @@ function wbScrollTo(id) {
 }
 
 /* ─────────────── 健康度判定 ───────────────
-   🔴 留存环比 ≤ -10pp，或流水环比 ≤ -20%，或连续2周新成团=0
-   🟡 留存环比 -5~-10pp，或流水环比 -10%~-20%
-   🟢 其余                                              */
+   红：留存环比 ≤ -10pp，或流水环比 ≤ -20%，或连续2周新成团=0
+   黄：留存环比 -5~-10pp，或流水环比 -10%~-20%
+   绿：其余                                        */
 function wbHealth(weeks) {
   if (!weeks || weeks.length < 2) return 'green';
   const prev = weeks[weeks.length - 2], last = weeks[weeks.length - 1];
@@ -611,7 +611,7 @@ function wbRenderInsights(data) {
   // 留存率（越高越好）
   const ret = last.retention_rate || 0, retP = prev ? (prev.retention_rate || 0) : ret;
   const retD = dPct(ret, retP);
-  const retTag = ret >= 60 ? '🟢 健康' : ret >= 40 ? '🟡 一般' : '🔴 偏低';
+  const retTag = ret >= 60 ? '健康' : ret >= 40 ? '一般' : '偏低';
   let retHtml = `本周 <b>${Math.round(ret)}%</b>（较上周 ${retD >= 0 ? '+' : ''}${retD}pp）· ${retTag}`;
   if (ins.retention) {
     if (ins.retention.best_hall) {
@@ -624,7 +624,7 @@ function wbRenderInsights(data) {
   // 解散率（越低越好）
   const dis = last.dissolution_rate || 0, disP = prev ? (prev.dissolution_rate || 0) : dis;
   const disD = dPct(dis, disP);
-  const disTag = dis <= 20 ? '🟢 低位' : dis <= 30 ? '🟡 正常' : '🔴 偏高';
+  const disTag = dis <= 20 ? '低位' : dis <= 30 ? '正常' : '偏高';
   let disHtml = `本周 <b>${dis}%</b>（较上周 ${disD >= 0 ? '+' : ''}${disD}pp）· ${disTag}`;
   if (ins.dissolution && ins.dissolution.count) {
     disHtml += ` · 解散 ${ins.dissolution.count} 个，主因「${ins.dissolution.top_reason}」${ins.dissolution.top_reason_count} 个`;

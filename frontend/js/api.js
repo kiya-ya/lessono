@@ -175,9 +175,9 @@ function renderTeamDetailModal(row) {
   document.getElementById('td-body').innerHTML = `
     <div class="team-detail-grid">
       <div class="team-detail-item"><span class="team-detail-label">大厅名称</span><span class="team-detail-value">${row.hall_name || '--'}</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">📅 成团日期</span><span class="team-detail-value">${row.form_date || '--'}</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">⏱ 已成团天数</span><span class="team-detail-value">${row.days_since_formed || 0} 天</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">🎁 奖励金额</span><span class="team-detail-value">¥${(row.reward_amount || 0).toLocaleString()}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">成团日期</span><span class="team-detail-value">${row.form_date || '--'}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">已成团天数</span><span class="team-detail-value">${row.days_since_formed || 0} 天</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">奖励金额</span><span class="team-detail-value">¥${(row.reward_amount || 0).toLocaleString()}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">状态</span><span class="team-detail-value" style="color:${statusColor};font-weight:600;">${statusIcon} ${status}${row.dissolve_date ? ' (' + row.dissolve_date + ')' : ''}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
     </div>

@@ -180,7 +180,7 @@ async function loadSisterProfile() {
     const s = d.summary || {};
     sumEl.innerHTML = `
       <span class="survival-chip">姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
-      <span class="survival-chip">🏆 头部 <strong>${s.head_count}</strong> 位</span>
+      <span class="survival-chip">头部 <strong>${s.head_count}</strong> 位</span>
       <span class="survival-chip">风险 <strong>${s.risk_count}</strong> 位</span>
       <span class="survival-chip">本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
     const insEl = document.getElementById('sister-profile-insight');

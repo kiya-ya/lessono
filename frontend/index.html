@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=45">
+<link rel="stylesheet" href="css/style.css?v=46">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -497,36 +497,6 @@
       </div>
     </div>
     <div id="compare-main">
-    <!-- 常驻自选对比条：任选两厅对比，结果内嵌展开 -->
-    <div class="chart-card" id="cmp-bar-card">
-      <h3>自选对比</h3>
-      <div class="cmp-bar">
-        <label>厅 A</label>
-        <select id="cmp-hall-a" class="wb-select cmp-select"></select>
-        <button class="cmp-swap" onclick="swapCmpHalls()" title="交换 A/B"></button>
-        <label>厅 B</label>
-        <select id="cmp-hall-b" class="wb-select cmp-select"></select>
-        <button class="btn-save" onclick="runHallCompare()">生成对比</button>
-        <button class="mini-btn" onclick="collapseCmpResult()" title="收起结果" style="margin-left:auto;">收起结果</button>
-      </div>
-      <div class="chart-src">点击大厅柱 → 自动填入 A 厅；选定 B 后点「生成对比」在下方展开逐项对比</div>
-    </div>
-    <!-- 对比结果区：生成后展开，6 张对垒卡，点卡弹层看周趋势 -->
-    <div class="chart-card" id="cmp-result" style="display:none;position:relative;">
-      <h3><span id="cmp-title">—</span></h3>
-      <div class="chart-src">本周快照（两厅各自最新周报）· 点卡片查看该指标周趋势</div>
-      <div class="cmp-cards" id="cmp-cards"></div>
-      <div class="cmp-popover" id="cmp-popover" style="display:none;">
-        <div class="cmp-popover-head">
-          <h3 id="cmp-popover-title">—</h3>
-          <button class="kpi-detail-close" onclick="closeCmpPopover()" title="收起">✕</button>
-        </div>
-        <div class="cmp-popover-grid">
-          <div class="chart-box" id="cmp-popover-chart" style="height:240px;"></div>
-          <div class="kpi-detail-table" id="cmp-popover-table"></div>
-        </div>
-      </div>
-    </div>
     <!-- 常驻导航：各大厅数据对比 -->
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -587,7 +557,6 @@
       <div class="chart-src" style="margin-top:10px;">点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
       <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
       <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-        <button class="mini-btn" onclick="setCmpHallABtn()" title="把该厅填入顶部自选对比 A 厅">设为对比 A</button>
         <button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button>
       </div>
     </div>
@@ -1037,12 +1006,12 @@
 
 <script src="js/config.js?v=44"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=57"></script>
+<script src="js/api.js?v=58"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=55"></script>
+<script src="js/render.js?v=56"></script>
 <script src="js/app.js?v=61"></script>
-<script src="js/workbench.js?v=56"></script>
-<script src="js/insight.js?v=57"></script>
+<script src="js/workbench.js?v=57"></script>
+<script src="js/insight.js?v=58"></script>
 <script src="js/warncenter.js?v=3"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>

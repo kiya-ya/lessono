@@ -74,10 +74,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
 .compare-table .col-change.up { color: #52c41a; }
 .compare-table .col-change.down { color: #ff4d4f; }
 .compare-table .col-change.flat { color: #999; }
-.compare-table .col-trend { font-size: 16px; }
-.compare-table .col-trend.up::after { content: '🟢'; }
-.compare-table .col-trend.down::after { content: '🔴'; }
-.compare-table .col-trend.flat::after { content: '⚪'; }
+.compare-table .col-trend { font-size: 13px; }
 
 .uid-loading { text-align: center; padding: 40px; color: #888; font-size: 14px; }
 .uid-error { background: #fff2f0; border: 1px solid #ffccc7; border-radius: 6px; padding: 16px; color: #cf1322; font-size: 13px; }
@@ -841,56 +838,6 @@ td.num, th.num {
 }
 .wb-input.wb-search { width: 150px; }
 .search-box .wb-select { padding: 8px 12px; font-size: 13px; }
-
-/* 自选对比 */
-.cmp-open {
-  border: none; background: var(--wb-grad); color: #fff;
-  padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
-  box-shadow: 0 2px 8px rgba(124,92,255,.25);
-}
-.cmp-open:hover { background: var(--wb-grad-hover); }
-.cmp-content { max-height: 90vh; overflow-y: auto; }
-.cmp-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
-.cmp-bar label { font-size: 12px; color: var(--wb-text-2); }
-.cmp-select { min-width: 200px; max-width: 260px; }
-.cmp-swap { border: 1px solid var(--wb-line); background: #fff; color: var(--wb-text-2); border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 13px; }
-.cmp-swap:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
-.cmp-two { display: flex; align-items: baseline; gap: 6px; font-size: 18px; flex-wrap: wrap; margin: 2px 0 6px; }
-/* A/B 身份色恒定：A 紫、B 绿；赢家用 👑 + 加粗标记，不再改色 */
-.cmp-a { color: #7C5CFF; font-weight: 600; }
-.cmp-b { color: #3D9A6C; font-weight: 600; }
-.cmp-sep { font-size: 10px; color: var(--wb-text-3); }
-.cmp-a.cmp-win, .cmp-b.cmp-win { font-weight: 800; }
-.cmp-name { margin-left: auto; font-size: 10px; color: var(--wb-text-3); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* 常驻自选对比条 */
-#cmp-bar-card { margin-bottom: 12px; }
-#cmp-bar-card .cmp-bar { margin: 12px 0 4px; }
-#cmp-result h3 { font-size: 15px; }
-#cmp-result .cmp-title { color: var(--wb-accent); }
-/* 6 张对垒卡 + 弹层 */
-.cmp-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.cmp-cards .kpi-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); border: 1px solid var(--wb-line); position: relative; overflow: hidden; cursor: pointer; padding: 14px 16px; }
-.cmp-cards .kpi-card:hover { transform: none; border-color: var(--wb-accent); }
-.cmp-cards .kpi-card.expanded { border-color: var(--wb-accent); box-shadow: 0 0 0 3px rgba(124,92,255,.15); }
-.cmp-cards .kpi-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
-.cmp-cards .kpi-card.acc-green::before { background: linear-gradient(90deg, #3D9A6C, #7DD3A0); }
-.cmp-cards .kpi-card.acc-red::before { background: linear-gradient(90deg, #D56060, #F0A3A3); }
-.cmp-cards .kpi-card.acc-gold::before { background: linear-gradient(90deg, #C98A2D, #E5B968); }
-.cmp-cards .kpi-card.acc-violet::before { background: linear-gradient(90deg, #7C5CFF, #A78BFA); }
-.cmp-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.cmp-card-top .kpi-label { margin-bottom: 0; }
-.cmp-lead { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-.cmp-lead.win-a { color: #7C5CFF; background: #F1EDFF; }
-.cmp-lead.win-b { color: #2E7D4F; background: #E8F5EE; }
-.cmp-lead.flat { color: var(--wb-text-2); background: #F0F1F4; }
-.cmp-race { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #F0F1F4; margin: 2px 0 6px; }
-.cmp-race-a { background: linear-gradient(90deg, #7C5CFF, #8F7BFF); height: 100%; }
-.cmp-race-b { background: linear-gradient(90deg, #3D9A6C, #6BC48E); height: 100%; }
-.cmp-popover { position: absolute; z-index: 30; width: 600px; max-width: 94%; background: #fff; border: 1px solid var(--wb-line); border-radius: 12px; box-shadow: 0 16px 40px rgba(26,29,38,.20); padding: 14px 16px; animation: kpiDetailIn .18s ease; }
-.cmp-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.cmp-popover-head h3 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-.cmp-popover-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 8px; align-items: start; }
-.cmp-popover-grid .kpi-detail-table { overflow: auto; }
 
 /* 对比分析：厅分析揭示面板 */
 .hall-focus { margin-top: 12px; }

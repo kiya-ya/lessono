@@ -9,7 +9,6 @@ async function initCompareChart() {
     renderHallComparePage();
     renderHallShare();
     renderHallRevenueTrend();
-    if (typeof initCmpBar === 'function') initCmpBar();
     // 跨页下钻：概览厅排行榜点行 → goPage 写入 state.pending，这里消费一次展开该厅分析
     if (state.pending && state.pending.hall && state.page === 'compare') {
       const hall = state.pending.hall;
@@ -203,7 +202,7 @@ function renderHfCards(hall, trend) {
   const last = trend[trend.length - 1] || {};
   const metrics = [
     { label: '进行中团数', v: hall.active_count, unit: ' 个', accent: 'acc-green' },
-    { label: '🧱 总团数', v: hall.team_count, unit: ' 个', accent: 'acc-violet' },
+    { label: '总团数', v: hall.team_count, unit: ' 个', accent: 'acc-violet' },
     { label: '解散数', v: hall.dissolved_count, unit: ' 个', accent: 'acc-red' },
     { label: '本周流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
     { label: '留存率（最近周）', v: last.retention_rate, pct: true, accent: 'acc-green' },
@@ -260,7 +259,7 @@ async function openWeekDrill(hallName, weekStart, weekEnd, weekLabel) {
   if (!drill) return;
   drill.style.display = '';
   drill.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-    <b>📌 ${hallName} · ${weekLabel} 周团明细</b>
+    <b>${hallName} · ${weekLabel} 周团明细</b>
     <span style="font-size:12px;color:var(--wb-text-3);">点趋势图任一周数据点查看该周情况</span>
   </div>`;
   try {
@@ -277,7 +276,7 @@ async function openWeekDrill(hallName, weekStart, weekEnd, weekLabel) {
         <span class="chip flat">周末存活 ${d.active_end ?? '—'} 个</span>
       </div>
       <div class="chart-grid" style="margin-top:6px;">
-        <div class="chart-card"><h3>🆕 该周新成团</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">成团日</th></tr></thead><tbody>${
+        <div class="chart-card"><h3>该周新成团</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">成团日</th></tr></thead><tbody>${
           newL.length ? newL.map(row).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--wb-text-3);padding:12px;">本周无新成团</td></tr>'
         }</tbody></table></div>
         <div class="chart-card"><h3>该周解散（含原因）</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">解散日</th><th>原因</th></tr></thead><tbody>${
@@ -311,13 +310,13 @@ function renderHfWeekTable(trend) {
   const fmt = (v, m) => m.unit === ' 元' ? '¥' + Number(v).toFixed(0) : Number(v).toFixed(m.unit === '%' ? 1 : 0) + m.unit;
   el.innerHTML = metrics.map(m => {
     const bv = getVal(b, m), av = getVal(a, m);
-    let diff = '—', cls = 'flat', trendIcon = '⚪';
+    let diff = '—', cls = 'flat', trendIcon = '<span class="dot" style="background:var(--wb-text-3)"></span>';
     if (b) {
       const d = av - bv;
       diff = (d > 0 ? '+' : '') + (m.unit === ' 元' ? '¥' + Number(d).toFixed(0) : Number(d).toFixed(m.unit === '%' ? 1 : 0) + m.unit);
       const good = m.reverse ? d < 0 : d > 0;
       cls = d === 0 ? 'flat' : good ? 'up' : 'down';
-      trendIcon = d === 0 ? '⚪' : good ? '🟢' : '🔴';
+      trendIcon = d === 0 ? '<span class="dot" style="background:var(--wb-text-3)"></span>' : good ? '<span class="dot green"></span>' : '<span class="dot red"></span>';
     }
     return `<tr><td>${m.name}</td><td class="num">${fmt(bv, m)}</td><td class="num">${fmt(av, m)}</td><td class="num dt-diff ${cls}">${diff}</td><td>${trendIcon}</td></tr>`;
   }).join('');
@@ -468,13 +467,13 @@ function renderUIDResult(data) {
   document.getElementById('res-hist-level').textContent = thisData.hist_best_level || '--';
 
   const rows = [
-    { key: 'week_level', label: '⭐ 当周队长等级', fmt: v => v || '--' },
-    { key: 'week_schedule_days', label: '📅 当周排档天数', fmt: v => v + '天', isNum: true },
-    { key: 'daily_task_count', label: '📋 每日任务完成', fmt: v => v + '次', isNum: true },
+    { key: 'week_level', label: '当周队长等级', fmt: v => v || '--' },
+    { key: 'week_schedule_days', label: '当周排档天数', fmt: v => v + '天', isNum: true },
+    { key: 'daily_task_count', label: '每日任务完成', fmt: v => v + '次', isNum: true },
     { key: 'week_revenue', label: '当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
-    { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '分钟', isNum: true },
-    { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
-    { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
+    { key: 'week_accompany_time', label: '当周陪档时长', fmt: v => v + '分钟', isNum: true },
+    { key: 'week_rank', label: '排行榜排名', fmt: v => v, isRank: true },
+    { key: 'best_4week_level', label: '4周最高等级', fmt: v => v || '--' },
   ];
 
   const tbody = document.getElementById('uid-compare-body');
@@ -482,7 +481,7 @@ function renderUIDResult(data) {
     const c = cmp[r.key];
     if (!c) return '';
     let trendClass = c.trend || 'flat';
-    let trendIcon = trendClass === 'up' ? '🟢' : trendClass === 'down' ? '🔴' : '⚪';
+    let trendIcon = trendClass === 'up' ? '<span class="dot green"></span>' : trendClass === 'down' ? '<span class="dot red"></span>' : '<span class="dot" style="background:var(--wb-text-3)"></span>';
     let trendText = trendClass === 'up' ? '增长' : trendClass === 'down' ? '下降' : '持平';
     let thisVal, lastVal;
     if (r.isNum && !r.isRank) { thisVal = r.fmt(c.this); lastVal = r.fmt(c.last); }
@@ -496,7 +495,7 @@ function renderUIDResult(data) {
 
   const hallThis = cmp.hall?.this || thisData.schedule_hall || thisData.auth_hall || '--';
   const hallLast = cmp.hall?.last || lastData.schedule_hall || lastData.auth_hall || '--';
-  html += `<tr><td class="col-metric">👥 参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat">⚪ 持平</td></tr>`;
+  html += `<tr><td class="col-metric">参与姐妹团</td><td class="col-this">${hallThis}</td><td class="col-last">${hallLast}</td><td class="col-change flat">—</td><td class="col-change flat">—</td><td class="col-trend flat"><span class="dot" style="background:var(--wb-text-3)"></span> 持平</td></tr>`;
   tbody.innerHTML = html;
   renderTeamInfo(data);
   renderBoundSisters(data);
@@ -552,7 +551,7 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">${t.hall_name || '--'}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">📅 成团日期</span>
+        <span class="team-detail-label">成团日期</span>
         <span class="team-detail-value">${t.form_date || '--'}</span>
       </div>
       <div class="team-detail-item">
@@ -560,7 +559,7 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">¥${(data.team_total_revenue || t.total_revenue || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">🎁 奖励金额</span>
+        <span class="team-detail-label">奖励金额</span>
         <span class="team-detail-value">¥${(t.reward_amount || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">
@@ -824,244 +823,4 @@ function exportUIDResult() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `UID_${d.uid}_对比分析.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-}
-
-/* ═══════════════ 自选对比：任选两厅逐项对比 ═══════════════ */
-let cmpHalls = [];
-let _cmpCharts = {};
-let _cmpWeekly = null;        // {nameA, nameB, wa, wb} 两厅周报，供弹层复用
-let _cmpPopoverMetric = null; // 当前展开的指标卡（null=关闭）
-let _cmpPopoverChart = null;  // 弹层趋势图实例
-let _cmpPopoverBound = false; // 是否已绑定「点空白关闭」
-
-const CMP_METRICS = [
-  { key: 'active_team_count_end', label: '进行中团数', unit: ' 个', goodHigher: true,  accent: 'acc-green'  },
-  { key: 'new_team_count',        label: '新成团数',   unit: ' 个', goodHigher: true,  accent: 'acc-violet' },
-  { key: 'dissolved_count',       label: '解散数',     unit: ' 个', goodHigher: false, accent: 'acc-red'    },
-  { key: 'total_reward',          label: '礼物流水',   money: true, goodHigher: true,  accent: 'acc-gold'   },
-  { key: 'retention_rate',        label: '留存率',     pct: true,   goodHigher: true,  accent: 'acc-green'  },
-  { key: 'dissolution_rate',      label: '解散率',     pct: true,   goodHigher: false, accent: 'acc-red'    },
-];
-
-function cmpFmt(m, v) {
-  if (v === null || v === undefined || Number.isNaN(v)) return '—';
-  if (m.money) return '¥' + Number(v).toFixed(0);
-  if (m.pct) return Number(v).toFixed(1) + '%';
-  return Number(v).toFixed(0) + (m.unit || '');
-}
-function cmpLeadNum(m, d) {
-  if (m.money) return '¥' + Number(d).toFixed(0);
-  if (m.pct) return Number(d).toFixed(1) + 'pp';
-  return Number(d).toFixed(0) + (m.unit || '');
-}
-
-/* 常驻对比条：用已加载的 hallCompareData 填充 A/B 选厅器（不再弹窗） */
-function initCmpBar() {
-  const selA = document.getElementById('cmp-hall-a');
-  const selB = document.getElementById('cmp-hall-b');
-  if (!selA || !selB || !hallCompareData.length) return;
-  cmpHalls = [...hallCompareData].sort((a, b) => b.team_count - a.team_count);
-  if (cmpHalls.length < 2) {
-    selA.innerHTML = '<option>可选大厅不足</option>';
-    return;
-  }
-  selA.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
-  selB.innerHTML = cmpHalls.map((h, i) => `<option value="${i}">${h.hall_name}</option>`).join('');
-  selB.value = String(Math.min(1, cmpHalls.length - 1));
-  if (!_cmpPopoverBound) {
-    _cmpPopoverBound = true;
-    document.addEventListener('click', function(e) {
-      if (!_cmpPopoverMetric) return;
-      const pop = document.getElementById('cmp-popover');
-      if (!pop) return;
-      if (pop.contains(e.target)) return;
-      if (e.target.closest && e.target.closest('#cmp-cards .cmp-card')) return;
-      closeCmpPopover();
-    });
-  }
-}
-
-/* 收起对比结果区 */
-function collapseCmpResult() {
-  const el = document.getElementById('cmp-result');
-  if (el) el.style.display = 'none';
-}
-
-/* 显式把某厅设为自选对比 A 厅（不再由点柱自动触发） */
-function setCmpHallA(hallName) {
-  const selA = document.getElementById('cmp-hall-a');
-  if (!selA || !cmpHalls.length) return;
-  const idx = cmpHalls.findIndex(h => h.hall_name === hallName);
-  if (idx >= 0) selA.value = String(idx);
-}
-
-/* 厅分析面板里的「设为对比 A」按钮：读取当前展开厅 */
-function setCmpHallABtn() {
-  if (!hfHall) return;
-  setCmpHallA(hfHall);
-}
-
-function swapCmpHalls() {
-  const a = document.getElementById('cmp-hall-a');
-  const b = document.getElementById('cmp-hall-b');
-  const t = a.value; a.value = b.value; b.value = t;
-  runHallCompare();
-}
-
-async function runHallCompare() {
-  const selA = document.getElementById('cmp-hall-a');
-  const selB = document.getElementById('cmp-hall-b');
-  const result = document.getElementById('cmp-result');
-  if (!selA || !selB || !result) return;
-  const a = cmpHalls[+selA.value];
-  const b = cmpHalls[+selB.value];
-  if (!a || !b || a.hall_name === b.hall_name) {
-    document.getElementById('cmp-title').textContent = '请选择两个不同的厅';
-    result.style.display = '';
-    return;
-  }
-  document.getElementById('cmp-title').textContent = `「${a.hall_name}」 vs 「${b.hall_name}」`;
-  try {
-    // 两厅各自周报（卡片取最新周，弹层取全周趋势）
-    const [wa, wb] = await Promise.all([
-      fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(a.hall_name)).then(r => r.json()),
-      fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(b.hall_name)).then(r => r.json()),
-    ]);
-    _cmpWeekly = { nameA: a.hall_name, nameB: b.hall_name, wa: wa.data || [], wb: wb.data || [] };
-    closeCmpPopover();
-    renderCmpCards(a.hall_name, b.hall_name, _cmpWeekly.wa, _cmpWeekly.wb);
-    result.style.display = '';
-    setTimeout(() => result.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-  } catch (e) { console.error('自选对比渲染失败:', e); }
-}
-
-function renderCmpCards(nameA, nameB, wa, wb) {
-  const lastOf = (arr, key) => { const l = arr[arr.length - 1]; return l ? l[key] : null; };
-  document.getElementById('cmp-cards').innerHTML = CMP_METRICS.map(m => {
-    const va = lastOf(wa, m.key), vb = lastOf(wb, m.key);
-    const hasA = va !== null && va !== undefined && !Number.isNaN(va);
-    const hasB = vb !== null && vb !== undefined && !Number.isNaN(vb);
-    const numA = hasA ? Number(va) : 0, numB = hasB ? Number(vb) : 0;
-    const d = numB - numA;
-    const good = m.goodHigher ? d > 0 : d < 0;   // B 是否更优
-    const winA = d !== 0 && !good, winB = d !== 0 && good;
-    const lead = d === 0
-      ? '<span class="cmp-lead flat">打平</span>'
-      : `<span class="cmp-lead ${winB ? 'win-b' : 'win-a'}">${winB ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
-    const max = Math.max(numA, numB, 1);
-    const aPct = (numA / max * 100).toFixed(1), bPct = (numB / max * 100).toFixed(1);
-    return `<div class="kpi-card cmp-card ${m.accent}" data-metric="${m.key}" onclick="toggleCmpPopover(this,'${m.key}')" title="点击查看周趋势">
-      <div class="cmp-card-top"><span class="kpi-label">${m.label}</span>${lead}</div>
-      <div class="cmp-two">
-        <span class="cmp-a${winA ? ' cmp-win' : ''}">${cmpFmt(m, va)}${winA ? ' ' : ''}</span>
-        <span class="cmp-sep">vs</span>
-        <span class="cmp-b${winB ? ' cmp-win' : ''}">${cmpFmt(m, vb)}${winB ? ' ' : ''}</span>
-      </div>
-      <div class="cmp-race"><span class="cmp-race-a" style="width:${aPct}%"></span><span class="cmp-race-b" style="width:${bPct}%"></span></div>
-      <div class="cmp-name">${nameA} vs ${nameB}</div>
-    </div>`;
-  }).join('');
-}
-
-/* ── 弹层：点指标卡 → 卡片旁浮出该指标周趋势 + 领先表 ── */
-function toggleCmpPopover(cardEl, key) {
-  if (_cmpPopoverMetric === key) { closeCmpPopover(); return; }
-  openCmpPopover(cardEl, key);
-}
-
-function openCmpPopover(cardEl, key) {
-  const pop = document.getElementById('cmp-popover');
-  if (!pop || !_cmpWeekly) return;
-  const m = CMP_METRICS.find(x => x.key === key);
-  if (!m) return;
-  _cmpPopoverMetric = key;
-  document.querySelectorAll('#cmp-cards .cmp-card').forEach(c => c.classList.toggle('expanded', c === cardEl));
-  document.getElementById('cmp-popover-title').textContent = `${m.label} · ${_cmpWeekly.nameA} vs ${_cmpWeekly.nameB}`;
-  renderCmpPopoverTable(m);
-  renderCmpPopoverChart(m);
-  pop.style.display = '';
-  positionCmpPopover(cardEl, pop);
-}
-
-function closeCmpPopover() {
-  _cmpPopoverMetric = null;
-  const pop = document.getElementById('cmp-popover');
-  if (pop) pop.style.display = 'none';
-  document.querySelectorAll('#cmp-cards .cmp-card.expanded').forEach(c => c.classList.remove('expanded'));
-  if (_cmpPopoverChart) { _cmpPopoverChart.dispose(); _cmpPopoverChart = null; }
-}
-
-/* 按周对齐两厅周报，返回 labels + A/B 序列（按 week_start 排序，裁掉两端空周） */
-function cmpAligned(key) {
-  const { wa, wb } = _cmpWeekly;
-  const ma = {}, mb = {};
-  (wa || []).forEach(r => { ma[r.week_start] = r; });
-  (wb || []).forEach(r => { mb[r.week_start] = r; });
-  let weeks = [...new Set([...Object.keys(ma), ...Object.keys(mb)])].sort(); // week_start 字符串排序 == 时间排序
-  let s = 0, e = weeks.length - 1;
-  while (s <= e && !(wbWeekHasData(ma[weeks[s]]) || wbWeekHasData(mb[weeks[s]]))) s++;
-  while (e >= s && !(wbWeekHasData(ma[weeks[e]]) || wbWeekHasData(mb[weeks[e]]))) e--;
-  weeks = weeks.slice(s, e + 1);
-  const labels = weeks.map(ws => (ma[ws] || mb[ws]).week_label);
-  return { labels, da: weeks.map(ws => ma[ws] ? ma[ws][key] : null), db: weeks.map(ws => mb[ws] ? mb[ws][key] : null) };
-}
-
-function renderCmpPopoverChart(m) {
-  const el = document.getElementById('cmp-popover-chart');
-  if (!el) return;
-  const { nameA, nameB } = _cmpWeekly;
-  const { labels, da, db } = cmpAligned(m.key);
-  const kind = m.money ? 'money' : m.pct ? 'pct' : 'num';
-  const fmt = v => kind === 'money' ? wbFmtMoney(v) : kind === 'pct' ? (v == null ? '—' : Number(v).toFixed(1) + '%') : (v == null ? '—' : v);
-  if (_cmpPopoverChart) _cmpPopoverChart.dispose();
-  _cmpPopoverChart = echarts.init(el);
-  _cmpPopoverChart.setOption({
-    tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
-      formatter: ps => { let h = ps[0].axisValue + '<br/>'; ps.forEach(p => { h += p.marker + ' ' + p.seriesName + ': ' + fmt(p.value) + '<br/>'; }); return h; } },
-    legend: { data: [nameA, nameB], top: 5, type: 'scroll' },
-    grid: { left: kind === 'money' ? 70 : 45, right: 20, top: 40, bottom: 32 },
-    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, rotate: 30 } },
-    yAxis: { type: 'value', axisLabel: { fontSize: 10, formatter: v => kind === 'money' ? wbFmtMoney(v) : v } },
-    series: [
-      { name: nameA, type: 'line', data: da, smooth: true, connectNulls: true, lineStyle: { color: '#7C5CFF', width: 2.5 }, itemStyle: { color: '#7C5CFF' }, symbolSize: 5 },
-      { name: nameB, type: 'line', data: db, smooth: true, connectNulls: true, lineStyle: { color: '#3D9A6C', width: 2.5 }, itemStyle: { color: '#3D9A6C' }, symbolSize: 5 },
-    ],
-  }, true);
-  setTimeout(() => { if (_cmpPopoverChart) _cmpPopoverChart.resize(); }, 0);
-}
-
-function renderCmpPopoverTable(m) {
-  const el = document.getElementById('cmp-popover-table');
-  if (!el) return;
-  const { nameA, nameB } = _cmpWeekly;
-  const { labels, da, db } = cmpAligned(m.key);
-  const rows = labels.map((l, i) => {
-    const va = da[i], vb = db[i];
-    const hasA = va !== null && va !== undefined, hasB = vb !== null && vb !== undefined;
-    let lead = '<span class="dt-na">—</span>';
-    if (hasA && hasB) {
-      const d = Number(vb) - Number(va);
-      if (d === 0) lead = '<span class="dt-na">打平</span>';
-      else {
-        const good = m.goodHigher ? d > 0 : d < 0;
-        lead = `<span class="dt-diff ${good ? 'up' : 'down'}">${good ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
-      }
-    }
-    return `<tr><td>${l}</td><td class="num">${cmpFmt(m, va)}</td><td class="num">${cmpFmt(m, vb)}</td><td class="num">${lead}</td></tr>`;
-  }).join('');
-  el.innerHTML = `<table class="data-table"><thead><tr><th>周</th><th class="num">${nameA}</th><th class="num">${nameB}</th><th class="num">领先</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function positionCmpPopover(cardEl, pop) {
-  const result = document.getElementById('cmp-result');
-  if (!result) return;
-  const cardR = cardEl.getBoundingClientRect();
-  const resultR = result.getBoundingClientRect();
-  const gap = 12;
-  const popW = pop.offsetWidth;
-  const isLeft = (cardR.left + cardR.width / 2) < (resultR.left + resultR.width / 2);
-  let left = isLeft ? (cardR.right - resultR.left + gap) : (cardR.left - resultR.left - popW - gap);
-  left = Math.max(4, Math.min(left, resultR.width - popW - 4));
-  pop.style.left = left + 'px';
-  pop.style.top = Math.max(0, cardR.top - resultR.top) + 'px';
 }
