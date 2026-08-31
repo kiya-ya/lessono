@@ -47,11 +47,11 @@
       <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
-      <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
-      <button class="tab" onclick="switchTab('alerts')"><span class="ico">⚠</span><span class="tab-txt"><b>预警中心</b><small>平台级预警 · 4 卡</small></span></button>
-      <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
-      <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
-      <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
+      <button class="tab active" onclick="switchTab('overview')"><span class="ico"></span><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
+      <button class="tab" onclick="switchTab('alerts')"><span class="ico"></span><span class="tab-txt"><b>预警中心</b><small>平台级预警 · 4 卡</small></span></button>
+      <button class="tab" onclick="switchTab('compare')"><span class="ico"></span><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
+      <button class="tab" onclick="switchTab('captains')"><span class="ico"></span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
+      <button class="tab" onclick="switchTab('uid')"><span class="ico"></span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
     <div class="side-status" id="side-status" title="Cookie 有效性：绿=有效，红=失效（自动重登中），点击手动兜底刷新">
       <div class="ss-head">数据连接<span class="ss-auto">自动刷新</span></div>
@@ -90,11 +90,11 @@
   <div id="tab-overview" class="tab-panel active">
     <!-- 看板导览（可关闭） -->
     <div class="wb-guide" id="wb-guide">
-      <span class="wb-guide-tag">📖 导览</span>
+      <span class="wb-guide-tag">导览</span>
       <span class="wb-guide-item">姐妹团 = 姐姐 + 妹妹 配对</span>
-      <span class="wb-guide-item">💯留存率：上周的团还剩多少（↑好） · 🚫解散率：本周解散占比（↓好）</span>
-      <span class="wb-guide-item">💰流水分两口径：姐妹团礼物奖励 / 厅总流水</span>
-      <span class="wb-guide-item">💡 左侧切视角，点卡片/柱状图联动明细</span>
+      <span class="wb-guide-item">留存率：上周的团还剩多少（↑好） · 解散率：本周解散占比（↓好）</span>
+      <span class="wb-guide-item">流水分两口径：姐妹团礼物奖励 / 厅总流水</span>
+      <span class="wb-guide-item">左侧切视角，点卡片/柱状图联动明细</span>
       <button class="wb-guide-close" onclick="closeWbGuide()" title="收起">✕</button>
     </div>
 
@@ -126,14 +126,14 @@
     </div>
     <div class="chart-grid">
       <div class="chart-card" id="survival-card">
-        <h3>🌱 姐妹团存活分析</h3>
+        <h3>姐妹团存活分析</h3>
         <div class="chart-src" id="survival-src">基于最新快照</div>
         <div class="survival-chips" id="survival-chips"></div>
         <div class="chart-container" id="chart-survival" style="height:220px;"></div>
         <div class="chart-insight" id="survival-insight"></div>
       </div>
       <div class="chart-card" id="dissolve-reasons-card">
-        <h3>💥 解散原因分布</h3>
+        <h3>解散原因分布</h3>
         <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
         <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
         <div class="chart-insight" id="dissolve-reasons-insight"></div>
@@ -145,7 +145,7 @@
       <span class="hint" id="wb-kpi-subtitle"></span>
       <select id="hall-select" class="wb-select" style="margin-left:auto" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
       <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
-      <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">🏠 全部大厅</button>
+      <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
     </div>
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算方式</span></div>
@@ -169,10 +169,10 @@
     <div class="kpi-detail" id="wb-kpi-detail">
       <div class="kpi-detail-card" data-metric="retention">
         <div class="kpi-detail-head">
-          <h3>💯 留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
+          <h3>留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
           <div class="kpi-detail-tabs">
-            <button class="on" data-tab="trend" onclick="wbRetentionTab('trend')">📈 趋势</button>
-            <button data-tab="dist" onclick="wbRetentionTab('dist')">📊 分布</button>
+            <button class="on" data-tab="trend" onclick="wbRetentionTab('trend')">趋势</button>
+            <button data-tab="dist" onclick="wbRetentionTab('dist')">分布</button>
             <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
           </div>
         </div>
@@ -193,7 +193,7 @@
       </div>
       <div class="kpi-detail-card" data-metric="dissolution">
         <div class="kpi-detail-head">
-          <h3>🚫 解散率<span class="chart-kpi" id="chart-kpi-dissolution"></span></h3>
+          <h3>解散率<span class="chart-kpi" id="chart-kpi-dissolution"></span></h3>
           <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
         </div>
         <div class="chart-src">本周有多少团解散 · 越低越好</div>
@@ -207,7 +207,7 @@
       </div>
       <div class="kpi-detail-card" data-metric="revenue">
         <div class="kpi-detail-head">
-          <h3>💰 礼物奖励金额<span class="chart-kpi" id="chart-kpi-revenue"></span></h3>
+          <h3>礼物奖励金额<span class="chart-kpi" id="chart-kpi-revenue"></span></h3>
           <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
         </div>
         <div class="chart-src">本周发放的礼物奖励总额</div>
@@ -221,7 +221,7 @@
       </div>
       <div class="kpi-detail-card" data-metric="newteam">
         <div class="kpi-detail-head">
-          <h3>📦 新成团数 · 日级明细</h3>
+          <h3>新成团数 · 日级明细</h3>
           <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
         </div>
         <div class="chart-src">每天新成团数 · 本周实线 vs 上周虚线</div>
@@ -235,7 +235,7 @@
       </div>
       <div class="kpi-detail-card" data-metric="activeteam">
         <div class="kpi-detail-head">
-          <h3>🔄 进行中姐妹团</h3>
+          <h3>进行中姐妹团</h3>
           <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
         </div>
         <div class="chart-src">每周在榜团数 · 越高越好</div>
@@ -249,7 +249,7 @@
       </div>
       <div class="kpi-detail-card" data-metric="activediss">
         <div class="kpi-detail-head">
-          <h3>⚠️ 主动解散占比 · 日级明细</h3>
+          <h3>主动解散占比 · 日级明细</h3>
           <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
         </div>
         <div class="chart-src">每天解散数（主动+被动）· 本周实线 vs 上周虚线</div>
@@ -314,7 +314,7 @@
       </div>
       <div class="chart-card" id="overview-captain-box">
         <div class="section-head" style="margin:0 0 6px;">
-          <h2>👑 姐姐排行 · 当日</h2>
+          <h2>姐姐排行 · 当日</h2>
         </div>
         <span class="hint">当日奖励 TOP3 · 点击查看完整姐姐分析</span>
         <div id="overview-captain-preview"></div>
@@ -362,8 +362,8 @@
         <option value="50">50条/页</option>
         <option value="100">100条/页</option>
       </select>
-      <button onclick="loadDetailTable(1)">🔍 搜索</button>
-      <button onclick="exportDetail()">📥 导出CSV</button>
+      <button onclick="loadDetailTable(1)">搜索</button>
+      <button onclick="exportDetail()">导出CSV</button>
     </div>
     <div class="chart-card" id="detail-table-card">
       <table class="data-table">
@@ -434,11 +434,11 @@
     <div id="compare-main">
     <!-- 常驻自选对比条：任选两厅对比，结果内嵌展开 -->
     <div class="chart-card" id="cmp-bar-card">
-      <h3>⚖️ 自选对比</h3>
+      <h3>自选对比</h3>
       <div class="cmp-bar">
         <label>厅 A</label>
         <select id="cmp-hall-a" class="wb-select cmp-select"></select>
-        <button class="cmp-swap" onclick="swapCmpHalls()" title="交换 A/B">⇄</button>
+        <button class="cmp-swap" onclick="swapCmpHalls()" title="交换 A/B"></button>
         <label>厅 B</label>
         <select id="cmp-hall-b" class="wb-select cmp-select"></select>
         <button class="btn-save" onclick="runHallCompare()">生成对比</button>
@@ -465,7 +465,7 @@
     <!-- 常驻导航：各大厅数据对比 -->
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>🏠 各大厅数据对比</span>
+        <span>各大厅数据对比</span>
         <div class="hall-compare-controls" style="display:flex;gap:8px;align-items:center;">
           <input type="text" id="hall-compare-search" placeholder="搜索大厅名称..." class="wb-input wb-search" oninput="onHallCompareSearch()">
           <select id="hall-compare-sort" onchange="onHallCompareSortChange()" class="wb-select">
@@ -488,20 +488,20 @@
     <!-- 厅分析揭示面板：点击大厅后展开 -->
     <div class="chart-card hall-focus" id="hall-focus" style="display:none;">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-        <span>🏠 <span id="hf-title">厅分析</span></span>
+        <span><span id="hf-title">厅分析</span></span>
         <button class="kpi-detail-close" onclick="closeHallFocus()" title="收起">✕</button>
       </h3>
       <div class="chart-src" id="hf-src">—</div>
       <div class="policy-grid" id="hf-cards" style="margin-bottom:12px;"></div>
       <div class="chart-grid">
-        <div class="chart-card"><h3>📈 留存率趋势</h3><div class="chart-box" id="hf-chart-ret"></div></div>
-        <div class="chart-card"><h3>💰 流水趋势</h3><div class="chart-box" id="hf-chart-rev"></div></div>
-        <div class="chart-card" style="grid-column:1/-1;"><h3>📊 该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
+        <div class="chart-card"><h3>留存率趋势</h3><div class="chart-box" id="hf-chart-ret"></div></div>
+        <div class="chart-card"><h3>流水趋势</h3><div class="chart-box" id="hf-chart-rev"></div></div>
+        <div class="chart-card" style="grid-column:1/-1;"><h3>该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
       </div>
-      <div class="chart-src" style="margin-top:10px;">💡 点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
+      <div class="chart-src" style="margin-top:10px;">点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
       <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
       <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-        <button class="mini-btn" onclick="setCmpHallABtn()" title="把该厅填入顶部自选对比 A 厅">⚔️ 设为对比 A</button>
+        <button class="mini-btn" onclick="setCmpHallABtn()" title="把该厅填入顶部自选对比 A 厅">设为对比 A</button>
         <button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button>
       </div>
     </div>
@@ -535,19 +535,19 @@
     </div>
     <div class="chart-grid">
       <div class="chart-card">
-        <h3>🏷️ 打标分布</h3>
+        <h3>打标分布</h3>
         <div class="chart-src">头部（流水前20%且持续率≥65%）· 风险（暴跌或带团多持续率低）· 其余普通</div>
         <div class="chart-container" id="chart-sister-tag" style="height:240px;"></div>
       </div>
       <div class="chart-card">
-        <h3>🌱 姐妹关系持续率分布</h3>
+        <h3>姐妹关系持续率分布</h3>
         <div class="chart-src">姐姐按持续率分段统计 · 一眼看清留存水位</div>
         <div class="chart-container" id="chart-sister-ret" style="height:240px;"></div>
       </div>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>👤 姐姐画像（周口径）</span>
+        <span>姐姐画像（周口径）</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <select id="sister-profile-sort" onchange="setSisterProfileSort(this.value)" class="wb-select">
             <option value="week_rev" selected>本周流水 ↓</option>
@@ -575,7 +575,7 @@
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span id="captain-table-title">👑 姐姐排行榜（按当日奖励）</span>
+        <span id="captain-table-title">姐姐排行榜（按当日奖励）</span>
         <div class="seg">
           <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
           <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
@@ -589,7 +589,7 @@
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>🎓 毕业妹妹</span>
+        <span>毕业妹妹</span>
         <div class="seg">
           <button id="grad-today" onclick="setGradRange('today')">今天</button>
           <button id="grad-week" class="on" onclick="setGradRange('week')">近一周</button>
@@ -625,7 +625,7 @@
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <span>🎯 培养力候选池</span>
+          <span>培养力候选池</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="hint">并列展示，不做权威排序</span>
             <select id="pool-per-page" onchange="setPoolPerPage(this.value)" class="wb-select">
@@ -642,7 +642,7 @@
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <span>📈 培养力象限（妹妹成长 × 培养升牌率）</span>
+          <span>培养力象限（妹妹成长 × 培养升牌率）</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="hint">只显示候选 · 密集区聚合</span>
             <select id="quadrant-hall-select" class="wb-select" onchange="setQuadrantHall(this.value)"><option value="all">全部大厅</option></select>
@@ -653,7 +653,7 @@
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <span>📝 结果记录（输送妹妹 / 提拔管理）</span>
+          <span>结果记录（输送妹妹 / 提拔管理）</span>
           <button class="btn-save" onclick="loadTalentActions()" style="padding:4px 12px;">刷新</button>
         </h3>
         <div class="chart-src">记录每次倾斜动作，攒成功案例后据此学习培养力权重（动作发生在点点开黑平台，需人工回填）</div>
@@ -670,7 +670,7 @@
         <select id="uid-type"><option value="game">新队长-游戏</option><option value="karaoke">新队长-歌房</option><option value="werewolf">新队长-狼人杀</option><option value="live">实时-乐园杀</option></select>
         <label>UID：</label>
         <input type="text" id="uid-input" placeholder="输入UID，如 26482359">
-        <button onclick="queryUID()">🔍 查询</button>
+        <button onclick="queryUID()">查询</button>
       </div>
     </div>
     <div class="dn-footer">
@@ -685,11 +685,11 @@
         <span>本页出现多处「流水」，口径不同勿混读：顶部「姐妹团累计流水」是<b>姐姐本人</b>的累计；周对比表「当周礼物流水」是<b>本周</b>礼物；参与明细「妹妹累计流水」是<b>团内妹妹</b>的累计。环比 = 本周 vs 上周的差值或变化率。</span>
       </div>
     </div>
-    <div id="uid-loading" class="uid-loading" style="display:none;">⏳ 正在查询 UID 数据，请稍候...</div>
+    <div id="uid-loading" class="uid-loading" style="display:none;">正在查询 UID 数据，请稍候...</div>
     <div id="uid-error" class="uid-error" style="display:none;"></div>
     <div id="uid-result" style="display:none;">
       <div class="uid-result-card">
-        <h3>👤 <span id="uid-result-title">UID 查询结果</span></h3>
+        <h3><span id="uid-result-title">UID 查询结果</span></h3>
         <div class="user-info">
           <span>UID：<strong id="res-uid">--</strong></span>
           <span>昵称：<strong id="res-nickname">--</strong></span>
@@ -700,8 +700,8 @@
       </div>
       <div class="uid-result-card">
         <h3 style="display:flex; justify-content:space-between; align-items:center;">
-          <span>📊 本周 vs 上周 对比分析</span>
-          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">📥 导出CSV</button>
+          <span>本周 vs 上周 对比分析</span>
+          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">导出CSV</button>
         </h3>
         <table class="compare-table">
           <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
@@ -710,21 +710,21 @@
       </div>
       <!-- 姐妹团参与明细 -->
       <div class="uid-result-card" id="team-info-card" style="display:none;">
-        <h3>🔗 姐妹团参与明细</h3>
+        <h3>姐妹团参与明细</h3>
         <div id="team-info-body"></div>
       </div>
       <div class="uid-result-card" id="partner-compare-card" style="display:none;">
-        <h3>👭 姐姐 vs 妹妹 本周数据对比</h3>
+        <h3>姐姐 vs 妹妹 本周数据对比</h3>
         <div id="partner-compare-chart" style="width:100%; height:300px;"></div>
         <div id="partner-compare-table" style="margin-top:12px;"></div>
       </div>
       <!-- 绑定妹妹列表 -->
       <div class="uid-result-card" id="bound-sisters-card" style="display:none;">
-        <h3>👭 绑定妹妹列表</h3>
+        <h3>绑定妹妹列表</h3>
         <div id="bound-sisters-body"></div>
       </div>
       <div class="uid-result-card">
-        <h3>🔗 关联信息</h3>
+        <h3>关联信息</h3>
         <div class="user-info">
           <span>保护期结束：<strong id="res-protection">--</strong></span>
           <span>姐妹团累计流水：<strong id="res-total-revenue">--</strong></span>
@@ -741,7 +741,7 @@
 <!-- Cookie 管理弹窗 -->
 <div class="cookie-modal" id="cookie-modal">
   <div class="cookie-modal-content" style="width:720px; max-width:95%;">
-    <h3>🍪 Cookie 管理</h3>
+    <h3>Cookie 管理</h3>
     <div class="cookie-dual-grid">
       <!-- 左栏：UID 查询 -->
       <div class="cookie-panel">
@@ -751,12 +751,12 @@
           <span class="cookie-panel-sub">server1.tuwan.com:10010</span>
         </div>
         <div class="cookie-panel-status" id="panel-status-uid">检测中...</div>
-        <button class="btn-refresh" id="refresh-btn-uid" onclick="manualRefreshCookie('uid')">🔄 立即刷新（自动重登）</button>
+        <button class="btn-refresh" id="refresh-btn-uid" onclick="manualRefreshCookie('uid')">立即刷新（自动重登）</button>
         <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
         <details class="cookie-advanced">
           <summary>手动粘贴（高级）</summary>
           <textarea id="cookie-input-uid" placeholder="在此粘贴 UID 查询页面的完整 Cookie..."></textarea>
-          <div class="hint">💡 获取方式：打开 UID 查询页 → F12 → Network → 点击查询 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
+          <div class="hint">获取方式：打开 UID 查询页 → F12 → Network → 点击查询 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
           <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
             <button class="btn-save" onclick="saveCookie('uid')">保存 UID 查询 Cookie</button>
           </div>
@@ -770,12 +770,12 @@
           <span class="cookie-panel-sub">bigdata.tuwan.com</span>
         </div>
         <div class="cookie-panel-status" id="panel-status-bigdata">检测中...</div>
-        <button class="btn-refresh" id="refresh-btn-bigdata" onclick="manualRefreshCookie('bigdata')">🔄 立即刷新（自动重登）</button>
+        <button class="btn-refresh" id="refresh-btn-bigdata" onclick="manualRefreshCookie('bigdata')">立即刷新（自动重登）</button>
         <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
         <details class="cookie-advanced">
           <summary>手动粘贴（高级）</summary>
           <textarea id="cookie-input-bigdata" placeholder="在此粘贴 bigdata 统计页的完整 Cookie..."></textarea>
-          <div class="hint">💡 获取方式：打开 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新 → 找到 sisters/tj → Headers → 复制 Cookie</div>
+          <div class="hint">获取方式：打开 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新 → 找到 sisters/tj → Headers → 复制 Cookie</div>
           <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
             <button class="btn-save" onclick="saveCookie('bigdata')">保存抓取 Cookie</button>
           </div>
@@ -783,7 +783,7 @@
       </div>
     </div>
     <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
-      <button class="btn-refresh" id="refresh-btn-all" onclick="manualRefreshCookie('all')">🔄 一键重登全部</button>
+      <button class="btn-refresh" id="refresh-btn-all" onclick="manualRefreshCookie('all')">一键重登全部</button>
       <span style="flex:1;"></span>
       <button class="btn-cancel" onclick="closeCookieModal()">关闭</button>
     </div>
@@ -794,7 +794,7 @@
 <div class="cookie-modal" id="sister-detail-modal">
   <div class="cookie-modal-content" style="width:860px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>👤 <span id="sd-name">姐姐详情</span></span>
+      <span><span id="sd-name">姐姐详情</span></span>
       <button onclick="closeSisterDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div class="survival-chips" id="sd-chips"></div>
@@ -814,7 +814,7 @@
 <div class="cookie-modal" id="team-detail-modal">
   <div class="cookie-modal-content" style="width:680px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>👭 姐妹团 <span id="td-team-id"></span></span>
+      <span>姐妹团 <span id="td-team-id"></span></span>
       <button onclick="closeTeamDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div id="td-body"></div>
@@ -829,7 +829,7 @@
 <div class="cookie-modal" id="talent-action-modal">
   <div class="cookie-modal-content" style="width:520px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>📝 记录倾斜动作 · <span id="ta-info">—</span></span>
+      <span>记录倾斜动作 · <span id="ta-info">—</span></span>
       <button onclick="closeTalentActionModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div class="chart-src">动作发生在点点开黑平台，此处仅回填记录，用于后续学习培养力权重</div>
@@ -859,7 +859,7 @@
 <div class="cookie-modal" id="talent-result-modal">
   <div class="cookie-modal-content" style="width:520px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>📈 补填结果 · <span id="tr-info">—</span></span>
+      <span>补填结果 · <span id="tr-info">—</span></span>
       <button onclick="closeTalentResultModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div class="chart-src">回填这次倾斜动作的后续效果，用于攒成功案例、学习培养力权重</div>
@@ -898,7 +898,7 @@
 <div class="cookie-modal" id="captain-full-modal">
   <div class="cookie-modal-content" style="width:760px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span id="captain-full-title">👑 姐姐排行榜（按当日奖励）</span>
+      <span id="captain-full-title">姐姐排行榜（按当日奖励）</span>
       <button onclick="closeCaptainFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:8px;">
@@ -924,7 +924,7 @@
 <div class="cookie-modal" id="grad-full-modal">
   <div class="cookie-modal-content" style="width:760px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>🎓 毕业妹妹名单</span>
+      <span>毕业妹妹名单</span>
       <button onclick="closeGradFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
     <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水一览</div>
@@ -940,12 +940,12 @@
 
 <script src="js/config.js?v=44"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=56"></script>
+<script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=53"></script>
-<script src="js/app.js?v=56"></script>
-<script src="js/workbench.js?v=55"></script>
-<script src="js/insight.js?v=53"></script>
-<script src="js/warncenter.js?v=2"></script>
+<script src="js/render.js?v=54"></script>
+<script src="js/app.js?v=57"></script>
+<script src="js/workbench.js?v=56"></script>
+<script src="js/insight.js?v=54"></script>
+<script src="js/warncenter.js?v=3"></script>
 </body>
 </html>

@@ -20,7 +20,7 @@ function setCaptainPeriod(p) {
     if (bf) bf.classList.toggle('on', k === p);
   });
   const ft = document.getElementById('captain-full-title');
-  if (ft) ft.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[p]}奖励）`;
+  if (ft) ft.textContent = `姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[p]}奖励）`;
   loadCaptains();
 }
 
@@ -126,7 +126,7 @@ async function loadCaptains() {
       document.getElementById('captains-hint').textContent = `数据日期 ${d.ref_date} · 会随所选大厅变化`;
     }
     const titleEl = document.getElementById('captain-table-title');
-    if (titleEl) titleEl.textContent = `👑 姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;
+    if (titleEl) titleEl.textContent = `姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;
 
     captainData = d.data || [];
     captainPage = 0;
@@ -179,10 +179,10 @@ async function loadSisterProfile() {
     sisterProfileGraduates = d.recent_graduates || [];
     const s = d.summary || {};
     sumEl.innerHTML = `
-      <span class="survival-chip">👤 姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
+      <span class="survival-chip">姐姐 ${d.total} 位（周 ${d.cur_week || ''}）</span>
       <span class="survival-chip">🏆 头部 <strong>${s.head_count}</strong> 位</span>
-      <span class="survival-chip">⚠️ 风险 <strong>${s.risk_count}</strong> 位</span>
-      <span class="survival-chip">💰 本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
+      <span class="survival-chip">风险 <strong>${s.risk_count}</strong> 位</span>
+      <span class="survival-chip">本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
     const insEl = document.getElementById('sister-profile-insight');
     if (insEl) {
       insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且持续率≥65%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多持续率低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
@@ -214,7 +214,7 @@ function renderRecentGraduates() {
     prevEl.innerHTML = list.length
       ? `<ul class="mini-preview">${list.slice(0, 3).map((g, i) => `<li onclick="jumpToUID('${g.sister_uid2 || ''}')" style="cursor:pointer;" title="点击查看妹妹 UID">
           <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
-          <span class="mp-name">${g.nickname || g.sister_uid2 || '-'} <span class="mp-sub">🎓 ${g.dissolve_date || '-'}</span></span>
+          <span class="mp-name">${g.nickname || g.sister_uid2 || '-'} <span class="mp-sub">${g.dissolve_date || '-'}</span></span>
         </li>`).join('')}</ul>`
       : `<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">${emptyTxt}</div>`;
   }
@@ -489,8 +489,8 @@ async function loadTalentPool() {
     if (d.error) return;
     poolList = d.list || [];
     if (sumEl) sumEl.innerHTML = `
-      <span class="survival-chip">👤 姐姐 <strong>${d.total}</strong> 位</span>
-      <span class="survival-chip">🎯 候选 <strong>${d.candidate_count}</strong> 位</span>
+      <span class="survival-chip">姐姐 <strong>${d.total}</strong> 位</span>
+      <span class="survival-chip">候选 <strong>${d.candidate_count}</strong> 位</span>
       <span class="survival-chip">并列展示 · 不做权威排序</span>`;
     const insEl = document.getElementById('pool-insight');
     if (insEl) {

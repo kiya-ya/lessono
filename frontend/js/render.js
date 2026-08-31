@@ -84,7 +84,7 @@ function renderHallComparePage() {
       base.borderRadius = [0, 4, 4, 0];
       const o = { value: v, itemStyle: base };
       if (isTop) {
-        o.label = { show: true, position: 'right', fontSize: 11, color: '#B07A1F', fontWeight: 'bold', formatter: '👑 ' + (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
+        o.label = { show: true, position: 'right', fontSize: 11, color: '#B07A1F', fontWeight: 'bold', formatter: (isMoney ? wbFmtMoney(v) : v + cfg.unit) };
       }
       return o;
     });
@@ -146,7 +146,7 @@ function renderHallComparePage() {
       if (names.size) {
         const arr = [...names];
         const shown = arr.slice(0, 5).join('、') + (arr.length > 5 ? ` 等 ${arr.length} 个厅` : '');
-        html = `<span style="color:#D56060;">⚠️ 近期解散率异常：${shown}</span><br>` + html;
+        html = `<span style="color:#D56060;">近期解散率异常：${shown}</span><br>` + html;
       }
     }
     insEl.innerHTML = html;
@@ -199,12 +199,12 @@ function renderHfCards(hall, trend) {
   if (!el) return;
   const last = trend[trend.length - 1] || {};
   const metrics = [
-    { label: '🏠 进行中团数', v: hall.active_count, unit: ' 个', accent: 'acc-green' },
+    { label: '进行中团数', v: hall.active_count, unit: ' 个', accent: 'acc-green' },
     { label: '🧱 总团数', v: hall.team_count, unit: ' 个', accent: 'acc-violet' },
-    { label: '💥 解散数', v: hall.dissolved_count, unit: ' 个', accent: 'acc-red' },
-    { label: '💰 本周流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
-    { label: '💯 留存率（最近周）', v: last.retention_rate, pct: true, accent: 'acc-green' },
-    { label: '📦 新成团（最近周）', v: last.new_team_count, unit: ' 个', accent: 'acc-violet' },
+    { label: '解散数', v: hall.dissolved_count, unit: ' 个', accent: 'acc-red' },
+    { label: '本周流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
+    { label: '留存率（最近周）', v: last.retention_rate, pct: true, accent: 'acc-green' },
+    { label: '新成团（最近周）', v: last.new_team_count, unit: ' 个', accent: 'acc-violet' },
   ];
   el.innerHTML = metrics.map(m => {
     const has = m.v !== null && m.v !== undefined && !Number.isNaN(m.v);
@@ -277,7 +277,7 @@ async function openWeekDrill(hallName, weekStart, weekEnd, weekLabel) {
         <div class="chart-card"><h3>🆕 该周新成团</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">成团日</th></tr></thead><tbody>${
           newL.length ? newL.map(row).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--wb-text-3);padding:12px;">本周无新成团</td></tr>'
         }</tbody></table></div>
-        <div class="chart-card"><h3>💥 该周解散（含原因）</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">解散日</th><th>原因</th></tr></thead><tbody>${
+        <div class="chart-card"><h3>该周解散（含原因）</h3><table class="data-table"><thead><tr><th>团长昵称</th><th class="num">解散日</th><th>原因</th></tr></thead><tbody>${
           dissL.length ? dissL.map(dissRow).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--wb-text-3);padding:12px;">本周无解散团</td></tr>'
         }</tbody></table></div>
       </div>`;
@@ -297,12 +297,12 @@ function renderHfWeekTable(trend) {
   const b = trend.length >= 2 ? trend[trend.length - 2] : null;
   const a = trend[trend.length - 1];
   const metrics = [
-    { name: '💯 留存率', key: 'retention_rate', unit: '%' },
-    { name: '🚫 解散率', key: 'dissolution_rate', unit: '%', reverse: true },
-    { name: '📦 新成团数', key: 'new_team_count', unit: ' 个' },
-    { name: '💥 解散数', key: 'dissolved_count', unit: ' 个', reverse: true },
-    { name: '🔄 进行中团数', key: 'active_team_count_end', unit: ' 个' },
-    { name: '💰 周礼物流水', key: 'total_reward', unit: ' 元' },
+    { name: '留存率', key: 'retention_rate', unit: '%' },
+    { name: '解散率', key: 'dissolution_rate', unit: '%', reverse: true },
+    { name: '新成团数', key: 'new_team_count', unit: ' 个' },
+    { name: '解散数', key: 'dissolved_count', unit: ' 个', reverse: true },
+    { name: '进行中团数', key: 'active_team_count_end', unit: ' 个' },
+    { name: '周礼物流水', key: 'total_reward', unit: ' 元' },
   ];
   const getVal = (w, m) => { if (!w) return 0; let v = w[m.key] || 0; return v; };
   const fmt = (v, m) => m.unit === ' 元' ? '¥' + Number(v).toFixed(0) : Number(v).toFixed(m.unit === '%' ? 1 : 0) + m.unit;
@@ -342,7 +342,7 @@ function renderUIDResult(data) {
     { key: 'week_level', label: '⭐ 当周队长等级', fmt: v => v || '--' },
     { key: 'week_schedule_days', label: '📅 当周排档天数', fmt: v => v + '天', isNum: true },
     { key: 'daily_task_count', label: '📋 每日任务完成', fmt: v => v + '次', isNum: true },
-    { key: 'week_revenue', label: '💰 当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
+    { key: 'week_revenue', label: '当周礼物流水', fmt: v => '¥' + v.toLocaleString(), isNum: true },
     { key: 'week_accompany_time', label: '⏱ 当周陪档时长', fmt: v => v + '分钟', isNum: true },
     { key: 'week_rank', label: '🏆 排行榜排名', fmt: v => v, isRank: true },
     { key: 'best_4week_level', label: '🏅 4周最高等级', fmt: v => v || '--' },
@@ -419,7 +419,7 @@ function renderTeamInfo(data) {
   body.innerHTML = `
     <div class="team-detail-grid">
       <div class="team-detail-item">
-        <span class="team-detail-label">🏠 大厅名称</span>
+        <span class="team-detail-label">大厅名称</span>
         <span class="team-detail-value">${t.hall_name || '--'}</span>
       </div>
       <div class="team-detail-item">
@@ -427,7 +427,7 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">${t.form_date || '--'}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">💰 姐妹团累计流水</span>
+        <span class="team-detail-label">姐妹团累计流水</span>
         <span class="team-detail-value">¥${(data.team_total_revenue || t.total_revenue || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">
@@ -435,7 +435,7 @@ function renderTeamInfo(data) {
         <span class="team-detail-value">¥${(t.reward_amount || 0).toLocaleString()}</span>
       </div>
       <div class="team-detail-item">
-        <span class="team-detail-label">📊 状态</span>
+        <span class="team-detail-label">状态</span>
         <span class="team-detail-value" style="color:${statusColor}; font-weight:600;">${statusIcon} ${t.status}${t.status === '已解散' && t.dissolve_date ? ' (' + t.dissolve_date + ')' : ''}</span>
       </div>
     </div>
@@ -589,7 +589,7 @@ function renderPartnerChartMulti(participants) {
     return (d.week_revenue || 0) > 0 || (d.week_schedule_days || 0) > 0 || (d.daily_task_count || 0) > 0;
   });
   if (!hasAnyData) {
-    chartDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">⚠️ 对比数据为空（妹妹UID数据可能未成功加载）</div>';
+    chartDiv.innerHTML = '<div style="padding:40px; text-align:center; color:#999;">对比数据为空（妹妹UID数据可能未成功加载）</div>';
     return;
   }
 
@@ -706,12 +706,12 @@ let _cmpPopoverChart = null;  // 弹层趋势图实例
 let _cmpPopoverBound = false; // 是否已绑定「点空白关闭」
 
 const CMP_METRICS = [
-  { key: 'active_team_count_end', label: '🏠 进行中团数', unit: ' 个', goodHigher: true,  accent: 'acc-green'  },
-  { key: 'new_team_count',        label: '📦 新成团数',   unit: ' 个', goodHigher: true,  accent: 'acc-violet' },
-  { key: 'dissolved_count',       label: '💥 解散数',     unit: ' 个', goodHigher: false, accent: 'acc-red'    },
-  { key: 'total_reward',          label: '💰 礼物流水',   money: true, goodHigher: true,  accent: 'acc-gold'   },
-  { key: 'retention_rate',        label: '💯 留存率',     pct: true,   goodHigher: true,  accent: 'acc-green'  },
-  { key: 'dissolution_rate',      label: '🚫 解散率',     pct: true,   goodHigher: false, accent: 'acc-red'    },
+  { key: 'active_team_count_end', label: '进行中团数', unit: ' 个', goodHigher: true,  accent: 'acc-green'  },
+  { key: 'new_team_count',        label: '新成团数',   unit: ' 个', goodHigher: true,  accent: 'acc-violet' },
+  { key: 'dissolved_count',       label: '解散数',     unit: ' 个', goodHigher: false, accent: 'acc-red'    },
+  { key: 'total_reward',          label: '礼物流水',   money: true, goodHigher: true,  accent: 'acc-gold'   },
+  { key: 'retention_rate',        label: '留存率',     pct: true,   goodHigher: true,  accent: 'acc-green'  },
+  { key: 'dissolution_rate',      label: '解散率',     pct: true,   goodHigher: false, accent: 'acc-red'    },
 ];
 
 function cmpFmt(m, v) {
@@ -818,15 +818,15 @@ function renderCmpCards(nameA, nameB, wa, wb) {
     const winA = d !== 0 && !good, winB = d !== 0 && good;
     const lead = d === 0
       ? '<span class="cmp-lead flat">打平</span>'
-      : `<span class="cmp-lead ${winB ? 'win-b' : 'win-a'}">👑 ${winB ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
+      : `<span class="cmp-lead ${winB ? 'win-b' : 'win-a'}">${winB ? nameB : nameA} 领先 ${cmpLeadNum(m, Math.abs(d))}</span>`;
     const max = Math.max(numA, numB, 1);
     const aPct = (numA / max * 100).toFixed(1), bPct = (numB / max * 100).toFixed(1);
     return `<div class="kpi-card cmp-card ${m.accent}" data-metric="${m.key}" onclick="toggleCmpPopover(this,'${m.key}')" title="点击查看周趋势">
       <div class="cmp-card-top"><span class="kpi-label">${m.label}</span>${lead}</div>
       <div class="cmp-two">
-        <span class="cmp-a${winA ? ' cmp-win' : ''}">${cmpFmt(m, va)}${winA ? ' 👑' : ''}</span>
+        <span class="cmp-a${winA ? ' cmp-win' : ''}">${cmpFmt(m, va)}${winA ? ' ' : ''}</span>
         <span class="cmp-sep">vs</span>
-        <span class="cmp-b${winB ? ' cmp-win' : ''}">${cmpFmt(m, vb)}${winB ? ' 👑' : ''}</span>
+        <span class="cmp-b${winB ? ' cmp-win' : ''}">${cmpFmt(m, vb)}${winB ? ' ' : ''}</span>
       </div>
       <div class="cmp-race"><span class="cmp-race-a" style="width:${aPct}%"></span><span class="cmp-race-b" style="width:${bPct}%"></span></div>
       <div class="cmp-name">${nameA} vs ${nameB}</div>

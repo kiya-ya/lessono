@@ -19,7 +19,7 @@ async function loadHalls() {
     const sel = document.getElementById('hall-select');
     if (sel) {
       const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-      sel.innerHTML = '<option value="all">🏠 全部大厅</option>' +
+      sel.innerHTML = '<option value="all">全部大厅</option>' +
         halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
       sel.value = currentHall;
     }
@@ -174,12 +174,12 @@ function renderTeamDetailModal(row) {
   const statusIcon = row.dissolve_date ? '✗' : '✓';
   document.getElementById('td-body').innerHTML = `
     <div class="team-detail-grid">
-      <div class="team-detail-item"><span class="team-detail-label">🏠 大厅名称</span><span class="team-detail-value">${row.hall_name || '--'}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">大厅名称</span><span class="team-detail-value">${row.hall_name || '--'}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">📅 成团日期</span><span class="team-detail-value">${row.form_date || '--'}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">⏱ 已成团天数</span><span class="team-detail-value">${row.days_since_formed || 0} 天</span></div>
       <div class="team-detail-item"><span class="team-detail-label">🎁 奖励金额</span><span class="team-detail-value">¥${(row.reward_amount || 0).toLocaleString()}</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">📊 状态</span><span class="team-detail-value" style="color:${statusColor};font-weight:600;">${statusIcon} ${status}${row.dissolve_date ? ' (' + row.dissolve_date + ')' : ''}</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">💥 解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">状态</span><span class="team-detail-value" style="color:${statusColor};font-weight:600;">${statusIcon} ${status}${row.dissolve_date ? ' (' + row.dissolve_date + ')' : ''}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
     </div>
     <div class="team-members">
       <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid || '--'}</a></div></div></div>
@@ -266,14 +266,14 @@ function renderPanelStatus(key, info, lastRun) {
   if (info) {
     if (info.ok) {
       dot.style.background = '#3D9A6C';
-      status.textContent = '✅ ' + label + ' Cookie 有效' + (lastRun ? ' · ' + lastRun + ' 保活' : '');
+      status.textContent = label + ' Cookie 有效' + (lastRun ? ' · ' + lastRun + ' 保活' : '');
     } else {
       dot.style.background = '#D56060';
-      status.textContent = '❌ ' + label + ' Cookie 失效，自动重登中（可点「立即刷新」兜底）';
+      status.textContent = label + ' Cookie 失效，自动重登中（可点「立即刷新」兜底）';
     }
   } else {
     dot.style.background = '#C98A2D';
-    status.textContent = '⚠️ ' + label + ' Cookie 未检测';
+    status.textContent = label + ' Cookie 未检测';
   }
 }
 
@@ -287,13 +287,9 @@ function showToast(message, type = 'info', duration = 3200) {
   }
   const el = document.createElement('div');
   el.className = 'wb-toast-item ' + (type || 'info');
-  const ico = document.createElement('span');
-  ico.className = 'wb-toast-ico';
-  ico.textContent = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
   const txt = document.createElement('span');
   txt.className = 'wb-toast-txt';
   txt.textContent = message;
-  el.appendChild(ico);
   el.appendChild(txt);
   wrap.appendChild(el);
   setTimeout(() => {
@@ -305,7 +301,7 @@ function showToast(message, type = 'info', duration = 3200) {
 async function manualRefreshCookie(target) {
   const label = target === 'bigdata' ? '数据抓取' : target === 'uid' ? 'UID查询' : '全部';
   const btn = document.getElementById('refresh-btn-' + target);
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 重登中…（OCR 验证码，约 10~30 秒）'; }
+  if (btn) { btn.disabled = true; btn.textContent = '重登中…（OCR 验证码，约 10~30 秒）'; }
   try {
     const resp = await fetch(API_BASE + '/api/cookie/auto-login', {
       method: 'POST',
@@ -327,7 +323,7 @@ async function manualRefreshCookie(target) {
   } catch (e) {
     showToast('请求失败: ' + (e.message || '请确认后端已启动'), 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 立即刷新（自动重登）'; }
+    if (btn) { btn.disabled = false; btn.textContent = '立即刷新（自动重登）'; }
   }
 }
 
@@ -349,23 +345,23 @@ async function saveCookie(target) {
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
       if (resp.status === 404) {
-        alert('❌ 后端接口不存在 (404)，请确认后端已重启并加载最新代码');
+        alert('后端接口不存在 (404)，请确认后端已重启并加载最新代码');
       } else {
-        alert('❌ 服务器错误 (' + resp.status + '): ' + text.substring(0, 200));
+        alert('服务器错误 (' + resp.status + '): ' + text.substring(0, 200));
       }
       return;
     }
     const data = await resp.json();
     if (data.success) {
-      alert('✅ ' + label + ' Cookie 更新成功！');
+      alert(label + ' Cookie 更新成功！');
       document.getElementById(inputId).value = '';
       checkCookieStatus();
       updateCookiePanelStatus();
     } else {
-      alert('❌ 更新失败: ' + (data.error || '未知错误'));
+      alert('更新失败: ' + (data.error || '未知错误'));
     }
   } catch (e) {
-    alert('❌ 网络请求失败: ' + (e.message || '请确认后端服务已启动'));
+    alert('网络请求失败: ' + (e.message || '请确认后端服务已启动'));
   }
 }
 

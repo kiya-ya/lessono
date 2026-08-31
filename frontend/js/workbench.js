@@ -269,7 +269,7 @@ function applyKpiAlertBadges() {
       const badge = document.createElement('span');
       badge.className = 'kpi-alert';
       badge.title = `${a.title || ''}${a.description ? '：' + a.description : ''}（${a.week_label || ''}）`;
-      badge.textContent = '⚠️';
+      badge.textContent = '!';
       const top = card.querySelector('.kpi-top');
       if (top) top.appendChild(badge);
     }
@@ -372,7 +372,7 @@ function wbRenderKPI() {
     ? `数据周期 ${wbKpiMeta.week} · 对比上一周`
     : '本周 vs 上周';
   if (!wbKpi) {
-    document.getElementById('wb-kpi-hero').innerHTML = ['💯 留存率', '🚫 解散率', '💰 礼物奖励金额']
+    document.getElementById('wb-kpi-hero').innerHTML = ['留存率', '解散率', '礼物奖励金额']
       .map(l => `<div class="kpi-card"><div class="kpi-label">${l}</div><div class="kpi-value">--</div><div class="kpi-foot"><span class="kpi-note">该厅当前周期暂无数据</span></div></div>`).join('');
     document.getElementById('wb-kpi-sub').innerHTML = '';
     return;
@@ -381,18 +381,17 @@ function wbRenderKPI() {
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const disPctSpark = weeks.map(w => (w.dissolved_count > 0 ? (w.active_dissolved_count || 0) / w.dissolved_count * 100 : 0));
   const heroes = [
-    { ico: '💯', label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
-    { ico: '🚫', label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
-    { ico: '💰', label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', metric: 'revenue', spark: sparkOf('total_reward') },
-    { ico: '📦', label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
-    { ico: '🔄', label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
-    { ico: '⚠️', label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', metric: 'activediss', spark: disPctSpark },
+    { label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
+    { label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
+    { label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', metric: 'revenue', spark: sparkOf('total_reward') },
+    { label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
+    { label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
+    { label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', metric: 'activediss', spark: disPctSpark },
   ];
   const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : f === 'int' ? v => Math.round(v) + ' 个' : v => Math.round(v) + '%';
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
     <div class="kpi-card hero accent-${k.accent}"${k.metric ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : ''}>
       <div class="kpi-top">
-        <span class="kpi-ico accent-${k.accent}">${k.ico}</span>
         <span class="kpi-label">${k.label}</span>
         <span class="kpi-note">${k.note}</span>
       </div>
@@ -635,7 +634,7 @@ function wbRenderInsights(data) {
   // 礼物奖励金额（越高越好）
   const rev = last.total_reward || 0, revP = prev ? (prev.total_reward || 0) : 0;
   const revC = revP > 0 ? Math.round((rev - revP) / revP * 100) : 0;
-  let revHtml = `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '📈 增长' : '📉 下降'}`;
+  let revHtml = `本周 <b>${wbFmtMoney(rev)}</b>（环比 ${revC >= 0 ? '+' : ''}${revC}%）· ${revC >= 0 ? '增长' : '下降'}`;
   if (ins.revenue) {
     revHtml += ` · 流水 TOP 姐姐「<a href="javascript:void(0)" onclick="openSisterDetail('${ins.revenue.top_sister_uid || ''}')">${ins.revenue.top_sister}</a>」${wbFmtMoney(ins.revenue.top_sister_rev)}，占 ${ins.revenue.share}%`;
   }
@@ -643,14 +642,14 @@ function wbRenderInsights(data) {
   // 新成团数（越高越好）
   const nt = last.new_team_count || 0, ntP = prev ? (prev.new_team_count || 0) : 0;
   const ntC = ntP > 0 ? Math.round((nt - ntP) / ntP * 100) : 0;
-  let ntHtml = `本周 <b>${nt} 个</b>（环比 ${ntC >= 0 ? '+' : ''}${ntC}%）· ${ntC >= 0 ? '📈 增长' : '📉 下降'}`;
+  let ntHtml = `本周 <b>${nt} 个</b>（环比 ${ntC >= 0 ? '+' : ''}${ntC}%）· ${ntC >= 0 ? '增长' : '下降'}`;
   ntHtml += ` · 日均 ${(nt / 7).toFixed(1)} 个`;
   setInsight('wb-insight-newteam', ntHtml);
   // 进行中姐妹团（越高越好）
   const at = last.active_team_count_end || 0, atP = prev ? (prev.active_team_count_end || 0) : 0;
   const atC = atP > 0 ? Math.round((at - atP) / atP * 100) : 0;
   const atS = last.active_team_count_start || 0;
-  let atHtml = `本周 <b>${at} 个</b>（环比 ${atC >= 0 ? '+' : ''}${atC}%）· ${atC >= 0 ? '📈 增长' : '📉 下降'}`;
+  let atHtml = `本周 <b>${at} 个</b>（环比 ${atC >= 0 ? '+' : ''}${atC}%）· ${atC >= 0 ? '增长' : '下降'}`;
   atHtml += ` · 周初 ${atS} → 周末 ${at}`;
   setInsight('wb-insight-activeteam', atHtml);
   // 主动解散占比（越低越好）
@@ -659,7 +658,7 @@ function wbRenderInsights(data) {
   const adPct = adD > 0 ? adA / adD * 100 : 0;
   const adDp = prev && prev.dissolved_count > 0 ? (prev.active_dissolved_count || 0) / prev.dissolved_count * 100 : adPct;
   const adDiff = Math.round((adPct - adDp) * 10) / 10;
-  let adHtml = `本周 <b>${Math.round(adPct)}%</b>（较上周 ${adDiff >= 0 ? '+' : ''}${adDiff}pp）· ${adDiff <= 0 ? '📉 改善' : '📈 恶化'}`;
+  let adHtml = `本周 <b>${Math.round(adPct)}%</b>（较上周 ${adDiff >= 0 ? '+' : ''}${adDiff}pp）· ${adDiff <= 0 ? '改善' : '恶化'}`;
   adHtml += ` · 解散 ${adD} 个，其中主动 ${adA} 个`;
   setInsight('wb-insight-activediss', adHtml);
 

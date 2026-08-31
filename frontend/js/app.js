@@ -217,8 +217,8 @@ async function queryUID(teamId) {
     document.getElementById('uid-result').style.display = 'block';
   } catch (e) {
     const errDiv = document.getElementById('uid-error');
-    let html = `<strong>❌ 查询失败</strong><br>${e.message}`;
-    if (e.message.includes('Cookie') || e.message.includes('连接') || e.message.includes('未加载')) html += `<div class="hint">💡 提示：请更新Cookie后重试。</div>`;
+    let html = `<strong>查询失败</strong><br>${e.message}`;
+    if (e.message.includes('Cookie') || e.message.includes('连接') || e.message.includes('未加载')) html += `<div class="hint">提示：请更新Cookie后重试。</div>`;
     errDiv.innerHTML = html;
     errDiv.style.display = 'block';
   } finally {
