@@ -1061,22 +1061,34 @@ def api_sister_profile():
 
     # 最近一周毕业的妹妹（满30天毕业 = dissolve_reason='毕业'）
     # 取每个妹妹最近一次毕业的那条快照，带上配对的姐姐（uid+昵称）
+    # 毕业妹妹时间范围切换（J 节）：today / week / month，缺省 week
+    grad_range = request.args.get('grad_range', 'week')
+    grad_window = {'today': "date('now')", 'week': "date('now', '-7 day')",
+                   'month': "date('now', '-30 day')"}.get(grad_range, "date('now', '-7 day')")
     recent_grad = conn.execute(f'''
         SELECT CAST(sister_uid2 AS TEXT) AS sister_uid2,
                sister_nickname2 AS nickname,
                hall_name, dissolve_date,
                CAST(sister_uid AS TEXT) AS sister_uid,
-               sister_nickname AS sister_nickname
+               sister_nickname AS sister_nickname,
+               sister_max_level2, sister_revenue
         FROM team_detail td
         WHERE dissolve_reason = '毕业'
-          AND date(dissolve_date) >= date('now', '-7 day') {hc}
+          AND date(dissolve_date) >= {grad_window} {hc}
           AND rowid = (
               SELECT MAX(rowid) FROM team_detail t2
               WHERE CAST(t2.sister_uid2 AS TEXT) = CAST(td.sister_uid2 AS TEXT)
                 AND t2.dissolve_reason = '毕业'
           )
-        ORDER BY dissolve_date DESC LIMIT 15
+        ORDER BY dissolve_date DESC
     ''', hp).fetchall()
+    recent_grad = [{
+        'sister_uid2': r['sister_uid2'], 'nickname': r['nickname'],
+        'hall_name': r['hall_name'], 'dissolve_date': r['dissolve_date'],
+        'sister_uid': r['sister_uid'], 'sister_nickname': r['sister_nickname'],
+        'sister_max_level2': r['sister_max_level2'] or '无',
+        'sister_revenue': round(r['sister_revenue'] or 0, 1),
+    } for r in recent_grad]
     conn.close()
 
     head_count = sum(1 for x in list_out if x['tag'] == 'head')
@@ -1779,8 +1791,9 @@ def api_lying_detail():
 @app.route('/api/warncenter')
 @login_required
 def api_warncenter():
-    """预警中心：平台级预警 4 卡（留存率 / 主动解散占比 / 新成团数 / 陪档活跃率）。
-    每卡返回近 8 周（陪档活跃率为近 8 快照日）趋势 + 当前值 + 环比 + 触发判定 + 受影响厅 Top10。"""
+    """预警中心：平台级预警 4 卡（留存率 / 主动解散占比 / 新成团数 / 解散时间分布）。
+    前 3 卡返回近 8 周趋势 + 当前值 + 环比 + 触发判定 + 受影响厅 Top10；
+    第 4 卡为解散时间分布分周直方图（近 8 周非毕业解散按存续天数分 4 桶）+ 受影响厅。"""
     conn = get_db_conn()
     ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
     rows = week_rows_all(conn, limit=8)  # 全平台逐周重算（升序）
@@ -1862,39 +1875,47 @@ def api_warncenter():
              for h, v in nt_cur_map.items() if v < nt_prev_map.get(h, 0)),
             key=lambda x: x['current'])[:10]
 
-    # ---- 卡4：陪档活跃率（< 40% 或近 8 快照日波动 > 20pp） ----
-    snap_dates = [r['snapshot_date'] for r in conn.execute(
-        'SELECT DISTINCT snapshot_date FROM team_detail ORDER BY snapshot_date').fetchall()][-8:]
-
-    def accompany_rate_at(d):
-        r = conn.execute("""SELECT COUNT(DISTINCT team_id) AS total,
-                                   COUNT(DISTINCT CASE WHEN accompany_task_count > 0 THEN team_id END) AS acc
-                            FROM team_detail
-                            WHERE rowid IN (SELECT MAX(rowid) FROM team_detail WHERE snapshot_date = ? GROUP BY team_id)
-                              AND (dissolve_date IS NULL OR dissolve_date = '')""", (d,)).fetchone()
-        return round(r['acc'] / r['total'] * 100, 2) if r['total'] else None
-    act_trend = [{'week': d, 'value': accompany_rate_at(d)} for d in snap_dates]
-    act_vals = [x['value'] for x in act_trend if x['value'] is not None]
-    act_cur = act_vals[-1] if act_vals else None
-    act_swing = round(max(act_vals) - min(act_vals), 2) if act_vals else None
-    act_triggered = act_cur is not None and (act_cur < 40 or (act_swing is not None and act_swing > 20))
-    act_halls = []
-    if ref:
-        q = """SELECT hall_name,
-                 COUNT(DISTINCT team_id) AS total,
-                 COUNT(DISTINCT CASE WHEN accompany_task_count > 0 THEN team_id END) AS acc
-               FROM team_detail
-               WHERE rowid IN (SELECT MAX(rowid) FROM team_detail WHERE snapshot_date = ? GROUP BY team_id)
-                 AND (dissolve_date IS NULL OR dissolve_date = '')
-                 AND hall_name IS NOT NULL AND hall_name != ''
-               GROUP BY hall_name"""
-        for r in conn.execute(q, (ref,)).fetchall():
-            if r['total']:
-                rate = round(r['acc'] / r['total'] * 100, 2)
-                if rate < 40:
-                    act_halls.append({'hall': r['hall_name'], 'current': rate})
-        act_halls.sort(key=lambda x: x['current'])
-        act_halls = act_halls[:10]
+    # ---- 卡4：解散时间分布（非毕业解散按「成团→解散」存续天数分 4 桶） ----
+    # 口径：已解散团存续天数 = dissolve_date − form_date（I 节同源）；非毕业解散 = dissolve_reason != '毕业'
+    # 4 桶：第1周1-7天 / 第2周8-14天 / 第3周15-21天 / 第4周22-29天（22+ 并入第4周）
+    diss_buckets = [('第1周(1-7天)', 1, 7), ('第2周(8-14天)', 8, 14),
+                    ('第3周(15-21天)', 15, 21), ('第4周(22-29天)', 22, 10 ** 9)]
+    diss_hist = [0] * len(diss_buckets)
+    diss_halls = {}  # hall -> {'count': n, 'weeks': [..]}
+    for r in conn.execute(f"""
+        SELECT hall_name, MIN(form_date) AS form_date, MIN(dissolve_date) AS dissolve_date
+        FROM team_detail
+        WHERE dissolve_date IS NOT NULL AND dissolve_date != ''
+          AND dissolve_reason != '毕业'
+          AND form_date IS NOT NULL AND form_date != ''
+          AND dissolve_date >= date(?, '-56 day')
+        GROUP BY team_id
+    """, (ref,)).fetchall():
+        try:
+            d = (datetime.strptime(r['dissolve_date'][:10], '%Y-%m-%d')
+                 - datetime.strptime(r['form_date'][:10], '%Y-%m-%d')).days
+        except Exception:
+            continue
+        if d <= 0:
+            continue
+        for i, (_, lo, hi) in enumerate(diss_buckets):
+            if lo <= d <= hi:
+                diss_hist[i] += 1
+                h = r['hall_name']
+                if h:
+                    dh = diss_halls.setdefault(h, {'count': 0, 'weeks': [0] * len(diss_buckets)})
+                    dh['count'] += 1
+                    dh['weeks'][i] += 1
+                break
+    diss_affected = []
+    for h, dh in diss_halls.items():
+        peak_i = max(range(len(diss_buckets)), key=lambda i: dh['weeks'][i])
+        diss_affected.append({'hall': h, 'count': dh['count'], 'peak_week': diss_buckets[peak_i][0]})
+    diss_affected.sort(key=lambda x: -x['count'])
+    diss_affected = diss_affected[:10]
+    diss_total = sum(diss_hist)
+    # 触发判定：第 2 周（8-14 天）为高发周（解散最集中的存续周）
+    diss_triggered = diss_hist[1] > 0 and diss_hist[1] == max(diss_hist)
     conn.close()
 
     return jsonify({
@@ -1912,10 +1933,11 @@ def api_warncenter():
              'metric_note': 'form_date 落在本周的团计数', 'threshold': '连续 2 周环比下降',
              'trend': nt_trend, 'current': nt_cur, 'wow': nt_wow, 'triggered': nt_triggered,
              'affected_halls': nt_halls},
-            {'key': 'activity', 'title': '陪档活跃率预警', 'level': 'warning',
-             'metric_note': '最新快照日有陪档团 ÷ 进行中团', 'threshold': '< 40% 或近 8 个快照日波动 > 20pp',
-             'trend': act_trend, 'current': act_cur, 'wow': None, 'triggered': act_triggered,
-             'affected_halls': act_halls},
+            {'key': 'dissolve_time', 'title': '解散时间分布', 'level': 'notice',
+             'metric_note': '非毕业解散团「成团→解散」存续天数分 4 桶（近 8 周）', 'threshold': '第 2 周（8-14 天）高发',
+             'hist': [{'label': b[0], 'count': c} for b, c in zip(diss_buckets, diss_hist)],
+             'total': diss_total, 'triggered': diss_triggered,
+             'affected_halls': diss_affected},
         ],
     })
 
