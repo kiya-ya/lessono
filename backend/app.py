@@ -2647,7 +2647,7 @@ def api_export_detail():
     import io, csv
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['姐妹团ID', '成团日期', '大厅', '姐姐昵称', '姐姐UID', '妹妹昵称', '妹妹UID', '累计流水', '奖励金额', '解散日期'])
+    writer.writerow(['姐妹团ID', '成团日期', '大厅', '姐姐昵称', '姐姐UID', '妹妹昵称', '妹妹UID', '妹妹累计流水', '奖励金额', '解散日期'])
     for r in rows:
         writer.writerow([r['team_id'], r['form_date'], r['hall_name'], r['sister_nickname'],
                          r['sister_uid'], r['sister_nickname2'], r['sister_uid2'],
