@@ -107,15 +107,33 @@ async function loadDetailTable(page = 1) {
     }
     const res = await fetch(API_BASE + `/api/detail-table?page=${page}&search=${encodeURIComponent(search)}&per_page=${detailPerPage}&status=${detailStatus}&reason=${encodeURIComponent(detailReason)}` + daysParam + dateParam + getHallParam() + sortParam);
     const result = await res.json();
-    _detailRows = result.data;
-    document.getElementById('detail-table-body').innerHTML = result.data.map((row, i) => {
+    const rows = result.data || [];
+    // 同一姐姐绑定多个妹妹时，合并成一大行（姐姐列 + 妹妹列 rowspan，妹妹名堆叠）
+    const groups = [];
+    rows.forEach(row => {
+      const key = row.sister_uid ? 'u:' + row.sister_uid : 'r:' + row.team_id + ':' + groups.length;
+      const last = groups[groups.length - 1];
+      if (last && last.key === key) last.rows.push(row);
+      else groups.push({ key, rows: [row] });
+    });
+    const display = [];
+    groups.forEach(g => g.rows.forEach((r, gi) => display.push({ row: r, group: g, gi })));
+    _detailRows = display.map(d => d.row);
+    document.getElementById('detail-table-body').innerHTML = display.map((d, i) => {
+      const row = d.row, g = d.group, gi = d.gi, n = g.rows.length;
       const status = row.dissolve_date ? '已解散' : '进行中';
       const statusStyle = row.dissolve_date ? 'color:#D56060;' : 'color:#3D9A6C;';
-      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>
-      <td>${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>
-      <td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>
-      <td>${row.days_since_formed || 0}</td>
-      <td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td></tr>`;
+      let sisterCell = '', sis2Cell = '';
+      if (gi === 0) {
+        sisterCell = `<td rowspan="${n}" style="vertical-align:middle;">${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>`;
+        if (n > 1) {
+          const stack = g.rows.map(r => `<span>${r.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${r.sister_uid2 || ''}', '${r.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${r.sister_uid2 || '-'}</a>)</span>`).join('');
+          sis2Cell = `<td rowspan="${n}" style="vertical-align:middle;"><span style="display:inline-flex;flex-direction:column;line-height:1.6;">${stack}</span></td>`;
+        } else {
+          sis2Cell = `<td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>`;
+        }
+      }
+      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td>${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td>${row.days_since_formed || 0}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td></tr>`;
     }).join('');
     
     // 分页渲染
@@ -330,8 +348,8 @@ async function manualRefreshCookie(target) {
 async function saveCookie(target) {
   const inputId = target === 'bigdata' ? 'cookie-input-bigdata' : 'cookie-input-uid';
   const cookieStr = document.getElementById(inputId).value.trim();
-  if (!cookieStr) { alert('请输入 Cookie'); return; }
-  if (!cookieStr.includes('PHPSESSID')) { alert('Cookie 格式不正确，缺少 PHPSESSID'); return; }
+  if (!cookieStr) { showToast('请输入 Cookie', 'error'); return; }
+  if (!cookieStr.includes('PHPSESSID')) { showToast('Cookie 格式不正确，缺少 PHPSESSID', 'error'); return; }
 
   const endpoint = target === 'bigdata' ? '/api/cookie/bigdata' : '/api/cookie';
   const label = target === 'bigdata' ? '数据抓取' : 'UID查询';
@@ -345,23 +363,23 @@ async function saveCookie(target) {
     if (!resp.ok) {
       const text = await resp.text().catch(() => '');
       if (resp.status === 404) {
-        alert('后端接口不存在 (404)，请确认后端已重启并加载最新代码');
+        showToast('后端接口不存在 (404)，请确认后端已重启并加载最新代码', 'error');
       } else {
-        alert('服务器错误 (' + resp.status + '): ' + text.substring(0, 200));
+        showToast('服务器错误 (' + resp.status + '): ' + text.substring(0, 200), 'error');
       }
       return;
     }
     const data = await resp.json();
     if (data.success) {
-      alert(label + ' Cookie 更新成功！');
+      showToast(label + ' Cookie 更新成功！', 'success');
       document.getElementById(inputId).value = '';
       checkCookieStatus();
       updateCookiePanelStatus();
     } else {
-      alert('更新失败: ' + (data.error || '未知错误'));
+      showToast('更新失败: ' + (data.error || '未知错误'), 'error');
     }
   } catch (e) {
-    alert('网络请求失败: ' + (e.message || '请确认后端服务已启动'));
+    showToast('网络请求失败: ' + (e.message || '请确认后端服务已启动'), 'error');
   }
 }
 

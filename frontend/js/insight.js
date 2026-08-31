@@ -509,14 +509,14 @@ async function loadGradRetention() {
   [retEl, d30El, proEl, grRet, gr30d, grPro].forEach(el => { if (el) el.textContent = '—'; });
   if (grTable) grTable.innerHTML = '<tbody><tr><td colspan="8" style="color:#9CA3AF;">加载中…</td></tr></tbody>';
   try {
-    const [capRes, s2Res] = await Promise.all([
-      fetch(API_BASE + '/api/captains'),
+    const [spRes, s2Res] = await Promise.all([
+      fetch(API_BASE + '/api/sister-profile'),
       fetch(API_BASE + '/api/sister2-profile'),
     ]);
-    const cap = await capRes.json();
+    const sp = await spRes.json();
     const s2 = await s2Res.json();
     const promotedSet = new Set((s2.list || []).filter(x => x.promoted).map(x => x.sister_uid));
-    const graduates = cap.recent_graduates || [];
+    const graduates = sp.recent_graduates || [];
     const promoted = graduates.filter(g => promotedSet.has(g.sister_uid2)).length;
     const promotedTxt = promoted + ' 人';
     if (proEl) proEl.textContent = promotedTxt;
@@ -745,7 +745,7 @@ async function saveTalentAction() {
   const date = document.getElementById('ta-date').value;
   const note = document.getElementById('ta-note').value.trim();
   if (!taUid) return;
-  if (!date) { alert('请选择动作日期'); return; }
+  if (!date) { showToast('请选择动作日期', 'error'); return; }
   try {
     const res = await fetch(API_BASE + '/api/talent-actions', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -760,8 +760,8 @@ async function saveTalentAction() {
     });
     const d = await res.json();
     if (d.success) { closeTalentActionModal(); loadTalentActions(); }
-    else { alert(d.error || '保存失败'); }
-  } catch (e) { console.error('保存记录失败:', e); alert('保存失败'); }
+    else { showToast(d.error || '保存失败', 'error'); }
+  } catch (e) { console.error('保存记录失败:', e); showToast('保存失败', 'error'); }
 }
 
 let talentActionsList = [];
@@ -818,7 +818,7 @@ function closeTalentResultModal() {
 async function saveTalentResult() {
   if (trId == null) return;
   const date = document.getElementById('tr-date').value;
-  if (!date) { alert('请选择回填日期'); return; }
+  if (!date) { showToast('请选择回填日期', 'error'); return; }
   const body = {
     result_sister_promoted: document.getElementById('tr-sister-promoted').checked ? 1 : 0,
     result_team_alive: document.getElementById('tr-team-alive').checked ? 1 : 0,
@@ -834,6 +834,6 @@ async function saveTalentResult() {
     });
     const d = await res.json();
     if (d.success) { closeTalentResultModal(); loadTalentActions(); }
-    else { alert(d.error || '保存失败'); }
-  } catch (e) { console.error('保存结果失败:', e); alert('保存失败'); }
+    else { showToast(d.error || '保存失败', 'error'); }
+  } catch (e) { console.error('保存结果失败:', e); showToast('保存失败', 'error'); }
 }

@@ -257,7 +257,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC'
   --wb-pad: 24px;
 }
 body { background: var(--wb-bg); }
-.wb-wrap { max-width: var(--wb-page); margin: 0 auto; padding: 0 var(--wb-pad); }
+.wb-wrap { max-width: none; margin: 0 auto; padding: 0 var(--wb-pad); }
 
 /* 导航条（覆盖旧紫渐变） */
 .header { background: var(--wb-nav); padding: 0; }

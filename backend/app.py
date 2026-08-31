@@ -1694,8 +1694,23 @@ def api_dissolve_reasons():
         'count': r['c'],
         'share': round(r['c'] / total * 100, 1) if total else 0,
     } for r in rows]
+    # 近8周各原因趋势（多线图）：按「累计解散数降序」的原因列表对齐，历史周缺项补 0
+    reason_names = [r['reason'] for r in reasons]
+    trend = {'weeks': [], 'series': [{'reason': n, 'data': []} for n in reason_names]}
+    for ws, we in week_list_from_detail(conn, limit=8):
+        trend['weeks'].append(f"{ws[5:]}~{we[5:]}")
+        wk = conn.execute(f"""
+            SELECT {DISSOLVE_REASON_CASE} AS reason, COUNT(*) AS c
+            FROM team_detail
+            WHERE {latest_teams} AND dissolve_date IS NOT NULL AND dissolve_date != ''
+              AND dissolve_date >= ? AND dissolve_date <= ? {hall_cond}
+            GROUP BY reason
+        """, (ws, we) + hp).fetchall()
+        cmap = {r['reason']: r['c'] for r in wk}
+        for s in trend['series']:
+            s['data'].append(cmap.get(s['reason'], 0))
     conn.close()
-    return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons})
+    return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons, 'trend': trend})
 
 
 @app.route('/api/lying-flat')

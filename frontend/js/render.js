@@ -177,6 +177,7 @@ async function openHallFocus(hallName) {
   renderHfTrend('hf-chart-rev', trend, 'total_reward', 'money', hallName);
   renderHfWeekTable(trend);
   renderHfDissolve(hallName);
+  renderHfTeamList(hallName);
   panel.style.display = '';
   setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
@@ -186,7 +187,7 @@ function closeHallFocus() {
   if (panel) panel.style.display = 'none';
   const drill = document.getElementById('hf-week-drill');
   if (drill) drill.style.display = 'none';
-  ['hf-chart-ret', 'hf-chart-rev', 'hf-diss'].forEach(id => {
+  ['hf-chart-ret', 'hf-chart-rev', 'hf-diss', 'hf-diss-trend'].forEach(id => {
     if (charts[id]) { charts[id].dispose(); charts[id] = null; }
   });
 }
@@ -441,11 +442,82 @@ async function renderHfDissolve(hallName) {
     charts['hfDiss'].on('click', function (params) {
       if (params.name && typeof drillToReason === 'function') drillToReason(params.name);
     });
+    renderHfDissTrend(d);
     if (ins) {
       const top = d.reasons[0];
-      ins.innerHTML = `该厅累计结束 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。近 8 周各原因趋势待后端补按周序列后落地。`;
+      ins.innerHTML = `该厅累计结束 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。近 8 周各原因趋势见右侧折线图。`;
     }
   } catch (e) { console.error('解散原因构成加载失败:', e); }
+}
+
+/* 解散原因构成 · 近 8 周各原因趋势（多折线） */
+function renderHfDissTrend(d) {
+  const el = document.getElementById('hf-diss-trend');
+  if (!el) return;
+  const trend = d.trend || {};
+  const weeks = trend.weeks || [];
+  const series = trend.series || [];
+  if (!weeks.length || !series.length) {
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">暂无趋势数据</div>';
+    return;
+  }
+  if (charts['hf-diss-trend']) charts['hf-diss-trend'].dispose();
+  const palette = ['#D56060', '#C98A2D', '#E11D48', '#9333EA', '#16A34A', '#9CA3AF', '#E08A5A', '#C0C4CC'];
+  charts['hf-diss-trend'] = echarts.init(el);
+  charts['hf-diss-trend'].setOption({
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' } },
+    legend: { top: 0, textStyle: { fontSize: 10, color: '#6B7280' }, type: 'scroll' },
+    grid: { left: 40, right: 20, top: 32, bottom: 30 },
+    xAxis: { type: 'category', data: weeks, axisLabel: { fontSize: 10, rotate: 30 } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#6B7280' } },
+    series: series.map((s, i) => ({
+      name: s.reason, type: 'line', data: s.data, smooth: true, connectNulls: true, symbolSize: 5,
+      lineStyle: { color: palette[i % palette.length], width: 2 },
+      itemStyle: { color: palette[i % palette.length] },
+    })),
+  });
+  charts['hf-diss-trend'].off('click');
+  charts['hf-diss-trend'].on('click', function (params) {
+    if (params.seriesName && typeof drillToReason === 'function') drillToReason(params.seriesName);
+  });
+}
+
+/* ── 厅揭示面板 · 该厅团明细（团ID可点击开弹窗） ── */
+let _hfTeamRows = [];
+async function renderHfTeamList(hallName) {
+  const el = document.getElementById('hf-team-list');
+  const src = document.getElementById('hf-team-list-src');
+  if (!el) return;
+  try {
+    const res = await fetch(API_BASE + '/api/detail-table?page=1&per_page=50&status=all&hall=' + encodeURIComponent(hallName));
+    const d = await res.json();
+    const rows = d.data || [];
+    _hfTeamRows = rows;
+    if (src) src.textContent = `${hallName} · 共 ${d.total || rows.length} 个团${rows.length > 50 ? '（最多显示前 50 条）' : ''}`;
+    if (!rows.length) {
+      el.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:14px;">该厅暂无团数据</td></tr>';
+      return;
+    }
+    el.innerHTML = '<thead><tr><th>团ID</th><th>成团日期</th><th>姐姐</th><th>妹妹</th><th class="num">已成团天</th><th>状态</th><th>解散原因</th></tr></thead><tbody>' +
+      rows.map((r, i) => {
+        const st = r.dissolve_date ? '<span class="chip flat">已解散</span>' : '<span class="chip up">进行中</span>';
+        return `<tr style="cursor:pointer;" onclick="openHfTeam(${i})">
+          <td style="color:#5B3EC4;font-weight:500;">${r.team_id}</td>
+          <td>${r.form_date || '-'}</td>
+          <td>${r.sister_nickname || '-'}</td>
+          <td>${r.sister_nickname2 || '-'}</td>
+          <td class="num">${r.days_since_formed || 0}</td>
+          <td>${st}</td>
+          <td>${r.dissolve_reason || '-'}</td>
+        </tr>`;
+      }).join('') + '</tbody>';
+  } catch (e) { console.error('该厅团明细加载失败:', e); }
+}
+
+function openHfTeam(i) {
+  const r = _hfTeamRows && _hfTeamRows[i];
+  if (!r) return;
+  if (typeof renderTeamDetailModal === 'function') renderTeamDetailModal(r);
 }
 
 function renderUIDResult(data) {
@@ -803,7 +875,7 @@ function renderPartnerTableMulti(participants) {
 }
 
 function exportUIDResult() {
-  if (!_lastUIDResult) { alert('请先进行UID查询'); return; }
+  if (!_lastUIDResult) { if (typeof showToast === 'function') showToast('请先进行UID查询', 'error'); return; }
   const d = _lastUIDResult;
   const cmp = d.compare || {};
   const thisLabel = d.this_week?.week_label || '本周';

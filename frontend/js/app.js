@@ -162,6 +162,15 @@ function onWeekChange() {
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
 }
 
+// 顶部搜索栏全局搜索：同步到明细搜索框 → 重载明细并滚动定位
+function topSearch() {
+  const q = (document.getElementById('top-search') || {}).value || '';
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = q.trim();
+  if (typeof loadDetailTable === 'function') loadDetailTable(1);
+  if (typeof focusDetailTable === 'function') focusDetailTable();
+}
+
 function refreshData() {
   // 工作台（KPI + 趋势图）
   if (typeof refreshWorkbench === 'function') refreshWorkbench();
@@ -209,7 +218,7 @@ function jumpToUID(uid, teamId) {
 async function queryUID(teamId) {
   const uid = document.getElementById('uid-input').value.trim();
   const captainType = document.getElementById('uid-type').value;
-  if (!uid) { alert('请输入UID'); return; }
+  if (!uid) { if (typeof showToast === 'function') showToast('请输入UID', 'error'); return; }
   document.getElementById('uid-loading').style.display = 'block';
   document.getElementById('uid-result').style.display = 'none';
   document.getElementById('uid-error').style.display = 'none';

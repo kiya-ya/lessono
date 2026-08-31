@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=46">
+<link rel="stylesheet" href="css/style.css?v=47">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -99,6 +99,17 @@
       <button class="wb-guide-close" onclick="closeWbGuide()" title="收起">✕</button>
     </div>
 
+    <!-- 顶部搜索栏：全局搜索 + 大厅/周筛选（联动下方全部数据） -->
+    <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
+      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;">
+        <input type="text" id="top-search" class="wb-input" style="flex:1;min-width:220px;padding:8px 12px;" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" autocomplete="off" onkeydown="if(event.key==='Enter')topSearch()">
+        <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
+        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
+        <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
+        <button onclick="topSearch()">搜索</button>
+      </div>
+    </div>
+
     <!-- 厅体检卡墙（厅运营） -->
     <div id="wb-hall-wall" style="display:none">
       <div class="section-head">
@@ -157,9 +168,6 @@
     <div class="section-head">
       <h2 id="wb-kpi-title">核心指标</h2>
       <span class="hint" id="wb-kpi-subtitle"></span>
-      <select id="hall-select" class="wb-select" style="margin-left:auto" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
-      <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
-      <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
     </div>
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算方式</span></div>
@@ -345,7 +353,7 @@
     </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
-        <input type="text" id="detail-search" placeholder="搜索姐妹团ID、昵称、大厅..." style="width:100%;" autocomplete="off">
+        <input type="text" id="detail-search" placeholder="按团ID搜索…" style="width:100%;" autocomplete="off">
         <div class="search-suggest" id="search-suggest" style="display:none;"></div>
       </div>
       <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
@@ -441,7 +449,7 @@
         <span><b>躺平</b> = 进行中团连续 <b>≥4 天</b> 未完成陪档；<b>提醒</b> = 连续 <b>1~3 天</b> 未陪档。自动解散线为「连续 5 日未完成陪档」，预警阈值取 4 天以便提前介入。连续天数按快照日计（快照有断档，实际自然日略多）。</span>
       </div>
     </div>
-    <div class="lying-kpis">
+    <div class="lying-kpis" id="lying-kpis">
       <div class="lying-kpi danger"><div class="lk-label"><span class="dot red"></span>躺平团数</div><div class="lk-val" id="ly-lying">--</div><div class="lk-foot">连续 ≥4 天未陪档</div></div>
       <div class="lying-kpi"><div class="lk-label"><span class="dot amber"></span>提醒团数</div><div class="lk-val" id="ly-warning">--</div><div class="lk-foot">连续 1~3 天未陪档</div></div>
       <div class="lying-kpi"><div class="lk-label"><span class="dot green"></span>陪档活跃率</div><div class="lk-val" id="ly-rate">--</div><div class="lk-foot">最新快照日有陪档团 ÷ 进行中团</div></div>
@@ -549,10 +557,18 @@
         <div class="chart-card" style="grid-column:1/-1;"><h3>该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
       </div>
       <div style="margin-top:14px;">
-        <h3 style="display:flex;justify-content:space-between;align-items:center;">解散原因构成<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅已解散团 · 环形占比 · 点扇区下钻</span></h3>
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">解散原因构成<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅已解散团 · 环形占比 + 近8周趋势 · 点扇区下钻</span></h3>
         <div class="chart-src" id="hf-diss-src" style="margin-top:6px;">—</div>
-        <div class="chart-box" id="hf-diss"></div>
+        <div class="chart-grid">
+          <div class="chart-card"><h3>环形占比</h3><div class="chart-box" id="hf-diss"></div></div>
+          <div class="chart-card"><h3>近 8 周各原因趋势</h3><div class="chart-box" id="hf-diss-trend"></div></div>
+        </div>
         <div class="chart-insight" id="hf-diss-insight"></div>
+      </div>
+      <div style="margin-top:14px;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">该厅团明细<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅全量团 · 点团ID查看</span></h3>
+        <div class="chart-src" id="hf-team-list-src" style="margin-top:6px;">—</div>
+        <div class="rank-scroll" style="max-height:360px;"><table class="rank-table" id="hf-team-list"></table></div>
       </div>
       <div class="chart-src" style="margin-top:10px;">点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
       <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
@@ -691,6 +707,17 @@
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>培养力象限（妹妹成长 × 培养升牌率）</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="hint">只显示候选 · 密集区聚合</span>
+            <select id="quadrant-hall-select" class="wb-select" onchange="setQuadrantHall(this.value)"><option value="all">全部大厅</option></select>
+          </div>
+        </h3>
+        <div class="chart-src">X 轴培养升牌率 · Y 轴妹妹成长(分/月) · 单点显示姓名、密集格聚合为「N 位」气泡 · 点单点/气泡名单跳 UID 查询</div>
+        <div class="chart-container" id="chart-talent-quadrant" style="height:320px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <span>培养力候选池</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span class="hint">并列展示，不做权威排序</span>
@@ -705,17 +732,6 @@
         <div class="rank-scroll"><table class="rank-table" id="pool-table"></table></div>
         <div class="pagination" id="pool-pagination" style="margin-top:8px;justify-content:center;"></div>
         <div class="chart-insight" id="pool-insight"></div>
-      </div>
-      <div class="chart-card">
-        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <span>培养力象限（妹妹成长 × 培养升牌率）</span>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="hint">只显示候选 · 密集区聚合</span>
-            <select id="quadrant-hall-select" class="wb-select" onchange="setQuadrantHall(this.value)"><option value="all">全部大厅</option></select>
-          </div>
-        </h3>
-        <div class="chart-src">X 轴培养升牌率 · Y 轴妹妹成长(分/月) · 单点显示姓名、密集格聚合为「N 位」气泡 · 点单点/气泡名单跳 UID 查询</div>
-        <div class="chart-container" id="chart-talent-quadrant" style="height:320px;"></div>
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1006,12 +1022,12 @@
 
 <script src="js/config.js?v=44"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=58"></script>
+<script src="js/api.js?v=59"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=56"></script>
-<script src="js/app.js?v=61"></script>
+<script src="js/render.js?v=57"></script>
+<script src="js/app.js?v=62"></script>
 <script src="js/workbench.js?v=57"></script>
-<script src="js/insight.js?v=58"></script>
+<script src="js/insight.js?v=59"></script>
 <script src="js/warncenter.js?v=3"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>
