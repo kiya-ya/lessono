@@ -85,6 +85,9 @@ async function loadWorkbenchOverview(initial = false) {
   const isAdmin = wbOverview.role === 'admin';
   document.getElementById('wb-hall-wall').style.display = isAdmin ? 'none' : '';
   document.getElementById('wb-rank-board').style.display = isAdmin ? '' : 'none';
+  // 厅运营看不到厅排行榜时，姐姐排行·当日 独占一行，避免右侧留白
+  const captainBox = document.getElementById('overview-captain-box');
+  if (captainBox) captainBox.style.gridColumn = isAdmin ? '' : '1 / -1';
   if (isAdmin) wbRenderRank(); else wbRenderWall();
 }
 
@@ -379,26 +382,27 @@ function wbRenderKPI() {
   }
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
-  const disPctSpark = weeks.map(w => (w.dissolved_count > 0 ? (w.active_dissolved_count || 0) / w.dissolved_count * 100 : 0));
   const heroes = [
-    { label: '留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'green', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
+    { label: '妹妹留存率', num: wbKpi.sister_retention ? wbKpi.sister_retention.value : null, fmt: 'pct', c: 0, suf: 'pp', note: '待落地 · 越高越好', accent: 'green', metric: 'sisretention', spark: [] },
     { label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
-    { label: '礼物奖励金额', num: wbKpi.revenue.value, fmt: 'money', c: wbKpi.revenue.change, suf: '%', note: '越高越好', accent: 'gold', metric: 'revenue', spark: sparkOf('total_reward') },
     { label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
     { label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
-    { label: '主动解散占比', num: wbKpi.active_dissolved_pct.value, fmt: 'pct', c: -wbKpi.active_dissolved_pct.change, suf: 'pp', note: '越低越好', accent: 'amber', metric: 'activediss', spark: disPctSpark },
+    { label: '姐妹团留存率', num: wbKpi.retention.value, fmt: 'pct', c: wbKpi.retention.change, suf: 'pp', note: '越高越好', accent: 'amber', metric: 'retention', spark: sparkOf('retention_rate').map(x => Math.min(100, x)) },
+    { label: '毕业妹妹数', num: wbKpi.graduated_sisters ? wbKpi.graduated_sisters.value : 0, fmt: 'int', c: wbKpi.graduated_sisters ? wbKpi.graduated_sisters.change : 0, suf: '%', note: '节奏平稳', accent: 'gold', metric: 'graduated', spark: sparkOf('graduation_count') },
   ];
   const fmtOf = f => f === 'money' ? v => wbFmtMoney(v) : f === 'int' ? v => Math.round(v) + ' 个' : v => Math.round(v) + '%';
-  document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => `
-    <div class="kpi-card hero accent-${k.accent}"${k.metric ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : ''}>
+  document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => {
+    const clickable = k.metric && k.metric !== 'sisretention' && k.metric !== 'graduated';
+    return `
+    <div class="kpi-card hero accent-${k.accent}"${clickable ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : (k.metric === 'sisretention' ? ` data-metric="${k.metric}" onclick="jumpToGrad()" title="毕业妹妹留存待落地，点击进入姐姐分析毕业妹妹模块"` : ` data-metric="${k.metric}" onclick="jumpToGraduated()" title="点击查看毕业妹妹名单"`)}>
       <div class="kpi-top">
         <span class="kpi-label">${k.label}</span>
         <span class="kpi-note">${k.note}</span>
       </div>
-      <div class="kpi-value" data-count="${k.num}" data-fmt="${k.fmt}">${fmtOf(k.fmt)(k.num)}</div>
-      <div class="kpi-foot">${wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
+      <div class="kpi-value" data-count="${k.num == null ? 0 : k.num}" data-fmt="${k.fmt}">${k.num == null ? '—' : fmtOf(k.fmt)(k.num)}</div>
+      <div class="kpi-foot">${k.num == null ? '<span class="chip flat">待落地</span>' : wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
       ${wbSpark(k.spark)}
-    </div>`).join('');
+    </div>`;}).join('');
   document.getElementById('wb-kpi-sub').innerHTML = '';
   // 数字滚动（数形结合的动态感）；KPI 卡在管理员视角下位于排行榜下方，滚入视口才播
   const kpiCountUp = () => document.querySelectorAll('#wb-kpi-hero .kpi-value').forEach(el => {

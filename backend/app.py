@@ -718,6 +718,10 @@ def api_kpi():
         'activity':      {'value': this_row['activity_index'],      'change': round(this_row['activity_index'] - getv(prev_row, 'activity_index'), 2),      'unit': ''},
         'achievement':   {'value': this_achieve, 'change': round(this_achieve - prev_achieve, 2), 'unit': '%'},
         'active_dissolved_pct': {'value': this_row['active_dissolved_pct'], 'change': round(this_row['active_dissolved_pct'] - getv(prev_row, 'active_dissolved_pct'), 2), 'unit': '%', 'reverse': True},
+        # 毕业妹妹数（满30天自动毕业计数，对齐 preview「毕业妹妹数」卡）
+        'graduated_sisters': {'value': this_row['graduation_count'], 'change': calc_pct(this_row['graduation_count'], getv(prev_row, 'graduation_count')), 'unit': '人'},
+        # 妹妹留存率（毕业妹妹毕业后仍留存/产出的占比）：依赖回访数据，后端待落地，前端显「待落地」
+        'sister_retention': {'value': None, 'change': 0, 'unit': '%'},
     }
     return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
 

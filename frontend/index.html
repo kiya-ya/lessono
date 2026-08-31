@@ -172,16 +172,16 @@
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算方式</span></div>
       <div class="dn-line">
-        <span class="dni"><b>留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>妹妹留存率</b><code>毕业后仍留存/产出的妹妹 ÷ 毕业妹妹总数</code><span>毕业妹妹留存，越高越好</span></span>
         <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
-        <span class="dni"><b>礼物奖励金额</b><code>本周发放的礼物奖励总额</code><span>姐妹团礼物奖励口径</span></span>
-        <span class="dni"><b>新成团数</b><code>本周新配对成团数</code><span>日级明细</span></span>
-        <span class="dni"><b>进行中姐妹团</b><code>期末在榜团数</code><span>未解散团数</span></span>
-        <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>手动+离职含换厅+注销</span></span>
+        <span class="dni"><b>新成团数</b><code>周期计数</code><span>新配对成团数</span></span>
+        <span class="dni"><b>进行中姐妹团</b><code>期末在榜计数</code><span>未解散团数</span></span>
+        <span class="dni"><b>姐妹团留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>毕业妹妹数</b><code>周期内满 30 天自动毕业计数</code><span>毕业节奏</span></span>
       </div>
       <div class="dn-notes">
         <span class="dn-tag">注意</span>
-        <span>毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周，对比口径均为较上一周。点各指标卡展开趋势 / 分布明细。</span>
+        <span><b>妹妹留存率</b>（毕业妹妹毕业后仍留存/产出的占比，口径：回访为主、近似兜底，待落地）与 <b>姐妹团留存率</b>（团口径、老团留存）是两个概念，请勿混读。毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周，对比口径均为较上一周。点各指标卡展开趋势 / 分布明细。</span>
       </div>
     </div>
     <div class="kpi-hero" id="wb-kpi-hero"></div>
@@ -191,7 +191,7 @@
     <div class="kpi-detail" id="wb-kpi-detail">
       <div class="kpi-detail-card" data-metric="retention">
         <div class="kpi-detail-head">
-          <h3>留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
+          <h3>姐妹团留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
           <div class="kpi-detail-tabs">
             <button class="on" data-tab="trend" onclick="wbRetentionTab('trend')">趋势</button>
             <button data-tab="dist" onclick="wbRetentionTab('dist')">分布</button>
@@ -353,7 +353,7 @@
     </div>
     <div class="search-box" style="flex-wrap:wrap;">
       <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
-        <input type="text" id="detail-search" placeholder="按团ID搜索…" style="width:100%;" autocomplete="off">
+        <input type="text" id="detail-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="width:100%;" autocomplete="off">
         <div class="search-suggest" id="search-suggest" style="display:none;"></div>
       </div>
       <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
@@ -398,10 +398,10 @@
 <th>姐姐</th>
 <th>妹妹</th>
 <th onclick="toggleSort('days_since_formed')" style="cursor:pointer;">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
-<th onclick="toggleSort('reward_amount')" style="cursor:pointer;">奖励金额 <span id="sort-reward_amount">▲▼</span></th>
 <th>状态</th>
 <th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
 <th>解散原因</th>
+<th onclick="toggleSort('reward_amount')" style="cursor:pointer;">奖励金额 <span id="sort-reward_amount">▲▼</span></th>
 </tr></thead>
         <tbody id="detail-table-body"></tbody>
       </table>
@@ -461,7 +461,7 @@
       <div class="wr-line"><span class="wn-tag warning">提醒</span>连续 <b>1~3 天</b> 未陪档，列入观察名单</div>
       <div class="wr-line"><span class="wn-tag warning">注意</span>长期未陪档团多已接近 30 天毕业线，属毕业前自然停滞，需与真正流失区分</div>
     </div>
-    <div class="chart-grid">
+    <div class="chart-grid" style="align-items:start;">
       <div class="chart-card">
         <h3>连续未陪档天数分布</h3>
         <div class="chart-src">进行中团按连续未陪档天数分组 · 点柱下钻</div>
@@ -1022,12 +1022,12 @@
 
 <script src="js/config.js?v=44"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=59"></script>
+<script src="js/api.js?v=60"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=57"></script>
 <script src="js/app.js?v=62"></script>
-<script src="js/workbench.js?v=57"></script>
-<script src="js/insight.js?v=59"></script>
+<script src="js/workbench.js?v=58"></script>
+<script src="js/insight.js?v=60"></script>
 <script src="js/warncenter.js?v=3"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>

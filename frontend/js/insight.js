@@ -495,6 +495,16 @@ function jumpToGrad() {
   }, 150);
 }
 
+// 概览「毕业妹妹数」卡点击：切到姐姐分析并定位毕业妹妹名单模块
+function jumpToGraduated() {
+  switchPage('captains');
+  switchCaptainView('profile');
+  setTimeout(() => {
+    const el = document.getElementById('grad-sec') || document.getElementById('grad-preview');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
+}
+
 // 回填「毕业妹妹留存」模块（概览 3 卡 + 姐姐分析完整模块）：
 // 晋升为姐姐取真数；留存率 2 卡 + 毕业后轨迹占位「待落地」（依赖回访数据，后端暂无）
 async function loadGradRetention() {
