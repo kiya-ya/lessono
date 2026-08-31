@@ -54,9 +54,8 @@ async function loadWeeks() {
     const savedWeek = localStorage.getItem('wb_week');
     if (savedWeek) currentWeek = savedWeek;
 
-    // 填充周选择下拉（概览页 KPI 标题行右侧）
-    const sel = document.getElementById('week-select');
-    if (sel) {
+    // 填充周选择下拉（概览页 KPI 标题行右侧 + 姐姐分析画像周选择）
+    const buildWeekOptions = () => {
       const opts = [];
       if (!hasThisWeek) {
         opts.push(`<option value="${thisWeekValue}">本周·收集中（${thisWeekStart.slice(5)} ~ ${thisWeekEnd.slice(5)}）</option>`);
@@ -66,8 +65,17 @@ async function loadWeeks() {
         const label = w.week_label || `${(w.week_start || '').slice(5)} ~ ${(w.week_end || '').slice(5)}`;
         return `<option value="${v}">${label}</option>`;
       }));
-      sel.innerHTML = opts.join('');
+      return opts;
+    };
+    const sel = document.getElementById('week-select');
+    if (sel) {
+      sel.innerHTML = buildWeekOptions().join('');
       sel.value = currentWeek;
+    }
+    const sisterSel = document.getElementById('sister-week-select');
+    if (sisterSel) {
+      sisterSel.innerHTML = buildWeekOptions().join('');
+      sisterSel.value = dbWeeks[0] ? (dbWeeks[0].week_start + '|' + dbWeeks[0].week_end) : thisWeekValue;
     }
   } catch (e) { console.error('周列表加载失败:', e); }
 }

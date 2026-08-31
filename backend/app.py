@@ -972,6 +972,14 @@ def api_sister_profile():
     weeks = [r['week_start'] for r in conn.execute('SELECT DISTINCT week_start FROM team_sister_revenue ORDER BY week_start').fetchall()]
     cur_week = weeks[-1] if weeks else None
     prev_week = weeks[-2] if len(weeks) >= 2 else None
+    # 时间周选择器（G 节）：week=YYYY-MM-DD|YYYY-MM-DD，取 week_start 定位历史某周
+    week_param = request.args.get('week', '')
+    if week_param and '|' in week_param:
+        ws = week_param.split('|')[0]
+        if ws in weeks:
+            idx = weeks.index(ws)
+            cur_week = ws
+            prev_week = weeks[idx - 1] if idx > 0 else None
 
     hc = '' if hall == 'all' else 'AND hall_name = ?'
     hp = [] if hall == 'all' else [hall]
@@ -1184,11 +1192,13 @@ def api_talent_pool():
     # 基础：昵称 + 牌子等级（最新快照）
     base = {}
     for r in conn.execute(f"""
-        SELECT CAST(sister_uid AS TEXT) AS su, MAX(sister_nickname) AS nickname, MAX({rank_sql}) AS lv
+        SELECT CAST(sister_uid AS TEXT) AS su, MAX(sister_nickname) AS nickname, MAX({rank_sql}) AS lv,
+               GROUP_CONCAT(DISTINCT hall_name) AS halls
         FROM team_detail WHERE {latest} AND sister_uid IS NOT NULL AND sister_uid != '' {hc} GROUP BY su
     """, hp).fetchall():
         base[r['su']] = {'sister_uid': r['su'], 'sister_nickname': r['nickname'],
-                         'level': LEVEL_NAMES.get(r['lv'], '无'), 'level_rank': r['lv'] or 0}
+                         'level': LEVEL_NAMES.get(r['lv'], '无'), 'level_rank': r['lv'] or 0,
+                         'halls': r['halls'] or ''}
 
     # 留存：历史带团总数 + 进行中团数（最新快照）
     for r in conn.execute(f"""

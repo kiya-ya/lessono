@@ -429,18 +429,19 @@
         <button id="cap-view-profile" class="on" onclick="switchCaptainView('profile')">画像</button>
         <button id="cap-view-pool" onclick="switchCaptainView('pool')">候选池</button>
       </div>
+      <select id="sister-week-select" class="wb-select" onchange="loadSisterProfile()" title="切换画像统计周（本周流水 / 环比）"></select>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div id="captains-main">
     <div class="chart-grid">
       <div class="chart-card">
         <h3>🏷️ 打标分布</h3>
-        <div class="chart-src">头部（流水前20%且留存≥50%）· 风险（暴跌或带团多留存低）· 其余普通</div>
+        <div class="chart-src">头部（流水前20%且持续率≥65%）· 风险（暴跌或带团多持续率低）· 其余普通</div>
         <div class="chart-container" id="chart-sister-tag" style="height:240px;"></div>
       </div>
       <div class="chart-card">
-        <h3>🌱 带团存活率分布</h3>
-        <div class="chart-src">姐姐按带团存活率分段统计 · 一眼看清留存水位</div>
+        <h3>🌱 姐妹关系持续率分布</h3>
+        <div class="chart-src">姐姐按持续率分段统计 · 一眼看清留存水位</div>
         <div class="chart-container" id="chart-sister-ret" style="height:240px;"></div>
       </div>
     </div>
@@ -450,7 +451,7 @@
         <div style="display:flex;align-items:center;gap:8px;">
           <select id="sister-profile-sort" onchange="setSisterProfileSort(this.value)" class="wb-select">
             <option value="week_rev" selected>本周流水 ↓</option>
-            <option value="retention">存活率 ↓</option>
+            <option value="retention">持续率 ↓</option>
             <option value="total_teams">带团数 ↓</option>
             <option value="rev_wow">流水环比 ↓</option>
           </select>
@@ -460,12 +461,12 @@
           </select>
         </div>
       </h3>
-      <div class="chart-src">产出=本周礼物流水 · 留存=带团存活率 · 稳定性=快照期在榜天数 · 头部/风险自动打标</div>
+      <div class="chart-src">产出=本周礼物流水 · 持续率=姐妹关系持续率（Σ已结束团存续天数÷(已结束团数×30)） · 稳定性=快照期在榜天数 · 头部/风险自动打标</div>
       <div class="tag-legend">
-        <span class="tag-legend-item"><span class="chip up">头部</span>流水前20%且留存≥50%</span>
-        <span class="tag-legend-item"><span class="chip down">风险</span>流水环比↓≥50% 或 带团≥3但留存&lt;50%</span>
+        <span class="tag-legend-item"><span class="chip up">头部</span>流水前20%且持续率≥65%</span>
+        <span class="tag-legend-item"><span class="chip down">风险</span>流水环比↓≥50% 或 带团≥3但持续率&lt;65%</span>
         <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
-        <span class="tag-legend-item"><b>在榜天</b>=快照出现天数 · <b>留存率</b>=进行中÷带团总数</span>
+        <span class="tag-legend-item"><b>在榜天</b>=快照出现天数 · <b>毕业率</b>=自然毕业团÷已结束团（持续率副行）</span>
       </div>
       <div class="survival-chips" id="sister-profile-sum"></div>
       <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
@@ -487,8 +488,15 @@
       <button class="expand-btn" id="captain-expand" onclick="openCaptainFull()">展开全部 →</button>
     </div>
     <div class="chart-card">
-      <h3>🎓 最近一周毕业的妹妹</h3>
-      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 近 7 天毕业 · 点卡片展开查看妹妹 UID 与配对姐姐</div>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>🎓 毕业妹妹</span>
+        <div class="seg">
+          <button id="grad-today" onclick="setGradRange('today')">今天</button>
+          <button id="grad-week" class="on" onclick="setGradRange('week')">近一周</button>
+          <button id="grad-month" onclick="setGradRange('month')">近一月</button>
+        </div>
+      </h3>
+      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 点卡片展开查看妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水</div>
       <div id="grad-preview"></div>
       <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
     </div>
@@ -507,11 +515,22 @@
             </select>
           </div>
         </h3>
-        <div class="chart-src">四因子证据：留存（存活率≥50%）· 妹妹成长（月成长分&gt;0）· 共同成长 · 牌子等级（铜牌起）</div>
+        <div class="chart-src">四因子证据：持续率（≥65%）· 妹妹成长（月成长分&gt;0）· 培养升牌率 · 牌子等级（银牌起）；培养力总分 = 0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率（仅排序参考，不进候选硬门槛）</div>
         <div class="survival-chips" id="pool-sum"></div>
         <div class="rank-scroll"><table class="rank-table" id="pool-table"></table></div>
         <div class="pagination" id="pool-pagination" style="margin-top:8px;justify-content:center;"></div>
         <div class="chart-insight" id="pool-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>📈 培养力象限（妹妹成长 × 培养升牌率）</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="hint">只显示候选 · 密集区聚合</span>
+            <select id="quadrant-hall-select" class="wb-select" onchange="setQuadrantHall(this.value)"><option value="all">全部大厅</option></select>
+          </div>
+        </h3>
+        <div class="chart-src">X 轴培养升牌率 · Y 轴妹妹成长(分/月) · 单点显示姓名、密集格聚合为「N 位」气泡 · 点单点/气泡名单跳 UID 查询</div>
+        <div class="chart-container" id="chart-talent-quadrant" style="height:320px;"></div>
       </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -774,10 +793,10 @@
 <div class="cookie-modal" id="grad-full-modal">
   <div class="cookie-modal-content" style="width:760px; max-width:95%;">
     <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span>🎓 最近一周毕业的妹妹</span>
+      <span>🎓 毕业妹妹名单</span>
       <button onclick="closeGradFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
     </h3>
-    <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 妹妹 UID + 配对姐姐一览</div>
+    <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水一览</div>
     <div class="rank-scroll" style="max-height:60vh;"><table class="rank-table" id="grad-full-table"></table></div>
     <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
       <button class="btn-cancel" onclick="closeGradFull()">关闭</button>
@@ -795,7 +814,7 @@
 <script src="js/render.js?v=50"></script>
 <script src="js/app.js?v=55"></script>
 <script src="js/workbench.js?v=55"></script>
-<script src="js/insight.js?v=51"></script>
+<script src="js/insight.js?v=52"></script>
 <script src="js/warncenter.js?v=1"></script>
 </body>
 </html>

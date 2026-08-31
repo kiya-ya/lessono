@@ -158,13 +158,19 @@ let sisterProfileGraduates = [];
 let sisterProfilePage = 0;
 let sisterProfilePerPage = 20;
 let sisterProfileSort = 'week_rev';
+let gradRange = 'week';   // 毕业妹妹时间档：today / week / month
+
+function getSisterWeekParam() {
+  const wkSel = document.getElementById('sister-week-select');
+  return wkSel && wkSel.value ? '&week=' + encodeURIComponent(wkSel.value) : '';
+}
 
 async function loadSisterProfile() {
   const sumEl = document.getElementById('sister-profile-sum');
   const tableEl = document.getElementById('sister-profile-table');
   if (!tableEl) return;
   try {
-    const res = await fetch(API_BASE + '/api/sister-profile?' + getHallParam().substring(1));
+    const res = await fetch(API_BASE + '/api/sister-profile?' + getHallParam().substring(1) + getSisterWeekParam() + '&grad_range=' + gradRange);
     const d = await res.json();
     if (d.error) return;
     sisterProfileList = d.list || [];
@@ -178,7 +184,7 @@ async function loadSisterProfile() {
       <span class="survival-chip">💰 本周流水 TOP：${s.top_sister || '—'} <strong>${wbFmtMoney(s.top_rev || 0)}</strong></span>`;
     const insEl = document.getElementById('sister-profile-insight');
     if (insEl) {
-      insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且留存≥50%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多留存低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
+      insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且持续率≥65%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多持续率低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
     }
     renderSisterProfile();
     renderSisterCharts();
@@ -186,32 +192,46 @@ async function loadSisterProfile() {
   } catch (e) { console.error('姐姐画像加载失败:', e); }
 }
 
-/* 最近一周毕业的妹妹（满30天自动毕业） */
+/* 最近毕业的妹妹（满30天自动毕业）· 三档时间切换 + 富字段 */
+const GRAD_RANGE_LABEL = { today: '今天', week: '近一周', month: '近一个月' };
+
+function setGradRange(v) {
+  gradRange = v;
+  ['today', 'week', 'month'].forEach(k => {
+    const b = document.getElementById('grad-' + k);
+    if (b) b.classList.toggle('on', k === v);
+  });
+  loadSisterProfile();
+}
+
 function renderRecentGraduates() {
   const list = sisterProfileGraduates || [];
-  // 1) 小窗口预览（TOP 3）
+  const emptyTxt = `「${GRAD_RANGE_LABEL[gradRange] || ''}」暂无毕业的妹妹。`;
+  // 1) 小窗口预览（TOP 3）：妹妹 + 毕业日期，可点跳 UID
   const prevEl = document.getElementById('grad-preview');
   if (prevEl) {
     prevEl.innerHTML = list.length
-      ? `<ul class="mini-preview">${list.slice(0, 3).map((g, i) => `<li>
+      ? `<ul class="mini-preview">${list.slice(0, 3).map((g, i) => `<li onclick="jumpToUID('${g.sister_uid2 || ''}')" style="cursor:pointer;" title="点击查看妹妹 UID">
           <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
           <span class="mp-name">${g.nickname || g.sister_uid2 || '-'} <span class="mp-sub">🎓 ${g.dissolve_date || '-'}</span></span>
         </li>`).join('')}</ul>`
-      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">近一周暂无毕业的妹妹。</div>';
+      : `<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">${emptyTxt}</div>`;
   }
-  // 2) 全量表（弹窗内）：妹妹 + 姐姐 + 大厅 + 毕业日期
+  // 2) 全量表（弹窗内）：妹妹UID / 姐姐UID / 大厅 / 妹妹最高牌子 / 流水 / 毕业日期
   const tableEl = document.getElementById('grad-full-table');
   if (tableEl) {
     tableEl.innerHTML = list.length
-      ? `<tr><th>#</th><th>妹妹</th><th>姐姐</th><th>大厅</th><th>毕业日期</th></tr>
+      ? `<tr><th>#</th><th>妹妹</th><th>姐姐</th><th>大厅</th><th>妹妹最高牌子</th><th>流水</th><th>毕业日期</th></tr>
         ${list.map((g, i) => `<tr>
           <td class="rank-no ${i < 3 ? 'top' : ''}">${i + 1}</td>
-          <td>${g.nickname || '-'} <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid2 || '-'})</span></td>
-          <td>${g.sister_nickname || '-'} <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid || '-'})</span></td>
-          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.hall_name || '-'}</td>
+          <td><a href="javascript:void(0)" onclick="jumpToUID('${g.sister_uid2 || ''}')">${g.nickname || '-'}</a> <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid2 || '-'})</span></td>
+          <td><a href="javascript:void(0)" onclick="jumpToUID('${g.sister_uid || ''}')">${g.sister_nickname || '-'}</a> <span style="color:var(--wb-text-3);font-size:11px">(${g.sister_uid || '-'})</span></td>
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g.hall_name || '-'}</td>
+          <td>${g.sister_max_level2 || '无'}</td>
+          <td>${wbFmtMoney(g.sister_revenue || 0)}</td>
           <td>${g.dissolve_date || '-'}</td>
         </tr>`).join('')}`
-      : '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:16px;">近一周暂无毕业的妹妹</td></tr>';
+      : `<tr><td colspan="7" style="text-align:center;color:#9CA3AF;padding:16px;">${emptyTxt}</td></tr>`;
   }
   // 展开按钮文案
   const expEl = document.getElementById('grad-expand');
@@ -254,7 +274,7 @@ function renderSisterCharts() {
       }]
     });
   }
-  // 2) 带团存活率分段直方图（分箱避免散点重叠）
+  // 2) 姐妹关系持续率分段直方图（分箱避免散点重叠）
   const retEl = document.getElementById('chart-sister-ret');
   if (retEl && retEl.offsetHeight) {
     const bins = [['0-20%', 0, 20], ['20-40%', 20, 40], ['40-60%', 40, 60], ['60-80%', 60, 80], ['80-100%', 80, 101]];
@@ -305,7 +325,7 @@ function renderSisterProfile() {
   const tag = x => x === 'head' ? '<span class="chip up">头部</span>' : x === 'risk' ? '<span class="chip down">风险</span>' : '<span class="chip flat">普通</span>';
   const wow = v => v == null ? '—' : `<span class="chip ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${v > 0 ? '+' : ''}${v}%</span>`;
   document.getElementById('sister-profile-table').innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>存活率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
+    <tr><th>#</th><th>姐姐</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>持续率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
@@ -314,7 +334,7 @@ function renderSisterProfile() {
       <td>${wow(x.rev_wow)}</td>
       <td>${x.total_teams}</td>
       <td>${x.active_teams}</td>
-      <td>${x.retention == null ? '—' : x.retention + '%'}</td>
+      <td>${x.retention == null ? '—' : x.retention + '%'}<div style="color:var(--wb-text-3);font-size:11px;">毕业 ${x.graduation_rate == null ? '—' : x.graduation_rate + '%'}</div></td>
       <td>${x.avg_days ?? '-'}</td>
       <td>${x.presence_days}</td>
       <td>${tag(x.tag)}</td>
@@ -357,7 +377,7 @@ async function openSisterDetail(uid) {
     document.getElementById('sd-chips').innerHTML = `
       <span class="survival-chip">带团 <strong>${d.total_teams}</strong></span>
       <span class="survival-chip">进行中 <strong>${d.active_teams}</strong></span>
-      <span class="survival-chip">存活率 ${d.retention == null ? '—' : '<strong>' + d.retention + '%</strong>'}</span>
+      <span class="survival-chip">进行中占比 ${d.retention == null ? '—' : '<strong>' + d.retention + '%</strong>'}</span>
       <span class="survival-chip">均成团 <strong>${d.avg_days ?? '—'}</strong>天</span>
       <span class="survival-chip">在榜 <strong>${d.presence_days}</strong>天</span>`;
     // 等级轨迹折线图（姐姐当日等级会波动，用折线展示）
@@ -427,6 +447,9 @@ function sdGoUID() {
 let poolList = [];
 let poolPage = 0;
 let poolPerPage = 20;
+let poolSortField = null;   // null = 后端默认顺序（候选优先 + 牌子等级）
+let poolSortOrder = 'desc';
+let quadrantHall = 'all';    // 培养力象限图按厅筛选
 
 function switchCaptainView(view) {
   const main = document.getElementById('captains-main');
@@ -460,14 +483,39 @@ async function loadTalentPool() {
       <span class="survival-chip">并列展示 · 不做权威排序</span>`;
     const insEl = document.getElementById('pool-insight');
     if (insEl) {
-      insEl.innerHTML = `候选 <b>${d.candidate_count}</b> 位满足「存活率≥50% 且 妹妹有成长 且 牌子≥铜牌」。四因子权重暂为「留存 = 妹妹成长 &gt; 共同成长 &gt; 牌子等级（门槛）」，在攒出成功案例前不做权威排序——请结合四列证据自行判断倾斜给谁，并把动作记到下方「结果记录」。`;
+      insEl.innerHTML = `候选 <b>${d.candidate_count}</b> 位满足「持续率≥65% 且 妹妹有成长 且 牌子≥银牌」。培养力总分 = 0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率，仅作排序参考、不进候选硬门槛——请结合四列证据自行判断倾斜给谁，并把动作记到下方「结果记录」。`;
     }
     renderTalentPool();
+    renderTalentQuadrant();
   } catch (e) { console.error('候选池加载失败:', e); }
 }
 
+function sortPool(field) {
+  if (poolSortField === field) {
+    poolSortOrder = poolSortOrder === 'desc' ? 'asc' : 'desc';
+  } else {
+    poolSortField = field;
+    poolSortOrder = 'desc';
+  }
+  poolPage = 0;
+  renderTalentPool();
+}
+
 function renderTalentPool() {
-  const list = poolList; // 后端已按「候选优先 + 牌子等级」并列分组
+  const poolArrow = f => poolSortField === f ? (poolSortOrder === 'desc' ? '▼' : '▲') : '▲▼';
+  const th = (field, label) => field
+    ? `<th style="cursor:pointer;user-select:none;white-space:nowrap;" onclick="sortPool('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${poolArrow(field)}</span></th>`
+    : `<th>${label}</th>`;
+
+  let list = poolList;
+  if (poolSortField) {
+    list = [...poolList].sort((a, b) => {
+      let av = a[poolSortField], bv = b[poolSortField];
+      if (av == null) av = -Infinity;
+      if (bv == null) bv = -Infinity;
+      return poolSortOrder === 'desc' ? bv - av : av - bv;
+    });
+  }
   const total = list.length;
   const totalPages = Math.max(1, Math.ceil(total / poolPerPage));
   if (poolPage >= totalPages) poolPage = totalPages - 1;
@@ -476,7 +524,7 @@ function renderTalentPool() {
   const page = list.slice(start, start + poolPerPage);
   const cand = c => c ? '<span class="chip up">候选</span>' : '<span class="chip flat">待观察</span>';
   document.getElementById('pool-table').innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>牌子等级</th><th>带团(总/进行)</th><th>存活率</th><th>妹妹成长(成长分/月)</th><th>共同成长</th><th>状态</th><th>操作</th></tr>
+    <tr><th>#</th>${th(null, '姐姐')}${th('level_rank', '牌子等级')}${th('total_teams', '带团(总/进行)')}${th('retention', '持续率')}${th('sister_growth', '妹妹成长(分/月)')}${th('joint_growth', '培养升牌率')}${th('total_score', '培养力总分')}<th>状态</th><th>操作</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
@@ -485,9 +533,10 @@ function renderTalentPool() {
       <td>${x.retention == null ? '—' : x.retention + '%'}</td>
       <td>${x.sister_growth}</td>
       <td>${x.joint_growth}%</td>
+      <td style="font-weight:600;">${x.total_score == null ? '—' : x.total_score}</td>
       <td>${cand(x.candidate)}</td>
       <td><button class="mini-btn" onclick="openTalentActionModal('${x.sister_uid || ''}')">记录</button></td>
-    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#9CA3AF;padding:16px;">暂无数据</td></tr>'}`;
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:#9CA3AF;padding:16px;">暂无数据</td></tr>'}`;
   const pg = document.getElementById('pool-pagination');
   if (pg) {
     let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${poolPage + 1}/${totalPages} 页</span>`;
@@ -500,6 +549,85 @@ function renderTalentPool() {
     if (poolPage < totalPages - 1) html += `<button onclick="poolPage++;renderTalentPool();">下一页</button>`;
     pg.innerHTML = html;
   }
+}
+
+/* 培养力象限图（妹妹成长 × 培养升牌率）：只显示候选 · 密集聚合「N 位」气泡 · 按厅筛选 · 点姐姐跳 UID */
+let _quadrantGroups = [];
+
+function setQuadrantHall(v) { quadrantHall = v; renderTalentQuadrant(); }
+
+function renderTalentQuadrant() {
+  const el = document.getElementById('chart-talent-quadrant');
+  if (!el || !window.echarts) return;
+  const hallSel = document.getElementById('quadrant-hall-select');
+  if (hallSel) {
+    const halls = [...new Set(poolList.flatMap(x => (x.halls || '').split(',').map(h => h.trim()).filter(Boolean)))];
+    const cur = quadrantHall;
+    hallSel.innerHTML = '<option value="all">全部大厅</option>' + halls.map(h => `<option value="${h}">${h}</option>`).join('');
+    if (halls.includes(cur)) hallSel.value = cur; else { hallSel.value = 'all'; quadrantHall = 'all'; }
+  }
+  const cands = poolList.filter(x => x.candidate);
+  const pts = cands.filter(x => quadrantHall === 'all' || (x.halls || '').split(',').map(h => h.trim()).includes(quadrantHall));
+  if (charts['talentQuadrant']) { charts['talentQuadrant'].dispose(); charts['talentQuadrant'] = null; }
+  const c = echarts.init(el);
+  charts['talentQuadrant'] = c;
+  if (!pts.length) {
+    c.setOption({ title: { text: '暂无候选（持续率≥65% + 妹妹有成长 + 银牌）', left: 'center', top: 'middle', textStyle: { fontSize: 12, color: '#9CA3AF' } } });
+    return;
+  }
+  // 网格聚合：x 每 10%（培养升牌率），y 每 2 分（妹妹成长）
+  const buckets = new Map();
+  pts.forEach(p => {
+    const bx = Math.max(0, Math.floor((p.joint_growth || 0) / 10));
+    const by = Math.max(0, Math.floor((p.sister_growth || 0) / 2));
+    const k = bx + ':' + by;
+    if (!buckets.has(k)) buckets.set(k, { bx, by, items: [] });
+    buckets.get(k).items.push(p);
+  });
+  const data = [];
+  _quadrantGroups = [];
+  buckets.forEach(g => {
+    const n = g.items.length;
+    _quadrantGroups.push({ items: g.items });
+    data.push({
+      value: [g.bx * 10 + 5, g.by * 2 + 1, n],
+      name: n === 1 ? (g.items[0].sister_nickname || g.items[0].sister_uid) : `${n} 位`,
+      symbolSize: n === 1 ? 18 : 18 + Math.min(n, 10) * 5,
+      itemStyle: { color: n === 1 ? '#7C5CFF' : 'rgba(124,92,255,.55)', borderColor: '#fff', borderWidth: 1 }
+    });
+  });
+  c.setOption({
+    tooltip: {
+      trigger: 'item',
+      formatter: p => {
+        const g = _quadrantGroups[p.dataIndex];
+        if (!g) return p.name;
+        return `<b>${g.items.length} 位</b><br/>` + g.items.map(i => `${i.sister_nickname || i.sister_uid}（升牌率 ${i.joint_growth}% / 成长 ${i.sister_growth}）`).join('<br/>');
+      }
+    },
+    grid: { left: 60, right: 30, top: 30, bottom: 50 },
+    xAxis: { name: '培养升牌率 %', type: 'value', max: 100, axisLabel: { fontSize: 10, color: '#6B7280' }, splitLine: { lineStyle: { color: '#F0F1F4' } }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
+    yAxis: { name: '妹妹成长(分/月)', type: 'value', axisLabel: { fontSize: 10, color: '#6B7280' }, splitLine: { lineStyle: { color: '#F0F1F4' } }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
+    series: [{ type: 'scatter', data, label: { show: true, formatter: '{b}', position: 'top', fontSize: 10, color: '#374151' } }]
+  });
+  c.off('click');
+  c.on('click', p => {
+    const g = _quadrantGroups[p.dataIndex];
+    if (!g) return;
+    if (g.items.length === 1) { jumpToUID(g.items[0].sister_uid); return; }
+    openQuadrantList(g.items);
+  });
+}
+
+function openQuadrantList(items) {
+  const rows = items.map(i => `<tr>
+    <td><a href="javascript:void(0)" onclick="jumpToUID('${i.sister_uid || ''}')">${i.sister_nickname || '-'}</a></td>
+    <td>${i.level ?? '-'}</td>
+    <td>${i.joint_growth}%</td>
+    <td>${i.sister_growth}</td>
+    <td>${i.total_score == null ? '—' : i.total_score}</td>
+  </tr>`).join('');
+  openWarnModal('培养力象限 · 密集区名单', `<table class="rank-table"><tr><th>姐姐</th><th>牌子</th><th>培养升牌率</th><th>妹妹成长</th><th>总分</th></tr>${rows}</table>`);
 }
 
 /* 结果记录：回填「输送妹妹 / 提拔管理」动作 */
