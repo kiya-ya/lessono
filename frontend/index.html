@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=43">
+<link rel="stylesheet" href="css/style.css?v=44">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -423,6 +423,55 @@
       </div>
     </div>
     <div class="chart-grid" id="alerts-grid"></div>
+
+    <!-- 躺平预警（妹妹维度） -->
+    <div class="section-head" style="margin-top:26px;">
+      <h2>躺平预警</h2>
+      <span class="hint">妹妹维度 · 进行中团连续未完成陪档 · 接近自动解散</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">日常任务与预警口径</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>陪档任务</b><code>姐姐主持档时妹妹陪档 20 分钟</code><span>日任务 ①</span></span>
+        <span class="dni"><b>开车任务</b><code>姐妹一起共同和老板有效开车打一局</code><span>日任务 ②</span></span>
+        <span class="dni"><b>收送礼任务</b><code>姐妹总共收到10个用户礼物或姐妹一起总共送出20个老板礼物</code><span>日任务 ③</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">规则</span>
+        <span><b>躺平</b> = 进行中团连续 <b>≥4 天</b> 未完成陪档；<b>提醒</b> = 连续 <b>1~3 天</b> 未陪档。自动解散线为「连续 5 日未完成陪档」，预警阈值取 4 天以便提前介入。连续天数按快照日计（快照有断档，实际自然日略多）。</span>
+      </div>
+    </div>
+    <div class="lying-kpis">
+      <div class="lying-kpi danger"><div class="lk-label"><span class="dot red"></span>躺平团数</div><div class="lk-val" id="ly-lying">--</div><div class="lk-foot">连续 ≥4 天未陪档</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot amber"></span>提醒团数</div><div class="lk-val" id="ly-warning">--</div><div class="lk-foot">连续 1~3 天未陪档</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot green"></span>陪档活跃率</div><div class="lk-val" id="ly-rate">--</div><div class="lk-foot">最新快照日有陪档团 ÷ 进行中团</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot violet"></span>参考日期</div><div class="lk-val" id="ly-ref">--</div><div class="lk-foot">最新快照日</div></div>
+    </div>
+    <div class="warn-rule">
+      <div class="wr-head">判定规则<span style="color:var(--wb-text-3);font-weight:400;">妹妹维度</span></div>
+      <div class="wr-line"><span class="wn-tag severe">躺平</span>进行中团连续 <b>≥4 天</b> 未完成「陪档」任务（成团日之前不计）</div>
+      <div class="wr-line"><span class="wn-tag warning">提醒</span>连续 <b>1~3 天</b> 未陪档，列入观察名单</div>
+      <div class="wr-line"><span class="wn-tag warning">注意</span>长期未陪档团多已接近 30 天毕业线，属毕业前自然停滞，需与真正流失区分</div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>连续未陪档天数分布</h3>
+        <div class="chart-src">进行中团按连续未陪档天数分组 · 点柱下钻</div>
+        <div class="chart-box" id="ly-days" style="height:220px;"></div>
+        <div class="chart-insight" id="ly-days-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3>躺平团 · 大厅分布</h3>
+        <div class="chart-src">受影响厅 · 按躺平团数降序 · 点行下钻</div>
+        <div class="rank-scroll"><table class="rank-table" id="ly-hall-table"></table></div>
+        <button class="expand-btn" onclick="openLyHalls()">查看全部大厅分布 →</button>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:14px;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">躺平团名单<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">按连续未陪档天数降序 · 点团ID查看</span></h3>
+      <div class="rank-scroll"><table class="rank-table" id="ly-list-table"></table></div>
+      <button class="expand-btn" onclick="openLyFull()">查看全部躺平名单 →</button>
+    </div>
   </div>
 
   <!-- 对比 -->
@@ -959,9 +1008,10 @@
 <script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=54"></script>
-<script src="js/app.js?v=59"></script>
+<script src="js/app.js?v=60"></script>
 <script src="js/workbench.js?v=56"></script>
 <script src="js/insight.js?v=56"></script>
 <script src="js/warncenter.js?v=3"></script>
+<script src="js/lyingflat.js?v=1"></script>
 </body>
 </html>

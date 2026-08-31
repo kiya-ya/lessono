@@ -18,7 +18,7 @@ function switchPage(name) {
     if (typeof switchCaptainView === 'function') switchCaptainView('profile');
     setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
   }
-  if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); }, 100);
+  if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); if (typeof loadLyingFlat === 'function') loadLyingFlat(); }, 100);
 }
 
 // 旧名兼容：index.html 里的 onclick="switchTab(...)" 仍走这里
@@ -175,6 +175,7 @@ function refreshData() {
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
   if (typeof loadGradRetention === 'function') loadGradRetention();
   if (typeof loadWarncenter === 'function') loadWarncenter();
+  if (typeof loadLyingFlat === 'function') loadLyingFlat();
   initCompareChart();
 }
 

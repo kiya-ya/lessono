@@ -1712,7 +1712,8 @@ def api_lying_flat():
     hall_cond = '' if hall == 'all' else 'AND hall_name = ?'
     hp = [] if hall == 'all' else [hall]
     active_rows = conn.execute(f"""
-        SELECT team_id, hall_name, sister_nickname, sister_uid, days_since_formed, form_date
+        SELECT team_id, hall_name, sister_nickname, sister_uid, sister_nickname2, sister_uid2,
+               sister_max_level2, days_since_formed, form_date, reward_amount
         FROM team_detail
         WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
           AND (dissolve_date IS NULL OR dissolve_date = '')
@@ -1744,7 +1745,12 @@ def api_lying_flat():
             'hall_name': t['hall_name'],
             'sister_nickname': t['sister_nickname'],
             'sister_uid': t['sister_uid'],
+            'sister_nickname2': t['sister_nickname2'],
+            'sister_uid2': t['sister_uid2'],
+            'sister_level2': t['sister_max_level2'] or '无',
             'days_since_formed': t['days_since_formed'],
+            'form_date': t['form_date'],
+            'reward_amount': t['reward_amount'],
             'accompany_streak': streak,
             'last_active': dates[i] if (i >= 0 and tm.get((tid, dates[i]), 0)) else None,
             'level': 'lying' if streak >= 4 else 'warning',
