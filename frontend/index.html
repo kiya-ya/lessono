@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=42">
+<link rel="stylesheet" href="css/style.css?v=43">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -47,11 +47,12 @@
       <button class="side-toggle" onclick="toggleSidebar()" title="收起侧栏">«</button>
     </div>
     <nav class="side-nav">
-      <button class="tab active" onclick="switchTab('overview')"><span class="ico"></span><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
-      <button class="tab" onclick="switchTab('alerts')"><span class="ico"></span><span class="tab-txt"><b>预警中心</b><small>平台级预警 · 4 卡</small></span></button>
-      <button class="tab" onclick="switchTab('compare')"><span class="ico"></span><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
-      <button class="tab" onclick="switchTab('captains')"><span class="ico"></span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
-      <button class="tab" onclick="switchTab('uid')"><span class="ico"></span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
+      <button class="tab active" onclick="switchTab('overview')"><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
+      <button class="tab" onclick="switchTab('alerts')"><span class="tab-txt"><b>预警中心</b><small>规则 · 下钻</small></span></button>
+      <button class="tab" onclick="switchTab('compare')"><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
+      <button class="tab" id="side-captains" onclick="switchTab('captains')"><span class="tab-txt"><b>姐姐分析</b><small>画像 · 毕业妹妹</small></span></button>
+      <button class="tab sub" id="side-filter" onclick="openCaptainPool()"><span class="tab-txt"><b>姐姐筛选</b></span></button>
+      <button class="tab" onclick="switchTab('uid')"><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
     <div class="side-status" id="side-status" title="Cookie 有效性：绿=有效，红=失效（自动重登中），点击手动兜底刷新">
       <div class="ss-head">数据连接<span class="ss-auto">自动刷新</span></div>
@@ -943,9 +944,9 @@
 <script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=54"></script>
-<script src="js/app.js?v=57"></script>
+<script src="js/app.js?v=58"></script>
 <script src="js/workbench.js?v=56"></script>
-<script src="js/insight.js?v=54"></script>
+<script src="js/insight.js?v=55"></script>
 <script src="js/warncenter.js?v=3"></script>
 </body>
 </html>

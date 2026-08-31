@@ -1,6 +1,6 @@
 function switchPage(name) {
   state.page = name;  // 单一来源记录当前页
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active', 'sub-on'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   const clicked = Array.from(document.querySelectorAll('.tab')).find(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + name + "'"));
   if (clicked) clicked.classList.add('active');
@@ -13,7 +13,10 @@ function switchPage(name) {
     if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
   }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
-  if (name === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+  if (name === 'captains') {
+    if (typeof switchCaptainView === 'function') switchCaptainView('profile');
+    setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+  }
   if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); }, 100);
 }
 

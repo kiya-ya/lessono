@@ -471,11 +471,19 @@ function switchCaptainView(view) {
   const set = (id, on) => { const b = document.getElementById(id); if (b) b.classList.toggle('on', on); };
   set('cap-view-profile', view === 'profile');
   set('cap-view-pool', view === 'pool');
+  // 侧栏高亮：姐姐分析主标签 vs 姐姐筛选子标签
+  const sm = document.getElementById('side-captains');
+  const ss = document.getElementById('side-filter');
+  if (sm) sm.classList.toggle('active', view === 'profile');
+  if (ss) { ss.classList.toggle('active', view === 'pool'); ss.classList.toggle('sub-on', view === 'pool'); }
   if (view === 'pool') { loadTalentPool(); loadTalentActions(); }
   if (view === 'profile') {
     setTimeout(() => { if (charts['sisterTag']) charts['sisterTag'].resize(); if (charts['sisterRet']) charts['sisterRet'].resize(); }, 60);
   }
 }
+
+// 侧栏「姐姐筛选」子标签入口：切到姐姐分析并展示候选池
+function openCaptainPool() { switchPage('captains'); switchCaptainView('pool'); }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }
 

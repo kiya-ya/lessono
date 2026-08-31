@@ -751,6 +751,14 @@ body { background: var(--wb-bg); }
 .side-nav .tab:hover { color: var(--wb-text); background: rgba(124,92,255,.08); }
 .side-nav .tab:hover .tab-txt small { color: #6B7280; }
 .side-nav .tab.active::before { background: #7C5CFF; }
+.side-nav .tab.sub { padding: 6px 12px 6px 26px; gap: 8px; }
+.side-nav .tab.sub .tab-txt b { font-size: 12px; font-weight: 500; color: var(--wb-text-3); }
+.side-nav .tab.sub:hover .tab-txt b { color: var(--wb-text); }
+.side-nav .tab.sub.sub-on { background: rgba(124,92,255,.12); }
+.side-nav .tab.sub.sub-on .tab-txt b { color: var(--wb-accent); font-weight: 600; }
+.side-nav .tab.sub.active { background: rgba(124,92,255,.12); box-shadow: none; }
+.side-nav .tab.sub.active::before { display: none; }
+.side-nav .tab.sub.active .tab-txt b { color: var(--wb-accent); font-weight: 600; }
 .side-foot { border-top: 1px solid #ECE9F7; color: #6B7280; }
 /* 侧边栏底部「数据连接」状态灯 */
 .side-status { padding: 10px 14px 6px; border-top: 1px solid #ECE9F7; }
