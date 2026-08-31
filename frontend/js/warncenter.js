@@ -1,7 +1,7 @@
 // warncenter.js - 预警中心（平台级预警 4 卡：留存率 / 异常解散 / 新成团 / 解散时间分布）
 
 const WARN_LEVEL = { severe: { label: '严重', cls: 'down' }, warning: { label: '警告', cls: 'warn' }, notice: { label: '提醒', cls: 'flat' } };
-const WARN_TITLE = { retention: '姐妹团留存率预警', active_diss: '异常解散预警', new_team: '新成团数预警', dissolve_time: '解散时间分布' };
+const WARN_TITLE = { retention: '姐妹团留存率预警', active_diss: '主动解散占比预警', new_team: '新成团数预警', dissolve_time: '解散时间分布' };
 
 let _warnData = null;
 

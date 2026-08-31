@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=47">
+<link rel="stylesheet" href="css/style.css?v=48">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -417,18 +417,44 @@
       <h2>预警中心</h2>
       <span class="hint" id="alerts-ref">平台级预警 · 近 8 周</span>
     </div>
-    <div class="dn-footer">
-      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">平台级预警口径</span></div>
-      <div class="dn-line">
-        <span class="dni"><b>留存率预警</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>跌破健康线预警</span></span>
-        <span class="dni"><b>主动解散占比预警</b><code>主动解散 ÷ 非毕业解散</code><span>连续升高预警</span></span>
-        <span class="dni"><b>新成团数预警</b><code>本周新成团数</code><span>连续下降预警</span></span>
-        <span class="dni"><b>解散时间分布</b><code>非毕业解散按存续天数分 4 桶</code><span>1-7 / 8-14 / 15-21 / 22-29 天</span></span>
-      </div>
-      <div class="dn-notes">
-        <span class="dn-tag">口径</span>
-        <span>平台级预警按近 8 周趋势判断，健康线 / 环比阈值见各卡标注。解散时间分布只统计<b>非毕业解散</b>，按 <code>dissolve_date − form_date</code> 实际存续天数分桶，用来回答「最容易在哪段时间破裂」。</span>
-      </div>
+    <div class="warn-rule">
+      <div class="wr-head">预警规则<span style="color:var(--wb-text-3);font-weight:400;">计算方式 · 触发阈值 · 数据来源</span></div>
+      <table class="rule-table">
+        <thead>
+          <tr><th>预警项</th><th>等级</th><th>计算方式</th><th>触发阈值（原因）</th><th>数据来源</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>姐妹团留存率</td>
+            <td><span class="wn-tag severe">严重</span></td>
+            <td>(期末进行中 − 本周新成团) ÷ 期初进行中 × 100%</td>
+            <td>&lt; 60% 健康线</td>
+            <td><code>team_detail</code> 按 team_id 去重</td>
+          </tr>
+          <tr>
+            <td>主动解散占比</td>
+            <td><span class="wn-tag notice">提醒</span></td>
+            <td>主动解散 ÷ 非毕业解散 × 100%</td>
+            <td>连续 2 周环比升高</td>
+            <td><code>team_detail.dissolve_reason</code></td>
+          </tr>
+          <tr>
+            <td>新成团数</td>
+            <td><span class="wn-tag notice">提醒</span></td>
+            <td>form_date 落在本周的团计数</td>
+            <td>连续 2 周环比下降</td>
+            <td><code>team_detail.form_date</code></td>
+          </tr>
+          <tr>
+            <td>解散时间分布</td>
+            <td><span class="wn-tag notice">分析</span></td>
+            <td>非毕业解散按「成团 → 解散」存续天数分 4 桶</td>
+            <td>1-7 / 8-14 / 15-21 / 22-29 天</td>
+            <td><code>dissolve_date − form_date</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:var(--wb-text-3);margin-top:4px;">平台级预警按近 8 周趋势判断；解散时间分布只统计<b>非毕业解散</b>，用来回答「最容易在哪段时间破裂」。</div>
     </div>
     <div class="chart-grid" id="alerts-grid"></div>
 
@@ -587,6 +613,10 @@
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div id="captains-main">
+    <div class="section-head" style="margin-top:4px;">
+      <h2>姐姐总览（画像 + 排行）</h2>
+      <span class="hint">点行下钻 · 排名随奖励口径切换</span>
+    </div>
     <div class="dn-footer">
       <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">打标口径与指标计算</span></div>
       <div class="dn-line">
@@ -653,6 +683,10 @@
       <div id="captain-preview"></div>
       <div class="chart-insight" id="captain-insight"></div>
       <button class="expand-btn" id="captain-expand" onclick="openCaptainFull()">展开全部 →</button>
+    </div>
+    <div class="section-head" style="margin-top:24px;">
+      <h2>毕业妹妹</h2>
+      <span class="hint">满 30 天自动毕业 · 名单切换 · 妹妹留存率与毕业后轨迹</span>
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -1026,9 +1060,9 @@
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=57"></script>
 <script src="js/app.js?v=62"></script>
-<script src="js/workbench.js?v=58"></script>
+<script src="js/workbench.js?v=59"></script>
 <script src="js/insight.js?v=60"></script>
-<script src="js/warncenter.js?v=3"></script>
+<script src="js/warncenter.js?v=4"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>
 </html>

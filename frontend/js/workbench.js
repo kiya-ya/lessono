@@ -896,12 +896,19 @@ async function loadDissolveReasons() {
     charts['dissolveReasons'] = echarts.init(el);
     charts['dissolveReasons'].setOption({
       tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
-      legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 11, color: '#6B7280' } },
+      legend: { orient: 'vertical', right: 6, top: 'middle', itemWidth: 10, itemHeight: 10, itemGap: 6, textStyle: { fontSize: 11, color: '#6B7280' } },
+      title: {
+        text: String(d.total), subtext: '累计解散(个)',
+        left: '31%', top: '40%', textAlign: 'center',
+        textStyle: { fontSize: 24, fontWeight: 700, color: '#111827' },
+        subtextStyle: { fontSize: 11, color: '#9CA3AF' },
+      },
       series: [{
-        type: 'pie', radius: ['45%', '72%'], center: ['38%', '50%'],
+        type: 'pie', radius: ['42%', '68%'], center: ['31%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
-        label: { show: true, formatter: '{b}\n{c}个', fontSize: 10, color: '#6B7280' },
+        label: { show: true, position: 'outside', formatter: '{c}', fontSize: 10, color: '#6B7280' },
+        labelLine: { length: 8, length2: 6, lineStyle: { color: '#D1D5DB' } },
         data: d.reasons.map(r => ({ name: r.reason, value: r.count, itemStyle: { color: colors[r.reason] || '#C0C4CC' } })),
       }]
     });
