@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=41">
+<link rel="stylesheet" href="css/style.css?v=42">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -112,6 +112,18 @@
       <h2>团分析</h2>
       <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
     </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      </div>
+    </div>
     <div class="chart-grid">
       <div class="chart-card" id="survival-card">
         <h3>🌱 姐妹团存活分析</h3>
@@ -134,6 +146,21 @@
       <select id="hall-select" class="wb-select" style="margin-left:auto" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
       <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
       <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">🏠 全部大厅</button>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
+        <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
+        <span class="dni"><b>礼物奖励金额</b><code>本周发放的礼物奖励总额</code><span>姐妹团礼物奖励口径</span></span>
+        <span class="dni"><b>新成团数</b><code>本周新配对成团数</code><span>日级明细</span></span>
+        <span class="dni"><b>进行中姐妹团</b><code>期末在榜团数</code><span>未解散团数</span></span>
+        <span class="dni"><b>主动解散占比</b><code>主动解散 ÷ 非毕业解散</code><span>手动+离职含换厅+注销</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周，对比口径均为较上一周。点各指标卡展开趋势 / 分布明细。</span>
+      </div>
     </div>
     <div class="kpi-hero" id="wb-kpi-hero"></div>
     <div class="kpi-sub" id="wb-kpi-sub"></div>
@@ -236,6 +263,37 @@
       </div>
     </div>
 
+    <!-- 平台级预警（小 KPI 窗口，点击跳预警中心） -->
+    <div class="section-head" style="margin-top:18px;">
+      <h2>预警</h2>
+      <span class="hint">平台级预警 · 点击进入预警中心查看规则与下钻</span>
+    </div>
+    <div class="warn-note">
+      <div class="wn-item"><span class="wn-tag severe">严重</span>跌破健康线（如姐妹团留存率 &lt; 60%）或环比连续骤降</div>
+      <div class="wn-item"><span class="wn-tag warning">警告</span>连续 2 周恶化（如主动解散占比连续升高）</div>
+      <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
+    </div>
+    <div class="warn-grid" id="overview-warn-grid">
+      <div class="warn-card severe" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot red"></span><span id="ow-ret-title">姐妹团留存率预警</span><span class="lvl" id="ow-ret-lvl">—</span></div>
+        <div class="val" id="ow-ret-val">--</div>
+        <div class="foot" id="ow-ret-foot">—</div>
+        <span class="go">进入预警中心 →</span>
+      </div>
+      <div class="warn-card warning" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot amber"></span><span id="ow-diss-title">主动解散占比预警</span><span class="lvl" id="ow-diss-lvl">—</span></div>
+        <div class="val" id="ow-diss-val">--</div>
+        <div class="foot" id="ow-diss-foot">—</div>
+        <span class="go">进入预警中心 →</span>
+      </div>
+      <div class="warn-card notice" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot violet"></span><span id="ow-new-title">新成团数预警</span><span class="lvl" id="ow-new-lvl">—</span></div>
+        <div class="val" id="ow-new-val">--</div>
+        <div class="foot" id="ow-new-foot">—</div>
+        <span class="go">进入预警中心 →</span>
+      </div>
+    </div>
+
     <!-- 厅排行榜 + 姐姐排行 并列小框（管理员看两个；厅运营只看姐姐） -->
     <div class="chart-grid">
       <div id="wb-rank-board" class="chart-card" style="display:none">
@@ -335,6 +393,19 @@
       <h2>预警中心</h2>
       <span class="hint" id="alerts-ref">平台级预警 · 近 8 周</span>
     </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">平台级预警口径</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>留存率预警</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>跌破健康线预警</span></span>
+        <span class="dni"><b>主动解散占比预警</b><code>主动解散 ÷ 非毕业解散</code><span>连续升高预警</span></span>
+        <span class="dni"><b>新成团数预警</b><code>本周新成团数</code><span>连续下降预警</span></span>
+        <span class="dni"><b>解散时间分布</b><code>非毕业解散按存续天数分 4 桶</code><span>1-7 / 8-14 / 15-21 / 22-29 天</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>平台级预警按近 8 周趋势判断，健康线 / 环比阈值见各卡标注。解散时间分布只统计<b>非毕业解散</b>，按 <code>dissolve_date − form_date</code> 实际存续天数分桶，用来回答「最容易在哪段时间破裂」。</span>
+      </div>
+    </div>
     <div class="chart-grid" id="alerts-grid"></div>
   </div>
 
@@ -344,6 +415,21 @@
       <h2>厅分析</h2>
       <select id="hall-week-select" class="wb-select" onchange="initCompareChart()" title="切换厅排行周增量流水统计周"></select>
       <span class="hint">厅排行 · 点柱子钻取单厅分析 · 流水为周增量</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算公式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>进行中团数</b><code>期末在榜团数</code><span>厅规模</span></span>
+        <span class="dni"><b>总团数</b><code>历史累计团数</code><span>厅累计</span></span>
+        <span class="dni"><b>解散数</b><code>累计解散团数</code><span>含毕业与非毕业</span></span>
+        <span class="dni"><b>本周流水</b><code>本周礼物流水（周增量）</code><span>非累计</span></span>
+        <span class="dni"><b>姐妹团留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存</span></span>
+        <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>厅排行榜流水为<b>周增量</b>（本周 vs 上周），非累计总流水；点柱子展开单厅趋势与本周/上周对比。数据来自 team_detail 每日快照，按最新快照去重。</span>
+      </div>
     </div>
     <div id="compare-main">
     <!-- 常驻自选对比条：任选两厅对比，结果内嵌展开 -->
@@ -434,6 +520,19 @@
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
     <div id="captains-main">
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">打标口径与指标计算</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>头部</b><code>周流水 ≥ P80 且 持续率 ≥ 65%</code><span>头部核心</span></span>
+        <span class="dni"><b>风险</b><code>环比 ≤ -50% 且上周 ≥ ¥1000，或带团 ≥ 3 且持续率 &lt; 65%</code><span>重点跟进</span></span>
+        <span class="dni"><b>普通</b><code>其余姐姐</code><span>常规观察</span></span>
+        <span class="dni"><b>姐妹关系持续率</b><code>Σ已结束团实际存续天数 ÷ (已结束团数×30)</code><span>毕业率作辅助副行</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span><b>持续率 ≥ 65% 为定稿阈值</b>（实测全量 45% / 已结束团≥2 口径 38% 达标，天然 ≥ 毕业率）。「牌子等级」（铜/银/金/王牌/大神）衡量姐姐自身等级经验，与「画像」（头部/风险/普通）是两码事——高牌子≠会带妹妹，画像看「流水 P80 + 持续率」，与牌子解耦。</span>
+      </div>
+    </div>
     <div class="chart-grid">
       <div class="chart-card">
         <h3>🏷️ 打标分布</h3>
@@ -505,6 +604,25 @@
 
     <!-- 候选池（阶段B）：并列展示四因子证据 + 结果记录 -->
     <div id="captains-pool" style="display:none;">
+      <div class="dn-footer">
+        <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">培养力指标口径</span></div>
+        <div class="dn-line">
+          <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
+          <span class="dni"><b>姐妹关系持续率</b><code>Σ已结束团实际存续天数 ÷ (已结束团数×30)</code><span>毕业率作辅助</span></span>
+          <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
+          <span class="dni"><b>培养升牌率</b><code>妹妹有成长的团占比 %</code><span>升级覆盖</span></span>
+          <span class="dni"><b>培养力总分</b><code>0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率</code><span>排序参考</span></span>
+          <span class="dni"><b>候选判定</b><code>持续率≥65% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
+        </div>
+        <div class="dn-notes">
+          <span class="dn-tag">口径</span>
+          <span><b>妹妹成长</b> =（末期难度分 − 初期难度分）÷ 团龄天数 × 30，只对有成长的团取平均，封顶映射 <code>min(成长,20)/20×100</code>（T=20 定稿）；<b>培养升牌率</b> = 妹妹有成长的团数 ÷ 历史带团总数 × 100%。难度分指数递增 铜牌2→银牌8→金牌16→王牌32→大神64（升级难度翻倍）。本表并列展示、不做权威排序，仅候选优先 + 牌子等级分组。</span>
+        </div>
+        <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--wb-line);">
+          <span class="dn-tag">未入选原因</span>
+          <span>未入选姐姐会在「候选判定」列标注差在哪一条：<b>持续率 &lt; 65%</b>（团多夭折/早夭）、<b>妹妹成长 = 0</b>（带不动妹妹）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛、不参与打分排序——银牌但妹妹成长快的姐姐，比王牌但妹妹不成长的更值得培养。</span>
+        </div>
+      </div>
       <div class="chart-card">
         <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <span>🎯 培养力候选池</span>
@@ -553,6 +671,18 @@
         <label>UID：</label>
         <input type="text" id="uid-input" placeholder="输入UID，如 26482359">
         <button onclick="queryUID()">🔍 查询</button>
+      </div>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">流水口径与字段对照</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>姐妹团累计流水</b><code>姐姐本人累计流水</code><span>关联信息卡 · team_total_revenue</span></span>
+        <span class="dni"><b>当周礼物流水</b><code>本周礼物流水</code><span>周对比表行</span></span>
+        <span class="dni"><b>妹妹累计流水</b><code>团内妹妹的流水</code><span>参与明细列 · sister_revenue</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>本页出现多处「流水」，口径不同勿混读：顶部「姐妹团累计流水」是<b>姐姐本人</b>的累计；周对比表「当周礼物流水」是<b>本周</b>礼物；参与明细「妹妹累计流水」是<b>团内妹妹</b>的累计。环比 = 本周 vs 上周的差值或变化率。</span>
       </div>
     </div>
     <div id="uid-loading" class="uid-loading" style="display:none;">⏳ 正在查询 UID 数据，请稍候...</div>
@@ -816,6 +946,6 @@
 <script src="js/app.js?v=56"></script>
 <script src="js/workbench.js?v=55"></script>
 <script src="js/insight.js?v=53"></script>
-<script src="js/warncenter.js?v=1"></script>
+<script src="js/warncenter.js?v=2"></script>
 </body>
 </html>

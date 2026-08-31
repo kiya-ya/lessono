@@ -887,3 +887,51 @@ td.num, th.num {
 .hall-focus { margin-top: 12px; }
 .hall-focus .chart-grid .chart-card { box-shadow: none; border-color: transparent; background: #F9FAFC; padding: 14px; }
 .hall-focus .kpi-value.hf-val { font-size: 22px; margin: 6px 0 4px; }
+
+/* ═══════ 数据说明（指标口径与计算方式说明块） ═══════ */
+.dn-footer{margin:0 0 14px;padding:12px 16px;background:#F8F9FB;border:1px solid #F0F1F4;border-radius:10px;}
+.dn-foot-head{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--wb-text);margin-bottom:8px;}
+.dn-line{display:flex;flex-wrap:wrap;gap:6px 16px;padding-bottom:2px;}
+.dni{font-size:12px;color:var(--wb-text-2);display:inline-flex;align-items:center;gap:6px;line-height:1.7;}
+.dni b{color:var(--wb-text);font-weight:600;white-space:nowrap;}
+.dni code{font-size:11px;color:#5B3EC4;background:#F3F0FF;border-radius:5px;padding:0 5px;font-family:inherit;white-space:nowrap;}
+.dn-notes{border-top:1px dashed var(--wb-line);margin-top:9px;padding-top:8px;display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--wb-text-2);line-height:1.7;}
+.dn-tag{flex-shrink:0;font-size:10.5px;font-weight:600;color:var(--wb-accent);background:#F3F0FF;border-radius:6px;padding:2px 6px;line-height:1.5;}
+
+/* ═══════ 预警说明框（上方，三行） ═══════ */
+.warn-note{display:flex;flex-direction:column;gap:6px;margin:0 0 14px;padding:10px 14px;background:#FAFBFC;border:1px solid #F0F1F4;border-radius:10px;}
+.warn-note .wn-item{font-size:11.5px;color:var(--wb-text-2);display:flex;align-items:center;gap:6px;line-height:1.7;}
+.warn-note .wn-item b{color:var(--wb-text);font-weight:600;}
+.wn-tag{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;flex-shrink:0;white-space:nowrap;}
+.wn-tag.severe{color:#DC2626;background:#FCEBEB;}
+.wn-tag.warning{color:#D97706;background:#FDF0D8;}
+.wn-tag.notice{color:#7C5CFF;background:#EFEBFF;}
+
+/* ═══════ 预警卡（小 KPI 窗口，点击跳预警中心） ═══════ */
+.warn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+@media(max-width:900px){.warn-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:560px){.warn-grid{grid-template-columns:1fr;}}
+.warn-card{border-radius:12px;padding:12px 14px;cursor:pointer;position:relative;transition:transform .22s ease,box-shadow .22s ease;min-height:98px;border:1px solid;border-left-width:3px;}
+.warn-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px -14px rgba(16,24,40,.16);}
+.warn-card .top{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.warn-card .lvl{margin-left:auto;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;flex-shrink:0;}
+.warn-card .val{font-size:20px;font-weight:700;margin:4px 0 2px;color:var(--wb-text);}
+.warn-card .foot{font-size:11px;}
+.warn-card .go{position:absolute;bottom:10px;right:12px;font-size:11px;}
+.warn-card .top .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.warn-card.severe{background:#FEF2F2;border-color:#F3C1C1;border-left-color:#DC2626;}
+.warn-card.severe .top{color:#B91C1C;}
+.warn-card.severe .lvl{color:#DC2626;background:#FCEBEB;}
+.warn-card.severe .foot{color:#B91C1C;}
+.warn-card.severe .go{color:#DC2626;}
+.warn-card.warning{background:#FFFBEB;border-color:#F3D9A6;border-left-color:#D97706;}
+.warn-card.warning .top{color:#B45309;}
+.warn-card.warning .lvl{color:#D97706;background:#FDF0D8;}
+.warn-card.warning .foot{color:#B45309;}
+.warn-card.warning .go{color:#D97706;}
+.warn-card.notice{background:#F5F3FF;border-color:#E2DBFF;border-left-color:#7C5CFF;}
+.warn-card.notice .top{color:#5B3EC4;}
+.warn-card.notice .lvl{color:#7C5CFF;background:#EFEBFF;}
+.warn-card.notice .foot{color:#6B7280;}
+.warn-card.notice .go{color:#7C5CFF;}
+.dot.violet{background:#7C5CFF;box-shadow:0 0 0 3px rgba(124,92,255,.12);}

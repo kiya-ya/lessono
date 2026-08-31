@@ -17,6 +17,7 @@ async function loadWarncenter() {
       return;
     }
     _warnData = d;
+    renderOverviewWarn();
     if (refEl) refEl.textContent = '平台级预警 · 近 8 周 · 数据日 ' + (d.ref_date || '--');
     grid.innerHTML = '';
     d.cards.forEach((card) => {
@@ -105,6 +106,26 @@ function warnRenderChart(card) {
   }
   c.setOption(opt);
   c.on('click', () => drillWarn(card.key));
+}
+
+// 概览页「预警」小卡：从 /api/warncenter 回填 3 张摘要卡（留存率/主动解散占比/新成团）
+function renderOverviewWarn() {
+  const fill = (key, valId, lvlId, footId) => {
+    const valEl = document.getElementById(valId);
+    if (!valEl) return;
+    const card = ((_warnData && _warnData.cards) || []).find((c) => c.key === key);
+    if (!card) return;
+    const lv = WARN_LEVEL[card.level] || WARN_LEVEL.notice;
+    const unit = key === 'new_team' ? ' 个' : '%';
+    valEl.textContent = card.current == null ? '--' : card.current + unit;
+    const lvlEl = document.getElementById(lvlId);
+    if (lvlEl) lvlEl.textContent = lv.label;
+    const footEl = document.getElementById(footId);
+    if (footEl) footEl.textContent = card.threshold || '';
+  };
+  fill('retention', 'ow-ret-val', 'ow-ret-lvl', 'ow-ret-foot');
+  fill('active_diss', 'ow-diss-val', 'ow-diss-lvl', 'ow-diss-foot');
+  fill('new_team', 'ow-new-val', 'ow-new-lvl', 'ow-new-foot');
 }
 
 function openWarnHalls(key) {
