@@ -495,15 +495,19 @@ function jumpToGrad() {
   }, 150);
 }
 
-// 回填概览「毕业妹妹留存」3 卡：晋升为姐姐取真数，留存率 2 卡暂显待落地占位
+// 回填「毕业妹妹留存」模块（概览 3 卡 + 姐姐分析完整模块）：
+// 晋升为姐姐取真数；留存率 2 卡 + 毕业后轨迹占位「待落地」（依赖回访数据，后端暂无）
 async function loadGradRetention() {
   const retEl = document.getElementById('ow-grad-ret');
   const d30El = document.getElementById('ow-grad-30d');
   const proEl = document.getElementById('ow-grad-promoted');
-  if (!retEl && !d30El && !proEl) return;
-  if (retEl) retEl.textContent = '—';
-  if (d30El) d30El.textContent = '—';
-  if (proEl) proEl.textContent = '—';
+  const grRet = document.getElementById('gr-ret');
+  const gr30d = document.getElementById('gr-30d');
+  const grPro = document.getElementById('gr-promoted');
+  const grTable = document.getElementById('gr-table');
+  if (!retEl && !d30El && !proEl && !grRet && !gr30d && !grPro && !grTable) return;
+  [retEl, d30El, proEl, grRet, gr30d, grPro].forEach(el => { if (el) el.textContent = '—'; });
+  if (grTable) grTable.innerHTML = '<tbody><tr><td colspan="8" style="color:#9CA3AF;">加载中…</td></tr></tbody>';
   try {
     const [capRes, s2Res] = await Promise.all([
       fetch(API_BASE + '/api/captains'),
@@ -514,10 +518,39 @@ async function loadGradRetention() {
     const promotedSet = new Set((s2.list || []).filter(x => x.promoted).map(x => x.sister_uid));
     const graduates = cap.recent_graduates || [];
     const promoted = graduates.filter(g => promotedSet.has(g.sister_uid2)).length;
-    if (proEl) proEl.textContent = promoted + ' 人';
+    const promotedTxt = promoted + ' 人';
+    if (proEl) proEl.textContent = promotedTxt;
+    if (grPro) grPro.textContent = promotedTxt;
+    if (grTable) grTable.innerHTML = gradRetentionTableHTML(graduates);
   } catch (e) {
-    /* 保持占位 */
+    if (grTable) grTable.innerHTML = '<tbody><tr><td colspan="8" style="color:#9CA3AF;">毕业妹妹留存加载失败</td></tr></tbody>';
   }
+}
+
+function gradRetentionTableHTML(graduates) {
+  const head = '<thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>';
+  if (!graduates.length) return head + '<tbody><tr><td colspan="8" style="color:#9CA3AF;">暂无毕业妹妹</td></tr></tbody>';
+  const rows = graduates.slice(0, 20).map(g => {
+    const name = g.nickname || g.sister_uid2 || '-';
+    const uid = g.sister_uid2 || '';
+    return `<tr>
+      <td>${esc(name)}</td>
+      <td>${uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${uid}')" style="color:#7C5CFF;text-decoration:none;">${uid}</a>` : '—'}</td>
+      <td>${esc(g.dissolve_date || '—')}</td>
+      <td>${esc(g.sister_nickname || '—')}</td>
+      <td style="color:#9CA3AF;">待落地</td>
+      <td><a href="javascript:void(0)" onclick="openLineage(this.dataset.n)" data-n="${esc(name)}" style="color:#7C5CFF;text-decoration:none;">看链</a></td>
+      <td style="color:#9CA3AF;">待落地</td>
+      <td style="color:#9CA3AF;">待落地</td>
+    </tr>`;
+  }).join('');
+  const more = graduates.length > 20 ? `<tr><td colspan="8" style="color:#9CA3AF;">… 共 ${graduates.length} 位，其余待回访数据落地</td></tr>` : '';
+  return head + `<tbody>${rows}${more}</tbody>`;
+}
+
+// 传承链下钻占位（依赖回访数据，后端 lineage 接口待落地）
+function openLineage(name) {
+  if (typeof showToast === 'function') showToast(`「${name}」的传承链（代际传承）待回访数据落地`, 'info');
 }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }

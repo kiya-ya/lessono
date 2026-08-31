@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=44">
+<link rel="stylesheet" href="css/style.css?v=45">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -598,10 +598,6 @@
   <div id="tab-captains" class="tab-panel">
     <div class="section-head">
       <h2>姐姐分析</h2>
-      <div class="seg" style="margin-left:auto;">
-        <button id="cap-view-profile" class="on" onclick="switchCaptainView('profile')">画像</button>
-        <button id="cap-view-pool" onclick="switchCaptainView('pool')">候选池</button>
-      </div>
       <select id="sister-week-select" class="wb-select" onchange="loadSisterProfile()" title="切换画像统计周（本周流水 / 环比）"></select>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
@@ -685,6 +681,21 @@
       <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 点卡片展开查看妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水</div>
       <div id="grad-preview"></div>
       <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
+    </div>
+    <div class="chart-card" id="grad-retention-sec" style="margin-top:14px;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">毕业妹妹留存<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">待落地</span></h3>
+      <div class="chart-src">妹妹留存率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充「姐妹关系持续率」只看关系能否维持、不看毕业后价值的缺口</div>
+      <div class="grad-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 妹妹留存率</div><div class="kpi-value" id="gr-ret">—</div><div class="kpi-note">近 8 周 · 待落地</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 毕业后 30 天留存</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note">毕业后 30 天仍在平台 · 待落地</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot violet"></span> 晋升为姐姐</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note">毕业妹妹中已当姐姐</div></div>
+      </div>
+      <div class="rank-scroll" style="margin-top:12px;"><table class="rank-table" id="gr-table"></table></div>
+      <div class="dn-notes" style="margin-top:10px;">
+        <span class="dn-tag">口径</span>
+        <span><b>妹妹留存率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。数据来源双口径：回访为主、近似兜底。回访数据尚未攒够，留存率 2 卡 + 带妹代数 + 来源暂「待落地」；「晋升为姐姐」已由妹妹 UID 命中晋升集回填真数。</span>
+      </div>
+      <div class="chart-src" style="margin-top:8px;">点击明细「已开始带妹妹 · 看链」徽标 → 展开该妹妹的传承链（代际传承，待落地）</div>
     </div>
     </div><!-- /captains-main -->
 
@@ -1029,9 +1040,9 @@
 <script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=55"></script>
-<script src="js/app.js?v=60"></script>
+<script src="js/app.js?v=61"></script>
 <script src="js/workbench.js?v=56"></script>
-<script src="js/insight.js?v=56"></script>
+<script src="js/insight.js?v=57"></script>
 <script src="js/warncenter.js?v=3"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>

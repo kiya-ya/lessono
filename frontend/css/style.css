@@ -314,6 +314,7 @@ body { background: var(--wb-bg); }
 .hall-card.active { border-color: var(--wb-accent); box-shadow: 0 0 0 1px var(--wb-accent), var(--wb-shadow); }
 .hall-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
 .hall-top .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; vertical-align: middle; }
 .dot.red { background: var(--wb-down); box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
 .dot.amber { background: var(--wb-warn); box-shadow: 0 0 0 3px rgba(217,119,6,.12); }
 .dot.green { background: var(--wb-up); box-shadow: 0 0 0 3px rgba(22,163,74,.12); }

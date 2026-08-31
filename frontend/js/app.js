@@ -16,7 +16,7 @@ function switchPage(name) {
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (name === 'captains') {
     if (typeof switchCaptainView === 'function') switchCaptainView('profile');
-    setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+    setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); if (typeof loadGradRetention === 'function') loadGradRetention(); }, 100);
   }
   if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); if (typeof loadLyingFlat === 'function') loadLyingFlat(); }, 100);
 }
