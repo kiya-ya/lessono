@@ -2207,6 +2207,36 @@ def api_weekly_team_detail():
         'active_end': active_end,
     })
 
+@app.route('/api/team/<int:team_id>/weekly')
+@login_required
+def api_team_weekly(team_id):
+    """团队明细弹窗「按周流水与牌子走势」：姐姐/妹妹周流水 + 合计（team_sister_revenue）
+    牌子走势取每周最后一个快照的姐姐当前等级 / 妹妹最高等级。"""
+    conn = get_db_conn()
+    weeks = conn.execute("""
+        SELECT week_start, week_end, sister_revenue, sister2_revenue, total_revenue
+        FROM team_sister_revenue WHERE team_id = ? ORDER BY week_start
+    """, (team_id,)).fetchall()
+    weekly = []
+    for w in weeks:
+        ws, we = w['week_start'], w['week_end']
+        lv = conn.execute("""
+            SELECT sister_level, sister_max_level2 FROM team_detail
+            WHERE team_id = ? AND snapshot_date >= ? AND snapshot_date <= ?
+            ORDER BY snapshot_date DESC, id DESC LIMIT 1
+        """, (team_id, ws, we)).fetchone()
+        weekly.append({
+            'week': f"{ws[5:]}~{we[5:]}",
+            'sister_level': lv['sister_level'] if lv else None,          # 姐姐牌子（当前等级）
+            'sister_max_level2': lv['sister_max_level2'] if lv else None,  # 妹妹最高牌子
+            'sister_revenue': round(w['sister_revenue'] or 0, 1),          # 姐姐周流水
+            'sister2_revenue': round(w['sister2_revenue'] or 0, 1),        # 妹妹周流水
+            'total_revenue': round(w['total_revenue'] or 0, 1),            # 合计
+        })
+    conn.close()
+    return jsonify({'team_id': team_id, 'weekly': weekly})
+
+
 @app.route('/api/hall-stats')
 @login_required
 def api_hall_stats():

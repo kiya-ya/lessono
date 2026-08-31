@@ -202,8 +202,36 @@ function renderTeamDetailModal(row) {
     <div class="team-members">
       <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid || '--'}</a></div></div></div>
       <div class="team-member"><div class="member-badge" style="background:#f6a6c1;">妹</div><div class="member-info"><div class="member-name">${row.sister_nickname2 || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid2 || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid2 || '--'}</a></div></div></div>
-    </div>`;
+    </div>
+    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--wb-text-1);">按周流水与牌子走势</div>
+    <div class="rank-scroll"><table class="rank-table" style="min-width:0;">
+      <thead><tr><th>周次</th><th>妹妹牌子</th><th>妹妹流水</th><th>姐姐牌子</th><th>姐姐流水</th><th>合计</th></tr></thead>
+      <tbody id="td-weekly-body"><tr><td colspan="6" style="color:#9CA3AF;">加载中…</td></tr></tbody>
+    </table></div>`;
   document.getElementById('team-detail-modal').classList.add('active');
+  loadTeamWeekly(row.team_id);
+}
+
+async function loadTeamWeekly(teamId) {
+  const body = document.getElementById('td-weekly-body');
+  if (!body || !teamId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/team/' + teamId + '/weekly');
+    const d = await res.json();
+    const wk = d.weekly || [];
+    if (!wk.length) { body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">暂无按周流水数据</td></tr>'; return; }
+    body.innerHTML = wk.map(w => `
+      <tr>
+        <td style="font-weight:600;">${w.week}</td>
+        <td>${w.sister_max_level2 || '—'}</td>
+        <td style="font-weight:600;">¥${(w.sister2_revenue || 0).toLocaleString()}</td>
+        <td>${w.sister_level || '—'}</td>
+        <td style="font-weight:600;">¥${(w.sister_revenue || 0).toLocaleString()}</td>
+        <td style="font-weight:700;color:#7C5CFF;">¥${(w.total_revenue || 0).toLocaleString()}</td>
+      </tr>`).join('');
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">按周流水数据加载失败</td></tr>';
+  }
 }
 
 function openTeamDetail(idx) {
