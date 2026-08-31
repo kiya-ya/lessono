@@ -373,6 +373,21 @@ def retention_by_hall(conn, ws, we):
     return out
 
 
+def hall_weekly_revenue(conn, ws, we):
+    """单次聚合计算各厅周增量流水（期末快照 sister_revenue 合计 − 期初快照合计），
+    仿 retention_by_hall 避免逐厅循环。期初/期末 = 各厅在 [ws, we] 内 MIN/MAX(snapshot_date)。"""
+    base = "AND hall_name IS NOT NULL AND hall_name != ''"
+    snap = f"SELECT hall_name, MIN(snapshot_date) AS s0, MAX(snapshot_date) AS s1 FROM team_detail WHERE snapshot_date >= ? AND snapshot_date <= ? {base} GROUP BY hall_name"
+    rev = f"SELECT hall_name, snapshot_date, SUM(sister_revenue) AS rev FROM team_detail WHERE snapshot_date >= ? AND snapshot_date <= ? {base} GROUP BY hall_name, snapshot_date"
+    rows = conn.execute(f"""
+        SELECT b.hall_name, COALESCE(e.rev, 0) - COALESCE(st.rev, 0) AS weekly_revenue
+        FROM ({snap}) b
+        LEFT JOIN ({rev}) st ON st.hall_name = b.hall_name AND st.snapshot_date = b.s0
+        LEFT JOIN ({rev}) e  ON e.hall_name = b.hall_name AND e.snapshot_date = b.s1
+    """, (ws, we, ws, we, ws, we)).fetchall()
+    return {r['hall_name']: round(max(0.0, r['weekly_revenue'] or 0), 1) for r in rows}
+
+
 def week_list_from_detail(conn, limit=16):
     """基于 team_detail 快照日推导周列表（周一为键，升序），供逐周重算。"""
     snaps = [r['snapshot_date'] for r in conn.execute(
@@ -2166,13 +2181,22 @@ def api_weekly_team_detail():
 def api_hall_stats():
     limit = int(request.args.get('limit', 10))
     hall = request.args.get('hall', '')
-    
+
     user_uid = request.cookies.get('auth_uid')
     conn = get_db_conn()
+    # 厅排行流水改「周增量」（B 节）：按所选周（缺省最新周）重算期末−期初快照流水
+    week = request.args.get('week', '')
+    if week and '|' in week:
+        ws, we = week.split('|')[0], week.split('|')[1]
+    else:
+        wl = week_list_from_detail(conn, 1)
+        ws, we = wl[0] if wl else (None, None)
+    rev_map = hall_weekly_revenue(conn, ws, we) if ws else {}
+
     cursor = conn.execute('SELECT role FROM users WHERE uid = ?', (user_uid,))
     user = cursor.fetchone()
     role = user['role'] if user else 'admin'
-    
+
     if role == 'admin' or hall == 'all':
         # 管理员或显式请求所有大厅
         cursor = conn.execute(
@@ -2205,7 +2229,11 @@ def api_hall_stats():
     
     rows = cursor.fetchall()
     conn.close()
-    
+
+    # 覆盖流水为周增量（B 节）；计数列仍用 hall_stats 快照口径
+    for r in rows:
+        r['total_revenue'] = rev_map.get(r['hall_name'], 0)
+
     return jsonify({'data': rows})
 
 

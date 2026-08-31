@@ -77,6 +77,11 @@ async function loadWeeks() {
       sisterSel.innerHTML = buildWeekOptions().join('');
       sisterSel.value = dbWeeks[0] ? (dbWeeks[0].week_start + '|' + dbWeeks[0].week_end) : thisWeekValue;
     }
+    const hallSel = document.getElementById('hall-week-select');
+    if (hallSel) {
+      hallSel.innerHTML = buildWeekOptions().join('');
+      hallSel.value = dbWeeks[0] ? (dbWeeks[0].week_start + '|' + dbWeeks[0].week_end) : thisWeekValue;
+    }
   } catch (e) { console.error('周列表加载失败:', e); }
 }
 async function loadDetailTable(page = 1) {

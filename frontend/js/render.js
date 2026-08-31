@@ -1,7 +1,9 @@
 async function initCompareChart() {
   try {
     const hallParam = currentHall === 'all' ? '&hall=all' : '';
-    const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam);
+    const hallWeekSel = document.getElementById('hall-week-select');
+    const weekParam = hallWeekSel && hallWeekSel.value ? '&week=' + encodeURIComponent(hallWeekSel.value) : '';
+    const hallRes = await fetch(API_BASE + '/api/hall-stats?limit=999' + hallParam + weekParam);
     const hallResult = await hallRes.json();
     hallCompareData = hallResult.data || [];
     renderHallComparePage();
@@ -62,7 +64,7 @@ function renderHallComparePage() {
     active_count:    { label: '进行中团数', unit: '个', color: '#7C5CFF', grad: '#8F7BFF' },
     team_count:      { label: '总团数',     unit: '个', color: '#3D9A6C', grad: '#6BC48E' },
     dissolved_count: { label: '解散数',     unit: '个', color: '#D56060', grad: '#F0A0A0' },
-    total_revenue:   { label: '礼物奖励金额',     unit: '元', color: '#C98A2D', grad: '#E5C87E' },
+    total_revenue:   { label: '本周流水',     unit: '元', color: '#C98A2D', grad: '#E5C87E' },
   };
   const cfg = metricConfig[hallCompareSortField] || metricConfig.active_count;
 
@@ -153,7 +155,6 @@ function renderHallComparePage() {
 
 /* 厅分析揭示：点击大厅 → 该厅 KPI + 趋势 + 本周vs上周 */
 let hfHall = '';
-let _hfCharts = {};
 
 async function openHallFocus(hallName) {
   hfHall = hallName || '';
@@ -184,7 +185,7 @@ function closeHallFocus() {
   const drill = document.getElementById('hf-week-drill');
   if (drill) drill.style.display = 'none';
   ['hf-chart-ret', 'hf-chart-rev'].forEach(id => {
-    if (_hfCharts[id]) { _hfCharts[id].dispose(); _hfCharts[id] = null; }
+    if (charts[id]) { charts[id].dispose(); charts[id] = null; }
   });
 }
 
@@ -201,7 +202,7 @@ function renderHfCards(hall, trend) {
     { label: '🏠 进行中团数', v: hall.active_count, unit: ' 个', accent: 'acc-green' },
     { label: '🧱 总团数', v: hall.team_count, unit: ' 个', accent: 'acc-violet' },
     { label: '💥 解散数', v: hall.dissolved_count, unit: ' 个', accent: 'acc-red' },
-    { label: '💰 礼物流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
+    { label: '💰 本周流水', v: hall.total_revenue, money: true, accent: 'acc-gold' },
     { label: '💯 留存率（最近周）', v: last.retention_rate, pct: true, accent: 'acc-green' },
     { label: '📦 新成团（最近周）', v: last.new_team_count, unit: ' 个', accent: 'acc-violet' },
   ];
@@ -223,9 +224,9 @@ function renderHfTrend(id, trend, key, kind, name) {
   const labels = t.map(r => r.week_label);
   const values = t.map(r => (r[key] ?? null));
   const fmt = v => kind === 'money' ? wbFmtMoney(v) : (v == null ? '—' : v + '%');
-  if (_hfCharts[id]) _hfCharts[id].dispose();
-  _hfCharts[id] = echarts.init(el);
-  _hfCharts[id].setOption({
+  if (charts[id]) charts[id].dispose();
+  charts[id] = echarts.init(el);
+  charts[id].setOption({
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
       formatter: ps => { const p = ps[0]; return p.name + '<br/>' + p.marker + ' ' + name + ': ' + fmt(p.value); } },
     grid: { left: kind === 'money' ? 70 : 45, right: 20, top: 16, bottom: 32 },
@@ -241,13 +242,13 @@ function renderHfTrend(id, trend, key, kind, name) {
     }],
   }, true);
   // 趋势点下钻：点击某周数据点 → 揭示该周该厅团明细
-  _hfCharts[id].off('click');
-  _hfCharts[id].on('click', function(params) {
+  charts[id].off('click');
+  charts[id].on('click', function(params) {
     if (!params.name) return;
     const w = trend.find(r => r.week_label === params.name);
     if (w) openWeekDrill(name, w.week_start, w.week_end, w.week_label);
   });
-  setTimeout(() => { if (_hfCharts[id]) _hfCharts[id].resize(); }, 0);
+  setTimeout(() => { if (charts[id]) charts[id].resize(); }, 0);
 }
 
 /* 趋势点下钻：该厅该周的新成团 / 该周解散（含原因）/ 周存活数 */
