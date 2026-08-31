@@ -485,6 +485,41 @@ function switchCaptainView(view) {
 // 侧栏「姐姐筛选」子标签入口：切到姐姐分析并展示候选池
 function openCaptainPool() { switchPage('captains'); switchCaptainView('pool'); }
 
+// 概览「毕业妹妹留存」跳转：切到姐姐分析并定位毕业妹妹留存模块
+function jumpToGrad() {
+  switchPage('captains');
+  switchCaptainView('profile');
+  setTimeout(() => {
+    const el = document.getElementById('grad-retention-sec');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
+}
+
+// 回填概览「毕业妹妹留存」3 卡：晋升为姐姐取真数，留存率 2 卡暂显待落地占位
+async function loadGradRetention() {
+  const retEl = document.getElementById('ow-grad-ret');
+  const d30El = document.getElementById('ow-grad-30d');
+  const proEl = document.getElementById('ow-grad-promoted');
+  if (!retEl && !d30El && !proEl) return;
+  if (retEl) retEl.textContent = '—';
+  if (d30El) d30El.textContent = '—';
+  if (proEl) proEl.textContent = '—';
+  try {
+    const [capRes, s2Res] = await Promise.all([
+      fetch(API_BASE + '/api/captains'),
+      fetch(API_BASE + '/api/sister2-profile'),
+    ]);
+    const cap = await capRes.json();
+    const s2 = await s2Res.json();
+    const promotedSet = new Set((s2.list || []).filter(x => x.promoted).map(x => x.sister_uid));
+    const graduates = cap.recent_graduates || [];
+    const promoted = graduates.filter(g => promotedSet.has(g.sister_uid2)).length;
+    if (proEl) proEl.textContent = promoted + ' 人';
+  } catch (e) {
+    /* 保持占位 */
+  }
+}
+
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }
 
 async function loadTalentPool() {

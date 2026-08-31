@@ -11,6 +11,7 @@ function switchPage(name) {
     if (typeof loadSurvival === 'function') loadSurvival();
     if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
     if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+    if (typeof loadGradRetention === 'function') loadGradRetention();
   }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (name === 'captains') {
@@ -172,6 +173,7 @@ function refreshData() {
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+  if (typeof loadGradRetention === 'function') loadGradRetention();
   if (typeof loadWarncenter === 'function') loadWarncenter();
   initCompareChart();
 }
@@ -301,6 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+  if (typeof loadGradRetention === 'function') loadGradRetention();
   if (typeof loadWarncenter === 'function') loadWarncenter();
 
   // 明细搜索框自动补全

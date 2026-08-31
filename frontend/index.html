@@ -108,36 +108,49 @@
       <div class="hall-grid" id="wb-hall-grid"></div>
     </div>
 
-    <!-- 团分析（原「团分析」页内容，合并进概览首位） -->
-    <div class="section-head">
-      <h2>团分析</h2>
-      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
+    <!-- 平台级预警（小 KPI 窗口，点击跳预警中心） -->
+    <div class="section-head" style="margin-top:18px;">
+      <h2>预警</h2>
+      <span class="hint">平台级预警 · 点击进入预警中心查看规则与下钻</span>
     </div>
-    <div class="dn-footer">
-      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
-      <div class="dn-line">
-        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
-        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
-        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+    <div class="warn-note">
+      <div class="wn-item"><span class="wn-tag severe">严重</span>跌破健康线（如姐妹团留存率 &lt; 60%）或环比连续骤降</div>
+      <div class="wn-item"><span class="wn-tag warning">警告</span>连续 2 周恶化（如主动解散占比连续升高）</div>
+      <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
+    </div>
+    <div class="warn-grid" id="overview-warn-grid">
+      <div class="warn-card severe" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot red"></span><span id="ow-ret-title">姐妹团留存率预警</span><span class="lvl" id="ow-ret-lvl">—</span></div>
+        <div class="val" id="ow-ret-val">--</div>
+        <div class="foot" id="ow-ret-foot">—</div>
+        <span class="go">进入预警中心 →</span>
       </div>
-      <div class="dn-notes">
-        <span class="dn-tag">注意</span>
-        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      <div class="warn-card warning" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot amber"></span><span id="ow-diss-title">主动解散占比预警</span><span class="lvl" id="ow-diss-lvl">—</span></div>
+        <div class="val" id="ow-diss-val">--</div>
+        <div class="foot" id="ow-diss-foot">—</div>
+        <span class="go">进入预警中心 →</span>
+      </div>
+      <div class="warn-card notice" onclick="switchTab('alerts')">
+        <div class="top"><span class="dot violet"></span><span id="ow-new-title">新成团数预警</span><span class="lvl" id="ow-new-lvl">—</span></div>
+        <div class="val" id="ow-new-val">--</div>
+        <div class="foot" id="ow-new-foot">—</div>
+        <span class="go">进入预警中心 →</span>
       </div>
     </div>
-    <div class="chart-grid">
-      <div class="chart-card" id="survival-card">
-        <h3>姐妹团存活分析</h3>
-        <div class="chart-src" id="survival-src">基于最新快照</div>
-        <div class="survival-chips" id="survival-chips"></div>
-        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
-        <div class="chart-insight" id="survival-insight"></div>
-      </div>
-      <div class="chart-card" id="dissolve-reasons-card">
-        <h3>解散原因分布</h3>
-        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
-        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
-        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+
+    <!-- 毕业妹妹留存（跳转入口） -->
+    <div class="section-head" style="margin-top:18px;">
+      <h2>毕业妹妹留存</h2>
+      <span class="hint">毕业后仍留存且优秀的妹妹占比 · 点击进入姐姐分析毕业妹妹模块</span>
+    </div>
+    <div class="chart-card" style="cursor:pointer;margin-bottom:16px;" onclick="jumpToGrad()">
+      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
+        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">妹妹留存率</div><div style="font-size:26px;font-weight:700;color:#16A34A;" id="ow-grad-ret">—</div></div>
+        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">毕业后 30 天留存</div><div style="font-size:26px;font-weight:700;" id="ow-grad-30d">—</div></div>
+        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">晋升为姐姐</div><div style="font-size:26px;font-weight:700;" id="ow-grad-promoted">—</div></div>
+        <div style="flex:1;min-width:220px;font-size:12px;color:var(--wb-text-2);line-height:1.7;">补充「姐妹关系持续率」只看关系能否顺利维持、不看毕业后价值的缺口。</div>
+        <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--wb-accent);white-space:nowrap;">查看毕业妹妹 →</span>
       </div>
     </div>
 
@@ -264,34 +277,36 @@
       </div>
     </div>
 
-    <!-- 平台级预警（小 KPI 窗口，点击跳预警中心） -->
-    <div class="section-head" style="margin-top:18px;">
-      <h2>预警</h2>
-      <span class="hint">平台级预警 · 点击进入预警中心查看规则与下钻</span>
+    <!-- 团分析 -->
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
     </div>
-    <div class="warn-note">
-      <div class="wn-item"><span class="wn-tag severe">严重</span>跌破健康线（如姐妹团留存率 &lt; 60%）或环比连续骤降</div>
-      <div class="wn-item"><span class="wn-tag warning">警告</span>连续 2 周恶化（如主动解散占比连续升高）</div>
-      <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      </div>
     </div>
-    <div class="warn-grid" id="overview-warn-grid">
-      <div class="warn-card severe" onclick="switchTab('alerts')">
-        <div class="top"><span class="dot red"></span><span id="ow-ret-title">姐妹团留存率预警</span><span class="lvl" id="ow-ret-lvl">—</span></div>
-        <div class="val" id="ow-ret-val">--</div>
-        <div class="foot" id="ow-ret-foot">—</div>
-        <span class="go">进入预警中心 →</span>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
       </div>
-      <div class="warn-card warning" onclick="switchTab('alerts')">
-        <div class="top"><span class="dot amber"></span><span id="ow-diss-title">主动解散占比预警</span><span class="lvl" id="ow-diss-lvl">—</span></div>
-        <div class="val" id="ow-diss-val">--</div>
-        <div class="foot" id="ow-diss-foot">—</div>
-        <span class="go">进入预警中心 →</span>
-      </div>
-      <div class="warn-card notice" onclick="switchTab('alerts')">
-        <div class="top"><span class="dot violet"></span><span id="ow-new-title">新成团数预警</span><span class="lvl" id="ow-new-lvl">—</span></div>
-        <div class="val" id="ow-new-val">--</div>
-        <div class="foot" id="ow-new-foot">—</div>
-        <span class="go">进入预警中心 →</span>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>解散原因分布</h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 一眼看出是自然到期还是违规/流失</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
       </div>
     </div>
 
@@ -944,9 +959,9 @@
 <script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=54"></script>
-<script src="js/app.js?v=58"></script>
+<script src="js/app.js?v=59"></script>
 <script src="js/workbench.js?v=56"></script>
-<script src="js/insight.js?v=55"></script>
+<script src="js/insight.js?v=56"></script>
 <script src="js/warncenter.js?v=3"></script>
 </body>
 </html>
