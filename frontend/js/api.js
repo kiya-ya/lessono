@@ -425,6 +425,20 @@ function selectSearchSuggest(name) {
   loadDetailTable(1);
 }
 
+async function loadUIDTypes() {
+  try {
+    const res = await fetch(API_BASE + '/api/uid-query/types');
+    const d = await res.json();
+    const types = d.types || [];
+    if (!types.length) return;
+    const sel = document.getElementById('uid-type');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = types.map(t => `<option value="${t.key}">${t.label}</option>`).join('');
+    if (types.some(t => t.key === cur)) sel.value = cur;
+  } catch (e) { console.error('UID类型加载失败:', e); }
+}
+
 // ========== 全局 401 拦截 ==========
 (function() {
   const originalFetch = window.fetch;

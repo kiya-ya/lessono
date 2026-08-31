@@ -286,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   await loadHalls();
   await loadWeeks();
+  loadUIDTypes();
   loadLastUpdate();
   // Cookie 有效性状态灯（侧边栏 + header 综合点），由 keepalive 真实活性驱动；每 60s 刷新一次
   if (typeof refreshCookieStatus === 'function') refreshCookieStatus();
