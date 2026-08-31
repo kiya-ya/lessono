@@ -7,6 +7,8 @@ async function initCompareChart() {
     const hallResult = await hallRes.json();
     hallCompareData = hallResult.data || [];
     renderHallComparePage();
+    renderHallShare();
+    renderHallRevenueTrend();
     if (typeof initCmpBar === 'function') initCmpBar();
     // 跨页下钻：概览厅排行榜点行 → goPage 写入 state.pending，这里消费一次展开该厅分析
     if (state.pending && state.pending.hall && state.page === 'compare') {
@@ -175,6 +177,7 @@ async function openHallFocus(hallName) {
   renderHfTrend('hf-chart-ret', trend, 'retention_rate', 'pct', hallName);
   renderHfTrend('hf-chart-rev', trend, 'total_reward', 'money', hallName);
   renderHfWeekTable(trend);
+  renderHfDissolve(hallName);
   panel.style.display = '';
   setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
 }
@@ -184,7 +187,7 @@ function closeHallFocus() {
   if (panel) panel.style.display = 'none';
   const drill = document.getElementById('hf-week-drill');
   if (drill) drill.style.display = 'none';
-  ['hf-chart-ret', 'hf-chart-rev'].forEach(id => {
+  ['hf-chart-ret', 'hf-chart-rev', 'hf-diss'].forEach(id => {
     if (charts[id]) { charts[id].dispose(); charts[id] = null; }
   });
 }
@@ -318,6 +321,132 @@ function renderHfWeekTable(trend) {
     }
     return `<tr><td>${m.name}</td><td class="num">${fmt(bv, m)}</td><td class="num">${fmt(av, m)}</td><td class="num dt-diff ${cls}">${diff}</td><td>${trendIcon}</td></tr>`;
   }).join('');
+}
+
+/* ── 各厅进行中团占比（TOP5 + 其他 · 点扇区钻取单厅） ── */
+function renderHallShare() {
+  const el = document.getElementById('hall-share');
+  const ins = document.getElementById('hall-share-insight');
+  if (!el) return;
+  const data = (hallCompareData || []).slice().sort((a, b) => (b.active_count || 0) - (a.active_count || 0));
+  if (!data.length) { if (ins) ins.textContent = '暂无大厅数据'; return; }
+  const top = data.slice(0, 5);
+  const restCount = data.slice(5).reduce((s, d) => s + (d.active_count || 0), 0);
+  const total = data.reduce((s, d) => s + (d.active_count || 0), 0);
+  const pieData = top.map(d => ({ name: d.hall_name, value: d.active_count || 0 }));
+  if (restCount > 0) pieData.push({ name: '其他厅', value: restCount });
+  const palette = ['#7C5CFF', '#3D9A6C', '#C98A2D', '#D56060', '#E08A5A', '#C0C4CC'];
+  if (charts['hallShare']) charts['hallShare'].dispose();
+  charts['hallShare'] = echarts.init(el);
+  charts['hallShare'].setOption({
+    tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
+    legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 11, color: '#6B7280' } },
+    series: [{
+      type: 'pie', radius: ['45%', '72%'], center: ['38%', '50%'],
+      itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+      label: { show: false },
+      data: pieData.map((d, i) => ({ ...d, itemStyle: { color: palette[i % palette.length] } })),
+    }],
+  });
+  charts['hallShare'].off('click');
+  charts['hallShare'].on('click', function (params) {
+    if (params.name && params.name !== '其他厅' && typeof openHallFocus === 'function') openHallFocus(params.name);
+  });
+  if (ins) {
+    const t1 = top[0], t2 = top[1];
+    const share = total ? Math.round(((t1.active_count || 0) + (t2.active_count || 0)) / total * 100) : 0;
+    ins.innerHTML = `${t1.hall_name} + ${t2.hall_name} 两家合计 <b>${share}%</b>，头部集中明显。`;
+  }
+}
+
+/* ── 各厅礼物流水周趋势（TOP5 厅 · 近 8 周 · 多线） ── */
+async function renderHallRevenueTrend() {
+  const el = document.getElementById('hall-trend');
+  const ins = document.getElementById('hall-trend-insight');
+  if (!el) return;
+  const tops = (hallCompareData || []).slice().sort((a, b) => (b.total_revenue || 0) - (a.total_revenue || 0)).slice(0, 5);
+  if (!tops.length) { if (ins) ins.textContent = '暂无大厅流水数据'; return; }
+  const palette = ['#7C5CFF', '#3D9A6C', '#C98A2D', '#D56060', '#E08A5A'];
+  const series = [];
+  let labels = [];
+  for (let i = 0; i < tops.length; i++) {
+    const h = tops[i];
+    let trend = [];
+    try {
+      const res = await fetch(API_BASE + '/api/weekly-report?limit=all&hall=' + encodeURIComponent(h.hall_name));
+      const d = await res.json();
+      trend = (d.data || []).slice(-8);
+    } catch (e) { /* 单厅趋势失败则留空 */ }
+    if (!labels.length) labels = trend.map(r => r.week_label);
+    series.push({
+      name: h.hall_name, type: 'line', smooth: true, connectNulls: true, symbolSize: 5,
+      data: trend.map(r => (r.total_reward ?? null)),
+      lineStyle: { color: palette[i], width: 2 }, itemStyle: { color: palette[i] },
+    });
+  }
+  if (charts['hallTrend']) charts['hallTrend'].dispose();
+  charts['hallTrend'] = echarts.init(el);
+  charts['hallTrend'].setOption({
+    tooltip: {
+      trigger: 'axis', backgroundColor: 'rgba(26,29,38,.92)', borderWidth: 0, textStyle: { color: '#fff' },
+      formatter: ps => {
+        let s = ps[0].name;
+        ps.forEach(p => { s += `<br/>${p.marker}${p.seriesName}: ${p.value == null ? '—' : wbFmtMoney(p.value)}`; });
+        return s;
+      },
+    },
+    legend: { top: 0, textStyle: { fontSize: 10, color: '#6B7280' } },
+    grid: { left: 70, right: 20, top: 32, bottom: 32 },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, rotate: 30 } },
+    yAxis: { type: 'value', axisLabel: { fontSize: 10, formatter: v => wbFmtMoney(v) } },
+    series,
+  });
+  charts['hallTrend'].off('click');
+  charts['hallTrend'].on('click', function (params) {
+    if (params.seriesName && typeof openHallFocus === 'function') openHallFocus(params.seriesName);
+  });
+  if (ins) {
+    ins.innerHTML = `${tops[0].hall_name} 流水居首，点折线/图例钻取对应厅。`;
+  }
+}
+
+/* ── 厅揭示面板 · 解散原因构成（该厅已解散团 · 环形占比） ── */
+async function renderHfDissolve(hallName) {
+  const el = document.getElementById('hf-diss');
+  const src = document.getElementById('hf-diss-src');
+  const ins = document.getElementById('hf-diss-insight');
+  if (!el) return;
+  try {
+    const res = await fetch(API_BASE + '/api/dissolve-reasons?hall=' + encodeURIComponent(hallName));
+    const d = await res.json();
+    if (d.error || !d.reasons || !d.reasons.length) {
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--wb-text-3);font-size:12px;">该厅暂无解散数据</div>';
+      if (src) src.textContent = '该厅暂无解散数据';
+      return;
+    }
+    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '生态违规': '#E11D48', '等级低于铜牌': '#9333EA', '毕业': '#16A34A', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
+    if (src) src.textContent = `快照日期 ${d.ref_date} · 该厅累计解散 ${d.total} 个团 · 环形占比`;
+    if (charts['hfDiss']) charts['hfDiss'].dispose();
+    charts['hfDiss'] = echarts.init(el);
+    charts['hfDiss'].setOption({
+      tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
+      legend: { orient: 'vertical', right: 0, top: 'middle', textStyle: { fontSize: 11, color: '#6B7280' } },
+      series: [{
+        type: 'pie', radius: ['45%', '72%'], center: ['38%', '50%'],
+        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}个', fontSize: 10, color: '#6B7280' },
+        data: d.reasons.map(r => ({ name: r.reason, value: r.count, itemStyle: { color: colors[r.reason] || '#C0C4CC' } })),
+      }],
+    });
+    charts['hfDiss'].off('click');
+    charts['hfDiss'].on('click', function (params) {
+      if (params.name && typeof drillToReason === 'function') drillToReason(params.name);
+    });
+    if (ins) {
+      const top = d.reasons[0];
+      ins.innerHTML = `该厅累计结束 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。近 8 周各原因趋势待后端补按周序列后落地。`;
+    }
+  } catch (e) { console.error('解散原因构成加载失败:', e); }
 }
 
 function renderUIDResult(data) {

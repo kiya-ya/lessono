@@ -550,6 +550,21 @@
       <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="hall-compare-insight"></div>
     </div>
+    <!-- 各厅进行中团占比 + 各厅礼物流水周趋势 -->
+    <div class="chart-grid" style="margin-top:14px;">
+      <div class="chart-card">
+        <h3>各厅进行中团占比</h3>
+        <div class="chart-src">按最新快照 · TOP5 厅 · 点扇区钻取</div>
+        <div class="chart-box" id="hall-share"></div>
+        <div class="chart-insight" id="hall-share-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3>各厅礼物流水周趋势</h3>
+        <div class="chart-src">近 8 周 · TOP5 厅 · 点折线/图例钻取</div>
+        <div class="chart-box" id="hall-trend"></div>
+        <div class="chart-insight" id="hall-trend-insight"></div>
+      </div>
+    </div>
     <!-- 厅分析揭示面板：点击大厅后展开 -->
     <div class="chart-card hall-focus" id="hall-focus" style="display:none;">
       <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -562,6 +577,12 @@
         <div class="chart-card"><h3>留存率趋势</h3><div class="chart-box" id="hf-chart-ret"></div></div>
         <div class="chart-card"><h3>流水趋势</h3><div class="chart-box" id="hf-chart-rev"></div></div>
         <div class="chart-card" style="grid-column:1/-1;"><h3>该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
+      </div>
+      <div style="margin-top:14px;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">解散原因构成<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅已解散团 · 环形占比 · 点扇区下钻</span></h3>
+        <div class="chart-src" id="hf-diss-src" style="margin-top:6px;">—</div>
+        <div class="chart-box" id="hf-diss"></div>
+        <div class="chart-insight" id="hf-diss-insight"></div>
       </div>
       <div class="chart-src" style="margin-top:10px;">点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
       <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
@@ -1007,7 +1028,7 @@
 <script src="js/utils.js?v=43"></script>
 <script src="js/api.js?v=57"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=54"></script>
+<script src="js/render.js?v=55"></script>
 <script src="js/app.js?v=60"></script>
 <script src="js/workbench.js?v=56"></script>
 <script src="js/insight.js?v=56"></script>
