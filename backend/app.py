@@ -209,6 +209,8 @@ DISSOLVE_REASON_CASE = """
     CASE
       WHEN dissolve_reason LIKE '%手动%' THEN '手动解散'
       WHEN dissolve_reason LIKE '%未完成%' THEN '任务未完成自动解散'
+      WHEN dissolve_reason LIKE '%违规%' THEN '生态违规'
+      WHEN dissolve_reason LIKE '%铜牌%' THEN '等级低于铜牌'
       WHEN dissolve_reason LIKE '%毕业%' THEN '毕业'
       WHEN dissolve_reason LIKE '%注销%' THEN '注销'
       WHEN dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' THEN '离职'
@@ -250,6 +252,12 @@ def _level_score_sql(col):
 
 # 主动解散（用户侧发起）：手动解散 / 离职(含换厅) / 注销
 ACTIVE_DISS_REASON_SQL = "(dissolve_reason LIKE '%手动%' OR dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' OR dissolve_reason LIKE '%注销%')"
+
+# 已成团天数口径（2026-08-31）：已解散团用 dissolve_date − form_date（真实存活天数），
+# 进行中团沿用 bigdata days_since_formed（「第N天」）。供所有展示位/计算位复用。
+DAYS_SINCE_FORMED_SQL = ("CASE WHEN dissolve_date IS NOT NULL AND dissolve_date != '' "
+                         "THEN CAST(julianday(dissolve_date) - julianday(form_date) AS INTEGER) "
+                         "ELSE days_since_formed END")
 
 
 def week_metrics_from_detail(conn, hall, ws, we):
@@ -989,9 +997,26 @@ def api_sister_profile():
         d.update(total_teams=r['total_teams'], presence_days=r['presence_days'], last_seen=r['last_seen'])
 
     # 进行中团数 + 平均成团天数（最新快照）
-    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG(days_since_formed) AS avg_days FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
+    for r in conn.execute(f"SELECT CAST(sister_uid AS TEXT) AS sister_uid, SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG({DAYS_SINCE_FORMED_SQL}) AS avg_days FROM team_detail WHERE {latest} {hc} GROUP BY sister_uid", hp).fetchall():
         d = base.setdefault(r['sister_uid'], {'sister_uid': r['sister_uid'], 'sister_nickname': None, 'sister_level': None})
         d.update(active_teams=r['active_teams'], avg_days=round(r['avg_days'], 1) if r['avg_days'] is not None else None)
+
+    # 姐妹关系持续率（2026-08-31 定稿）：已结束团（dissolve_date 非空）实际存续天数 ÷ (已结束团数 × 30)
+    # 毕业团 clamp 30 天；解散团 dissolve_date − form_date；进行中团不进分子分母。
+    ended = {}
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su,
+               COUNT(*) AS ended_teams,
+               COALESCE(SUM(CASE WHEN dissolve_reason = '毕业' THEN 30
+                                 ELSE CAST(julianday(dissolve_date) - julianday(form_date) AS INTEGER) END), 0) AS total_days,
+               SUM(CASE WHEN dissolve_reason = '毕业' THEN 1 ELSE 0 END) AS grad_teams
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+          AND dissolve_date IS NOT NULL AND dissolve_date != ''
+          AND sister_uid IS NOT NULL AND sister_uid != '' {hc}
+        GROUP BY su
+    """, hp).fetchall():
+        ended[r['su']] = r
 
     list_out = []
     for uid, s in base.items():
@@ -999,7 +1024,14 @@ def api_sister_profile():
         prev_rev = (rev.get(uid, {}).get(prev_week, 0)) if prev_week else 0
         total_teams = s.get('total_teams') or 0
         active_teams = s.get('active_teams') or 0
-        retention = round(active_teams / total_teams * 100, 1) if total_teams else None
+        e = ended.get(uid)
+        ended_teams = e['ended_teams'] if e else 0
+        total_days = e['total_days'] if e else 0
+        grad_teams = e['grad_teams'] if e else 0
+        # 姐妹关系持续率 = Σ(已结束团存续天数) ÷ (已结束团数 × 30)
+        retention = round(total_days / (ended_teams * 30) * 100, 1) if ended_teams else None
+        # 带团毕业率（辅助副行）= 自然毕业团 ÷ 已结束团
+        graduation_rate = round(grad_teams / ended_teams * 100, 1) if ended_teams else None
         wow = round((week_rev - prev_rev) / prev_rev * 100, 1) if prev_rev and prev_rev > 0 else None
         list_out.append({
             'sister_uid': uid,
@@ -1011,6 +1043,7 @@ def api_sister_profile():
             'total_teams': total_teams,
             'active_teams': active_teams,
             'retention': retention,
+            'graduation_rate': graduation_rate,
             'avg_days': s.get('avg_days'),
             'presence_days': s.get('presence_days', 0),
             'last_seen': s.get('last_seen'),
@@ -1020,8 +1053,8 @@ def api_sister_profile():
     p80 = revs[int(len(revs) * 0.8)] if revs else 0
     for x in list_out:
         r = x['retention']
-        head = x['week_rev'] > 0 and x['week_rev'] >= p80 and r is not None and r >= 50
-        risk = (x['rev_wow'] is not None and x['rev_wow'] <= -50 and x['prev_rev'] >= 1000) or (x['total_teams'] >= 3 and r is not None and r < 50)
+        head = x['week_rev'] > 0 and x['week_rev'] >= p80 and r is not None and r >= 65
+        risk = (x['rev_wow'] is not None and x['rev_wow'] <= -50 and x['prev_rev'] >= 1000) or (x['total_teams'] >= 3 and r is not None and r < 65)
         x['tag'] = 'head' if head else ('risk' if risk else 'normal')
 
     list_out.sort(key=lambda x: (-(x['week_rev'] or 0), -(x['retention'] or 0)))
@@ -1078,7 +1111,7 @@ def api_sister2_profile():
     for r in conn.execute(f"""
         SELECT CAST(sister_uid2 AS TEXT) AS su, MAX(sister_nickname2) AS nickname, MAX({rank_sql}) AS rank,
                COUNT(DISTINCT team_id) AS team_count, COUNT(DISTINCT snapshot_date) AS presence_days,
-               MAX(days_since_formed) AS max_days
+               MAX({DAYS_SINCE_FORMED_SQL}) AS max_days
         FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc} GROUP BY su
     """, hp).fetchall():
         base[r['su']] = {
@@ -1160,44 +1193,73 @@ def api_talent_pool():
         d = base.setdefault(r['su'], {'sister_uid': r['su'], 'sister_nickname': None, 'level': None, 'level_rank': 0})
         d['active_teams'] = r['active_teams'] or 0
 
-    # 妹妹成长（按团：妹妹最高等级 Δscore / 团龄，score 为难度加权分）+ 共同成长（妹妹有成长且团存活的团占比）
+    # 姐妹关系持续率：已结束团实际存续天数 ÷ (已结束团数 × 30)
+    ended = {}
+    for r in conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su,
+               COUNT(*) AS ended_teams,
+               COALESCE(SUM(CASE WHEN dissolve_reason = '毕业' THEN 30
+                                 ELSE CAST(julianday(dissolve_date) - julianday(form_date) AS INTEGER) END), 0) AS total_days,
+               SUM(CASE WHEN dissolve_reason = '毕业' THEN 1 ELSE 0 END) AS grad_teams
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+          AND dissolve_date IS NOT NULL AND dissolve_date != ''
+          AND sister_uid IS NOT NULL AND sister_uid != '' {hc}
+        GROUP BY su
+    """, hp).fetchall():
+        ended[r['su']] = r
+
+    # 妹妹成长（按团：妹妹最高等级 Δscore / 团龄，score 为难度加权分）+ 培养升牌率（妹妹成长覆盖率 = 有成长团 ÷ 历史团）
+    # 团龄口径：已解散团 dissolve_date − form_date，进行中团 days_since_formed（2026-08-31 修正）。
     growth = {}
     for r in conn.execute(f"""
         SELECT CAST(sister_uid AS TEXT) AS su,
                MAX({score2_sql}) - MIN({score2_sql}) AS gr,
-               MAX(days_since_formed) AS days,
-               MAX(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS alive
+               MAX(CASE WHEN dissolve_date IS NOT NULL AND dissolve_date != ''
+                        THEN CAST(julianday(dissolve_date) - julianday(form_date) AS INTEGER)
+                        ELSE days_since_formed END) AS days
         FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc}
         GROUP BY team_id
     """, hp).fetchall():
         su = r['su']
-        g = growth.setdefault(su, {'teams': 0, 'grew': 0, 'joint': 0, 'gr_sum': 0.0})
+        g = growth.setdefault(su, {'teams': 0, 'grew': 0, 'gr_sum': 0.0})
         g['teams'] += 1
         gr = r['gr'] or 0
         days = r['days'] or 1
         if gr > 0:
             g['grew'] += 1
             g['gr_sum'] += gr / days
-            if r['alive']:
-                g['joint'] += 1
 
     for su, g in growth.items():
         d = base.setdefault(su, {'sister_uid': su, 'sister_nickname': None, 'level': None, 'level_rank': 0})
         d['grew_teams'] = g['grew']
-        d['sister_growth'] = round(g['gr_sum'] / g['teams'] * 30, 2) if g['teams'] else 0  # 每月成长分（难度加权）
-        d['joint_growth'] = round(g['joint'] / g['teams'] * 100, 1) if g['teams'] else 0
+        # 妹妹成长（每月成长分，只对有成长的团取平均：÷ g['grew']）
+        d['sister_growth'] = round(g['gr_sum'] / g['grew'] * 30, 2) if g['grew'] else 0
+        # 培养升牌率（妹妹成长覆盖率 = 有成长团 ÷ 历史带团总数，去掉「团存活」条件）
+        d['joint_growth'] = round(g['grew'] / g['teams'] * 100, 1) if g['teams'] else 0
 
     list_out = []
     for su, s in base.items():
         total_teams = s.get('total_teams') or 0
         active_teams = s.get('active_teams') or 0
-        retention = round(active_teams / total_teams * 100, 1) if total_teams else None
+        e = ended.get(su)
+        ended_teams = e['ended_teams'] if e else 0
+        total_days = e['total_days'] if e else 0
+        grad_teams = e['grad_teams'] if e else 0
+        # 姐妹关系持续率（主指标）= Σ(已结束团存续天数) ÷ (已结束团数 × 30)
+        retention = round(total_days / (ended_teams * 30) * 100, 1) if ended_teams else None
+        # 带团毕业率（辅助）= 自然毕业团 ÷ 已结束团
+        graduation_rate = round(grad_teams / ended_teams * 100, 1) if ended_teams else None
         s.setdefault('sister_growth', 0)
         s.setdefault('joint_growth', 0)
         s.setdefault('grew_teams', 0)
         s['retention'] = retention
+        s['graduation_rate'] = graduation_rate
         s['active_teams'] = active_teams
-        s['candidate'] = (retention is not None and retention >= 50) and s['sister_growth'] > 0 and s['level_rank'] >= 2
+        # 候选判定：持续率 ≥ 65% + 妹妹有成长 + 牌子 ≥ 银牌(level_rank≥4)
+        s['candidate'] = (retention is not None and retention >= 65) and s['sister_growth'] > 0 and s['level_rank'] >= 4
+        # 培养力总分（v1，满分100，仅排序参考不进候选硬门槛）= 0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率
+        s['total_score'] = round(0.4 * retention + 0.35 * (min(s['sister_growth'], 20) / 20 * 100) + 0.25 * s['joint_growth'], 1) if retention is not None else None
         list_out.append(s)
 
     # 并列展示：候选优先分组，再按牌子等级，非权威排序
@@ -1337,10 +1399,10 @@ def api_sister_detail():
     if not base or base['total_teams'] is None:
         conn.close()
         return jsonify({'error': '未找到该姐姐'}), 404
-    act = conn.execute(f"SELECT SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG(days_since_formed) AS avg_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}", [uid]).fetchone()
+    act = conn.execute(f"SELECT SUM(CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 1 ELSE 0 END) AS active_teams, AVG({DAYS_SINCE_FORMED_SQL}) AS avg_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}", [uid]).fetchone()
     pres = conn.execute("SELECT COUNT(DISTINCT snapshot_date) AS presence_days FROM team_detail WHERE CAST(sister_uid AS TEXT) = ?", [uid]).fetchone()
     teams = conn.execute(f"""
-        SELECT team_id, hall_name, days_since_formed, reward_amount, dissolve_date, sister_nickname2
+        SELECT team_id, hall_name, {DAYS_SINCE_FORMED_SQL} AS days_since_formed, reward_amount, dissolve_date, sister_nickname2
         FROM team_detail WHERE CAST(sister_uid AS TEXT) = ? AND {latest}
         ORDER BY CASE WHEN dissolve_date IS NULL OR dissolve_date = '' THEN 0 ELSE 1 END, days_since_formed DESC
     """, [uid]).fetchall()
@@ -1395,9 +1457,10 @@ def api_captains():
         ref_d = datetime.strptime(ref, '%Y-%m-%d').date()
         start = (ref_d - timedelta(days=ref_d.weekday())) if period == 'week' else ref_d.replace(day=1)
         hall_cond = "AND s.hall_name = ?" if hall != 'all' else ''
+        hall_cond_inner = "AND l.hall_name = ?" if hall != 'all' else ''
         params = [start.isoformat(), ref]
         if hall != 'all':
-            params.append(hall)
+            params += [hall, hall]  # 外层 s 厅过滤 + 内层 active_count 厅过滤
         params.append(limit)
         rows = conn.execute(f"""
             WITH snap AS (
@@ -1416,7 +1479,7 @@ def api_captains():
                    GROUP_CONCAT(DISTINCT s.hall_name) AS halls,
                    COUNT(DISTINCT s.team_id) AS team_count,
                    (SELECT COUNT(*) FROM latest l WHERE l.sister_uid = s.sister_uid
-                     AND (l.dissolve_date = '' OR l.dissolve_date IS NULL)) AS active_count,
+                     AND (l.dissolve_date = '' OR l.dissolve_date IS NULL) {hall_cond_inner}) AS active_count,
                    SUM(s.reward_amount) AS total_reward
             FROM snap s
             WHERE s.sister_uid IS NOT NULL AND s.sister_uid != '' {hall_cond}
@@ -1447,41 +1510,12 @@ def api_captains():
         'halls': r['halls'] or '',
         'team_count': r['team_count'],
         'active_count': r['active_count'],
-        'survival_rate': round(r['active_count'] / r['team_count'] * 100, 1) if r['team_count'] else 0,
         'total_reward': round(r['total_reward'] or 0, 1),
     } for r in rows]
 
-    # 头牌依赖度：各厅 TOP1 姐姐当日奖励占比
-    dep_rows = conn.execute("""
-        WITH per_captain AS (
-          SELECT hall_name, sister_uid, MAX(sister_nickname) AS nickname, SUM(reward_amount) AS rev
-          FROM team_detail
-          WHERE rowid IN (SELECT MAX(rowid) FROM team_detail
-                          WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail)
-                          GROUP BY team_id)
-            AND sister_uid IS NOT NULL AND sister_uid != ''
-          GROUP BY hall_name, sister_uid
-        ),
-        hall_total AS (
-          SELECT hall_name, SUM(rev) AS total_rev, MAX(rev) AS top_rev
-          FROM per_captain GROUP BY hall_name
-        )
-        SELECT p.hall_name, p.sister_uid, p.nickname, p.rev, h.total_rev
-        FROM per_captain p JOIN hall_total h ON p.hall_name = h.hall_name AND p.rev = h.top_rev
-        WHERE h.total_rev > 0
-        ORDER BY (p.rev * 1.0 / h.total_rev) DESC
-    """).fetchall()
-    dependency = [{
-        'hall_name': r['hall_name'],
-        'top_captain': r['nickname'] or r['sister_uid'],
-        'top_uid': r['sister_uid'],
-        'share': round(r['rev'] / r['total_rev'] * 100, 1),
-        'captain_rev': round(r['rev'], 1),
-        'hall_rev': round(r['total_rev'], 1),
-    } for r in dep_rows]
     conn.close()
 
-    return jsonify({'data': captains, 'dependency': dependency, 'ref_date': ref, 'period': period, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
+    return jsonify({'data': captains, 'ref_date': ref, 'period': period, 'metric_note': 'reward_amount 为快照当日发放的礼物奖励金额，非累计总流水；累计总流水请在 UID 查询中查看'})
 
 
 @app.route('/api/trend-insights')
@@ -2033,7 +2067,18 @@ def api_detail_table():
     cursor = conn.execute(f'SELECT * FROM team_detail {where_clause} ORDER BY {sort_field} {order_sql} LIMIT ? OFFSET ?', params + [per_page, offset])
     rows = cursor.fetchall()
     conn.close()
-    
+
+    # 已成团天数口径：已解散团用 dissolve_date − form_date 覆盖（2026-08-31，对齐 I 节）
+    for row in rows:
+        dd = (row.get('dissolve_date') or '').strip()
+        fd = (row.get('form_date') or '').strip()
+        if dd and fd:
+            try:
+                row['days_since_formed'] = (datetime.strptime(dd[:10], '%Y-%m-%d')
+                                            - datetime.strptime(fd[:10], '%Y-%m-%d')).days
+            except Exception:
+                pass
+
     return jsonify({
         'data': rows,
         'total': total,
