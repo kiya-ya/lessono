@@ -887,7 +887,7 @@ async function loadDissolveReasons() {
       if (src) src.textContent = '暂无解散数据';
       return;
     }
-    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '毕业': '#16A34A', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
+    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '生态违规': '#E11D48', '等级低于铜牌': '#9333EA', '毕业': '#16A34A', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
     if (src) src.textContent = `快照日期 ${d.ref_date} · 累计解散 ${d.total} 个团${hall ? '（大厅：' + hall + '）' : ''}`;
     if (charts['dissolveReasons']) charts['dissolveReasons'].dispose();
     charts['dissolveReasons'] = echarts.init(el);

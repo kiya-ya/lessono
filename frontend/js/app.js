@@ -14,6 +14,7 @@ function switchPage(name) {
   }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (name === 'captains') setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); }, 100);
+  if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); }, 100);
 }
 
 // 旧名兼容：index.html 里的 onclick="switchTab(...)" 仍走这里
@@ -168,6 +169,7 @@ function refreshData() {
   if (typeof loadCaptains === 'function') loadCaptains();
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+  if (typeof loadWarncenter === 'function') loadWarncenter();
   initCompareChart();
 }
 
@@ -295,6 +297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof loadSurvival === 'function') loadSurvival();
   if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+  if (typeof loadWarncenter === 'function') loadWarncenter();
 
   // 明细搜索框自动补全
   const searchInput = document.getElementById('detail-search');

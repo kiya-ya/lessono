@@ -48,6 +48,7 @@
     </div>
     <nav class="side-nav">
       <button class="tab active" onclick="switchTab('overview')"><span class="ico">⌂</span><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
+      <button class="tab" onclick="switchTab('alerts')"><span class="ico">⚠</span><span class="tab-txt"><b>预警中心</b><small>平台级预警 · 4 卡</small></span></button>
       <button class="tab" onclick="switchTab('compare')"><span class="ico">▦</span><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
       <button class="tab" onclick="switchTab('captains')"><span class="ico">♙</span><span class="tab-txt"><b>姐姐分析</b><small>画像 · 候选池</small></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="ico">⌕</span><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
@@ -282,6 +283,8 @@
         <option value="">全部原因</option>
         <option value="手动解散">手动解散</option>
         <option value="任务未完成自动解散">任务未完成自动解散</option>
+        <option value="生态违规">生态违规</option>
+        <option value="等级低于铜牌">等级低于铜牌</option>
         <option value="毕业">毕业</option>
         <option value="注销">注销</option>
         <option value="离职">离职</option>
@@ -324,6 +327,15 @@
       <div class="chart-insight" id="detail-insight"></div>
     </div>
 
+  </div>
+
+  <!-- 预警中心 -->
+  <div id="tab-alerts" class="tab-panel">
+    <div class="section-head">
+      <h2>预警中心</h2>
+      <span class="hint" id="alerts-ref">平台级预警 · 近 8 周</span>
+    </div>
+    <div class="chart-grid" id="alerts-grid"></div>
   </div>
 
   <!-- 对比 -->
@@ -781,8 +793,9 @@
 <script src="js/api.js?v=53"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=50"></script>
-<script src="js/app.js?v=54"></script>
-<script src="js/workbench.js?v=54"></script>
+<script src="js/app.js?v=55"></script>
+<script src="js/workbench.js?v=55"></script>
 <script src="js/insight.js?v=51"></script>
+<script src="js/warncenter.js?v=1"></script>
 </body>
 </html>
