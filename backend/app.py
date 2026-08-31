@@ -547,6 +547,32 @@ def api_halls():
     return jsonify({'data': halls, 'role': role})
 
 
+@app.route('/api/hall-groups')
+@login_required
+def api_hall_groups():
+    """组→厅层级（搜索栏 类型/组/大厅 三级联动）：读 data/hall_groups.json 爬取结果。
+    顶层 key = 类型（王者/和平/娱乐/其他 队长周排行），value = {组: [大厅,...]}。"""
+    fp = os.path.join(PROJECT_ROOT, 'data', 'hall_groups.json')
+    types = []
+    if os.path.exists(fp):
+        try:
+            with open(fp, 'r', encoding='utf-8') as f:
+                raw = json.load(f)
+            for type_name, groups_map in raw.items():
+                if type_name == '_meta':
+                    continue
+                groups = []
+                for group_name, halls in groups_map.items():
+                    groups.append({'group': group_name, 'halls': halls or []})
+                # 组按名字稳定排序
+                groups.sort(key=lambda g: g['group'])
+                types.append({'type': type_name, 'groups': groups})
+            types.sort(key=lambda t: t['type'])
+        except Exception as e:
+            app.logger.warning('hall_groups.json 解析失败: %s', e)
+    return jsonify({'types': types})
+
+
 @app.route('/api/hall-overview')
 @login_required
 def api_hall_overview():

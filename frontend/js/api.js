@@ -25,6 +25,61 @@ async function loadHalls() {
     }
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
+
+async function loadHallGroups() {
+  try {
+    const res = await fetch(API_BASE + '/api/hall-groups');
+    const d = await res.json();
+    _hallGroupTypes = d.types || [];
+    renderTypeSelect();
+  } catch (e) { console.error('组大厅层级加载失败:', e); }
+}
+
+// 搜索栏三级联动：类型 → 组 → 大厅
+function renderTypeSelect() {
+  const sel = document.getElementById('type-select');
+  if (!sel) return;
+  const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  sel.innerHTML = '<option value="all">全部类型</option>' +
+    _hallGroupTypes.map(t => `<option value="${esc(t.type)}">${esc(t.type)}</option>`).join('');
+  sel.value = 'all';
+  renderGroupSelect();
+}
+function renderGroupSelect() {
+  const sel = document.getElementById('group-select');
+  if (!sel) return;
+  const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const type = (document.getElementById('type-select') || {}).value;
+  const groups = type === 'all'
+    ? _hallGroupTypes.flatMap(t => t.groups)
+    : ((_hallGroupTypes.find(t => t.type === type) || {}).groups || []);
+  sel.innerHTML = '<option value="all">全部组</option>' +
+    groups.map(g => `<option value="${esc(g.group)}">${esc(g.group)}</option>`).join('');
+  sel.value = 'all';
+  renderHallSelectByGroup();
+}
+function renderHallSelectByGroup() {
+  const sel = document.getElementById('hall-select');
+  if (!sel) return;
+  const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const type = (document.getElementById('type-select') || {}).value;
+  const group = (document.getElementById('group-select') || {}).value;
+  const groups = type === 'all'
+    ? _hallGroupTypes.flatMap(t => t.groups)
+    : ((_hallGroupTypes.find(t => t.type === type) || {}).groups || []);
+  let halls;
+  if (group !== 'all') {
+    halls = (groups.find(g => g.group === group) || {}).halls || [];
+  } else if (type !== 'all') {
+    halls = groups.flatMap(g => g.halls);
+  } else {
+    halls = allHalls;
+  }
+  sel.innerHTML = '<option value="all">全部大厅</option>' +
+    halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
+  sel.value = (currentHall && halls.includes(currentHall)) ? currentHall : 'all';
+}
+
 async function loadWeeks() {
   try {
     const res = await fetch(API_BASE + '/api/weekly-report?limit=all');

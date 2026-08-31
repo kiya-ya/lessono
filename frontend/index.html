@@ -103,6 +103,8 @@
     <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
       <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;">
         <input type="text" id="top-search" class="wb-input" style="flex:1;min-width:220px;padding:8px 12px;" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" autocomplete="off" onkeydown="if(event.key==='Enter')topSearch()">
+        <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
+        <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
         <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
         <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
         <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
@@ -1054,13 +1056,13 @@
 <!-- 一键回到顶部 -->
 <button class="back-to-top" id="back-to-top" onclick="scrollToTop()" title="回到顶部">↑</button>
 
-<script src="js/config.js?v=44"></script>
+<script src="js/config.js?v=45"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=61"></script>
+<script src="js/api.js?v=62"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=57"></script>
-<script src="js/app.js?v=62"></script>
-<script src="js/workbench.js?v=59"></script>
+<script src="js/app.js?v=63"></script>
+<script src="js/workbench.js?v=60"></script>
 <script src="js/insight.js?v=60"></script>
 <script src="js/warncenter.js?v=4"></script>
 <script src="js/lyingflat.js?v=1"></script>

@@ -306,6 +306,10 @@ function onHallSelect() {
   wbSelectHall(sel.value);
 }
 
+// 搜索栏三级联动：类型 → 组 → 大厅（只改下拉候选，数据仍由 hall-select 驱动）
+function onTypeSelect() { renderGroupSelect(); }
+function onGroupSelect() { renderHallSelectByGroup(); }
+
 // 让厅选择器显示值始终跟随 currentHall（外部 setHall 后同步）
 function wbSyncHallSelect() {
   const sel = document.getElementById('hall-select');

@@ -14,6 +14,8 @@ let hallCompareSearch = '';
 
 // 全量大厅名单（/api/halls 返回，供概览厅选择器使用）
 let allHalls = [];
+// 组→大厅层级（/api/hall-groups 返回，供搜索栏 类型/组/大厅 三级联动）
+let _hallGroupTypes = [];
 
 // ===== 页面状态（单一来源，后续各页逐步迁入）=====
 const state = {
