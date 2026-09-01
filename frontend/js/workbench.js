@@ -387,7 +387,7 @@ function wbRenderKPI() {
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const heroes = [
-    { label: '妹妹留存率', num: wbKpi.sister_retention ? wbKpi.sister_retention.value : null, fmt: 'pct', c: 0, suf: 'pp', note: '待落地 · 越高越好', accent: 'green', metric: 'sisretention', spark: [] },
+    { label: '妹妹留存率', num: wbKpi.sister_retention ? wbKpi.sister_retention.value : null, fmt: 'pct', c: 0, suf: 'pp', note: '近似 · 越高越好', accent: 'green', metric: 'sisretention', spark: [] },
     { label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
     { label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
     { label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
@@ -398,13 +398,13 @@ function wbRenderKPI() {
   document.getElementById('wb-kpi-hero').innerHTML = heroes.map(k => {
     const clickable = k.metric && k.metric !== 'sisretention' && k.metric !== 'graduated';
     return `
-    <div class="kpi-card hero accent-${k.accent}"${clickable ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : (k.metric === 'sisretention' ? ` data-metric="${k.metric}" onclick="jumpToGrad()" title="毕业妹妹留存待落地，点击进入姐姐分析毕业妹妹模块"` : ` data-metric="${k.metric}" onclick="jumpToGraduated()" title="点击查看毕业妹妹名单"`)}>
+    <div class="kpi-card hero accent-${k.accent}"${clickable ? ` data-metric="${k.metric}" onclick="wbToggleKpi('${k.metric}')" title="点击展开趋势明细"` : (k.metric === 'sisretention' ? ` data-metric="${k.metric}" onclick="jumpToGrad()" title="毕业妹妹留存（近似），点击进入姐姐分析毕业妹妹模块"` : ` data-metric="${k.metric}" onclick="jumpToGraduated()" title="点击查看毕业妹妹名单"`)}>
       <div class="kpi-top">
         <span class="kpi-label">${k.label}</span>
         <span class="kpi-note">${k.note}</span>
       </div>
       <div class="kpi-value" data-count="${k.num == null ? 0 : k.num}" data-fmt="${k.fmt}">${k.num == null ? '—' : fmtOf(k.fmt)(k.num)}</div>
-      <div class="kpi-foot">${k.num == null ? '<span class="chip flat">待落地</span>' : wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
+      <div class="kpi-foot">${k.num == null ? '<span class="chip flat">暂无</span>' : wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
       ${wbSpark(k.spark)}
     </div>`;}).join('');
   document.getElementById('wb-kpi-sub').innerHTML = '';

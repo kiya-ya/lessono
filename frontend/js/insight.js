@@ -3,11 +3,6 @@
 /* ═══════════════ 姐姐分析 ═══════════════ */
 
 let captainPeriod = 'day';          // day / week / month
-let captainSortField = 'total_reward';
-let captainSortOrder = 'desc';
-let captainData = [];
-let captainPage = 0;
-let captainPerPage = 20;
 
 const CAPTAIN_PERIOD_LABEL = { day: '当日', week: '当周', month: '当月' };
 
@@ -16,122 +11,34 @@ function setCaptainPeriod(p) {
   ['day', 'week', 'month'].forEach(k => {
     const b = document.getElementById('cap-' + k);
     if (b) b.classList.toggle('on', k === p);
-    const bf = document.getElementById('capf-' + k);
-    if (bf) bf.classList.toggle('on', k === p);
   });
-  const ft = document.getElementById('captain-full-title');
-  if (ft) ft.textContent = `姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[p]}奖励）`;
   loadCaptains();
 }
 
-function sortCaptains(field) {
-  if (captainSortField === field) {
-    captainSortOrder = captainSortOrder === 'desc' ? 'asc' : 'desc';
-  } else {
-    captainSortField = field;
-    captainSortOrder = 'desc';
-  }
-  captainPage = 0;
-  renderCaptainTable();
-}
-
-function setCaptainPerPage(v) {
-  captainPerPage = parseInt(v) || 20;
-  captainPage = 0;
-  renderCaptainTable();
-}
-
-function renderCaptainTable() {
-  const sortArrow = f => captainSortField === f ? (captainSortOrder === 'desc' ? '▼' : '▲') : '▲▼';
-  const sorted = [...captainData].sort((a, b) => {
-    const av = a[captainSortField] || 0, bv = b[captainSortField] || 0;
-    return captainSortOrder === 'desc' ? bv - av : av - bv;
-  });
-  const total = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(total / captainPerPage));
-  if (captainPage >= totalPages) captainPage = totalPages - 1;
-  if (captainPage < 0) captainPage = 0;
-  const start = captainPage * captainPerPage;
-  const pageData = sorted.slice(start, start + captainPerPage);
-
-  // 1) 小窗口预览（TOP 3）
-  const prevEl = document.getElementById('captain-preview');
-  if (prevEl) {
-    const top3 = sorted.slice(0, 3);
-    prevEl.innerHTML = top3.length
-      ? `<ul class="mini-preview">${top3.map((c, i) => `<li>
-          <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
-          <span class="mp-name">${c.nickname} <span class="mp-sub">(${c.uid})</span></span>
-          <span class="mp-val">${wbFmtMoney(c.total_reward)}</span>
-        </li>`).join('')}</ul>`
-      : '<div style="color:var(--wb-text-3);font-size:12px;padding:8px 0;">暂无排行数据。</div>';
-  }
-
-  // 2) 全量表（弹窗内，可排序 + 分页）
-  const tableEl = document.getElementById('captain-full-table');
-  if (tableEl) {
-    const th = (field, label) =>
-      `<th style="cursor:pointer;user-select:none" onclick="sortCaptains('${field}')">${label} <span style="font-size:10px;color:var(--wb-text-3)">${sortArrow(field)}</span></th>`;
-    tableEl.innerHTML = `
-      <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>所在大厅</th>${th('total_reward', CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励')}</tr>
-      ${pageData.map((c, i) => `<tr>
-        <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
-        <td>${c.nickname}</td>
-        <td>${c.uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${c.uid}')" style="color:#7C5CFF;text-decoration:none;">${c.uid}</a>` : '-'}</td>
-        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${c.halls}</td>
-        <td>${wbFmtMoney(c.total_reward)}</td>
-      </tr>`).join('')}`;
-  }
-  const pg = document.getElementById('captain-full-pagination');
-  if (pg) {
-    let html = `<span style="font-size:12px;color:#666;margin-right:10px;">共 ${total} 位 · ${captainPage + 1}/${totalPages} 页</span>`;
-    if (captainPage > 0) html += `<button onclick="captainPage--;renderCaptainTable();">上一页</button>`;
-    pagerRange(captainPage, totalPages).forEach(i => {
-      html += i === '...'
-        ? '<span class="pager-dots">…</span>'
-        : `<button class="${i === captainPage ? 'active' : ''}" onclick="captainPage=${i};renderCaptainTable();">${i + 1}</button>`;
-    });
-    if (captainPage < totalPages - 1) html += `<button onclick="captainPage++;renderCaptainTable();">下一页</button>`;
-    pg.innerHTML = html;
-  }
-  const insEl = document.getElementById('captain-insight');
-  if (insEl) {
-    const top = sorted[0];
-    insEl.innerHTML = top
-      ? `TOP 姐姐「${top.nickname}」${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励 <b>${wbFmtMoney(top.total_reward)}</b>。`
-      : '暂无排行数据。';
-  }
-  // 展开按钮文案
-  const expEl = document.getElementById('captain-expand');
-  if (expEl) expEl.innerHTML = `展开全部 ${total} 位 →`;
-}
-
-function openCaptainFull() {
-  const modal = document.getElementById('captain-full-modal');
-  if (modal) modal.classList.add('active');
-}
-
-function closeCaptainFull() {
-  const modal = document.getElementById('captain-full-modal');
-  if (modal) modal.classList.remove('active');
-}
+let captainRewardMap = {};   // uid → { reward, halls }
 
 async function loadCaptains() {
-  const tableEl = document.getElementById('captain-preview');
-  if (!tableEl) return;
   try {
-    const res = await fetch(API_BASE + `/api/captains?limit=100&period=${captainPeriod}&` + getHallParam().substring(1));
+    const res = await fetch(API_BASE + `/api/captains?limit=200&period=${captainPeriod}&` + getHallParam().substring(1));
     const d = await res.json();
     if (d.ref_date) {
-      document.getElementById('captains-hint').textContent = `数据日期 ${d.ref_date} · 会随所选大厅变化`;
+      const hintEl = document.getElementById('captains-hint');
+      if (hintEl) hintEl.textContent = `数据日期 ${d.ref_date} · 会随所选大厅变化`;
     }
-    const titleEl = document.getElementById('captain-table-title');
-    if (titleEl) titleEl.textContent = `姐姐排行榜（按${CAPTAIN_PERIOD_LABEL[captainPeriod]}奖励）`;
+    captainRewardMap = {};
+    (d.data || []).forEach(c => { captainRewardMap[c.uid] = { reward: c.total_reward, halls: c.halls || '' }; });
+    applyCaptainReward();
+  } catch (e) { console.error('姐姐奖励排行加载失败:', e); }
+}
 
-    captainData = d.data || [];
-    captainPage = 0;
-    renderCaptainTable();
-  } catch (e) { console.error('姐姐分析加载失败:', e); }
+// 把 /api/captains 的奖励/大厅合并进 /api/sister-profile 画像列表，形成「姐姐总览」合并表
+function applyCaptainReward() {
+  sisterProfileList.forEach(x => {
+    const m = captainRewardMap[x.sister_uid];
+    x.reward = m ? m.reward : 0;
+    x.halls = m ? m.halls : '';
+  });
+  renderSisterProfile();
 }
 
 /* 概览页姐姐小窗：当日奖励 TOP3（点行跳姐姐分析页） */
@@ -158,7 +65,7 @@ let sisterProfileSummary = {};
 let sisterProfileGraduates = [];
 let sisterProfilePage = 0;
 let sisterProfilePerPage = 20;
-let sisterProfileSort = 'week_rev';
+let sisterProfileSort = 'reward';
 let gradRange = 'week';   // 毕业妹妹时间档：today / week / month
 
 function getSisterWeekParam() {
@@ -187,7 +94,7 @@ async function loadSisterProfile() {
     if (insEl) {
       insEl.innerHTML = `头部 <b>${s.head_count}</b> 位是流水主力（高于八成非零姐姐且持续率≥65%），风险 <b>${s.risk_count}</b> 位需重点跟进（环比暴跌或带团多持续率低）。本周流水 TOP「${s.top_sister || '—'}」${wbFmtMoney(s.top_rev || 0)}。`;
     }
-    renderSisterProfile();
+    applyCaptainReward();
     renderSisterCharts();
     renderRecentGraduates();
   } catch (e) { console.error('姐姐画像加载失败:', e); }
@@ -324,22 +231,20 @@ function renderSisterProfile() {
   const start = sisterProfilePage * sisterProfilePerPage;
   const page = list.slice(start, start + sisterProfilePerPage);
   const tag = x => x === 'head' ? '<span class="chip up">头部</span>' : x === 'risk' ? '<span class="chip down">风险</span>' : '<span class="chip flat">普通</span>';
-  const wow = v => v == null ? '—' : `<span class="chip ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${v > 0 ? '+' : ''}${v}%</span>`;
+  const rewardTh = CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励';
   document.getElementById('sister-profile-table').innerHTML = `
-    <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>等级</th><th>本周流水</th><th>环比</th><th>带团</th><th>进行中</th><th>持续率</th><th>均成团天</th><th>在榜天</th><th>标签</th></tr>
+    <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>姐妹关系持续率</th><th>所在大厅</th><th>等级</th><th>${rewardTh}</th></tr>
     ${page.map((x, i) => `<tr>
       <td class="rank-no ${(start + i) < 3 ? 'top' : ''}">${start + i + 1}</td>
       <td><a href="javascript:void(0)" onclick="openSisterDetail('${x.sister_uid || ''}')">${x.sister_nickname || '-'}</a></td>
       <td>${x.sister_uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${x.sister_uid}')" style="color:#7C5CFF;text-decoration:none;">${x.sister_uid}</a>` : '-'}</td>
-      <td>${x.sister_level ?? '-'}</td>
-      <td>${wbFmtMoney(x.week_rev)}</td>
-      <td>${wow(x.rev_wow)}</td>
+      <td>${tag(x.tag)}</td>
       <td>${x.total_teams}</td>
       <td>${x.active_teams}</td>
-      <td>${x.retention == null ? '—' : x.retention + '%'}<div style="color:var(--wb-text-3);font-size:11px;">毕业 ${x.graduation_rate == null ? '—' : x.graduation_rate + '%'}</div></td>
-      <td>${x.avg_days ?? '-'}</td>
-      <td>${x.presence_days}</td>
-      <td>${tag(x.tag)}</td>
+      <td>${x.retention == null ? '—' : '<b>' + x.retention + '%</b>'}<div style="color:var(--wb-text-3);font-size:11px;">毕业率 ${x.graduation_rate == null ? '—' : x.graduation_rate + '%'}</div></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.halls || '-'}</td>
+      <td>${x.sister_level ?? '-'}</td>
+      <td style="font-weight:600;">${wbFmtMoney(x.reward || 0)}</td>
     </tr>`).join('')}`;
   const pg = document.getElementById('sister-profile-pagination');
   if (pg) {
@@ -505,57 +410,92 @@ function jumpToGraduated() {
   }, 150);
 }
 
-// 回填「毕业妹妹留存」模块（概览 3 卡 + 姐姐分析完整模块）：
-// 晋升为姐姐取真数；留存率 2 卡 + 毕业后轨迹占位「待落地」（依赖回访数据，后端暂无）
+// 回填「毕业妹妹留存」模块（概览 3 卡 + 姐姐分析完整模块 + 近 8 周毕业趋势）：
+// 近似兜底口径：毕业后是否再次成团/当姐姐；晋升为姐姐取真数。
 async function loadGradRetention() {
-  const retEl = document.getElementById('ow-grad-ret');
-  const d30El = document.getElementById('ow-grad-30d');
-  const proEl = document.getElementById('ow-grad-promoted');
+  const owRet = document.getElementById('ow-grad-ret');
+  const ow30d = document.getElementById('ow-grad-30d');
+  const owPro = document.getElementById('ow-grad-promoted');
   const grRet = document.getElementById('gr-ret');
   const gr30d = document.getElementById('gr-30d');
   const grPro = document.getElementById('gr-promoted');
   const grTable = document.getElementById('gr-table');
-  if (!retEl && !d30El && !proEl && !grRet && !gr30d && !grPro && !grTable) return;
-  [retEl, d30El, proEl, grRet, gr30d, grPro].forEach(el => { if (el) el.textContent = '—'; });
-  if (grTable) grTable.innerHTML = '<tbody><tr><td colspan="8" style="color:#9CA3AF;">加载中…</td></tr></tbody>';
+  const lineEl = document.getElementById('cap-grad-line');
+  if (!owRet && !ow30d && !owPro && !grRet && !gr30d && !grPro && !grTable && !lineEl) return;
   try {
-    const [spRes, s2Res] = await Promise.all([
-      fetch(API_BASE + '/api/sister-profile'),
-      fetch(API_BASE + '/api/sister2-profile'),
-    ]);
-    const sp = await spRes.json();
-    const s2 = await s2Res.json();
-    const promotedSet = new Set((s2.list || []).filter(x => x.promoted).map(x => x.sister_uid));
-    const graduates = sp.recent_graduates || [];
-    const promoted = graduates.filter(g => promotedSet.has(g.sister_uid2)).length;
-    const promotedTxt = promoted + ' 人';
-    if (proEl) proEl.textContent = promotedTxt;
+    const res = await fetch(API_BASE + '/api/grad-retention?' + getHallParam().substring(1));
+    const d = await res.json();
+    const s = d.stats || {};
+    const setPct = (el, v) => { if (el) el.textContent = v == null ? '—' : Math.round(v) + '%'; };
+    setPct(owRet, s.retention_rate);
+    setPct(ow30d, s.retention_30d);
+    setPct(grRet, s.retention_rate);
+    setPct(gr30d, s.retention_30d);
+    const promotedTxt = s.promoted == null ? '—' : s.promoted + ' 人';
+    if (owPro) owPro.textContent = promotedTxt;
     if (grPro) grPro.textContent = promotedTxt;
-    if (grTable) grTable.innerHTML = gradRetentionTableHTML(graduates);
+    if (grTable) grTable.innerHTML = gradRetentionTableHTML(s.list || []);
+    renderGradLine(d.trend || []);
   } catch (e) {
+    console.error('毕业妹妹留存加载失败:', e);
     if (grTable) grTable.innerHTML = '<tbody><tr><td colspan="8" style="color:#9CA3AF;">毕业妹妹留存加载失败</td></tr></tbody>';
   }
 }
 
-function gradRetentionTableHTML(graduates) {
+function gradRetentionTableHTML(list) {
   const head = '<thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>';
-  if (!graduates.length) return head + '<tbody><tr><td colspan="8" style="color:#9CA3AF;">暂无毕业妹妹</td></tr></tbody>';
-  const rows = graduates.slice(0, 20).map(g => {
+  if (!list.length) return head + '<tbody><tr><td colspan="8" style="color:#9CA3AF;">暂无毕业妹妹</td></tr></tbody>';
+  const rows = list.slice(0, 20).map(g => {
     const name = g.nickname || g.sister_uid2 || '-';
     const uid = g.sister_uid2 || '';
+    const days = g.retained_days;
+    const keep = (!g.retained || days == null || days <= 0)
+      ? '<span style="color:#6B7280;font-weight:700;">0 天</span>'
+      : days >= 90 ? '<span style="color:#16A34A;font-weight:700;">≥90 天</span>'
+      : days >= 30 ? '<span style="color:#16A34A;font-weight:700;">≥30 天</span>'
+      : `<span style="color:#B45309;font-weight:700;">${days} 天</span>`;
+    const lineage = g.promoted
+      ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" onclick="openLineage(this.dataset.n)" title="点击查看传承链">已开始带妹妹 · 看链</span>`
+      : '<span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span>';
     return `<tr>
       <td>${esc(name)}</td>
       <td>${uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${uid}')" style="color:#7C5CFF;text-decoration:none;">${uid}</a>` : '—'}</td>
-      <td>${esc(g.dissolve_date || '—')}</td>
+      <td>${esc(g.grad_date || '—')}</td>
       <td>${esc(g.sister_nickname || '—')}</td>
-      <td style="color:#9CA3AF;">待落地</td>
-      <td><a href="javascript:void(0)" onclick="openLineage(this.dataset.n)" data-n="${esc(name)}" style="color:#7C5CFF;text-decoration:none;">看链</a></td>
-      <td style="color:#9CA3AF;">待落地</td>
-      <td style="color:#9CA3AF;">待落地</td>
+      <td>${keep}</td>
+      <td>${lineage}</td>
+      <td style="color:#9CA3AF;">—</td>
+      <td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td>
     </tr>`;
   }).join('');
-  const more = graduates.length > 20 ? `<tr><td colspan="8" style="color:#9CA3AF;">… 共 ${graduates.length} 位，其余待回访数据落地</td></tr>` : '';
+  const more = list.length > 20 ? `<tr><td colspan="8" style="color:#9CA3AF;">… 共 ${list.length} 位，其余待回访数据落地</td></tr>` : '';
   return head + `<tbody>${rows}${more}</tbody>`;
+}
+
+// 近 8 周毕业趋势柱图（/api/grad-retention trend）
+function renderGradLine(trend) {
+  const el = document.getElementById('cap-grad-line');
+  if (!el || !window.echarts) return;
+  if (charts['gradLine']) charts['gradLine'].dispose();
+  const labels = trend.map(t => t.week);
+  const vals = trend.map(t => t.count);
+  const c = echarts.init(el);
+  charts['gradLine'] = c;
+  c.setOption({
+    tooltip: { trigger: 'axis', formatter: ps => `${ps[0].name}<br/>毕业 ${ps[0].value} 位` },
+    grid: { left: 8, right: 12, top: 24, bottom: 8, containLabel: true },
+    xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#6B7280', interval: 0 } },
+    yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+    series: [{ type: 'bar', data: vals, barMaxWidth: 40, itemStyle: { color: '#7C5CFF', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280' } }]
+  });
+  const ins = document.getElementById('grad-line-insight');
+  if (ins) {
+    if (!vals.length) { ins.innerHTML = '暂无毕业趋势数据。'; return; }
+    const total = vals.reduce((a, b) => a + b, 0);
+    const avg = total / vals.length;
+    const last = vals[vals.length - 1];
+    ins.innerHTML = `近 ${vals.length} 周每周毕业 <b>${Math.min(...vals)}~${Math.max(...vals)}</b> 位，均值 ≈ <b>${avg.toFixed(1)}</b> 位，本周 <b>${last}</b> 位。`;
+  }
 }
 
 // 传承链下钻占位（依赖回访数据，后端 lineage 接口待落地）

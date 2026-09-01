@@ -731,6 +731,8 @@ def api_kpi():
     this_achieve = achieve_rate(ws, we)
     prev_achieve = achieve_rate(pws, pwe) if pws else 0.0
 
+    # 妹妹留存率（近似兜底：毕业后仍留存/产出的妹妹占比；回访真口径待落地）
+    grad_ret = grad_retention_stats(conn, hall)
     conn.close()
 
     this_retention = getv(this_row, 'retention_rate')
@@ -746,8 +748,8 @@ def api_kpi():
         'active_dissolved_pct': {'value': this_row['active_dissolved_pct'], 'change': round(this_row['active_dissolved_pct'] - getv(prev_row, 'active_dissolved_pct'), 2), 'unit': '%', 'reverse': True},
         # 毕业妹妹数（满30天自动毕业计数，对齐 preview「毕业妹妹数」卡）
         'graduated_sisters': {'value': this_row['graduation_count'], 'change': calc_pct(this_row['graduation_count'], getv(prev_row, 'graduation_count')), 'unit': '人'},
-        # 妹妹留存率（毕业妹妹毕业后仍留存/产出的占比）：依赖回访数据，后端待落地，前端显「待落地」
-        'sister_retention': {'value': None, 'change': 0, 'unit': '%'},
+        # 妹妹留存率（近似兜底：毕业后仍留存/产出的妹妹占比；回访真口径待落地）
+        'sister_retention': {'value': grad_ret['retention_rate'], 'change': 0, 'unit': '%'},
     }
     return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
 
@@ -1220,6 +1222,103 @@ def api_sister2_profile():
         },
         'list': list_out,
     })
+
+
+def grad_retention_stats(conn, hall='all'):
+    """毕业妹妹留存（近似兜底）：毕业后仍留存/产出、毕业后30天留存、晋升为姐姐。
+    毕业妹妹 = 有「毕业」记录的去重妹妹（sister_uid2，取最近一次毕业日）。
+    仍留存/产出 = 毕业后该妹妹仍作为姐姐或妹妹出现在任一快照（毕业日之后）；
+    毕业后30天留存 = 毕业满30天的妹妹中，毕业满30天后仍有快照；
+    晋升为姐姐 = 妹妹 UID 命中 team_detail 的 sister_uid 集合。
+    依赖「回访」数据的真口径待落地，此即 preview 的「近似兜底」。"""
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
+
+    grads = conn.execute(f"""
+        SELECT CAST(sister_uid2 AS TEXT) AS su,
+               MAX(sister_nickname2) AS nickname,
+               MAX(sister_nickname) AS sister_nickname,
+               MAX(dissolve_date) AS grad_date,
+               MAX(hall_name) AS hall_name
+        FROM team_detail
+        WHERE dissolve_reason = '毕业' AND sister_uid2 IS NOT NULL AND sister_uid2 != '' {hc}
+        GROUP BY su
+    """, hp).fetchall()
+
+    promoted_set = {r['su'] for r in conn.execute(
+        'SELECT DISTINCT CAST(sister_uid AS TEXT) AS su FROM team_detail '
+        'WHERE sister_uid IS NOT NULL AND sister_uid != ""').fetchall()}
+
+    # 每个 UID 最近一次出现快照日（作为姐姐或妹妹任一角色）
+    latest_seen = {}
+    for r in conn.execute("""
+        SELECT su, MAX(snapshot_date) AS last_snap FROM (
+          SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
+          UNION ALL
+          SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
+        ) GROUP BY su
+    """).fetchall():
+        latest_seen[r['su']] = r['last_snap']
+
+    total = len(grads)
+    retained = retained_30d = eligible_30d = promoted = 0
+    ref_d = datetime.strptime(ref, '%Y-%m-%d').date() if ref else None
+    list_out = []
+    for g in grads:
+        su, gd = g['su'], (g['grad_date'] or '')[:10]
+        last = (latest_seen.get(su) or '')[:10]
+        promoted_flag = su in promoted_set
+        retained_flag = bool(gd and last and last > gd)
+        retained_days = None
+        if gd and last:
+            try:
+                retained_days = (datetime.strptime(last, '%Y-%m-%d').date()
+                                 - datetime.strptime(gd, '%Y-%m-%d').date()).days
+            except Exception:
+                retained_days = None
+        if promoted_flag:
+            promoted += 1
+        if retained_flag:
+            retained += 1
+        if gd and ref_d:
+            try:
+                gd_d = datetime.strptime(gd, '%Y-%m-%d').date()
+                if (ref_d - gd_d).days >= 30:
+                    eligible_30d += 1
+                    if last and last >= (gd_d + timedelta(days=30)).strftime('%Y-%m-%d'):
+                        retained_30d += 1
+            except Exception:
+                pass
+        list_out.append({
+            'sister_uid2': su, 'nickname': g['nickname'],
+            'sister_nickname': g['sister_nickname'], 'grad_date': gd,
+            'hall_name': g['hall_name'], 'retained': retained_flag,
+            'retained_days': retained_days, 'promoted': promoted_flag,
+        })
+
+    list_out.sort(key=lambda x: -(x['retained_days'] if x['retained_days'] is not None else -1))
+    return {
+        'total': total, 'retained': retained, 'promoted': promoted,
+        'retention_rate': round(retained / total * 100, 1) if total else None,
+        'retained_30d': retained_30d, 'eligible_30d': eligible_30d,
+        'retention_30d': round(retained_30d / eligible_30d * 100, 1) if eligible_30d else None,
+        'ref_date': ref, 'list': list_out,
+    }
+
+
+@app.route('/api/grad-retention')
+@login_required
+def api_grad_retention():
+    """毕业妹妹留存模块 + 近 8 周毕业趋势（近似兜底，非回访真口径）。"""
+    hall = request.args.get('hall', 'all')
+    conn = get_db_conn()
+    stats = grad_retention_stats(conn, hall)
+    # 近 8 周毕业趋势：每周毕业团数，与「毕业妹妹数」KPI 同口径（team 计数）
+    trend = [{'week': r['week_label'], 'count': r['graduation_count']}
+             for r in week_rows_all(conn, limit=8)]
+    conn.close()
+    return jsonify({'stats': stats, 'trend': trend})
 
 
 @app.route('/api/talent-pool')

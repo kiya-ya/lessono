@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=48">
+<link rel="stylesheet" href="css/style.css?v=49">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -101,14 +101,16 @@
 
     <!-- 顶部搜索栏：全局搜索 + 大厅/周筛选（联动下方全部数据） -->
     <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
-      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;">
-        <input type="text" id="top-search" class="wb-input" style="flex:1;min-width:220px;padding:8px 12px;" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" autocomplete="off" onkeydown="if(event.key==='Enter')topSearch()">
+      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
+        <span class="wb-searchbar-lbl">类型</span>
         <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
+        <span class="wb-searchbar-lbl">组</span>
         <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
+        <span class="wb-searchbar-lbl">大厅</span>
         <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
+        <span class="wb-searchbar-lbl">时间</span>
         <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
         <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
-        <button onclick="topSearch()">搜索</button>
       </div>
     </div>
 
@@ -646,13 +648,18 @@
     </div>
     <div class="chart-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>姐姐画像（周口径）</span>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <span>姐姐总览</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="seg">
+            <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+            <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
+            <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
+          </div>
           <select id="sister-profile-sort" onchange="setSisterProfileSort(this.value)" class="wb-select">
-            <option value="week_rev" selected>本周流水 ↓</option>
+            <option value="reward" selected>奖励 ↓</option>
             <option value="retention">持续率 ↓</option>
             <option value="total_teams">带团数 ↓</option>
-            <option value="rev_wow">流水环比 ↓</option>
+            <option value="active_teams">进行中 ↓</option>
           </select>
           <select id="sister-profile-per-page" onchange="setSisterProfilePerPage(this.value)" class="wb-select">
             <option value="20" selected>20条/页</option>
@@ -660,61 +667,55 @@
           </select>
         </div>
       </h3>
-      <div class="chart-src">产出=本周礼物流水 · 持续率=姐妹关系持续率（Σ已结束团存续天数÷(已结束团数×30)） · 稳定性=快照期在榜天数 · 头部/风险自动打标</div>
+      <div class="chart-src">画像=流水 P80 + 持续率打标 · 持续率=Σ已结束团存续天数÷(已结束团数×30) · 奖励随「当日/当周/当月」切换 · 点行下钻</div>
       <div class="tag-legend">
         <span class="tag-legend-item"><span class="chip up">头部</span>流水前20%且持续率≥65%</span>
         <span class="tag-legend-item"><span class="chip down">风险</span>流水环比↓≥50% 或 带团≥3但持续率&lt;65%</span>
         <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
-        <span class="tag-legend-item"><b>在榜天</b>=快照出现天数 · <b>毕业率</b>=自然毕业团÷已结束团（持续率副行）</span>
+        <span class="tag-legend-item"><b>毕业率</b>=自然毕业团÷已结束团（持续率副行）</span>
       </div>
       <div class="survival-chips" id="sister-profile-sum"></div>
       <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
       <div class="pagination" id="sister-profile-pagination" style="margin-top:8px;justify-content:center;"></div>
       <div class="chart-insight" id="sister-profile-insight"></div>
     </div>
-    <div class="chart-card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span id="captain-table-title">姐姐排行榜（按当日奖励）</span>
-        <div class="seg">
-          <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
-          <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
-          <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
-        </div>
-      </h3>
-      <div class="chart-src">奖励为当日发放的礼物金额；点卡片展开全量并可排序 · 累计总流水请在「UID查询」查看</div>
-      <div id="captain-preview"></div>
-      <div class="chart-insight" id="captain-insight"></div>
-      <button class="expand-btn" id="captain-expand" onclick="openCaptainFull()">展开全部 →</button>
-    </div>
-    <div class="section-head" style="margin-top:24px;">
+    <div class="section-head" id="grad-sec" style="margin-top:24px;">
       <h2>毕业妹妹</h2>
-      <span class="hint">满 30 天自动毕业 · 名单切换 · 妹妹留存率与毕业后轨迹</span>
+      <span class="hint">近 8 周毕业趋势 · 名单切换 · 妹妹留存率与毕业后轨迹</span>
     </div>
-    <div class="chart-card">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>毕业妹妹</span>
-        <div class="seg">
-          <button id="grad-today" onclick="setGradRange('today')">今天</button>
-          <button id="grad-week" class="on" onclick="setGradRange('week')">近一周</button>
-          <button id="grad-month" onclick="setGradRange('month')">近一月</button>
-        </div>
-      </h3>
-      <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 点卡片展开查看妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水</div>
-      <div id="grad-preview"></div>
-      <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>近 8 周毕业趋势</h3>
+        <div class="chart-src">每周满 30 天自动毕业的妹妹数</div>
+        <div class="chart-box" id="cap-grad-line"></div>
+        <div class="chart-insight" id="grad-line-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>毕业妹妹名单</span>
+          <div class="seg">
+            <button id="grad-today" onclick="setGradRange('today')">今天</button>
+            <button id="grad-week" class="on" onclick="setGradRange('week')">近一周</button>
+            <button id="grad-month" onclick="setGradRange('month')">近一月</button>
+          </div>
+        </h3>
+        <div class="chart-src">满 30 天自动毕业 · 点行查看配对姐姐</div>
+        <div id="grad-preview"></div>
+        <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
+      </div>
     </div>
     <div class="chart-card" id="grad-retention-sec" style="margin-top:14px;">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">毕业妹妹留存<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">待落地</span></h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">毕业妹妹留存<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">近似兜底</span></h3>
       <div class="chart-src">妹妹留存率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充「姐妹关系持续率」只看关系能否维持、不看毕业后价值的缺口</div>
       <div class="grad-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
-        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 妹妹留存率</div><div class="kpi-value" id="gr-ret">—</div><div class="kpi-note">近 8 周 · 待落地</div></div>
-        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 毕业后 30 天留存</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note">毕业后 30 天仍在平台 · 待落地</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 妹妹留存率</div><div class="kpi-value" id="gr-ret">—</div><div class="kpi-note">毕业后仍留存/产出 · 近似</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 毕业后 30 天留存</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note">毕业满30天仍在平台 · 近似</div></div>
         <div class="kpi-card"><div class="kpi-label"><span class="dot violet"></span> 晋升为姐姐</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note">毕业妹妹中已当姐姐</div></div>
       </div>
       <div class="rank-scroll" style="margin-top:12px;"><table class="rank-table" id="gr-table"></table></div>
       <div class="dn-notes" style="margin-top:10px;">
         <span class="dn-tag">口径</span>
-        <span><b>妹妹留存率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。数据来源双口径：回访为主、近似兜底。回访数据尚未攒够，留存率 2 卡 + 带妹代数 + 来源暂「待落地」；「晋升为姐姐」已由妹妹 UID 命中晋升集回填真数。</span>
+        <span><b>妹妹留存率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。当前为<b>近似兜底</b>：以「毕业后是否再次成团 / 当姐姐（快照重新出现）」近似「仍留存/产出」，回访真口径待回访数据攒够后切换；「晋升为姐姐」由妹妹 UID 命中晋升集回填真数。</span>
       </div>
       <div class="chart-src" style="margin-top:8px;">点击明细「已开始带妹妹 · 看链」徽标 → 展开该妹妹的传承链（代际传承，待落地）</div>
     </div>
@@ -1012,32 +1013,6 @@
   </div>
 </div>
 
-<!-- 姐姐排行榜全量弹窗 -->
-<div class="cookie-modal" id="captain-full-modal">
-  <div class="cookie-modal-content" style="width:760px; max-width:95%;">
-    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span id="captain-full-title">姐姐排行榜（按当日奖励）</span>
-      <button onclick="closeCaptainFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
-    </h3>
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-bottom:8px;">
-      <div class="seg">
-        <button id="capf-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
-        <button id="capf-week" onclick="setCaptainPeriod('week')">当周</button>
-        <button id="capf-month" onclick="setCaptainPeriod('month')">当月</button>
-      </div>
-      <select id="captain-per-page" onchange="setCaptainPerPage(this.value)" class="wb-select">
-        <option value="20" selected>20条/页</option>
-        <option value="30">30条/页</option>
-      </select>
-    </div>
-    <div class="rank-scroll" style="max-height:60vh;"><table class="rank-table" id="captain-full-table"></table></div>
-    <div class="pagination" id="captain-full-pagination" style="margin-top:8px;justify-content:center;"></div>
-    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
-      <button class="btn-cancel" onclick="closeCaptainFull()">关闭</button>
-    </div>
-  </div>
-</div>
-
 <!-- 最近一周毕业妹妹全量弹窗 -->
 <div class="cookie-modal" id="grad-full-modal">
   <div class="cookie-modal-content" style="width:760px; max-width:95%;">
@@ -1058,13 +1033,13 @@
 
 <script src="js/config.js?v=45"></script>
 <script src="js/utils.js?v=43"></script>
-<script src="js/api.js?v=62"></script>
+<script src="js/api.js?v=63"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=57"></script>
 <script src="js/app.js?v=63"></script>
-<script src="js/workbench.js?v=60"></script>
-<script src="js/insight.js?v=60"></script>
-<script src="js/warncenter.js?v=4"></script>
+<script src="js/workbench.js?v=61"></script>
+<script src="js/insight.js?v=61"></script>
+<script src="js/warncenter.js?v=5"></script>
 <script src="js/lyingflat.js?v=1"></script>
 </body>
 </html>
