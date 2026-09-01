@@ -351,7 +351,7 @@ body { background: var(--wb-bg); }
 .kpi-note { font-size: 11px; color: var(--wb-text-3); margin-top: 0; }
 
 /* 趋势图 */
-.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; align-items: start; }
 .chart-grid.single { grid-template-columns: 1fr; }
 .chart-grid .chart-card { box-shadow: var(--wb-shadow); border-radius: var(--wb-radius); margin-bottom: 0; border: 1px solid var(--wb-line); }
 .chart-grid > .chart-card:only-child { grid-column: 1 / -1; }

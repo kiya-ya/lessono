@@ -43,7 +43,7 @@ function renderLyingDays(d) {
   const c = echarts.init(el);
   charts['ly-days'] = c;
   c.setOption({
-    grid: { left: 40, right: 12, top: 20, bottom: 30 },
+    grid: { left: 8, right: 12, top: 24, bottom: 8, containLabel: true },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#6B7280', interval: 0 } },
     yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#6B7280' } },

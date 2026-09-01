@@ -100,7 +100,7 @@ function warnRenderChart(card) {
       grid: { left: 8, right: 12, top: 24, bottom: 8, containLabel: true },
       tooltip: { trigger: 'axis' },
       xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 10, color: '#6B7280', interval: 0 } },
-      yAxis: { type: 'value', axisLabel: { fontSize: 10, color: '#6B7280' } },
+      yAxis: { type: 'value', scale: true, axisLabel: { fontSize: 10, color: '#6B7280' } },
       series: [{ type: 'line', data: vals, smooth: true, symbolSize: 5, itemStyle: { color: '#7C5CFF' }, areaStyle: { color: 'rgba(124,92,255,.08)' } }]
     };
   }

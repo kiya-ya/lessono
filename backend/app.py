@@ -1834,7 +1834,7 @@ def api_dissolve_reasons():
             WHERE {latest_teams} AND dissolve_date IS NOT NULL AND dissolve_date != ''
               AND dissolve_date >= ? AND dissolve_date <= ? {hall_cond}
             GROUP BY reason
-        """, (ws, we) + hp).fetchall()
+        """, (ws, we) + tuple(hp)).fetchall()
         cmap = {r['reason']: r['c'] for r in wk}
         for s in trend['series']:
             s['data'].append(cmap.get(s['reason'], 0))
