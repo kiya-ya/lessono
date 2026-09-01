@@ -488,6 +488,7 @@ function renderGradLine(trend) {
     yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
     series: [{ type: 'bar', data: vals, barMaxWidth: 40, itemStyle: { color: '#7C5CFF', borderRadius: [4, 4, 0, 0] }, label: { show: true, position: 'top', fontSize: 10, color: '#6B7280' } }]
   });
+  setTimeout(resizeAllCharts, 300);
   const ins = document.getElementById('grad-line-insight');
   if (ins) {
     if (!vals.length) { ins.innerHTML = '暂无毕业趋势数据。'; return; }

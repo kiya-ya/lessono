@@ -27,6 +27,8 @@ async function loadWarncenter() {
       grid.appendChild(el);
       setTimeout(() => warnRenderChart(card), 30);
     });
+    // 卡片等高拉伸后，图表 canvas 重绘填满
+    setTimeout(resizeAllCharts, 400);
   } catch (e) {
     console.error('预警中心加载失败:', e);
     grid.innerHTML = '<div class="chart-card">预警中心加载失败</div>';

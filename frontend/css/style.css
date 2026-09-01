@@ -910,3 +910,15 @@ td.num, th.num {
 .rule-table td{padding:9px 10px;border-bottom:1px solid #F3F4F6;vertical-align:top;color:var(--wb-text-2);line-height:1.6;}
 .rule-table td:first-child{font-weight:600;color:var(--wb-text);white-space:nowrap;}
 .rule-table code{font-family:inherit;background:#F3F0FF;color:#5B3EC4;padding:1px 5px;border-radius:4px;font-size:11px;white-space:nowrap;}
+
+/* ── 并排卡片等高对齐（修复留白不齐，2026-09-01） ── */
+/* 同一行两张卡片等高；图表/表格区自动填满；操作按钮统一吸底 */
+.chart-grid { align-items: stretch; }
+.chart-grid .chart-card { display: flex; flex-direction: column; }
+.chart-grid .chart-card > .chart-box { flex: 1; min-height: 200px; }
+.chart-grid .chart-card > .rank-scroll,
+.chart-grid .chart-card > #wb-rank-mini,
+.chart-grid .chart-card > #overview-captain-preview,
+.chart-grid .chart-card > #grad-preview { flex: 1; }
+.chart-grid .chart-card > .expand-btn { margin-top: 8px; }
+.chart-grid .chart-card > .expand-btn:first-of-type { margin-top: auto; }

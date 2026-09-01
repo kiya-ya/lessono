@@ -15,6 +15,7 @@ async function loadLyingFlat() {
     renderLyingDays(d);
     renderLyingHall(d);
     renderLyingList(d, 6);
+    setTimeout(resizeAllCharts, 300);
   } catch (e) {
     console.error('躺平预警加载失败:', e);
   }

@@ -605,6 +605,8 @@ function wbRenderCharts() {
     charts[key].setOption(opt);
   }
   wbRenderInsights(data);
+  // 卡片等高拉伸后，图表 canvas 重绘填满
+  setTimeout(resizeAllCharts, 300);
 }
 
 function wbRenderInsights(data) {

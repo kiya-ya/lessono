@@ -150,7 +150,12 @@ function toggleSidebar() {
   layout.classList.toggle('side-collapsed');
   localStorage.setItem('wb_sidebar', layout.classList.contains('side-collapsed') ? 'collapsed' : 'expanded');
   // 侧栏宽度变化后重绘图表
-  setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 260);
+  setTimeout(resizeAllCharts, 260);
+}
+
+// 等高网格内图表在数据渲染/卡片拉伸后统一重绘（canvas 跟上容器高度）
+function resizeAllCharts() {
+  Object.values(charts).forEach(c => { try { c && c.resize(); } catch (e) {} });
 }
 
 // 周选择下拉（概览页 KPI 标题行右侧）：切换统计周 → 刷新工作台
