@@ -455,7 +455,7 @@ function gradRetentionTableHTML(list) {
       : days >= 30 ? '<span style="color:#16A34A;font-weight:700;">≥30 天</span>'
       : `<span style="color:#B45309;font-weight:700;">${days} 天</span>`;
     const lineage = g.promoted
-      ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" onclick="openLineage(this.dataset.n)" title="点击查看传承链">已开始带妹妹 · 看链</span>`
+      ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" data-u="${esc(uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="点击查看她带的团">已开始带妹妹 · 看明细</span>`
       : '<span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span>';
     return `<tr>
       <td>${esc(name)}</td>
@@ -499,9 +499,32 @@ function renderGradLine(trend) {
   }
 }
 
-// 传承链下钻占位（依赖回访数据，后端 lineage 接口待落地）
-function openLineage(name) {
-  if (typeof showToast === 'function') showToast(`「${name}」的传承链（代际传承）待回访数据落地`, 'info');
+// 传承链弹窗：毕业妹妹晋升姐姐后带团明细（复用 /api/sister-detail 真实数据）
+async function openLineage(name, uid) {
+  if (!uid) return;
+  try {
+    const res = await fetch(API_BASE + '/api/sister-detail?uid=' + encodeURIComponent(uid));
+    const d = await res.json();
+    if (d.error || !d.teams || !d.teams.length) {
+      if (typeof showToast === 'function') showToast(`「${name}」暂无带团记录`, 'info');
+      return;
+    }
+    const teams = d.teams;
+    const active = teams.filter(t => t.status === 'active').length;
+    const rows = teams.map(t => `<tr>
+      <td>${t.team_id}</td>
+      <td>${esc(t.hall_name || '-')}</td>
+      <td>${esc(t.sister_nickname2 || '-')}${t.sister_uid2 ? ` <span style="color:#9CA3AF;font-size:11px;">(${t.sister_uid2})</span>` : ''}</td>
+      <td>${esc(t.form_date || '-')}</td>
+      <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
+      <td>${t.days_since_formed} 天</td>
+    </tr>`).join('');
+    openWarnModal(`传承链 · ${esc(name)}`,
+      `<div style="font-size:12px;color:#6B7280;margin-bottom:8px;">毕业后晋升为姐姐 · 当前牌子 <b>${esc(d.level || '无')}</b> · 共带 ${teams.length} 团（进行中 ${active}）</div>
+       <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('传承链加载失败: ' + e.message, 'error');
+  }
 }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }
@@ -614,47 +637,55 @@ function renderTalentQuadrant() {
     c.setOption({ title: { text: '暂无候选（持续率≥65% + 妹妹有成长 + 银牌）', left: 'center', top: 'middle', textStyle: { fontSize: 12, color: '#9CA3AF' } } });
     return;
   }
-  // 网格聚合：x 每 10%（培养升牌率），y 每 2 分（妹妹成长）
+  // 热力图网格聚合（替代重叠气泡）：x 培养升牌率每10%一格，y 妹妹成长按数据自适应分档
+  const maxG = Math.max(...pts.map(p => p.sister_growth || 0), 1);
+  const step = maxG <= 4 ? 0.5 : maxG <= 10 ? 1 : maxG <= 20 ? 2 : maxG <= 40 ? 5 : 10;
+  const yBins = Math.min(8, Math.ceil(maxG / step));
   const buckets = new Map();
   pts.forEach(p => {
-    const bx = Math.max(0, Math.floor((p.joint_growth || 0) / 10));
-    const by = Math.max(0, Math.floor((p.sister_growth || 0) / 2));
+    const bx = Math.min(9, Math.max(0, Math.floor((p.joint_growth || 0) / 10)));
+    const by = Math.min(yBins - 1, Math.max(0, Math.floor((p.sister_growth || 0) / step)));
     const k = bx + ':' + by;
-    if (!buckets.has(k)) buckets.set(k, { bx, by, items: [] });
-    buckets.get(k).items.push(p);
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(p);
   });
+  const xLabels = Array.from({ length: 10 }, (_, i) => `${i * 10}-${(i + 1) * 10}%`);
+  const yLabels = Array.from({ length: yBins }, (_, i) => `${i * step}~${Math.round((i + 1) * step * 10) / 10}`);
+  _quadrantGroups = {};
   const data = [];
-  _quadrantGroups = [];
-  buckets.forEach(g => {
-    const n = g.items.length;
-    _quadrantGroups.push({ items: g.items });
-    data.push({
-      value: [g.bx * 10 + 5, g.by * 2 + 1, n],
-      name: n === 1 ? (g.items[0].sister_nickname || g.items[0].sister_uid) : `${n} 位`,
-      symbolSize: n === 1 ? 18 : 18 + Math.min(n, 10) * 5,
-      itemStyle: { color: n === 1 ? '#7C5CFF' : 'rgba(124,92,255,.55)', borderColor: '#fff', borderWidth: 1 }
-    });
+  let maxCnt = 1;
+  buckets.forEach((items, k) => {
+    const [bx, by] = k.split(':').map(Number);
+    _quadrantGroups[k] = items;
+    maxCnt = Math.max(maxCnt, items.length);
+    data.push([bx, by, items.length, k]);
   });
   c.setOption({
     tooltip: {
       trigger: 'item',
       formatter: p => {
-        const g = _quadrantGroups[p.dataIndex];
-        if (!g) return p.name;
-        return `<b>${g.items.length} 位</b><br/>` + g.items.map(i => `${i.sister_nickname || i.sister_uid}（升牌率 ${i.joint_growth}% / 成长 ${i.sister_growth}）`).join('<br/>');
+        const g = _quadrantGroups[p.data[3]];
+        if (!g) return '';
+        const head = `升牌率 ${xLabels[p.data[0]]} · 成长 ${yLabels[p.data[1]]} 分/月<br/><b>${g.length} 位</b>`;
+        return head + '<br/>' + g.slice(0, 8).map(i => `${i.sister_nickname || i.sister_uid}（${i.joint_growth}% / ${i.sister_growth}）`).join('<br/>') + (g.length > 8 ? `<br/>… 等 ${g.length} 位，点击查看全部` : '');
       }
     },
-    grid: { left: 60, right: 30, top: 30, bottom: 50 },
-    xAxis: { name: '培养升牌率 %', type: 'value', max: 100, axisLabel: { fontSize: 10, color: '#6B7280' }, splitLine: { lineStyle: { color: '#F0F1F4' } }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
-    yAxis: { name: '妹妹成长(分/月)', type: 'value', axisLabel: { fontSize: 10, color: '#6B7280' }, splitLine: { lineStyle: { color: '#F0F1F4' } }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
-    series: [{ type: 'scatter', data, label: { show: true, formatter: '{b}', position: 'top', fontSize: 10, color: '#374151' } }]
+    grid: { left: 70, right: 30, top: 30, bottom: 50 },
+    xAxis: { type: 'category', data: xLabels, name: '培养升牌率', axisLabel: { fontSize: 9, color: '#6B7280' }, splitArea: { show: true }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
+    yAxis: { type: 'category', data: yLabels, name: '妹妹成长(分/月)', axisLabel: { fontSize: 9, color: '#6B7280' }, splitArea: { show: true }, nameTextStyle: { fontSize: 11, color: '#6B7280' } },
+    visualMap: { min: 0, max: maxCnt, show: false, inRange: { color: ['#F4F5F8', '#C7BFFB', '#7C5CFF', '#4F3BC4'] } },
+    series: [{
+      type: 'heatmap', data,
+      label: { show: true, fontSize: 10, color: '#374151', formatter: p => p.data[2] > 1 ? p.data[2] + ' 位' : (buckets.get(p.data[3])[0].sister_nickname || '') },
+      emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(124,92,255,.4)' } }
+    }]
   });
   c.off('click');
   c.on('click', p => {
-    const g = _quadrantGroups[p.dataIndex];
+    const g = _quadrantGroups[p.data[3]];
     if (!g) return;
-    if (g.items.length === 1) { jumpToUID(g.items[0].sister_uid); return; }
-    openQuadrantList(g.items);
+    if (g.length === 1) { jumpToUID(g[0].sister_uid); return; }
+    openQuadrantList(g);
   });
 }
 
