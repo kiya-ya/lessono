@@ -164,7 +164,8 @@
         <span class="wb-searchbar-lbl">大厅</span>
         <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
         <span class="wb-searchbar-lbl">时间</span>
-        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周期（按月 / 按周，联动 KPI 与趋势图）"></select>
+        <select id="month-select" class="wb-select" onchange="onMonthChange()" title="先选月份"></select>
+        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="再选「整月」或该月某一周（联动 KPI 与趋势图）"></select>
         <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
       </div>
     </div>

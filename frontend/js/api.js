@@ -109,7 +109,7 @@ async function loadWeeks() {
     const savedWeek = localStorage.getItem('wb_week');
     if (savedWeek) currentWeek = savedWeek;
 
-    // 填充周选择下拉（概览页 KPI 标题行右侧 + 姐姐分析画像周选择）
+    // 全量周选项（姐姐分析画像周选择 / 厅分析周选择用，不分月）
     const buildWeekOptions = () => {
       const opts = [];
       if (!hasThisWeek) {
@@ -122,10 +122,19 @@ async function loadWeeks() {
       }));
       return opts;
     };
-    // 按月选项（值同为 start|end 整月范围，后端按区间重算，天然兼容）：
-    // 从最早有数据的月份到当前月，倒序；当前月标注「至今」
-    const buildMonthOptions = () => {
-      const opts = [];
+
+    // 概览页「先选月后选周」：缓存全量周/月候选（值同为 start|end 范围，后端按区间重算）
+    window.wbAllWeeks = [];
+    if (!hasThisWeek) {
+      window.wbAllWeeks.push({ value: thisWeekValue, label: `本周·收集中（${thisWeekStart.slice(5)} ~ ${thisWeekEnd.slice(5)}）`, ws: thisWeekStart, we: thisWeekEnd });
+    }
+    dbWeeks.forEach(w => {
+      const v = w.week_start + '|' + w.week_end;
+      window.wbAllWeeks.push({ value: v, label: w.week_label || `${(w.week_start || '').slice(5)} ~ ${(w.week_end || '').slice(5)}`, ws: w.week_start, we: w.week_end });
+    });
+    // 月候选：从最早有数据的月份到当前月（倒序，当前月标注「至今」）
+    window.wbMonths = [];
+    {
       const now2 = new Date();
       const first = dbWeeks.length
         ? new Date((dbWeeks[dbWeeks.length - 1].week_start || '') + 'T00:00:00')
@@ -136,21 +145,37 @@ async function loadWeeks() {
         const mm = String(m + 1).padStart(2, '0');
         const lastDay = new Date(y, m + 1, 0).getDate();
         const isCur = (y === now2.getFullYear() && m === now2.getMonth());
-        opts.push(`<option value="${y}-${mm}-01|${y}-${mm}-${lastDay}">${y}年${m + 1}月${isCur ? '·至今' : ''}</option>`);
+        const mws = `${y}-${mm}-01`, mwe = `${y}-${mm}-${lastDay}`;
+        window.wbMonths.push({ value: `${mws}|${mwe}`, label: `${y}年${m + 1}月${isCur ? '·至今' : ''}`, ws: mws, we: mwe });
         m--; if (m < 0) { m = 11; y--; }
       }
-      return opts;
+    }
+
+    // 当前选中值归属的月：整月值直接匹配；周 → 周四所在月（与后端周均值归属口径一致）
+    const monthOfValue = v => {
+      const fallback = (window.wbMonths[0] || {}).value || '';
+      if (!v || !v.includes('|')) return fallback;
+      const direct = window.wbMonths.find(x => x.value === v);
+      if (direct) return direct.value;
+      const thu = new Date(v.split('|')[0] + 'T00:00:00');
+      thu.setDate(thu.getDate() + 3);
+      const ym = `${thu.getFullYear()}-${String(thu.getMonth() + 1).padStart(2, '0')}`;
+      const hit = window.wbMonths.find(x => x.ws.slice(0, 7) === ym);
+      return hit ? hit.value : fallback;
     };
-    const sel = document.getElementById('week-select');
-    if (sel) {
-      sel.innerHTML = `<optgroup label="按月">${buildMonthOptions().join('')}</optgroup>`
-        + `<optgroup label="按周">${buildWeekOptions().join('')}</optgroup>`;
-      sel.value = currentWeek;
-      // 历史遗留值（如已删除的旧选项）兜底回默认周
-      if (sel.value !== currentWeek) {
-        currentWeek = hasThisWeek
-          ? dbWeeks[0].week_start + '|' + dbWeeks[0].week_end
-          : thisWeekValue;
+
+    const mSel = document.getElementById('month-select');
+    if (mSel) {
+      mSel.innerHTML = window.wbMonths.map(x => `<option value="${x.value}">${x.label}</option>`).join('');
+      mSel.value = monthOfValue(currentWeek);
+      // 按所选月重建周下拉；当前值不在该月候选（历史遗留）时回退「整月」
+      const v = fillWeekSelectForMonth(mSel.value, currentWeek);
+      if (v && v !== currentWeek) currentWeek = v;
+    } else {
+      // 无月下拉（旧结构兜底）：周下拉保持全量平铺
+      const sel = document.getElementById('week-select');
+      if (sel) {
+        sel.innerHTML = buildWeekOptions().join('');
         sel.value = currentWeek;
       }
     }
@@ -166,6 +191,24 @@ async function loadWeeks() {
     }
   } catch (e) { console.error('周列表加载失败:', e); }
 }
+
+// 概览页「先选月后选周」联动：按所选月重建周下拉（「整月」+ 与该月有交集的周），返回实际选中值
+function fillWeekSelectForMonth(monthValue, preferValue) {
+  const sel = document.getElementById('week-select');
+  if (!sel) return preferValue || monthValue;
+  const m = (window.wbMonths || []).find(x => x.value === monthValue);
+  if (!m) return preferValue || monthValue;
+  const opts = [`<option value="${m.value}">整月</option>`];
+  (window.wbAllWeeks || []).forEach(w => {
+    if (w.we >= m.ws && w.ws <= m.we) opts.push(`<option value="${w.value}">${w.label}</option>`);
+  });
+  sel.innerHTML = opts.join('');
+  const want = preferValue || m.value;
+  sel.value = want;
+  if (sel.value !== want) sel.value = m.value; // 不在本月候选 → 回退整月
+  return sel.value;
+}
+
 async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;

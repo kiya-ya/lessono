@@ -158,7 +158,17 @@ function resizeAllCharts() {
   Object.values(charts).forEach(c => { try { c && c.resize(); } catch (e) {} });
 }
 
-// 周选择下拉（概览页 KPI 标题行右侧）：切换统计周 → 刷新工作台
+// 月选择下拉（先选月）：重建该月周下拉并默认选中「整月」→ 刷新工作台
+function onMonthChange() {
+  const mSel = document.getElementById('month-select');
+  if (!mSel) return;
+  const v = typeof fillWeekSelectForMonth === 'function' ? fillWeekSelectForMonth(mSel.value) : mSel.value;
+  currentWeek = v || mSel.value;
+  localStorage.setItem('wb_week', currentWeek);
+  if (typeof refreshWorkbench === 'function') refreshWorkbench();
+}
+
+// 周选择下拉（后选周）：整月或该月某一周 → 刷新工作台
 function onWeekChange() {
   const sel = document.getElementById('week-select');
   if (!sel) return;
