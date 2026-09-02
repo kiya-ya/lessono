@@ -154,18 +154,18 @@
       </div>
     </div>
 
-    <!-- 全局筛选栏：类型/组/大厅/周期（联动下方全部数据） -->
+    <!-- 全局筛选栏：时间/类型/组/大厅（联动下方全部数据） -->
     <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
       <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
+        <span class="wb-searchbar-lbl">时间</span>
+        <select id="month-select" class="wb-select" onchange="onMonthChange()" title="先选月份"></select>
+        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="再选「整月」或该月某一周（联动 KPI 与趋势图）"></select>
         <span class="wb-searchbar-lbl">类型</span>
         <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
         <span class="wb-searchbar-lbl">组</span>
         <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
         <span class="wb-searchbar-lbl">大厅</span>
         <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
-        <span class="wb-searchbar-lbl">时间</span>
-        <select id="month-select" class="wb-select" onchange="onMonthChange()" title="先选月份"></select>
-        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="再选「整月」或该月某一周（联动 KPI 与趋势图）"></select>
         <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
       </div>
     </div>
