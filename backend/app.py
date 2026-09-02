@@ -10,6 +10,7 @@ import string
 import base64
 import io
 from datetime import datetime, timedelta
+from calendar import monthrange
 
 from flask import Flask, jsonify, request, send_from_directory, Response, session
 from flask_cors import CORS
@@ -402,6 +403,32 @@ def week_list_from_detail(conn, limit=16):
     return items[-limit:] if limit else items
 
 
+def apply_month_avg_rates(conn, hall, ws, we, row):
+    """整月视图的「率」类指标修正：姐妹团 30 天生命周期下，跨整月的
+    (期末−新成团)/期初 口径必然趋 0 甚至为负（无业务意义），
+    故月视图留存率/解散率/主动解散占比 = 月内各周的周均值
+    （周归属按周中点=周四落在月内判定，与 ISO 周口径一致）。
+    计数类（新成团/毕业/在榜）仍按整月区间统计，不在此修正。
+    直接就地改写 row，无周数据时保留原值。"""
+    if not row:
+        return row
+    d0 = datetime.strptime(ws, '%Y-%m-%d')
+    ret, dis, ad = [], [], []
+    for wws, wwe in week_list_from_detail(conn, limit=0):
+        mid = datetime.strptime(wws, '%Y-%m-%d') + timedelta(days=3)
+        if mid.strftime('%Y-%m') == d0.strftime('%Y-%m'):
+            m = week_metrics_from_detail(conn, hall, wws, wwe)
+            if m:
+                ret.append(m['retention_rate'])
+                dis.append(m['dissolution_rate'])
+                ad.append(m['active_dissolved_pct'])
+    if ret:
+        row['retention_rate'] = round(sum(ret) / len(ret), 2)
+        row['dissolution_rate'] = round(sum(dis) / len(dis), 2)
+        row['active_dissolved_pct'] = round(sum(ad) / len(ad), 2)
+    return row
+
+
 def _stats_daily_dedup_rows(conn, ws, we):
     """stats_daily 每 date_str 取 active_team_count 最大的一行（正确行）。
     08-01 起 stats_daily 出现「减半」双行：正确行 ~600 vs 减半行 ~360，
@@ -696,13 +723,44 @@ def api_kpi():
         conn.close()
         return jsonify({'error': '该周暂无数据'}), 404
 
-    # 上一周（重算）
+    # 判定「整月」范围（ws=当月1日 且 we=当月最后一日）→ 对比上一月；否则对比上一周
+    period_type = 'week'
+    try:
+        _d0 = datetime.strptime(ws, '%Y-%m-%d')
+        _d1 = datetime.strptime(we, '%Y-%m-%d')
+        is_month = (_d0.day == 1 and _d0.year == _d1.year and _d0.month == _d1.month
+                    and _d1.day == monthrange(_d0.year, _d0.month)[1])
+    except ValueError:
+        is_month = False
+
+    # 上一周期（月 → 上一月；周 → 最近一个更早的周）
     prev_row = None
-    for (pws, pwe) in reversed(weeks):
-        if pws < ws:
-            prev_row = week_metrics_from_detail(conn, hall, pws, pwe)
+    if is_month:
+        period_type = 'month'
+        apply_month_avg_rates(conn, hall, ws, we, this_row)
+        today = datetime.now().date()
+        p_month_end = _d0 - timedelta(days=1)   # 上一月最后一日
+        p_month_start = p_month_end.replace(day=1)
+        if _d1.date() > today:
+            # 本月·至今：计数类对比上一月「同期窗口」（MTD vs MTD，避免 2 天 vs 整月的误导），
+            # 率类仍对比上一月整月周均值（口径与本期一致）
+            p_end = p_month_start + (today - _d0.date())
+            prev_row = week_metrics_from_detail(conn, hall, p_month_start.strftime('%Y-%m-%d'), p_end.strftime('%Y-%m-%d'))
             if prev_row:
-                break
+                prev_full = week_metrics_from_detail(conn, hall, p_month_start.strftime('%Y-%m-%d'), p_month_end.strftime('%Y-%m-%d'))
+                apply_month_avg_rates(conn, hall, p_month_start.strftime('%Y-%m-%d'), p_month_end.strftime('%Y-%m-%d'), prev_full)
+                if prev_full:
+                    for _k in ('retention_rate', 'dissolution_rate', 'active_dissolved_pct'):
+                        prev_row[_k] = prev_full[_k]
+        else:
+            prev_row = week_metrics_from_detail(conn, hall, p_month_start.strftime('%Y-%m-%d'), p_month_end.strftime('%Y-%m-%d'))
+            apply_month_avg_rates(conn, hall, p_month_start.strftime('%Y-%m-%d'), p_month_end.strftime('%Y-%m-%d'), prev_row)
+    else:
+        for (pws, pwe) in reversed(weeks):
+            if pws < ws:
+                prev_row = week_metrics_from_detail(conn, hall, pws, pwe)
+                if prev_row:
+                    break
     if not prev_row:
         prev_row = {k: 0 for k in this_row.keys()}
         prev_row['week_start'] = prev_row['week_end'] = ''
@@ -751,7 +809,8 @@ def api_kpi():
         # 妹妹留存率（近似兜底：毕业后仍留存/产出的妹妹占比；回访真口径待落地）
         'sister_retention': {'value': grad_ret['retention_rate'], 'change': 0, 'unit': '%'},
     }
-    return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': this_row['week_label']})
+    week_label = f"{_d0.year}年{_d0.month}月" if is_month else this_row['week_label']
+    return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': week_label, 'period_type': period_type})
 
 
 @app.route('/api/trends')

@@ -7,7 +7,7 @@
 let wbOverview = null;  // { role, data: [{ hall_name, weeks: [...(升序)] }] }
 let wbWeekly = [];      // 当前筛选大厅的周数据（升序，已按所选周截断）
 let wbKpi = null;
-let wbKpiMeta = { week: '', date: '' };
+let wbKpiMeta = { week: '', date: '', periodType: 'week' };
 let wbPlatformWeekly = null;  // 平台（hall=all）周数据缓存，用于均值参考线
 let wbInsights = null;        // 趋势图点名式结论（/api/trend-insights）
 
@@ -345,7 +345,7 @@ async function refreshWorkbench() {
     ]);
     const kpiJson = await kpiRes.json();
     wbKpi = kpiJson.data || null;
-    wbKpiMeta = { week: kpiJson.week || '', date: kpiJson.date || '' };
+    wbKpiMeta = { week: kpiJson.week || '', date: kpiJson.date || '', periodType: kpiJson.period_type || 'week' };
     wbWeekly = ((await weekRes.json()).data) || [];
     if (platRes) wbPlatformWeekly = ((await platRes.json()).data) || [];
     wbInsights = insJson || null;
@@ -375,8 +375,9 @@ function wbRenderKPI() {
   const resetBtn = document.getElementById('wb-hall-reset');
   if (resetBtn) resetBtn.style.display = currentHall === 'all' ? 'none' : '';
   document.getElementById('wb-kpi-title').textContent = '核心指标 · ' + hallLabel;
+  const cmpUnit = wbKpiMeta.periodType === 'month' ? '月' : '周';
   document.getElementById('wb-kpi-subtitle').textContent = wbKpiMeta.week
-    ? `数据周期 ${wbKpiMeta.week} · 对比上一周`
+    ? `数据周期 ${wbKpiMeta.week} · 对比上一${cmpUnit}`
     : '本周 vs 上周';
   if (!wbKpi) {
     document.getElementById('wb-kpi-hero').innerHTML = ['留存率', '解散率', '礼物奖励金额']
@@ -404,7 +405,7 @@ function wbRenderKPI() {
         <span class="kpi-note">${k.note}</span>
       </div>
       <div class="kpi-value" data-count="${k.num == null ? 0 : k.num}" data-fmt="${k.fmt}">${k.num == null ? '—' : fmtOf(k.fmt)(k.num)}</div>
-      <div class="kpi-foot">${k.num == null ? '<span class="chip flat">暂无</span>' : wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上周</span></div>
+      <div class="kpi-foot">${k.num == null ? '<span class="chip flat">暂无</span>' : wbChip(k.c, k.suf)}<span class="kpi-foot-label">较上${cmpUnit}</span></div>
       ${wbSpark(k.spark)}
     </div>`;}).join('');
   document.getElementById('wb-kpi-sub').innerHTML = '';

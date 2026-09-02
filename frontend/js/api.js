@@ -122,10 +122,37 @@ async function loadWeeks() {
       }));
       return opts;
     };
+    // 按月选项（值同为 start|end 整月范围，后端按区间重算，天然兼容）：
+    // 从最早有数据的月份到当前月，倒序；当前月标注「至今」
+    const buildMonthOptions = () => {
+      const opts = [];
+      const now2 = new Date();
+      const first = dbWeeks.length
+        ? new Date((dbWeeks[dbWeeks.length - 1].week_start || '') + 'T00:00:00')
+        : now2;
+      let y = now2.getFullYear(), m = now2.getMonth();
+      const endY = first.getFullYear(), endM = first.getMonth();
+      while (y > endY || (y === endY && m >= endM)) {
+        const mm = String(m + 1).padStart(2, '0');
+        const lastDay = new Date(y, m + 1, 0).getDate();
+        const isCur = (y === now2.getFullYear() && m === now2.getMonth());
+        opts.push(`<option value="${y}-${mm}-01|${y}-${mm}-${lastDay}">${y}年${m + 1}月${isCur ? '·至今' : ''}</option>`);
+        m--; if (m < 0) { m = 11; y--; }
+      }
+      return opts;
+    };
     const sel = document.getElementById('week-select');
     if (sel) {
-      sel.innerHTML = buildWeekOptions().join('');
+      sel.innerHTML = `<optgroup label="按月">${buildMonthOptions().join('')}</optgroup>`
+        + `<optgroup label="按周">${buildWeekOptions().join('')}</optgroup>`;
       sel.value = currentWeek;
+      // 历史遗留值（如已删除的旧选项）兜底回默认周
+      if (sel.value !== currentWeek) {
+        currentWeek = hasThisWeek
+          ? dbWeeks[0].week_start + '|' + dbWeeks[0].week_end
+          : thisWeekValue;
+        sel.value = currentWeek;
+      }
     }
     const sisterSel = document.getElementById('sister-week-select');
     if (sisterSel) {

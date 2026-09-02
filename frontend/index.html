@@ -99,21 +99,6 @@
       <button class="wb-guide-close" onclick="closeWbGuide()" title="收起">✕</button>
     </div>
 
-    <!-- 顶部搜索栏：全局搜索 + 大厅/周筛选（联动下方全部数据） -->
-    <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
-      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
-        <span class="wb-searchbar-lbl">类型</span>
-        <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
-        <span class="wb-searchbar-lbl">组</span>
-        <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
-        <span class="wb-searchbar-lbl">大厅</span>
-        <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
-        <span class="wb-searchbar-lbl">时间</span>
-        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周（KPI + 趋势图 + PDF 导出）"></select>
-        <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
-      </div>
-    </div>
-
     <!-- 厅体检卡墙（厅运营） -->
     <div id="wb-hall-wall" style="display:none">
       <div class="section-head">
@@ -169,6 +154,21 @@
       </div>
     </div>
 
+    <!-- 全局筛选栏：类型/组/大厅/周期（联动下方全部数据） -->
+    <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
+      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
+        <span class="wb-searchbar-lbl">类型</span>
+        <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
+        <span class="wb-searchbar-lbl">组</span>
+        <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
+        <span class="wb-searchbar-lbl">大厅</span>
+        <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
+        <span class="wb-searchbar-lbl">时间</span>
+        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="切换统计周期（按月 / 按周，联动 KPI 与趋势图）"></select>
+        <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
+      </div>
+    </div>
+
     <div class="section-head">
       <h2 id="wb-kpi-title">核心指标</h2>
       <span class="hint" id="wb-kpi-subtitle"></span>
@@ -185,7 +185,7 @@
       </div>
       <div class="dn-notes">
         <span class="dn-tag">注意</span>
-        <span><b>妹妹留存率</b>（毕业妹妹毕业后仍留存/产出的占比，口径：回访为主、近似兜底，待落地）与 <b>姐妹团留存率</b>（团口径、老团留存）是两个概念，请勿混读。毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周，对比口径均为较上一周。点各指标卡展开趋势 / 分布明细。</span>
+        <span><b>妹妹留存率</b>（毕业妹妹毕业后仍留存/产出的占比，口径：回访为主、近似兜底，待落地）与 <b>姐妹团留存率</b>（团口径、老团留存）是两个概念，请勿混读。毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周期，按周时对比上一周、按月时对比上一月。按月视图下计数类指标（新成团/毕业等）为整月合计，率类指标（留存率/解散率等）为月内各周的周均值（姐妹团 30 天生命周期，跨整月留存无意义）。点各指标卡展开趋势 / 分布明细。</span>
       </div>
     </div>
     <div class="kpi-hero" id="wb-kpi-hero"></div>
