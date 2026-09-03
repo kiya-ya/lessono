@@ -287,15 +287,16 @@ async function lwShow(ev, teamId, idx) {
       <div class="lw-pop-head">#${d.team_id} ${d.sister_nickname || ''} × ${d.sister_nickname2 || ''}</div>
       <div class="lw-pop-sub">第 ${w.idx} 周 · ${fmtD(w.start)} ~ ${fmtD(w.end)} ${stateTag}</div>
       <div class="lw-pop-grid">
-        <span>妹妹周流水</span><b>${_lwMoney(w.sister2_revenue)}</b>
+        <span>妹妹周流水</span><b>${w.sister2_revenue == null ? '—' : (w.sis2_partial ? '≈' : '') + _lwMoney(w.sister2_revenue)}</b>
         <span>姐姐周流水</span><b>${w.sister_revenue == null ? '—' : '≈' + _lwMoney(w.sister_revenue)}</b>
-        <span>礼物奖励</span><b>${_lwMoney(w.reward)}</b>
-        <span>任务活跃</span><b>${w.tasks == null ? '—' : '+' + w.tasks}</b>
+        <span>妹妹累计流水</span><b>${_lwMoney(w.sister2_cum)}</b>
+        <span>姐姐累计流水</span><b>${w.sister_cum == null ? '—' : '≈' + _lwMoney(w.sister_cum)}</b>
+        <span>任务活跃</span><b>${w.tasks == null ? '—' : (w.tasks_partial ? '≈+' : '+') + w.tasks}</b>
         <span>姐姐牌子</span><b>${w.sister_level || '—'}</b>
         <span>妹妹最高牌子</span><b>${w.sister_max_level2 || '—'}</b>
       </div>
       ${w.state === 'dissolved' && d.dissolve_reason ? `<div class="lw-pop-foot">结束原因：${d.dissolve_reason}</div>` : ''}
-      ${w.sister_revenue != null ? '<div class="lw-pop-foot">姐姐流水按自然周重叠天数折算（约值）</div>' : ''}
+      ${(w.sister_revenue != null || w.sister_cum != null || w.sis2_partial || w.tasks_partial) ? '<div class="lw-pop-foot">≈ 为自然周折算或快照缺口的估算值；周流水严格限定在该周时间范围内</div>' : ''}
       <button class="lw-pop-more" onclick="lwOpenDetail(${d.team_id})">查看团队完整明细 →</button>`;
   } catch (e) {
     pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';

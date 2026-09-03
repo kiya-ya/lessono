@@ -2473,9 +2473,6 @@ def api_team_life_weeks(team_id):
 
     today = datetime.now().date()
 
-    def snap_val(rs, key):
-        return (rs[-1][key] or 0) if rs else 0
-
     weeks = []
     for i in range(4):
         w0 = fd + timedelta(days=7 * i)
@@ -2485,14 +2482,42 @@ def api_team_life_weeks(team_id):
         before = [r for r in rows if r['snapshot_date'] < w0s]
         has_data = bool(in_win) and w0 <= today
 
-        sis2_rev = round(max(0.0, snap_val(in_win, 'sister_revenue') - snap_val(before, 'sister_revenue')), 1)
-        reward = round(sum(r['reward_amount'] or 0 for r in in_win), 1)
-        t_end = snap_val(in_win, 'drive_task_count') + snap_val(in_win, 'accompany_task_count') + snap_val(in_win, 'gift_task_count')
-        t_bef = snap_val(before, 'drive_task_count') + snap_val(before, 'accompany_task_count') + snap_val(before, 'gift_task_count')
-        tasks = max(0, int(t_end - t_bef))
+        # 窗口内增量：只累加窗口内相邻快照的差值，窗口首日增量仅在前一天恰有快照时计入。
+        # 这样快照有缺口时增量严格限定在当周，不会把前几周的量并进来（缺口周则显示无数据）。
+        base = before[-1] if before else None
+        gap_ok = False
+        if base is not None:
+            try:
+                gap_ok = (w0 - datetime.strptime(base['snapshot_date'], '%Y-%m-%d').date()).days <= 1
+            except (ValueError, TypeError):
+                gap_ok = False
 
-        # 姐姐流水折算：自然周 × 重叠天数/7
+        def win_delta(get):
+            """返回 (增量, partial)。partial=True 表示基线缺口、只含窗口内可见增量（低估）。"""
+            if not in_win:
+                return None, False
+            vals = [get(r) for r in in_win]
+            total = sum(max(0.0, vals[k] - vals[k - 1]) for k in range(1, len(vals)))
+            if gap_ok:
+                return round(total + max(0.0, vals[0] - get(base)), 1), False
+            if i == 0 and base is None:
+                # 第 1 周且前面完全没有快照：累计从 0 起算（爬取覆盖成团日时准确；
+                # 爬取前已成团的老团第 1 周窗口通常无快照，走 has_data=False）
+                return round(total + max(0.0, vals[0]), 1), False
+            return round(total, 1), True
+
+        get_rev2 = lambda r: r['sister_revenue'] or 0
+        get_task = lambda r: (r['drive_task_count'] or 0) + (r['accompany_task_count'] or 0) + (r['gift_task_count'] or 0)
+        sis2_rev, sis2_partial = win_delta(get_rev2)
+        tasks, tasks_partial = win_delta(get_task)
+        tasks = int(tasks) if tasks is not None else None
+
+        # 累计流水（截至该周末）：妹妹取窗口最后快照的累计值（精确）
+        sis2_cum = round(in_win[-1]['sister_revenue'] or 0, 1) if in_win else None
+
+        # 姐姐流水：当周 = 自然周按重叠天数折算；累计 = 成团~该周末的折算累计（均为约值）
         sis_rev, sis_approx = 0.0, False
+        sis_cum, sis_cum_any = 0.0, False
         for rr in rev_rows:
             try:
                 cws = datetime.strptime(rr['week_start'], '%Y-%m-%d').date()
@@ -2503,6 +2528,10 @@ def api_team_life_weeks(team_id):
             if ov > 0:
                 sis_rev += (rr['sister_revenue'] or 0) * ov / 7.0
                 sis_approx = True
+            ov_cum = (min(cwe, w1) - max(cws, fd)).days + 1
+            if ov_cum > 0:
+                sis_cum += (rr['sister_revenue'] or 0) * min(ov_cum, 7) / 7.0
+                sis_cum_any = True
 
         dissolved_here = bool(dd and w0 <= dd <= w1)
         if dd and dd < w0:
@@ -2519,7 +2548,9 @@ def api_team_life_weeks(team_id):
             # 解散后快照仍携带累计值（增量非 0 是噪声），该周无意义一律置空
             weeks.append({
                 'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state, 'has_data': False,
-                'sister2_revenue': None, 'sister_revenue': None, 'reward': None, 'tasks': None,
+                'sister2_revenue': None, 'sister_revenue': None, 'tasks': None,
+                'sister2_cum': None, 'sister_cum': None,
+                'sis2_partial': False, 'tasks_partial': False,
                 'sister_level': None, 'sister_max_level2': None, 'dissolved_here': False,
             })
             continue
@@ -2528,7 +2559,10 @@ def api_team_life_weeks(team_id):
             'has_data': has_data,
             'sister2_revenue': sis2_rev if has_data else None,
             'sister_revenue': round(sis_rev, 1) if has_data and sis_approx else None,
-            'reward': reward if has_data else None,
+            'sister2_cum': sis2_cum if has_data else None,
+            'sister_cum': round(sis_cum, 1) if has_data and sis_cum_any else None,
+            'sis2_partial': sis2_partial,
+            'tasks_partial': tasks_partial,
             'tasks': tasks if has_data else None,
             'sister_level': in_win[-1]['sister_level'] if in_win else None,
             'sister_max_level2': in_win[-1]['sister_max_level2'] if in_win else None,
