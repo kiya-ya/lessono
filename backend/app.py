@@ -214,6 +214,9 @@ DISSOLVE_REASON_CASE = """
       WHEN dissolve_reason LIKE '%铜牌%' THEN '等级低于铜牌'
       WHEN dissolve_reason LIKE '%毕业%' THEN '毕业'
       WHEN dissolve_reason LIKE '%注销%' THEN '注销'
+      WHEN dissolve_reason LIKE '姐姐%离职%' THEN '姐姐离职'
+      WHEN dissolve_reason LIKE '妹妹%离职%' THEN '妹妹离职'
+      WHEN dissolve_reason LIKE '%双方%离职%' THEN '双方同日离职'
       WHEN dissolve_reason LIKE '%离职%' OR dissolve_reason LIKE '%不在同一个大厅%' THEN '离职'
       ELSE '其他'
     END

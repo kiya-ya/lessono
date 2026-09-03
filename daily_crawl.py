@@ -68,6 +68,14 @@ def main():
         msg = '数据抓取成功'
         print(f'\n[SUCCESS] {msg}')
 
+        # 离职原因细分（姐姐/妹妹/双方）+ 回写今日新快照
+        try:
+            from leaver_refine import refine_leavers, apply_leaver_reasons
+            refine_leavers()
+            apply_leaver_reasons()
+        except Exception as le:
+            print(f'[WARN] 离职原因细分失败: {le}')
+
         # 抓取成功后运行预警检测
         try:
             from alerts_engine import run_alerts_check
