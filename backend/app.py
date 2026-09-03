@@ -9,6 +9,7 @@ import random
 import string
 import base64
 import io
+import re
 from datetime import datetime, timedelta
 from calendar import monthrange
 
@@ -1880,10 +1881,30 @@ def api_trend_insights():
     return jsonify({'week_start': ws, 'week_end': we, 'ref_date': ref, **out})
 
 
+def _dissolve_bucket(raw):
+    """原始解散原因 → (大类, 细分原因)，供饼图两级钻取。
+    大类：主动解散（手动/离职含换厅/注销）· 系统解散（未陪档/违规/低等级）· 毕业 · 其他。
+    细分时需先剥离细分回写的「（离职 YYYY-MM-DD）」时间后缀。"""
+    r = re.sub(r'（离职[^）]*）', '', raw or '')
+    if '手动' in r: return ('主动解散', '手动解散')
+    if r.startswith('姐姐'): return ('主动解散', '姐姐离职')
+    if r.startswith('妹妹'): return ('主动解散', '妹妹离职')
+    if '双方' in r and '离职' in r: return ('主动解散', '双方同日离职')
+    if '不在同一个大厅' in r: return ('主动解散', '换厅（不在同一大厅）')
+    if '离职' in r: return ('主动解散', '离职（未细分）')
+    if '注销' in r: return ('主动解散', '注销')
+    if '陪档' in r or '未完成' in r: return ('系统解散', '连续5日未陪档')
+    if '违规' in r: return ('系统解散', '生态违规')
+    if '铜牌' in r: return ('系统解散', '等级低于铜牌')
+    if '毕业' in r: return ('毕业', '毕业（满30天）')
+    return ('其他', r or '其他')
+
+
 @app.route('/api/dissolve-reasons')
 @login_required
 def api_dissolve_reasons():
-    """解散原因分布：已解散姐妹团按归一化原因统计（支持按大厅过滤）"""
+    """解散原因分布：已解散姐妹团按归一化原因统计（支持按大厅过滤）
+    另附两级钻取数据：buckets=大类分布，bucket_detail=大类下的细分原因。"""
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
     ref = conn.execute('SELECT MAX(snapshot_date) AS ref FROM team_detail').fetchone()['ref']
@@ -1918,8 +1939,31 @@ def api_dissolve_reasons():
         cmap = {r['reason']: r['c'] for r in wk}
         for s in trend['series']:
             s['data'].append(cmap.get(s['reason'], 0))
+
+    # 两级钻取数据：原始原因 → (大类, 细分)
+    raw_rows = conn.execute(f"""
+        SELECT dissolve_reason AS raw, COUNT(*) AS c
+        FROM team_detail
+        WHERE {latest_teams} AND dissolve_date IS NOT NULL AND dissolve_date != ''
+          {hall_cond}
+        GROUP BY raw
+    """, hp).fetchall()
+    buckets_map, detail_map = {}, {}
+    for r in raw_rows:
+        b, f = _dissolve_bucket(r['raw'])
+        buckets_map[b] = buckets_map.get(b, 0) + r['c']
+        detail_map.setdefault(b, {})
+        detail_map[b][f] = detail_map[b].get(f, 0) + r['c']
+    buckets = [{'name': n, 'count': c, 'share': round(c / total * 100, 1) if total else 0}
+               for n, c in sorted(buckets_map.items(), key=lambda x: -x[1])]
+    bucket_detail = {
+        b: [{'reason': f, 'count': c, 'share': round(c / buckets_map[b] * 100, 1)}
+            for f, c in sorted(fm.items(), key=lambda x: -x[1])]
+        for b, fm in detail_map.items()
+    }
     conn.close()
-    return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons, 'trend': trend})
+    return jsonify({'ref_date': ref, 'total': total, 'reasons': reasons, 'trend': trend,
+                    'buckets': buckets, 'bucket_detail': bucket_detail})
 
 
 @app.route('/api/lying-flat')

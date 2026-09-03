@@ -883,7 +883,86 @@ async function loadSurvival() {
   } catch (e) { console.error('存活分析加载失败:', e); }
 }
 
-/* ── 解散原因分布（明细数据页） ── */
+/* ── 解散原因分布（明细数据页）：大类 → 细分 两级钻取 ── */
+let _drData = null;    // 接口缓存
+let _drLevel = 1;      // 1=大类 2=细分
+let _drBucket = '';    // 当前细分所属大类
+
+const DR_BUCKET_COLORS = { '主动解散': '#D56060', '系统解散': '#C98A2D', '毕业': '#16A34A', '其他': '#C0C4CC' };
+const DR_FINE_COLORS = ['#7C5CFF', '#E08A5A', '#3D9A6C', '#E11D48', '#9333EA', '#C98A2D', '#4C8DFF', '#D5B42D', '#9CA3AF', '#16A34A'];
+// 细分原因 → 明细表原因筛选下拉的值
+const DR_FINE2FILTER = {
+  '手动解散': '手动解散', '姐姐离职': '姐姐离职', '妹妹离职': '妹妹离职', '双方同日离职': '双方同日离职',
+  '换厅（不在同一大厅）': '离职', '离职（未细分）': '离职', '注销': '注销',
+  '连续5日未陪档': '任务未完成自动解散', '生态违规': '生态违规', '等级低于铜牌': '等级低于铜牌', '毕业（满30天）': '毕业',
+};
+
+function drRenderPie() {
+  const el = document.getElementById('chart-dissolve-reasons');
+  const d = _drData;
+  if (!el || !d) return;
+  const back = document.getElementById('dr-back');
+  if (back) back.style.display = _drLevel === 2 ? '' : 'none';
+  const isL2 = _drLevel === 2;
+  const items = isL2 ? (d.bucket_detail[_drBucket] || []) : d.buckets;
+  const subTotal = items.reduce((s, x) => s + x.count, 0);
+  if (charts['dissolveReasons']) charts['dissolveReasons'].dispose();
+  charts['dissolveReasons'] = echarts.init(el);
+  charts['dissolveReasons'].setOption({
+    tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
+    legend: { orient: 'vertical', right: 6, top: 'middle', itemWidth: 10, itemHeight: 10, itemGap: 6, textStyle: { fontSize: 11, color: '#6B7280' } },
+    title: {
+      text: String(isL2 ? subTotal : d.total), subtext: isL2 ? `${_drBucket}(个)` : '累计解散(个)',
+      left: '31%', top: '40%', textAlign: 'center',
+      textStyle: { fontSize: 24, fontWeight: 700, color: '#111827' },
+      subtextStyle: { fontSize: 11, color: '#9CA3AF' },
+    },
+    series: [{
+      type: 'pie', radius: ['42%', '68%'], center: ['31%', '50%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
+      label: { show: true, position: 'outside', formatter: '{c}', fontSize: 10, color: '#6B7280' },
+      labelLine: { length: 8, length2: 6, lineStyle: { color: '#D1D5DB' } },
+      data: items.map((r, i) => ({
+        name: isL2 ? r.reason : r.name, value: r.count,
+        itemStyle: { color: isL2 ? DR_FINE_COLORS[i % DR_FINE_COLORS.length] : (DR_BUCKET_COLORS[r.name] || '#C0C4CC') },
+      })),
+    }]
+  });
+  charts['dissolveReasons'].off('click');
+  charts['dissolveReasons'].on('click', function (params) {
+    if (_drLevel === 1) {
+      // 大类：有多个细分 → 进二级；只有一个细分（如毕业）→ 直接下钻明细
+      const detail = (d.bucket_detail[params.name]) || [];
+      if (detail.length > 1) {
+        _drBucket = params.name;
+        _drLevel = 2;
+        drRenderPie();
+      } else if (detail.length === 1 && typeof drillToReason === 'function') {
+        drillToReason(DR_FINE2FILTER[detail[0].reason] || '');
+      }
+    } else if (typeof drillToReason === 'function') {
+      drillToReason(DR_FINE2FILTER[params.name] || '');
+    }
+  });
+  const insEl = document.getElementById('dissolve-reasons-insight');
+  if (insEl && items.length) {
+    if (isL2) {
+      const top = items[0];
+      insEl.innerHTML = `「${_drBucket}」共 <b>${subTotal}</b> 个团，最多「${top.reason}」${top.count} 个（占 ${top.share}%）。点切片下钻明细，或返回大类。`;
+    } else {
+      const top = d.buckets[0];
+      insEl.innerHTML = `累计解散 <b>${d.total}</b> 个团，最大类「${top.name}」${top.count} 个（占 ${top.share}%）。点大块查看细分原因。`;
+    }
+  }
+}
+
+function drBackToBuckets() {
+  _drLevel = 1;
+  _drBucket = '';
+  drRenderPie();
+}
+
 async function loadDissolveReasons() {
   const el = document.getElementById('chart-dissolve-reasons');
   if (!el) return;
@@ -897,37 +976,11 @@ async function loadDissolveReasons() {
       if (src) src.textContent = '暂无解散数据';
       return;
     }
-    const colors = { '手动解散': '#D56060', '任务未完成自动解散': '#C98A2D', '生态违规': '#E11D48', '等级低于铜牌': '#9333EA', '毕业': '#16A34A', '注销': '#9CA3AF', '离职': '#E08A5A', '其他': '#C0C4CC' };
-    if (src) src.textContent = `快照日期 ${d.ref_date} · 累计解散 ${d.total} 个团${hall ? '（大厅：' + hall + '）' : ''}`;
-    if (charts['dissolveReasons']) charts['dissolveReasons'].dispose();
-    charts['dissolveReasons'] = echarts.init(el);
-    charts['dissolveReasons'].setOption({
-      tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${p.value} 个（${p.percent}%）` },
-      legend: { orient: 'vertical', right: 6, top: 'middle', itemWidth: 10, itemHeight: 10, itemGap: 6, textStyle: { fontSize: 11, color: '#6B7280' } },
-      title: {
-        text: String(d.total), subtext: '累计解散(个)',
-        left: '31%', top: '40%', textAlign: 'center',
-        textStyle: { fontSize: 24, fontWeight: 700, color: '#111827' },
-        subtextStyle: { fontSize: 11, color: '#9CA3AF' },
-      },
-      series: [{
-        type: 'pie', radius: ['42%', '68%'], center: ['31%', '50%'],
-        avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 4, borderColor: '#fff', borderWidth: 2 },
-        label: { show: true, position: 'outside', formatter: '{c}', fontSize: 10, color: '#6B7280' },
-        labelLine: { length: 8, length2: 6, lineStyle: { color: '#D1D5DB' } },
-        data: d.reasons.map(r => ({ name: r.reason, value: r.count, itemStyle: { color: colors[r.reason] || '#C0C4CC' } })),
-      }]
-    });
-    const insEl = document.getElementById('dissolve-reasons-insight');
-    if (insEl) {
-      const top = d.reasons[0];
-      insEl.innerHTML = `累计解散 <b>${d.total}</b> 个团，主因「${top.reason}」${top.count} 个（占 ${top.share}%）。`;
-    }
-    charts['dissolveReasons'].off('click');
-    charts['dissolveReasons'].on('click', function (params) {
-      if (params.name && typeof drillToReason === 'function') drillToReason(params.name);
-    });
+    if (src) src.textContent = `快照日期 ${d.ref_date} · 累计解散 ${d.total} 个团${hall ? '（大厅：' + hall + '）' : ''} · 点大块（主动/系统/毕业）看细分原因`;
+    _drData = d;
+    _drLevel = 1;
+    _drBucket = '';
+    drRenderPie();
   } catch (e) { console.error('解散原因分布加载失败:', e); }
 }
 
