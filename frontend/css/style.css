@@ -944,3 +944,5 @@ td.num, th.num {
 .lw-pop-grid b { text-align: right; font-variant-numeric: tabular-nums; color: var(--wb-text); }
 .lw-pop-foot { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #EEEAF9; font-size: 11px; color: var(--wb-text-3); }
 .lw-pop-loading { color: var(--wb-text-3); padding: 6px 2px; }
+.lw-pop-more { display: block; width: 100%; margin-top: 10px; padding: 7px 10px; border: 1px dashed #D9D5F0; border-radius: 8px; background: #FAF9FF; color: var(--wb-accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
+.lw-pop-more:hover { background: #F1EDFF; border-color: var(--wb-accent); }

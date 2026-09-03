@@ -295,10 +295,18 @@ async function lwShow(ev, teamId, idx) {
         <span>妹妹最高牌子</span><b>${w.sister_max_level2 || '—'}</b>
       </div>
       ${w.state === 'dissolved' && d.dissolve_reason ? `<div class="lw-pop-foot">结束原因：${d.dissolve_reason}</div>` : ''}
-      ${w.sister_revenue != null ? '<div class="lw-pop-foot">姐姐流水按自然周重叠天数折算（约值）</div>' : ''}`;
+      ${w.sister_revenue != null ? '<div class="lw-pop-foot">姐姐流水按自然周重叠天数折算（约值）</div>' : ''}
+      <button class="lw-pop-more" onclick="lwOpenDetail(${d.team_id})">查看团队完整明细 →</button>`;
   } catch (e) {
     pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';
   }
+}
+
+// 方框弹层 → 团队完整明细弹窗（按 team_id 找回明细行索引）
+function lwOpenDetail(teamId) {
+  lwClose();
+  const idx = (_detailRows || []).findIndex(r => String(r.team_id) === String(teamId));
+  if (idx >= 0) openTeamDetail(idx);
 }
 
 async function loadDetailTable(page = 1) {
@@ -350,7 +358,7 @@ async function loadDetailTable(page = 1) {
           sis2Cell = `<td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>`;
         }
       }
-      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td><a href="javascript:void(0)" onclick="event.stopPropagation();openTeamDetail(${i})" style="color:#7C5CFF;text-decoration:none;cursor:pointer;font-weight:600;">#${row.team_id}</a></td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td style="white-space:nowrap;">${lwSquaresHtml(row)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td></tr>`;
+      return `<tr><td style="font-weight:600;color:var(--wb-text);">#${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td style="white-space:nowrap;">${lwSquaresHtml(row)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td></tr>`;
     }).join('');
     
     // 分页渲染
