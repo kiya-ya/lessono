@@ -147,6 +147,23 @@ def init_talent_db():
         print(f'[WARN] 培养力结果记录表初始化失败: {e}')
 
 
+def init_member_protection_db():
+    """妹妹保护期结束时间表（明细表「保护期结束时间」列数据源，protection_sync 抓取）"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS member_protection (
+                uid TEXT PRIMARY KEY,
+                protection_end TEXT,
+                checked_at TEXT
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f'[WARN] 保护期表初始化失败: {e}')
+
+
 def init_detail_indexes():
     """为 team_detail 高频过滤列补索引（form_date/dissolve_date/hall_name），
     加速周指标重算与明细查询；幂等，已有索引跳过。"""
@@ -168,6 +185,7 @@ def init_detail_indexes():
 # 启动时执行
 init_auth_db()
 init_talent_db()
+init_member_protection_db()
 init_detail_indexes()
 
 
@@ -2294,7 +2312,8 @@ def api_detail_table():
     conditions = []
     params = []
     # 只显示最新快照的数据，避免历史快照重复；同一快照内按 team_id 去重（防御重复抓取）
-    conditions.append('''rowid IN (SELECT MAX(rowid) FROM team_detail
+    # 注意：主查询 LEFT JOIN member_protection，rowid 必须带表名限定（否则 ambiguous）
+    conditions.append('''team_detail.rowid IN (SELECT MAX(rowid) FROM team_detail
         WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail) GROUP BY team_id)''')
     if search:
         conditions.append('(sister_nickname LIKE ? OR sister_nickname2 LIKE ? OR CAST(team_id AS TEXT) LIKE ? OR hall_name LIKE ? OR dissolve_reason LIKE ?)')
@@ -2329,7 +2348,11 @@ def api_detail_table():
     total = cursor.fetchone()['total']
     
     offset = (page - 1) * per_page
-    cursor = conn.execute(f'SELECT * FROM team_detail {where_clause} ORDER BY {sort_field} {order_sql} LIMIT ? OFFSET ?', params + [per_page, offset])
+    cursor = conn.execute(
+        f'SELECT team_detail.*, mp.protection_end FROM team_detail '
+        f'LEFT JOIN member_protection mp ON mp.uid = CAST(team_detail.sister_uid2 AS TEXT) '
+        f'{where_clause} ORDER BY {sort_field} {order_sql} LIMIT ? OFFSET ?',
+        params + [per_page, offset])
     rows = cursor.fetchall()
     conn.close()
 

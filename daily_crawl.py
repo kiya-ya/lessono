@@ -76,6 +76,13 @@ def main():
         except Exception as le:
             print(f'[WARN] 离职原因细分失败: {le}')
 
+        # 妹妹保护期结束时间同步（明细表「保护期结束」列）
+        try:
+            from protection_sync import sync_protection
+            sync_protection(limit=120)
+        except Exception as pe:
+            print(f'[WARN] 保护期同步失败: {pe}')
+
         # 抓取成功后运行预警检测
         try:
             from alerts_engine import run_alerts_check

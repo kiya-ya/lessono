@@ -256,6 +256,9 @@ document.addEventListener('click', e => {
   if (p && !p.contains(e.target)) lwClose();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') lwClose(); });
+// 滚动即收起弹层（capture 覆盖表格等嵌套滚动容器）
+document.addEventListener('scroll', lwClose, true);
+window.addEventListener('resize', lwClose);
 
 function _lwMoney(v) { return v == null ? '—' : '¥' + Number(v).toFixed(1); }
 
@@ -267,10 +270,16 @@ async function lwShow(ev, teamId, idx) {
   pop.id = 'lw-popover';
   pop.innerHTML = '<div class="lw-pop-loading">加载中…</div>';
   document.body.appendChild(pop);
-  // 定位：点击处附近，防溢出
-  const pw = 250, ph = 230;
-  pop.style.left = Math.min(ev.clientX, window.innerWidth - pw - 12) + 'px';
-  pop.style.top = Math.min(ev.clientY + 8, window.innerHeight - ph - 12) + 'px';
+  // 定位：优先点击处右下方；实测弹层高度，底部溢出则翻转到上方，左右防溢出
+  const place = () => {
+    const pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 120;
+    let left = Math.max(8, Math.min(ev.clientX, window.innerWidth - pw - 12));
+    let top = ev.clientY + 8;
+    if (top + ph > window.innerHeight - 8) top = Math.max(8, ev.clientY - ph - 8);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  };
+  place();
   try {
     if (!_lwCache[teamId]) {
       const res = await fetch(API_BASE + `/api/team/${teamId}/life-weeks`);
@@ -278,8 +287,8 @@ async function lwShow(ev, teamId, idx) {
     }
     const d = _lwCache[teamId];
     const w = (d.weeks || []).find(x => x.idx === idx);
-    if (!w || w.state === 'future') { pop.innerHTML = '<div class="lw-pop-loading">该周尚未开始</div>'; return; }
-    if (w.state === 'gone') { pop.innerHTML = `<div class="lw-pop-loading">第 ${idx} 周未经历 · 团已于 ${d.dissolve_date || '—'} ${d.dissolve_reason === '毕业' ? '毕业' : '解散'}</div>`; return; }
+    if (!w || w.state === 'future') { pop.innerHTML = '<div class="lw-pop-loading">该周尚未开始</div>'; place(); return; }
+    if (w.state === 'gone') { pop.innerHTML = `<div class="lw-pop-loading">第 ${idx} 周未经历 · 团已于 ${d.dissolve_date || '—'} ${d.dissolve_reason === '毕业' ? '毕业' : '解散'}</div>`; place(); return; }
     const stateTag = w.state === 'dissolved'
       ? `<span class="lw-tag end">${(d.dissolve_reason === '毕业' ? '该周毕业' : '该周解散')}</span>`
       : w.state === 'current' ? '<span class="lw-tag cur">进行中</span>' : '<span class="lw-tag">已结束</span>';
@@ -299,8 +308,10 @@ async function lwShow(ev, teamId, idx) {
       ${w.state === 'dissolved' && d.dissolve_reason ? `<div class="lw-pop-foot">结束原因：${d.dissolve_reason}</div>` : ''}
       ${(w.sister_revenue != null || w.sister_cum != null || w.sis2_partial || w.tasks_partial) ? '<div class="lw-pop-foot">≈ 为自然周折算或快照缺口的估算值；周流水严格限定在该周时间范围内</div>' : ''}
       <button class="lw-pop-more" onclick="lwOpenDetail(${d.team_id},${w.idx})">查看团队完整明细 →</button>`;
+    place();  // 内容渲染后按实测高度重新定位（防底部溢出）
   } catch (e) {
     pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';
+    place();
   }
 }
 
@@ -309,6 +320,16 @@ function lwOpenDetail(teamId, weekIdx) {
   lwClose();
   const idx = (_detailRows || []).findIndex(r => String(r.team_id) === String(teamId));
   if (idx >= 0) openTeamDetail(idx, weekIdx || 0);
+}
+
+// 保护期结束时间显示：3 天内到期橙色加粗，已过期灰色标注
+function fmtProtection(pe) {
+  const d = (pe || '').slice(0, 10);
+  if (!d) return '<span style="color:#C4C9D1;">—</span>';
+  const left = Math.ceil((new Date(d + 'T00:00:00') - Date.now()) / 864e5);
+  if (left < 0) return `<span style="color:#9CA3AF;">${d}（已过）</span>`;
+  if (left <= 3) return `<span style="color:#D97706;font-weight:600;" title="保护期 ${left} 天后到期">${d}</span>`;
+  return d;
 }
 
 async function loadDetailTable(page = 1) {
@@ -361,7 +382,7 @@ async function loadDetailTable(page = 1) {
           sis2Cell = `<td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>`;
         }
       }
-      return `<tr><td style="font-weight:600;color:var(--wb-text);">#${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td style="white-space:nowrap;">${lwSquaresHtml(row)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td></tr>`;
+      return `<tr><td style="font-weight:600;color:var(--wb-text);">#${row.team_id}</td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td style="white-space:nowrap;">${fmtProtection(row.protection_end)}</td><td style="white-space:nowrap;">${lwSquaresHtml(row)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${row.dissolve_reason || ''}">${row.dissolve_reason || '-'}</td></tr>`;
     }).join('');
     
     // 分页渲染
