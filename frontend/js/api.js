@@ -298,17 +298,17 @@ async function lwShow(ev, teamId, idx) {
       </div>
       ${w.state === 'dissolved' && d.dissolve_reason ? `<div class="lw-pop-foot">结束原因：${d.dissolve_reason}</div>` : ''}
       ${(w.sister_revenue != null || w.sister_cum != null || w.sis2_partial || w.tasks_partial) ? '<div class="lw-pop-foot">≈ 为自然周折算或快照缺口的估算值；周流水严格限定在该周时间范围内</div>' : ''}
-      <button class="lw-pop-more" onclick="lwOpenDetail(${d.team_id})">查看团队完整明细 →</button>`;
+      <button class="lw-pop-more" onclick="lwOpenDetail(${d.team_id},${w.idx})">查看团队完整明细 →</button>`;
   } catch (e) {
     pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';
   }
 }
 
-// 方框弹层 → 团队完整明细弹窗（按 team_id 找回明细行索引）
-function lwOpenDetail(teamId) {
+// 方框弹层 → 团队完整明细弹窗（按 team_id 找回明细行索引，并聚焦当前周）
+function lwOpenDetail(teamId, weekIdx) {
   lwClose();
   const idx = (_detailRows || []).findIndex(r => String(r.team_id) === String(teamId));
-  if (idx >= 0) openTeamDetail(idx);
+  if (idx >= 0) openTeamDetail(idx, weekIdx || 0);
 }
 
 async function loadDetailTable(page = 1) {
@@ -398,6 +398,7 @@ async function loadDetailTable(page = 1) {
 let _detailRows = [];
 let _tdSisterUid = '';
 let _tdTeamId = '';
+let _tdFocusWeek = 0;  // 从方框弹层进入时聚焦的周（0=全部）
 
 /* ── 日期下钻过滤（趋势图点数据点 → 按成团/解散日期过滤明细） ── */
 let detailDateField = '';
@@ -411,9 +412,10 @@ function clearDateFilter() {
   loadDetailTable(1);
 }
 
-function renderTeamDetailModal(row) {
+function renderTeamDetailModal(row, focusWeek) {
   _tdSisterUid = row.sister_uid || '';
   _tdTeamId = row.team_id || '';
+  _tdFocusWeek = focusWeek || 0;
   document.getElementById('td-team-id').textContent = '#' + (row.team_id || '-');
   const status = row.dissolve_date ? '已解散' : '进行中';
   const statusColor = row.dissolve_date ? '#D56060' : '#3D9A6C';
@@ -423,7 +425,8 @@ function renderTeamDetailModal(row) {
       <div class="team-detail-item"><span class="team-detail-label">大厅名称</span><span class="team-detail-value">${row.hall_name || '--'}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">成团日期</span><span class="team-detail-value">${row.form_date || '--'}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">已成团天数</span><span class="team-detail-value">${row.days_since_formed || 0} 天</span></div>
-      <div class="team-detail-item"><span class="team-detail-label">奖励金额</span><span class="team-detail-value">¥${(row.reward_amount || 0).toLocaleString()}</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">妹妹累计流水</span><span class="team-detail-value" id="td-sis2-cum">…</span></div>
+      <div class="team-detail-item"><span class="team-detail-label">姐姐累计流水</span><span class="team-detail-value" id="td-sis-cum">…</span></div>
       <div class="team-detail-item"><span class="team-detail-label">状态</span><span class="team-detail-value" style="color:${statusColor};font-weight:600;">${statusIcon} ${status}${row.dissolve_date ? ' (' + row.dissolve_date + ')' : ''}</span></div>
       <div class="team-detail-item"><span class="team-detail-label">解散原因</span><span class="team-detail-value">${row.dissolve_reason || '—'}</span></div>
     </div>
@@ -431,41 +434,68 @@ function renderTeamDetailModal(row) {
       <div class="team-member"><div class="member-badge">姐</div><div class="member-info"><div class="member-name">${row.sister_nickname || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid || '--'}</a></div></div></div>
       <div class="team-member"><div class="member-badge" style="background:#f6a6c1;">妹</div><div class="member-info"><div class="member-name">${row.sister_nickname2 || '--'}</div><div class="member-uid">UID: <a href="javascript:void(0)" onclick="closeTeamDetail();jumpToUID('${row.sister_uid2 || ''}')" style="color:#7C5CFF;text-decoration:none;">${row.sister_uid2 || '--'}</a></div></div></div>
     </div>
-    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--wb-text-1);">按周流水与牌子走势</div>
+    <div style="margin:14px 0 6px;font-size:12px;font-weight:600;color:var(--wb-text-1);"><span id="td-weekly-title">按周流水与牌子走势（成团第 1~4 周）</span>${focusWeek ? ' <a id="td-weekly-all" href="javascript:void(0)" onclick="lwShowAllWeeks()" style="color:#7C5CFF;text-decoration:none;font-weight:400;">查看全部周 →</a>' : ''}</div>
     <div class="rank-scroll"><table class="rank-table" style="min-width:0;">
-      <thead><tr><th>周次</th><th>妹妹牌子</th><th>妹妹流水</th><th>姐姐牌子</th><th>姐姐流水</th><th>合计</th></tr></thead>
+      <thead><tr><th>周次</th><th>妹妹牌子</th><th>妹妹周流水</th><th>姐姐牌子</th><th>姐姐周流水</th><th>任务活跃</th></tr></thead>
       <tbody id="td-weekly-body"><tr><td colspan="6" style="color:#9CA3AF;">加载中…</td></tr></tbody>
     </table></div>`;
+  if (focusWeek) {
+    const t = document.getElementById('td-weekly-title');
+    if (t) t.textContent = `第 ${focusWeek} 周数据`;
+  }
   document.getElementById('team-detail-modal').classList.add('active');
   loadTeamWeekly(row.team_id);
+}
+
+// 「查看全部周」：清除单周聚焦，重渲染周表
+function lwShowAllWeeks() {
+  _tdFocusWeek = 0;
+  const t = document.getElementById('td-weekly-title');
+  if (t) t.textContent = '按周流水与牌子走势（成团第 1~4 周）';
+  const a = document.getElementById('td-weekly-all');
+  if (a) a.style.display = 'none';
+  loadTeamWeekly(_tdTeamId);
 }
 
 async function loadTeamWeekly(teamId) {
   const body = document.getElementById('td-weekly-body');
   if (!body || !teamId) return;
   try {
-    const res = await fetch(API_BASE + '/api/team/' + teamId + '/weekly');
-    const d = await res.json();
-    const wk = d.weekly || [];
-    if (!wk.length) { body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">暂无按周流水数据</td></tr>'; return; }
-    body.innerHTML = wk.map(w => `
+    if (!_lwCache[teamId]) {
+      const res = await fetch(API_BASE + '/api/team/' + teamId + '/life-weeks');
+      _lwCache[teamId] = await res.json();
+    }
+    const d = _lwCache[teamId];
+    const all = d.weeks || [];
+    // 顶部累计流水卡（截至最新有数据的周）
+    const lastCum2 = [...all].reverse().find(w => w.sister2_cum != null);
+    const lastCum1 = [...all].reverse().find(w => w.sister_cum != null);
+    const el2 = document.getElementById('td-sis2-cum');
+    if (el2) el2.textContent = lastCum2 ? '¥' + lastCum2.sister2_cum.toLocaleString() : '—';
+    const el1 = document.getElementById('td-sis-cum');
+    if (el1) el1.textContent = lastCum1 ? '≈¥' + lastCum1.sister_cum.toLocaleString() : '—';
+    // 周表：默认全部有数据的周；从方框进入时只显示点击的当周
+    let ws = all.filter(w => w.has_data);
+    if (_tdFocusWeek) ws = ws.filter(w => w.idx === _tdFocusWeek);
+    if (!ws.length) { body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">暂无周数据</td></tr>'; return; }
+    body.innerHTML = ws.map(w => `
       <tr>
-        <td style="font-weight:600;">${w.week}</td>
+        <td style="font-weight:600;">第${w.idx}周 <span style="color:#9CA3AF;font-weight:400;">${(w.start || '').slice(5).replace('-', '/')}~${(w.end || '').slice(5).replace('-', '/')}</span></td>
         <td>${w.sister_max_level2 || '—'}</td>
-        <td style="font-weight:600;">¥${(w.sister2_revenue || 0).toLocaleString()}</td>
+        <td style="font-weight:600;">${w.sister2_revenue == null ? '—' : (w.sis2_partial ? '≈' : '') + '¥' + w.sister2_revenue.toLocaleString()}</td>
         <td>${w.sister_level || '—'}</td>
-        <td style="font-weight:600;">¥${(w.sister_revenue || 0).toLocaleString()}</td>
-        <td style="font-weight:700;color:#7C5CFF;">¥${(w.total_revenue || 0).toLocaleString()}</td>
+        <td style="font-weight:600;">${w.sister_revenue == null ? '—' : '≈¥' + w.sister_revenue.toLocaleString()}</td>
+        <td>${w.tasks == null ? '—' : '+' + w.tasks}</td>
       </tr>`).join('');
   } catch (e) {
-    body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">按周流水数据加载失败</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" style="color:#9CA3AF;">周数据加载失败</td></tr>';
   }
 }
 
-function openTeamDetail(idx) {
+function openTeamDetail(idx, focusWeek) {
   const row = _detailRows && _detailRows[idx];
   if (!row) return;
-  renderTeamDetailModal(row);
+  renderTeamDetailModal(row, focusWeek);
 }
 
 function closeTeamDetail() {
