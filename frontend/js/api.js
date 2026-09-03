@@ -237,9 +237,10 @@ function lwSquaresHtml(row) {
       if (isActive && lifeDays <= 30) { cls = 'current'; tip = `第${i}周 · 本周进行中，点击查看该周数据`; }
       else { cls = 'done end'; tip = `第${i}周 · 生命最后一周，点击查看该周数据`; }
     } else {
-      cls = 'ended'; tip = '未经历（团已结束）';
+      if (isActive) { cls = 'todo'; tip = `第${i}周 · 未开始`; }
+      else { cls = 'ended'; tip = '未经历（团已结束）'; }
     }
-    if (cls !== 'ended') click = ` onclick="event.stopPropagation();lwShow(event,${row.team_id},${i})"`;
+    if (cls !== 'ended' && cls !== 'todo') click = ` onclick="event.stopPropagation();lwShow(event,${row.team_id},${i})"`;
     out += `<span class="lw-sq ${cls}"${click} title="${tip}"></span>`;
   }
   out += `</span><span class="lw-days">${d} 天</span>`;
@@ -351,10 +352,11 @@ async function loadDetailTable(page = 1) {
       const statusStyle = row.dissolve_date ? 'color:#D56060;' : 'color:#3D9A6C;';
       let sisterCell = '', sis2Cell = '';
       if (gi === 0) {
-        sisterCell = `<td rowspan="${n}" style="vertical-align:middle;">${row.sister_nickname || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)</td>`;
+        const leadBadge = n > 1 ? `<span class="sis-lead-cnt" title="该姐姐同时带 ${n} 个妹妹">×${n}</span>` : '';
+        sisterCell = `<td rowspan="${n}" class="sis-lead-cell"><span class="sis-lead-name">${row.sister_nickname || '-'}</span> (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid || '-'}</a>)${leadBadge}</td>`;
         if (n > 1) {
-          const stack = g.rows.map(r => `<span>${r.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${r.sister_uid2 || ''}', '${r.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${r.sister_uid2 || '-'}</a>)</span>`).join('');
-          sis2Cell = `<td rowspan="${n}" style="vertical-align:middle;"><span style="display:inline-flex;flex-direction:column;line-height:1.6;">${stack}</span></td>`;
+          const stack = g.rows.map(r => `<span class="sis-chip">${r.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${r.sister_uid2 || ''}', '${r.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${r.sister_uid2 || '-'}</a>)</span>`).join('');
+          sis2Cell = `<td rowspan="${n}" style="vertical-align:middle;"><span class="sis-stack">${stack}</span></td>`;
         } else {
           sis2Cell = `<td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>`;
         }

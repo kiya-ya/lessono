@@ -925,7 +925,8 @@ td.num, th.num {
 
 /* ── 明细表「生命周期方框」（2026-09-03）：4 格 = 30 天 4 周，点击看该周数据 ── */
 .lw-strip { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 6px; cursor: default; }
-.lw-sq { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid #C9BFA8; box-sizing: border-box; display: inline-block; }
+.lw-sq { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid #D4D7DD; box-sizing: border-box; display: inline-block; }
+.lw-sq.todo { background: #fff; border-color: #D9DDE3; }
 .lw-sq.done { background: var(--wb-accent); border-color: var(--wb-accent); cursor: pointer; transition: transform .12s; }
 .lw-sq.done.end { background: #8B7CF6; }
 .lw-sq.current { background: #EFE9FF; border-color: var(--wb-accent); box-shadow: 0 0 0 2px rgba(124,92,255,.22); cursor: pointer; transition: transform .12s; animation: lw-pulse 1.6s ease-in-out infinite; }
@@ -946,3 +947,10 @@ td.num, th.num {
 .lw-pop-loading { color: var(--wb-text-3); padding: 6px 2px; }
 .lw-pop-more { display: block; width: 100%; margin-top: 10px; padding: 7px 10px; border: 1px dashed #D9D5F0; border-radius: 8px; background: #FAF9FF; color: var(--wb-accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
 .lw-pop-more:hover { background: #F1EDFF; border-color: var(--wb-accent); }
+
+/* ── 明细表「一带多」姐姐合并格视觉强化（2026-09-03） ── */
+.sis-lead-cell { background: #F7F5FF; border-left: 3px solid var(--wb-accent); vertical-align: middle; }
+.sis-lead-name { font-weight: 700; color: var(--wb-text); }
+.sis-lead-cnt { display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 700; color: #fff; background: var(--wb-accent); border-radius: 8px; padding: 1px 7px; vertical-align: middle; line-height: 1.5; }
+.sis-stack { display: inline-flex; flex-direction: column; gap: 5px; padding: 2px 0; }
+.sis-chip { display: inline-block; background: #fff; border: 1px solid #E3DDF7; border-radius: 8px; padding: 3px 9px; line-height: 1.45; box-shadow: 0 1px 2px rgba(124,92,255,.08); white-space: nowrap; }
