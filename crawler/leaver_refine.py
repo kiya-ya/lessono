@@ -29,6 +29,15 @@ ROLE_REASON = {
     '双方': '姐妹双方同日离职自动解散',
 }
 
+
+def reason_text(role, leave_time=''):
+    """回写文案：有离职时间时附上（离职 YYYY-MM-DD）"""
+    base = ROLE_REASON.get(role)
+    if not base:
+        return None
+    lt = (leave_time or '')[:10]
+    return f"{base}（离职 {lt}）" if lt else base
+
 DDL = """
 CREATE TABLE IF NOT EXISTS team_leaver (
     team_id INTEGER PRIMARY KEY,
@@ -54,16 +63,17 @@ def _store(conn, team_id, role, uid, leave_time, source):
          datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
 
-def _resolve_by_uid_format(reason, sister_uid, sister_uid2):
-    """`NNNNNN 离职` 格式：直接按 UID 匹配"""
+def _resolve_by_uid_format(reason, sister_uid, sister_uid2, dissolve_date):
+    """`NNNNNN 离职` 格式：直接按 UID 匹配；离职时间取解散日期"""
     m = re.match(r'^\s*(\d+)\s*离职', reason or '')
     if not m:
         return None
     uid = m.group(1)
+    lt = (dissolve_date or '')[:10]
     if str(sister_uid) == uid:
-        return ('姐姐', uid, '', 'reason_uid')
+        return ('姐姐', uid, lt, 'reason_uid')
     if str(sister_uid2) == uid:
-        return ('妹妹', uid, '', 'reason_uid')
+        return ('妹妹', uid, lt, 'reason_uid')
     return ('未判定', uid, '', 'reason_uid')  # UID 不在当前团成员里（可能换过妹妹）
 
 
@@ -135,7 +145,7 @@ def refine_leavers(limit=60, delay=0.6, max_heals=3):
         team_id = row['team_id']
         reason = row['dissolve_reason'] or ''
         try:
-            res = _resolve_by_uid_format(reason, row['sister_uid'], row['sister_uid2'])
+            res = _resolve_by_uid_format(reason, row['sister_uid'], row['sister_uid2'], row['dissolve_date'])
             if res is None:
                 if crawler is None:
                     crawler = UIDCrawler()
@@ -179,15 +189,22 @@ def refine_leavers(limit=60, delay=0.6, max_heals=3):
 
 def apply_leaver_reasons():
     """把已判定的细分结果回写到 team_detail（每日抓取后必须执行，覆盖新快照的原始文案）。
-    返回回写的团数。"""
+    文案附离职时间；team_leaver 缺时间的用解散日期兜底。返回回写的团数。"""
     conn = get_db()
     init_table(conn)
     rows = conn.execute(
-        "SELECT team_id, leaver_role FROM team_leaver WHERE leaver_role IN ('姐姐', '妹妹', '双方')"
+        "SELECT team_id, leaver_role, leave_time FROM team_leaver WHERE leaver_role IN ('姐姐', '妹妹', '双方')"
     ).fetchall()
     applied = 0
     for r in rows:
-        text = ROLE_REASON.get(r['leaver_role'])
+        lt = (r['leave_time'] or '')[:10]
+        if not lt:
+            drow = conn.execute(
+                "SELECT dissolve_date FROM team_detail WHERE team_id = ? "
+                "AND dissolve_date IS NOT NULL AND dissolve_date != '' "
+                "ORDER BY snapshot_date DESC LIMIT 1", (r['team_id'],)).fetchone()
+            lt = (drow['dissolve_date'] or '')[:10] if drow else ''
+        text = reason_text(r['leaver_role'], lt)
         if not text:
             continue
         cur = conn.execute(
