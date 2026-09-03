@@ -922,3 +922,25 @@ td.num, th.num {
 .chart-grid .chart-card > #grad-preview { flex: 1; }
 .chart-grid .chart-card > .expand-btn { margin-top: 8px; }
 .chart-grid .chart-card > .expand-btn:first-of-type { margin-top: auto; }
+
+/* ── 明细表「生命周期方框」（2026-09-03）：4 格 = 30 天 4 周，点击看该周数据 ── */
+.lw-strip { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 6px; cursor: default; }
+.lw-sq { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid #C9BFA8; box-sizing: border-box; display: inline-block; }
+.lw-sq.done { background: var(--wb-accent); border-color: var(--wb-accent); cursor: pointer; transition: transform .12s; }
+.lw-sq.done.end { background: #8B7CF6; }
+.lw-sq.current { background: #EFE9FF; border-color: var(--wb-accent); box-shadow: 0 0 0 2px rgba(124,92,255,.22); cursor: pointer; transition: transform .12s; animation: lw-pulse 1.6s ease-in-out infinite; }
+.lw-sq.ended { background: #EEF0F3; border-color: #E3E6EB; }
+.lw-sq.done:hover, .lw-sq.current:hover { transform: scale(1.25); }
+@keyframes lw-pulse { 0%,100% { box-shadow: 0 0 0 1.5px rgba(124,92,255,.18); } 50% { box-shadow: 0 0 0 3.5px rgba(124,92,255,.30); } }
+.lw-days { font-size: 12px; color: var(--wb-text-2); vertical-align: middle; }
+.lw-popover { position: fixed; z-index: 9999; background: #fff; border: 1px solid #E7E3F5; border-radius: 12px; box-shadow: 0 10px 34px rgba(35,25,90,.20); padding: 12px 14px; min-width: 236px; max-width: 300px; font-size: 12.5px; color: var(--wb-text-2); }
+.lw-pop-head { font-weight: 700; color: var(--wb-text); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lw-pop-sub { font-size: 11px; color: var(--wb-text-3); margin: 3px 0 8px; display: flex; align-items: center; gap: 6px; }
+.lw-tag { font-size: 10px; padding: 1px 6px; border-radius: 5px; background: #F3F0FF; color: #5B3EC4; font-weight: 600; }
+.lw-tag.cur { background: #E8F6EE; color: #16803C; }
+.lw-tag.end { background: #FDECEC; color: #C0392B; }
+.lw-pop-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.lw-pop-grid span { color: var(--wb-text-3); }
+.lw-pop-grid b { text-align: right; font-variant-numeric: tabular-nums; color: var(--wb-text); }
+.lw-pop-foot { margin-top: 8px; padding-top: 6px; border-top: 1px dashed #EEEAF9; font-size: 11px; color: var(--wb-text-3); }
+.lw-pop-loading { color: var(--wb-text-3); padding: 6px 2px; }

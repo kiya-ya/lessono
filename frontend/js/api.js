@@ -209,6 +209,98 @@ function fillWeekSelectForMonth(monthValue, preferValue) {
   return sel.value;
 }
 
+/* ─────────── 明细表「生命周期方框」：30 天 = 4 周，1 方框 = 1 周，点击看该周数据 ─────────── */
+const _lwCache = {};  // team_id -> /api/team/<id>/life-weeks 返回
+
+function _lwParseDate(s) {
+  if (!s) return null;
+  s = String(s).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T00:00:00') : null; // 老格式'07-15星期三'不猜，按完整周期处理
+}
+
+// 4 个方框（第1~4周）+ 天数：实心=已经历的周，描边高亮=当前周，灰色=未经历（已结束）
+function lwSquaresHtml(row) {
+  const d = row.days_since_formed || 0;
+  let lifeDays = d;
+  if (row.dissolve_date) {
+    const f = _lwParseDate(row.form_date), dd = _lwParseDate(row.dissolve_date);
+    lifeDays = (f && dd) ? Math.round((dd - f) / 864e5) + 1 : 30;
+  }
+  const endWeek = Math.min(4, Math.ceil(Math.max(lifeDays, 1) / 7)); // 生命覆盖到最后一周
+  const isActive = !row.dissolve_date;
+  let out = '<span class="lw-strip" title="4 个方框 = 30 天生命周期的 4 周，点击查看该周数据">';
+  for (let i = 1; i <= 4; i++) {
+    let cls, click = '', tip;
+    if (i < endWeek) {
+      cls = 'done'; tip = `第${i}周 · 已结束，点击查看该周数据`;
+    } else if (i === endWeek) {
+      if (isActive && lifeDays <= 30) { cls = 'current'; tip = `第${i}周 · 本周进行中，点击查看该周数据`; }
+      else { cls = 'done end'; tip = `第${i}周 · 生命最后一周，点击查看该周数据`; }
+    } else {
+      cls = 'ended'; tip = '未经历（团已结束）';
+    }
+    if (cls !== 'ended') click = ` onclick="event.stopPropagation();lwShow(event,${row.team_id},${i})"`;
+    out += `<span class="lw-sq ${cls}"${click} title="${tip}"></span>`;
+  }
+  out += `</span><span class="lw-days">${d} 天</span>`;
+  return out;
+}
+
+function lwClose() {
+  const p = document.getElementById('lw-popover');
+  if (p) p.remove();
+}
+document.addEventListener('click', e => {
+  const p = document.getElementById('lw-popover');
+  if (p && !p.contains(e.target)) lwClose();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') lwClose(); });
+
+function _lwMoney(v) { return v == null ? '—' : '¥' + Number(v).toFixed(1); }
+
+async function lwShow(ev, teamId, idx) {
+  ev.stopPropagation();
+  lwClose();
+  const pop = document.createElement('div');
+  pop.className = 'lw-popover';
+  pop.id = 'lw-popover';
+  pop.innerHTML = '<div class="lw-pop-loading">加载中…</div>';
+  document.body.appendChild(pop);
+  // 定位：点击处附近，防溢出
+  const pw = 250, ph = 230;
+  pop.style.left = Math.min(ev.clientX, window.innerWidth - pw - 12) + 'px';
+  pop.style.top = Math.min(ev.clientY + 8, window.innerHeight - ph - 12) + 'px';
+  try {
+    if (!_lwCache[teamId]) {
+      const res = await fetch(API_BASE + `/api/team/${teamId}/life-weeks`);
+      _lwCache[teamId] = await res.json();
+    }
+    const d = _lwCache[teamId];
+    const w = (d.weeks || []).find(x => x.idx === idx);
+    if (!w || w.state === 'future') { pop.innerHTML = '<div class="lw-pop-loading">该周尚未开始</div>'; return; }
+    if (w.state === 'gone') { pop.innerHTML = `<div class="lw-pop-loading">第 ${idx} 周未经历 · 团已于 ${d.dissolve_date || '—'} ${d.dissolve_reason === '毕业' ? '毕业' : '解散'}</div>`; return; }
+    const stateTag = w.state === 'dissolved'
+      ? `<span class="lw-tag end">${(d.dissolve_reason === '毕业' ? '该周毕业' : '该周解散')}</span>`
+      : w.state === 'current' ? '<span class="lw-tag cur">进行中</span>' : '<span class="lw-tag">已结束</span>';
+    const fmtD = s => (s || '').slice(5).replace('-', '/');
+    pop.innerHTML = `
+      <div class="lw-pop-head">#${d.team_id} ${d.sister_nickname || ''} × ${d.sister_nickname2 || ''}</div>
+      <div class="lw-pop-sub">第 ${w.idx} 周 · ${fmtD(w.start)} ~ ${fmtD(w.end)} ${stateTag}</div>
+      <div class="lw-pop-grid">
+        <span>妹妹周流水</span><b>${_lwMoney(w.sister2_revenue)}</b>
+        <span>姐姐周流水</span><b>${w.sister_revenue == null ? '—' : '≈' + _lwMoney(w.sister_revenue)}</b>
+        <span>礼物奖励</span><b>${_lwMoney(w.reward)}</b>
+        <span>任务活跃</span><b>${w.tasks == null ? '—' : '+' + w.tasks}</b>
+        <span>姐姐牌子</span><b>${w.sister_level || '—'}</b>
+        <span>妹妹最高牌子</span><b>${w.sister_max_level2 || '—'}</b>
+      </div>
+      ${w.state === 'dissolved' && d.dissolve_reason ? `<div class="lw-pop-foot">结束原因：${d.dissolve_reason}</div>` : ''}
+      ${w.sister_revenue != null ? '<div class="lw-pop-foot">姐姐流水按自然周重叠天数折算（约值）</div>' : ''}`;
+  } catch (e) {
+    pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';
+  }
+}
+
 async function loadDetailTable(page = 1) {
   detailPage = page;
   const search = document.getElementById('detail-search').value;
@@ -258,7 +350,7 @@ async function loadDetailTable(page = 1) {
           sis2Cell = `<td>${row.sister_nickname2 || '-'} (<a href="javascript:void(0)" onclick="event.stopPropagation();jumpToUID('${row.sister_uid2 || ''}', '${row.team_id || ''}')" style="color:#7C5CFF; text-decoration:none; cursor:pointer;">${row.sister_uid2 || '-'}</a>)</td>`;
         }
       }
-      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td><a href="javascript:void(0)" onclick="event.stopPropagation();openTeamDetail(${i})" style="color:#7C5CFF;text-decoration:none;cursor:pointer;font-weight:600;">#${row.team_id}</a></td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td>${row.days_since_formed || 0}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td></tr>`;
+      return `<tr onclick="openTeamDetail(${i})" title="点击查看姐妹团详情" style="cursor:pointer;"><td><a href="javascript:void(0)" onclick="event.stopPropagation();openTeamDetail(${i})" style="color:#7C5CFF;text-decoration:none;cursor:pointer;font-weight:600;">#${row.team_id}</a></td><td>${row.form_date || '-'}</td><td>${row.hall_name || '-'}</td>${sisterCell}${sis2Cell}<td style="white-space:nowrap;">${lwSquaresHtml(row)}</td><td style="${statusStyle}">${status}</td><td>${row.dissolve_date || '-'}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${row.dissolve_reason || '-'}</td><td>¥${(row.reward_amount || 0).toFixed(1)}</td></tr>`;
     }).join('');
     
     // 分页渲染

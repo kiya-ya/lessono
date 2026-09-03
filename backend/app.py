@@ -2421,6 +2421,131 @@ def api_team_weekly(team_id):
     return jsonify({'team_id': team_id, 'weekly': weekly})
 
 
+@app.route('/api/team/<int:team_id>/life-weeks')
+@login_required
+def api_team_life_weeks(team_id):
+    """明细表「生命周期方框」弹层：按成团第 N 周（1~4，第 4 周为第 22~30 天共 9 天）聚合。
+    妹妹流水/任务 = team_detail 快照期末−期前增量；奖励 = 窗口内 reward_amount 求和；
+    姐姐流水 = team_sister_revenue 自然周按重叠天数折算（approx 标记）；
+    牌子取窗口内最后快照的姐姐当前等级 / 妹妹最高等级。"""
+    conn = get_db_conn()
+    rows = conn.execute("""
+        SELECT snapshot_date, form_date, sister_revenue, reward_amount,
+               sister_level, sister_max_level2,
+               drive_task_count, accompany_task_count, gift_task_count
+        FROM team_detail WHERE team_id = ? ORDER BY snapshot_date, id
+    """, (team_id,)).fetchall()
+    if not rows:
+        conn.close()
+        return jsonify({'error': '团不存在'}), 404
+    info = conn.execute(
+        "SELECT dissolve_date, dissolve_reason, hall_name, sister_nickname, sister_nickname2 "
+        "FROM team_detail WHERE team_id = ? ORDER BY snapshot_date DESC, id DESC LIMIT 1",
+        (team_id,)).fetchone()
+
+    # form_date 兼容老格式（'07-15星期三'）：先 ISO，失败则用最早快照反推
+    fd = None
+    fd_raw = (rows[0]['form_date'] or '')[:10]
+    try:
+        fd = datetime.strptime(fd_raw, '%Y-%m-%d').date()
+    except ValueError:
+        dsf = conn.execute(
+            "SELECT snapshot_date, days_since_formed FROM team_detail WHERE team_id = ? "
+            "AND days_since_formed IS NOT NULL ORDER BY snapshot_date, id LIMIT 1",
+            (team_id,)).fetchone()
+        if dsf and dsf['days_since_formed']:
+            fd = datetime.strptime(dsf['snapshot_date'], '%Y-%m-%d').date() - timedelta(days=dsf['days_since_formed'] - 1)
+    if not fd:
+        conn.close()
+        return jsonify({'error': '成团日期缺失'}), 400
+
+    dd = None
+    if info and info['dissolve_date']:
+        try:
+            dd = datetime.strptime(info['dissolve_date'][:10], '%Y-%m-%d').date()
+        except ValueError:
+            dd = None
+
+    # 姐姐周流水（自然周），供折算
+    rev_rows = conn.execute(
+        "SELECT week_start, week_end, sister_revenue FROM team_sister_revenue WHERE team_id = ?",
+        (team_id,)).fetchall()
+
+    today = datetime.now().date()
+
+    def snap_val(rs, key):
+        return (rs[-1][key] or 0) if rs else 0
+
+    weeks = []
+    for i in range(4):
+        w0 = fd + timedelta(days=7 * i)
+        w1 = min(fd + timedelta(days=7 * i + 6), fd + timedelta(days=29))  # 第4周 22~30 天
+        w0s, w1s = w0.isoformat(), w1.isoformat()
+        in_win = [r for r in rows if w0s <= r['snapshot_date'] <= w1s]
+        before = [r for r in rows if r['snapshot_date'] < w0s]
+        has_data = bool(in_win) and w0 <= today
+
+        sis2_rev = round(max(0.0, snap_val(in_win, 'sister_revenue') - snap_val(before, 'sister_revenue')), 1)
+        reward = round(sum(r['reward_amount'] or 0 for r in in_win), 1)
+        t_end = snap_val(in_win, 'drive_task_count') + snap_val(in_win, 'accompany_task_count') + snap_val(in_win, 'gift_task_count')
+        t_bef = snap_val(before, 'drive_task_count') + snap_val(before, 'accompany_task_count') + snap_val(before, 'gift_task_count')
+        tasks = max(0, int(t_end - t_bef))
+
+        # 姐姐流水折算：自然周 × 重叠天数/7
+        sis_rev, sis_approx = 0.0, False
+        for rr in rev_rows:
+            try:
+                cws = datetime.strptime(rr['week_start'], '%Y-%m-%d').date()
+                cwe = datetime.strptime(rr['week_end'], '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                continue
+            ov = (min(cwe, w1) - max(cws, w0)).days + 1
+            if ov > 0:
+                sis_rev += (rr['sister_revenue'] or 0) * ov / 7.0
+                sis_approx = True
+
+        dissolved_here = bool(dd and w0 <= dd <= w1)
+        if dd and dd < w0:
+            state = 'gone'       # 此周之前已结束（未经历）
+        elif w0 > today:
+            state = 'future'     # 未开始
+        elif dissolved_here:
+            state = 'dissolved'  # 该周内解散/毕业
+        elif w1 <= today:
+            state = 'done'       # 已完整经历
+        else:
+            state = 'current'    # 进行中的一周
+        if state == 'gone':
+            # 解散后快照仍携带累计值（增量非 0 是噪声），该周无意义一律置空
+            weeks.append({
+                'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state, 'has_data': False,
+                'sister2_revenue': None, 'sister_revenue': None, 'reward': None, 'tasks': None,
+                'sister_level': None, 'sister_max_level2': None, 'dissolved_here': False,
+            })
+            continue
+        weeks.append({
+            'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state,
+            'has_data': has_data,
+            'sister2_revenue': sis2_rev if has_data else None,
+            'sister_revenue': round(sis_rev, 1) if has_data and sis_approx else None,
+            'reward': reward if has_data else None,
+            'tasks': tasks if has_data else None,
+            'sister_level': in_win[-1]['sister_level'] if in_win else None,
+            'sister_max_level2': in_win[-1]['sister_max_level2'] if in_win else None,
+            'dissolved_here': dissolved_here,
+        })
+    conn.close()
+    return jsonify({
+        'team_id': team_id, 'form_date': fd.isoformat(),
+        'dissolve_date': dd.isoformat() if dd else None,
+        'dissolve_reason': info['dissolve_reason'] if info else None,
+        'hall_name': info['hall_name'] if info else None,
+        'sister_nickname': info['sister_nickname'] if info else None,
+        'sister_nickname2': info['sister_nickname2'] if info else None,
+        'weeks': weeks,
+    })
+
+
 @app.route('/api/hall-stats')
 @login_required
 def api_hall_stats():
