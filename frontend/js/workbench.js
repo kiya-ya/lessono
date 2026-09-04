@@ -295,6 +295,7 @@ function wbSelectHall(hall) {
 function wbResetHall() {
   setHall('all');
   document.querySelectorAll('#wb-hall-grid .hall-card').forEach(c => c.classList.remove('active'));
+  resetHallHierarchy();
   wbSyncHallSelect();
   refreshData();
 }
@@ -306,14 +307,39 @@ function onHallSelect() {
   wbSelectHall(sel.value);
 }
 
-// 搜索栏三级联动：类型 → 组 → 大厅（只改下拉候选，数据仍由 hall-select 驱动）
-function onTypeSelect() { renderGroupSelect(); }
-function onGroupSelect() { renderHallSelectByGroup(); }
+// 搜索栏三级联动：既可逐级选择，也可从组/大厅跳级反向补齐父级。
+// 类型或组只负责缩小大厅候选；最终数据仍由 hall-select 驱动。
+function onTypeSelect() {
+  renderGroupSelect('all', 'all');
+}
+function onGroupSelect() {
+  const groupSel = document.getElementById('group-select');
+  const typeSel = document.getElementById('type-select');
+  if (!groupSel || !typeSel) return;
+
+  const group = groupSel.value;
+  if (group === 'all') {
+    renderHallSelectByGroup('all');
+    return;
+  }
+
+  // data-type 可区分在多个类型下重名的组；无标记时再按当前类型反查。
+  const optionType = groupSel.selectedOptions[0] && groupSel.selectedOptions[0].dataset.type;
+  const hierarchy = findGroupHierarchy(group, optionType || typeSel.value);
+  if (hierarchy) {
+    typeSel.value = hierarchy.type;
+    renderGroupSelect(hierarchy.group, 'all');
+  } else {
+    renderHallSelectByGroup('all');
+  }
+}
 
 // 让厅选择器显示值始终跟随 currentHall（外部 setHall 后同步）
 function wbSyncHallSelect() {
   const sel = document.getElementById('hall-select');
-  if (sel) sel.value = currentHall;
+  if (!sel) return;
+  if (currentHall !== 'all' && syncHierarchyFromHall(currentHall)) return;
+  sel.value = currentHall;
 }
 
 // 概览厅排行榜点行 → 跳到厅分析页并展开该厅（跨页下钻，不改变概览的筛选大厅）

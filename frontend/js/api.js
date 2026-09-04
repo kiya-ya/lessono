@@ -32,33 +32,67 @@ async function loadHallGroups() {
     const d = await res.json();
     _hallGroupTypes = d.types || [];
     renderTypeSelect();
+    syncHierarchyFromHall(currentHall);
   } catch (e) { console.error('组大厅层级加载失败:', e); }
 }
 
-// 搜索栏三级联动：类型 → 组 → 大厅
-function renderTypeSelect() {
+// 搜索栏三级联动：类型 → 组 → 大厅。
+// 同时支持从大厅/组反查父级，供用户跳级选择时自动补齐上层。
+function findHallHierarchy(hall) {
+  if (!hall || hall === 'all') return null;
+  for (const typeItem of _hallGroupTypes) {
+    for (const groupItem of (typeItem.groups || [])) {
+      if ((groupItem.halls || []).includes(hall)) {
+        return { type: typeItem.type, group: groupItem.group, hall };
+      }
+    }
+  }
+  return null;
+}
+
+function findGroupHierarchy(group, preferredType) {
+  if (!group || group === 'all') return null;
+  const orderedTypes = preferredType && preferredType !== 'all'
+    ? [
+        ..._hallGroupTypes.filter(t => t.type === preferredType),
+        ..._hallGroupTypes.filter(t => t.type !== preferredType),
+      ]
+    : _hallGroupTypes;
+  for (const typeItem of orderedTypes) {
+    if ((typeItem.groups || []).some(g => g.group === group)) {
+      return { type: typeItem.type, group };
+    }
+  }
+  return null;
+}
+
+function renderTypeSelect(selectedType = 'all') {
   const sel = document.getElementById('type-select');
   if (!sel) return;
   const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   sel.innerHTML = '<option value="all">全部类型</option>' +
     _hallGroupTypes.map(t => `<option value="${esc(t.type)}">${esc(t.type)}</option>`).join('');
-  sel.value = 'all';
+  sel.value = _hallGroupTypes.some(t => t.type === selectedType) ? selectedType : 'all';
   renderGroupSelect();
 }
-function renderGroupSelect() {
+function renderGroupSelect(selectedGroup = 'all', selectedHall = currentHall) {
   const sel = document.getElementById('group-select');
   if (!sel) return;
   const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
   const type = (document.getElementById('type-select') || {}).value;
-  const groups = type === 'all'
-    ? _hallGroupTypes.flatMap(t => t.groups)
-    : ((_hallGroupTypes.find(t => t.type === type) || {}).groups || []);
+  const groupEntries = type === 'all'
+    ? _hallGroupTypes.flatMap(t => (t.groups || []).map(g => ({ ...g, parentType: t.type })))
+    : (((_hallGroupTypes.find(t => t.type === type) || {}).groups || [])
+        .map(g => ({ ...g, parentType: type })));
   sel.innerHTML = '<option value="all">全部组</option>' +
-    groups.map(g => `<option value="${esc(g.group)}">${esc(g.group)}</option>`).join('');
-  sel.value = 'all';
-  renderHallSelectByGroup();
+    groupEntries.map(g => `<option value="${esc(g.group)}" data-type="${esc(g.parentType)}">${esc(g.group)}</option>`).join('');
+  const matchingOption = Array.from(sel.options).find(option =>
+    option.value === selectedGroup && (type === 'all' || option.dataset.type === type));
+  sel.value = matchingOption ? selectedGroup : 'all';
+  if (matchingOption) matchingOption.selected = true;
+  renderHallSelectByGroup(selectedHall);
 }
-function renderHallSelectByGroup() {
+function renderHallSelectByGroup(selectedHall = currentHall) {
   const sel = document.getElementById('hall-select');
   if (!sel) return;
   const esc = h => String(h).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -77,7 +111,30 @@ function renderHallSelectByGroup() {
   }
   sel.innerHTML = '<option value="all">全部大厅</option>' +
     halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
-  sel.value = (currentHall && halls.includes(currentHall)) ? currentHall : 'all';
+  sel.value = (selectedHall && halls.includes(selectedHall)) ? selectedHall : 'all';
+}
+
+function syncHierarchyFromHall(hall) {
+  const hallSel = document.getElementById('hall-select');
+  if (!hall || hall === 'all') {
+    if (hallSel) hallSel.value = 'all';
+    return false;
+  }
+  const hierarchy = findHallHierarchy(hall);
+  if (!hierarchy) {
+    if (hallSel) hallSel.value = hall;
+    return false;
+  }
+  const typeSel = document.getElementById('type-select');
+  if (typeSel) typeSel.value = hierarchy.type;
+  renderGroupSelect(hierarchy.group, hall);
+  return true;
+}
+
+function resetHallHierarchy() {
+  const typeSel = document.getElementById('type-select');
+  if (typeSel) typeSel.value = 'all';
+  renderGroupSelect('all', 'all');
 }
 
 async function loadWeeks() {
