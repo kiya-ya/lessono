@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=53">
+<link rel="stylesheet" href="css/style.css?v=55">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -108,8 +108,10 @@
       <div class="hall-grid" id="wb-hall-grid"></div>
     </div>
 
+    <!-- 预警与毕业妹妹留存：不受下方时间筛选影响 -->
+    <section class="overview-cluster overview-realtime" aria-label="预警与毕业妹妹留存">
     <!-- 平台级预警（小 KPI 窗口，点击跳预警中心） -->
-    <div class="section-head" style="margin-top:18px;">
+    <div class="section-head">
       <h2>预警</h2>
       <span class="hint">平台级预警 · 点击进入预警中心查看规则与下钻</span>
     </div>
@@ -153,7 +155,10 @@
         <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--wb-accent);white-space:nowrap;">查看毕业妹妹 →</span>
       </div>
     </div>
+    </section>
 
+    <!-- 筛选条件与核心指标 -->
+    <section class="overview-cluster overview-periodic" aria-label="筛选条件与核心指标">
     <!-- 全局筛选栏：时间/类型/组/大厅（联动下方全部数据） -->
     <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
       <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
@@ -289,8 +294,10 @@
         </div>
       </div>
     </div>
+    </section>
 
-    <!-- 团分析 -->
+    <!-- 团分析：说明、图表、厅排行与姐姐排行 -->
+    <section class="overview-cluster overview-team-analysis" aria-label="团分析">
     <div class="section-head">
       <h2>团分析</h2>
       <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
@@ -350,6 +357,7 @@
         <button class="expand-btn" onclick="switchTab('captains')">查看全部姐姐 →</button>
       </div>
     </div>
+    </section>
 
     <!-- 明细搜索（原「团分析」页的明细表，合并进概览末位） -->
     <div class="section-head">

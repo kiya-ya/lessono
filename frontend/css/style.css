@@ -1114,6 +1114,57 @@ td.num, th.num {
 }
 .info-fold .rule-table{margin-top:0;}
 
+/* ═══════ 概览页信息分区 ═══════ */
+.overview-cluster{
+  margin:18px 0;
+  padding:16px;
+  background:#fff;
+  border:1.5px solid #8B73F6;
+  border-radius:14px;
+  box-shadow:0 4px 16px rgba(124,92,255,.055);
+}
+.overview-cluster > .section-head{
+  margin:14px 0 10px;
+}
+.overview-cluster > .section-head:first-child{
+  margin-top:0;
+}
+.overview-realtime > .chart-card{
+  margin-bottom:0!important;
+  border-color:#DED7FF;
+  box-shadow:none;
+}
+.overview-periodic #overview-topbar{
+  margin-bottom:16px!important;
+  border-color:#DED7FF;
+  background:#FCFBFF;
+  box-shadow:none;
+}
+.overview-periodic > .kpi-detail{
+  margin-bottom:0;
+}
+.overview-team-analysis > .chart-grid:last-of-type{
+  margin-bottom:0;
+}
+
+/* 折叠说明使用独立的浅灰层，区别于页面 #F2F3F7 底色 */
+#tab-overview .overview-cluster .info-fold{
+  background:#F8F8FA;
+  border-color:#DFE1E7;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.65);
+}
+#tab-overview .overview-cluster .info-fold:hover{
+  background:#F6F6F8;
+  border-color:#D7D9E0;
+}
+#tab-overview .overview-cluster .info-fold-trigger:hover{
+  background:#F1F2F5;
+}
+
+@media(max-width:720px){
+  .overview-cluster{padding:12px;border-radius:12px;}
+}
+
 @media(max-width:560px){
   .info-fold-trigger{padding:9px 12px;gap:10px;}
   .info-fold-content{padding-left:12px;padding-right:12px;}
