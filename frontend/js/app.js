@@ -375,6 +375,7 @@ function initInfoFolds() {
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
   initInfoFolds();
+  initSearchableHallFilters();
   // 恢复侧栏折叠状态
   if (localStorage.getItem('wb_sidebar') === 'collapsed') {
     const layout = document.querySelector('.layout');

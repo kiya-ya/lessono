@@ -1,8 +1,11 @@
+let _hallListRole = 'admin';
+
 async function loadHalls() {
   try {
     const res = await fetch(API_BASE + '/api/halls');
     const result = await res.json();
     const role = result.role || 'admin';
+    _hallListRole = role;
     const halls = result.data || [];
     allHalls = halls;
 
@@ -22,6 +25,7 @@ async function loadHalls() {
       sel.innerHTML = '<option value="all">全部大厅</option>' +
         halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
       sel.value = currentHall;
+      syncFilterCombobox(sel);
     }
   } catch (e) { console.error('大厅列表加载失败:', e); }
 }
@@ -73,6 +77,7 @@ function renderTypeSelect(selectedType = 'all') {
   sel.innerHTML = '<option value="all">全部类型</option>' +
     _hallGroupTypes.map(t => `<option value="${esc(t.type)}">${esc(t.type)}</option>`).join('');
   sel.value = _hallGroupTypes.some(t => t.type === selectedType) ? selectedType : 'all';
+  syncFilterCombobox(sel);
   renderGroupSelect();
 }
 function renderGroupSelect(selectedGroup = 'all', selectedHall = currentHall) {
@@ -90,6 +95,7 @@ function renderGroupSelect(selectedGroup = 'all', selectedHall = currentHall) {
     option.value === selectedGroup && (type === 'all' || option.dataset.type === type));
   sel.value = matchingOption ? selectedGroup : 'all';
   if (matchingOption) matchingOption.selected = true;
+  syncFilterCombobox(sel);
   renderHallSelectByGroup(selectedHall);
 }
 function renderHallSelectByGroup(selectedHall = currentHall) {
@@ -107,17 +113,20 @@ function renderHallSelectByGroup(selectedHall = currentHall) {
   } else if (type !== 'all') {
     halls = groups.flatMap(g => g.halls);
   } else {
-    halls = allHalls;
+    const configuredHalls = [...new Set(groups.flatMap(g => g.halls || []))];
+    halls = allHalls.length || _hallListRole !== 'admin' ? allHalls : configuredHalls;
   }
   sel.innerHTML = '<option value="all">全部大厅</option>' +
     halls.map(h => `<option value="${esc(h)}">${esc(h)}</option>`).join('');
   sel.value = (selectedHall && halls.includes(selectedHall)) ? selectedHall : 'all';
+  syncFilterCombobox(sel);
 }
 
 function syncHierarchyFromHall(hall) {
   const hallSel = document.getElementById('hall-select');
   if (!hall || hall === 'all') {
     if (hallSel) hallSel.value = 'all';
+    syncFilterCombobox(hallSel);
     return false;
   }
   const hierarchy = findHallHierarchy(hall);
@@ -127,6 +136,7 @@ function syncHierarchyFromHall(hall) {
   }
   const typeSel = document.getElementById('type-select');
   if (typeSel) typeSel.value = hierarchy.type;
+  syncFilterCombobox(typeSel);
   renderGroupSelect(hierarchy.group, hall);
   return true;
 }
@@ -134,6 +144,7 @@ function syncHierarchyFromHall(hall) {
 function resetHallHierarchy() {
   const typeSel = document.getElementById('type-select');
   if (typeSel) typeSel.value = 'all';
+  syncFilterCombobox(typeSel);
   renderGroupSelect('all', 'all');
 }
 

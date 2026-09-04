@@ -328,6 +328,7 @@ function onGroupSelect() {
   const hierarchy = findGroupHierarchy(group, optionType || typeSel.value);
   if (hierarchy) {
     typeSel.value = hierarchy.type;
+    syncFilterCombobox(typeSel);
     renderGroupSelect(hierarchy.group, 'all');
   } else {
     renderHallSelectByGroup('all');
@@ -340,6 +341,7 @@ function wbSyncHallSelect() {
   if (!sel) return;
   if (currentHall !== 'all' && syncHierarchyFromHall(currentHall)) return;
   sel.value = currentHall;
+  syncFilterCombobox(sel);
 }
 
 // 概览厅排行榜点行 → 跳到厅分析页并展开该厅（跨页下钻，不改变概览的筛选大厅）
