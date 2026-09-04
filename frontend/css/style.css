@@ -911,6 +911,106 @@ td.num, th.num {
 .rule-table td:first-child{font-weight:600;color:var(--wb-text);white-space:nowrap;}
 .rule-table code{font-family:inherit;background:#F3F0FF;color:#5B3EC4;padding:1px 5px;border-radius:4px;font-size:11px;white-space:nowrap;}
 
+/* ═══════ 术语与口径说明折叠组件 ═══════ */
+.info-fold.dn-footer,
+.info-fold.warn-note,
+.info-fold.warn-rule{
+  display:block;
+  padding:0;
+  overflow:hidden;
+  transition:border-color .18s ease,background-color .18s ease;
+}
+.info-fold:hover{border-color:#E1E3E9;}
+.info-fold-trigger{
+  width:100%;
+  min-height:42px;
+  padding:10px 14px;
+  border:0;
+  background:transparent;
+  color:var(--wb-text);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+.info-fold-trigger:hover{background:#F5F6F9;}
+.info-fold-trigger:focus-visible{
+  outline:2px solid var(--wb-accent);
+  outline-offset:-2px;
+  border-radius:9px;
+}
+.info-fold-title{
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:12.5px;
+  font-weight:600;
+}
+.info-fold-subtitle,
+.info-fold-title > span{
+  color:var(--wb-text-3)!important;
+  font-weight:400!important;
+}
+.info-fold-action{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--wb-text-3);
+  font-size:11px;
+  font-weight:500;
+}
+.info-fold-chevron{
+  width:7px;
+  height:7px;
+  border-right:1.5px solid currentColor;
+  border-bottom:1.5px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+  transition:transform .2s ease,color .18s ease;
+}
+.info-fold.is-open .info-fold-action{color:var(--wb-accent);}
+.info-fold.is-open .info-fold-chevron{transform:rotate(225deg) translate(-1px,-1px);}
+.info-fold-body{
+  display:grid;
+  grid-template-rows:0fr;
+  opacity:0;
+  transition:grid-template-rows .22s ease,opacity .16s ease;
+}
+.info-fold.is-open .info-fold-body{
+  grid-template-rows:1fr;
+  opacity:1;
+}
+.info-fold-content{
+  min-height:0;
+  overflow:hidden;
+  padding:0 14px;
+}
+.info-fold.is-open .info-fold-content{padding-bottom:12px;}
+.info-fold.warn-note .info-fold-content,
+.info-fold.warn-rule .info-fold-content{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.info-fold .rule-table{margin-top:0;}
+
+@media(max-width:560px){
+  .info-fold-trigger{padding:9px 12px;gap:10px;}
+  .info-fold-content{padding-left:12px;padding-right:12px;}
+  .info-fold-state{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .info-fold,
+  .info-fold-body,
+  .info-fold-chevron{transition:none!important;}
+}
+
 /* ── 并排卡片等高对齐（修复留白不齐，2026-09-01） ── */
 /* 同一行两张卡片等高；图表/表格区自动填满；操作按钮统一吸底 */
 .chart-grid { align-items: stretch; }

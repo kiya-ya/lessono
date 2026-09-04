@@ -307,8 +307,58 @@ window.addEventListener('scroll', () => {
   if (btn) btn.classList.toggle('show', window.scrollY > 300);
 });
 
+// 页面内的术语/口径说明默认收起，避免大段灰底说明挤占首屏。
+// 保留原有内容结构，通过渐进增强统一加上可访问的折叠控制。
+function initInfoFolds() {
+  document.querySelectorAll('.dn-footer, .warn-note, .warn-rule').forEach((panel, index) => {
+    if (panel.classList.contains('info-fold')) return;
+
+    const originalHead = panel.querySelector(':scope > .dn-foot-head, :scope > .wr-head');
+    const titleHtml = originalHead
+      ? originalHead.innerHTML
+      : '提示说明<span class="info-fold-subtitle">严重 · 警告 · 提醒的触发含义</span>';
+    if (originalHead) originalHead.remove();
+
+    const body = document.createElement('div');
+    const content = document.createElement('div');
+    const bodyId = `info-fold-body-${index + 1}`;
+    body.className = 'info-fold-body';
+    body.id = bodyId;
+    body.setAttribute('aria-hidden', 'true');
+    body.inert = true;
+    content.className = 'info-fold-content';
+
+    while (panel.firstChild) content.appendChild(panel.firstChild);
+    body.appendChild(content);
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'info-fold-trigger';
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.setAttribute('aria-controls', bodyId);
+    trigger.innerHTML = `
+      <span class="info-fold-title">${titleHtml}</span>
+      <span class="info-fold-action">
+        <span class="info-fold-state">展开</span>
+        <span class="info-fold-chevron" aria-hidden="true"></span>
+      </span>`;
+
+    trigger.addEventListener('click', () => {
+      const isOpen = panel.classList.toggle('is-open');
+      trigger.setAttribute('aria-expanded', String(isOpen));
+      body.setAttribute('aria-hidden', String(!isOpen));
+      body.inert = !isOpen;
+      trigger.querySelector('.info-fold-state').textContent = isOpen ? '收起' : '展开';
+    });
+
+    panel.classList.add('info-fold');
+    panel.append(trigger, body);
+  });
+}
+
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', async () => {
+  initInfoFolds();
   // 恢复侧栏折叠状态
   if (localStorage.getItem('wb_sidebar') === 'collapsed') {
     const layout = document.querySelector('.layout');
