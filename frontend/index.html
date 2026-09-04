@@ -821,16 +821,12 @@
           <span>精英队长：<strong id="res-elite">--</strong></span>
         </div>
       </div>
-      <div class="uid-result-card">
-        <h3 style="display:flex; justify-content:space-between; align-items:center;">
-          <span>本周 vs 上周 对比分析</span>
-          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">导出CSV</button>
-        </h3>
-        <table class="compare-table">
-          <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
-          <tbody id="uid-compare-body"></tbody>
-        </table>
+      <!-- 模块切换：姐妹团参与明细（默认） / 本周 vs 上周 对比 -->
+      <div class="uid-pane-tabs">
+        <button id="uid-pane-btn-teams" class="on" onclick="uidSwitchPane('teams')">姐妹团参与明细</button>
+        <button id="uid-pane-btn-week" onclick="uidSwitchPane('week')">本周 vs 上周 对比</button>
       </div>
+      <div id="uid-pane-teams">
       <!-- 姐妹团参与明细 -->
       <div class="uid-result-card" id="team-info-card" style="display:none;">
         <h3>姐妹团参与明细</h3>
@@ -846,6 +842,18 @@
         <h3>绑定妹妹列表</h3>
         <div id="bound-sisters-body"></div>
       </div>
+      </div>
+      <div id="uid-pane-week" style="display:none;">
+      <div class="uid-result-card">
+        <h3 style="display:flex; justify-content:space-between; align-items:center;">
+          <span>本周 vs 上周 对比分析</span>
+          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">导出CSV</button>
+        </h3>
+        <table class="compare-table">
+          <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
+          <tbody id="uid-compare-body"></tbody>
+        </table>
+      </div>
       <div class="uid-result-card">
         <h3>关联信息</h3>
         <div class="user-info">
@@ -853,6 +861,7 @@
           <span>姐妹团累计流水：<strong id="res-total-revenue">--</strong></span>
           <span>历史最高等级：<strong id="res-hist-level">--</strong></span>
         </div>
+      </div>
       </div>
   </div>
   </div>

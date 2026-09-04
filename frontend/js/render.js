@@ -572,6 +572,9 @@ function renderUIDResult(data) {
   renderTeamInfo(data);
   renderBoundSisters(data);
   renderPartnerCompare(data);
+  // 模块分页默认落「姐妹团参与明细」；该 UID 无任何团数据时落到周对比页
+  const hasTeam = !!(data.team_info || (data.bound_sisters || []).length);
+  if (typeof uidSwitchPane === 'function') uidSwitchPane(hasTeam ? 'teams' : 'week');
 }
 
 function renderTeamInfo(data) {

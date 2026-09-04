@@ -230,6 +230,22 @@ function jumpToUID(uid, teamId) {
   queryUID(teamId);
 }
 
+// UID 查询结果：姐妹团参与明细 / 本周vs上周对比 两个模块分页切换
+function uidSwitchPane(pane) {
+  const teams = document.getElementById('uid-pane-teams');
+  const week = document.getElementById('uid-pane-week');
+  const bT = document.getElementById('uid-pane-btn-teams');
+  const bW = document.getElementById('uid-pane-btn-week');
+  if (!teams || !week) return;
+  const isTeams = pane === 'teams';
+  teams.style.display = isTeams ? '' : 'none';
+  week.style.display = isTeams ? 'none' : '';
+  if (bT) bT.classList.toggle('on', isTeams);
+  if (bW) bW.classList.toggle('on', !isTeams);
+  // 切回参与明细页时，姐姐vs妹妹图表需 resize（隐藏时 echarts 尺寸为 0）
+  if (isTeams && typeof _partnerChart !== 'undefined' && _partnerChart) setTimeout(() => _partnerChart.resize(), 50);
+}
+
 async function queryUID(teamId) {
   const uid = document.getElementById('uid-input').value.trim();
   const captainType = document.getElementById('uid-type').value;
