@@ -701,28 +701,39 @@ def api_hall_overview():
             sister_weekly = None
             sister_monthly = None
             sister_prev_weekly = None
+            younger_weekly = None
+            younger_monthly = None
+            younger_prev_weekly = None
             if has_sister_rev:
                 if latest_sw:
                     sw = conn.execute(
-                        'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
+                        'SELECT SUM(total_revenue) AS s, SUM(sister2_revenue) AS s2 FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
                         (h, latest_sw)).fetchone()
                     if sw and sw['s'] is not None:
                         sister_weekly = round(sw['s'], 1)
+                    if sw and sw['s2'] is not None:
+                        younger_weekly = round(sw['s2'], 1)
                 if prev_sw:
                     sp = conn.execute(
-                        'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
+                        'SELECT SUM(total_revenue) AS s, SUM(sister2_revenue) AS s2 FROM team_sister_revenue WHERE hall_name = ? AND week_start = ?',
                         (h, prev_sw)).fetchone()
                     if sp and sp['s'] is not None:
                         sister_prev_weekly = round(sp['s'], 1)
+                    if sp and sp['s2'] is not None:
+                        younger_prev_weekly = round(sp['s2'], 1)
                 # 姐妹团月流水：与本月有交集的周都计入（周跨界按整周归入，如 08-31~09-06 计入 9 月）
                 sm = conn.execute(
-                    'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_end >= ?',
+                    'SELECT SUM(total_revenue) AS s, SUM(sister2_revenue) AS s2 FROM team_sister_revenue WHERE hall_name = ? AND week_end >= ?',
                     (h, month_start)).fetchone()
                 if sm and sm['s'] is not None:
                     sister_monthly = round(sm['s'], 1)
+                if sm and sm['s2'] is not None:
+                    younger_monthly = round(sm['s2'], 1)
             data.append({'hall_name': h, 'weeks': week_list, 'month': month,
                          'sister_weekly_revenue': sister_weekly, 'sister_monthly_revenue': sister_monthly,
-                         'sister_prev_weekly_revenue': sister_prev_weekly})
+                         'sister_prev_weekly_revenue': sister_prev_weekly,
+                         'younger_weekly_revenue': younger_weekly, 'younger_monthly_revenue': younger_monthly,
+                         'younger_prev_weekly_revenue': younger_prev_weekly})
     conn.close()
     return jsonify({'role': role, 'data': data})
 

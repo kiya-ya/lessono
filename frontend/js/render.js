@@ -589,9 +589,11 @@ function renderTeamInfo(data) {
 
   const statusColor = t.status === '进行中' ? '#3D9A6C' : '#D56060';
   const statusIcon = t.status === '进行中' ? '✓' : '✗';
+  const queriedUid = String(data.uid || '');
+  const isQueriedUid = uid => queriedUid && String(uid || '') === queriedUid;
 
   let membersHtml = `
-    <div class="team-member">
+    <div class="team-member${isQueriedUid(t.sister_uid) ? ' uid-query-hit' : ''}">
       <div class="member-badge">姐</div>
       <div class="member-info">
         <div class="member-name">${t.sister_nickname || '--'}</div>
@@ -603,18 +605,19 @@ function renderTeamInfo(data) {
   if (boundSisters.length > 0) {
     for (let i = 0; i < boundSisters.length; i++) {
       const bs = boundSisters[i];
+      const bsUid = bs.uid || bs.team_info?.sister_uid2;
       membersHtml += `
-        <div class="team-member">
+        <div class="team-member${isQueriedUid(bsUid) ? ' uid-query-hit' : ''}">
           <div class="member-badge" style="background:#f6a6c1;">妹${i + 1}</div>
           <div class="member-info">
             <div class="member-name">${bs.nickname || bs.team_info?.sister_nickname2 || '--'}</div>
-            <div class="member-uid">UID: ${(() => { const u = bs.uid || bs.team_info?.sister_uid2; return u ? `<a href="javascript:void(0)" onclick="jumpToUID('${u}')" style="color:#7C5CFF;text-decoration:none;">${u}</a>` : '--'; })()}</div>
+            <div class="member-uid">UID: ${bsUid ? `<a href="javascript:void(0)" onclick="jumpToUID('${bsUid}')" style="color:#7C5CFF;text-decoration:none;">${bsUid}</a>` : '--'}</div>
           </div>
         </div>`;
     }
   } else if (t.sister_nickname2 || t.sister_uid2) {
     membersHtml += `
-      <div class="team-member">
+      <div class="team-member${isQueriedUid(t.sister_uid2) ? ' uid-query-hit' : ''}">
         <div class="member-badge" style="background:#f6a6c1;">妹</div>
         <div class="member-info">
           <div class="member-name">${t.sister_nickname2 || '--'}</div>
