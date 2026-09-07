@@ -1441,6 +1441,8 @@ def api_grad_retention():
     hall = request.args.get('hall', 'all')
     conn = get_db_conn()
     stats = grad_retention_stats(conn, hall)
+    # 快照采集起点：早于该日期的周窗口无数据（前端方框显示「无快照数据」而非「无活跃」）
+    stats['data_start'] = conn.execute('SELECT MIN(snapshot_date) AS s FROM team_detail').fetchone()['s']
     # 近 8 周毕业趋势：每周毕业团数，与「毕业妹妹数」KPI 同口径（team 计数）
     trend = [{'week': r['week_label'], 'count': r['graduation_count']}
              for r in week_rows_all(conn, limit=8)]
@@ -1464,6 +1466,9 @@ def api_sister2_post_grad_weeks(uid):
         return jsonify({'error': '未找到毕业记录'}), 404
     d0 = datetime.strptime(gd, '%Y-%m-%d').date()
     end_d = d0 + timedelta(days=28)
+    # 快照采集起点：窗口完全在起点之前 → no_data（不是不活跃，是没采集到）
+    ds_row = conn.execute('SELECT MIN(snapshot_date) AS s FROM team_detail').fetchone()
+    data_start = ds_row['s'] if ds_row and ds_row['s'] else '1970-01-01'
 
     # 窗口内每日快照：角色/牌子/大厅/团
     snap_rows = conn.execute("""
@@ -1513,7 +1518,7 @@ def api_sister2_post_grad_weeks(uid):
             if ov > 0:
                 rev += ((rr['sis_rev'] or 0) + (rr['sis2_rev'] or 0)) * ov / 7.0
                 has_rev = True
-        state = 'future' if w0 > today else ('active' if in_win else 'inactive')
+        state = 'no_data' if w1s < data_start else ('future' if w0 > today else ('active' if in_win else 'inactive'))
         weeks.append({
             'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state,
             'active_days': len(in_win),

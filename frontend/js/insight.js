@@ -444,6 +444,7 @@ async function loadGradRetention() {
     if (grProNote) grProNote.textContent = `占毕业总数 ${pct(s.promoted || 0)}`;
     if (grTable) {
       _gradRetentionList = s.list || [];
+      _grDataStart = s.data_start || '';
       grFilter();
     }
     renderGradLine(d.trend || []);
@@ -487,11 +488,16 @@ function grWeeksHtml(g) {
   let out = '<span class="lw-strip">';
   for (let i = 1; i <= 4; i++) {
     const wStart = grad ? new Date(grad.getTime() + (7 * (i - 1) + 1) * 864e5) : null;
+    const wEnd = grad ? new Date(grad.getTime() + 7 * i * 864e5) : null;
+    // 窗口完全在快照采集起点之前 → 无数据（不是不活跃）
+    const noData = wEnd && _grDataStart && wEnd < new Date(_grDataStart + 'T00:00:00');
     const future = !wStart || wStart > now;
     const active = wa[i - 1] === 1;
-    const cls = future ? 'todo' : active ? 'done' : 'ended';
-    const tip = future ? `毕业后第${i}周 · 未到` : `毕业后第${i}周 · ${active ? '活跃' : '无活跃记录'}，点击查看该周数据`;
-    const click = future ? '' : ` onclick="grShowWeek(event,'${g.sister_uid2}',${i})"`;
+    const cls = noData || future ? 'todo' : active ? 'done' : 'ended';
+    const tip = noData ? `毕业后第${i}周 · 无快照数据（采集起点 ${_grDataStart} 之前）`
+      : future ? `毕业后第${i}周 · 未到`
+      : `毕业后第${i}周 · ${active ? '活跃' : '无活跃记录'}，点击查看该周数据`;
+    const click = (future || noData) ? '' : ` onclick="grShowWeek(event,'${g.sister_uid2}',${i})"`;
     out += `<span class="lw-sq ${cls}"${click} title="${tip}"></span>`;
   }
   out += '</span>';
@@ -525,7 +531,9 @@ async function grShowWeek(ev, uid, idx) {
     if (!w) { pop.innerHTML = '<div class="lw-pop-loading">无数据</div>'; place(); return; }
     const stateTag = w.state === 'active'
       ? `<span class="lw-tag cur">活跃 ${w.active_days} 天</span>`
-      : '<span class="lw-tag end">无活跃记录</span>';
+      : w.state === 'no_data'
+        ? '<span class="lw-tag">无快照数据</span>'
+        : '<span class="lw-tag end">无活跃记录</span>';
     const fmtD = s => (s || '').slice(5).replace('-', '/');
     pop.innerHTML = `
       <div class="lw-pop-head">${esc(d.nickname || '')} <span style="color:#9CA3AF;font-weight:400;">${d.uid}</span></div>
@@ -548,6 +556,7 @@ async function grShowWeek(ev, uid, idx) {
 let _gradRetentionList = [];
 let _grPage = 1;
 let _grSort = { key: '', dir: 'desc' };   // ''=后端默认（留存天数降序）
+let _grDataStart = '';                    // 快照采集起点（之前的周窗口显示「无快照数据」）
 const GR_PAGE_SIZE = 20;
 
 function grSort(key) {
