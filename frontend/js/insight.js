@@ -564,8 +564,8 @@ async function openLineage(name, uid) {
       <td>${t.days} 天</td>
     </tr>`).join('');
     openWarnModal(`传承链 · ${esc(name)}`,
-      `<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个</div>
-       <div id="lineage-tree-chart" style="width:100%;height:380px;"></div>
+      `<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点节点收起/展开）</span></div>
+       <div id="lineage-tree-chart" style="width:100%;height:420px;"></div>
        <div style="font-size:12px;color:#9CA3AF;margin:6px 0;">直接带的 ${directRows.length} 个团：</div>
        <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
     renderLineageTree(d.tree);
@@ -613,11 +613,13 @@ function renderLineageTree(root) {
     },
     series: [{
       type: 'tree', data: [data],
-      left: '14%', right: '22%', top: '4%', bottom: '4%',
-      orient: 'LR', symbol: 'circle',
+      left: '8%', right: '8%', top: '10%', bottom: '4%',
+      orient: 'TB', symbol: 'circle',
+      roam: true,                    // 滚轮缩放 + 拖拽平移（妹妹多时查看局部）
+      scaleLimit: { min: 0.4, max: 3 },
       expandAndCollapse: true, initialTreeDepth: 2,
-      label: { position: 'right', verticalAlign: 'middle', fontSize: 11, color: '#374151', distance: 6 },
-      leaves: { label: { position: 'right', fontSize: 11, color: '#374151' } },
+      label: { position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5 },
+      leaves: { label: { position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5 } },
       lineStyle: { color: '#D9D5F0', width: 1.2, curveness: 0.5 },
       emphasis: { focus: 'descendant' },
       animationDuration: 300,
