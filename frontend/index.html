@@ -836,10 +836,15 @@
       </div>
       <!-- 模块切换：姐妹团参与明细（默认） / 本周 vs 上周 对比 -->
       <div class="uid-pane-tabs">
-        <button id="uid-pane-btn-teams" class="on" onclick="uidSwitchPane('teams')">姐妹团参与明细</button>
+        <button id="uid-pane-btn-teams" class="on" onclick="uidSwitchPane('teams')">姐妹团参与明细<span id="uid-teams-flag" style="display:none;font-size:11px;font-weight:400;opacity:.75;">（无记录）</span></button>
         <button id="uid-pane-btn-week" onclick="uidSwitchPane('week')">本周 vs 上周 对比</button>
       </div>
       <div id="uid-pane-teams">
+      <!-- 无姐妹团数据时的空状态（避免误以为没加载出来） -->
+      <div class="uid-result-card" id="uid-teams-empty" style="display:none;text-align:center;padding:28px 16px;color:var(--wb-text-3);font-size:13px;">
+        该 UID 暂无姐妹团参与记录（未在任何姐妹团快照中出现）<br>
+        <span style="font-size:12px;">可切换到「本周 vs 上周 对比」查看个人排档数据</span>
+      </div>
       <!-- 姐妹团参与明细 -->
       <div class="uid-result-card" id="team-info-card" style="display:none;">
         <h3>姐妹团参与明细</h3>

@@ -572,8 +572,12 @@ function renderUIDResult(data) {
   renderTeamInfo(data);
   renderBoundSisters(data);
   renderPartnerCompare(data);
-  // 模块分页默认落「姐妹团参与明细」；该 UID 无任何团数据时落到周对比页
+  // 模块分页默认落「姐妹团参与明细」；该 UID 无任何团数据时落到周对比页，明细页显示空状态 + 按钮标注
   const hasTeam = !!(data.team_info || (data.bound_sisters || []).length);
+  const emptyEl = document.getElementById('uid-teams-empty');
+  if (emptyEl) emptyEl.style.display = hasTeam ? 'none' : '';
+  const flagEl = document.getElementById('uid-teams-flag');
+  if (flagEl) flagEl.style.display = hasTeam ? 'none' : '';
   if (typeof uidSwitchPane === 'function') uidSwitchPane(hasTeam ? 'teams' : 'week');
 }
 
