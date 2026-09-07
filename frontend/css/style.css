@@ -1226,3 +1226,7 @@ td.num, th.num {
 .uid-pane-tabs button { padding: 8px 18px; border: 1px solid var(--wb-line); background: #fff; color: var(--wb-text-2); border-radius: 999px; font-size: 13px; cursor: pointer; transition: all .15s; }
 .uid-pane-tabs button:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
 .uid-pane-tabs button.on { background: var(--wb-grad); color: #fff; border-color: transparent; font-weight: 600; }
+
+/* ── 毕业妹妹留存表：全量滚动 + 吸顶表头（2026-09-07） ── */
+.gr-scroll { max-height: 480px; overflow-y: auto; }
+.gr-scroll .rank-table thead th { position: sticky; top: 0; background: #fff; z-index: 2; box-shadow: 0 1px 0 var(--wb-line); }

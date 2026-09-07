@@ -434,7 +434,10 @@ async function loadGradRetention() {
     const promotedTxt = s.promoted == null ? '—' : s.promoted + ' 人';
     if (owPro) owPro.textContent = promotedTxt;
     if (grPro) grPro.textContent = promotedTxt;
-    if (grTable) grTable.innerHTML = gradRetentionTableHTML(s.list || []);
+    if (grTable) {
+      _gradRetentionList = s.list || [];
+      grFilter();
+    }
     renderGradLine(d.trend || []);
   } catch (e) {
     console.error('毕业妹妹留存加载失败:', e);
@@ -442,10 +445,14 @@ async function loadGradRetention() {
   }
 }
 
-function gradRetentionTableHTML(list) {
+function gradRetentionTableHTML(list, filter) {
   const head = '<thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>';
-  if (!list.length) return head + '<tbody><tr><td colspan="8" style="color:#9CA3AF;">暂无毕业妹妹</td></tr></tbody>';
-  const rows = list.slice(0, 20).map(g => {
+  const kw = (filter || '').trim().toLowerCase();
+  const filtered = kw
+    ? list.filter(g => ((g.nickname || '') + (g.sister_uid2 || '') + (g.sister_nickname || '')).toLowerCase().includes(kw))
+    : list;
+  if (!filtered.length) return head + `<tbody><tr><td colspan="8" style="color:#9CA3AF;">${list.length ? '无匹配的妹妹' : '暂无毕业妹妹'}</td></tr></tbody>`;
+  const rows = filtered.map(g => {
     const name = g.nickname || g.sister_uid2 || '-';
     const uid = g.sister_uid2 || '';
     const days = g.retained_days;
@@ -468,8 +475,21 @@ function gradRetentionTableHTML(list) {
       <td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td>
     </tr>`;
   }).join('');
-  const more = list.length > 20 ? `<tr><td colspan="8" style="color:#9CA3AF;">… 共 ${list.length} 位，其余待回访数据落地</td></tr>` : '';
-  return head + `<tbody>${rows}${more}</tbody>`;
+  return head + `<tbody>${rows}</tbody>`;
+}
+
+// 毕业妹妹留存表：搜索过滤（纯前端，数据源已在内存中）
+let _gradRetentionList = [];
+function grFilter() {
+  const kw = (document.getElementById('gr-search') || {}).value || '';
+  const kwT = kw.trim().toLowerCase();
+  const n = kwT
+    ? _gradRetentionList.filter(g => ((g.nickname || '') + (g.sister_uid2 || '') + (g.sister_nickname || '')).toLowerCase().includes(kwT)).length
+    : _gradRetentionList.length;
+  const cnt = document.getElementById('gr-count');
+  if (cnt) cnt.textContent = kwT ? `共 ${_gradRetentionList.length} 位 · 筛选出 ${n} 位` : `共 ${_gradRetentionList.length} 位`;
+  const grTable = document.getElementById('gr-table');
+  if (grTable) grTable.innerHTML = gradRetentionTableHTML(_gradRetentionList, kw);
 }
 
 // 近 8 周毕业趋势柱图（/api/grad-retention trend）

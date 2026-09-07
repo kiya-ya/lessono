@@ -724,7 +724,11 @@
         <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 毕业后 30 天留存</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note">毕业满30天仍在平台 · 近似</div></div>
         <div class="kpi-card"><div class="kpi-label"><span class="dot violet"></span> 晋升为姐姐</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note">毕业妹妹中已当姐姐</div></div>
       </div>
-      <div class="rank-scroll" style="margin-top:12px;"><table class="rank-table" id="gr-table"></table></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+        <input type="text" id="gr-search" class="wb-input wb-search" placeholder="搜索妹妹 / UID / 配对姐姐…" style="max-width:240px;" oninput="grFilter()">
+        <span id="gr-count" style="font-size:12px;color:var(--wb-text-3);"></span>
+      </div>
+      <div class="rank-scroll gr-scroll" style="margin-top:8px;"><table class="rank-table" id="gr-table"></table></div>
       <div class="dn-notes" style="margin-top:10px;">
         <span class="dn-tag">口径</span>
         <span><b>妹妹留存率</b> = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 × 100%。当前为<b>近似兜底</b>：以「毕业后是否再次成团 / 当姐姐（快照重新出现）」近似「仍留存/产出」，回访真口径待回访数据攒够后切换；「晋升为姐姐」由妹妹 UID 命中晋升集回填真数。</span>
