@@ -445,14 +445,10 @@ async function loadGradRetention() {
   }
 }
 
-function gradRetentionTableHTML(list, filter) {
+function gradRetentionTableHTML(list) {
   const head = '<thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>';
-  const kw = (filter || '').trim().toLowerCase();
-  const filtered = kw
-    ? list.filter(g => ((g.nickname || '') + (g.sister_uid2 || '') + (g.sister_nickname || '')).toLowerCase().includes(kw))
-    : list;
-  if (!filtered.length) return head + `<tbody><tr><td colspan="8" style="color:#9CA3AF;">${list.length ? '无匹配的妹妹' : '暂无毕业妹妹'}</td></tr></tbody>`;
-  const rows = filtered.map(g => {
+  if (!list.length) return head + `<tbody><tr><td colspan="8" style="color:#9CA3AF;">${_gradRetentionList.length ? '无匹配的妹妹' : '暂无毕业妹妹'}</td></tr></tbody>`;
+  const rows = list.map(g => {
     const name = g.nickname || g.sister_uid2 || '-';
     const uid = g.sister_uid2 || '';
     const days = g.retained_days;
@@ -478,18 +474,42 @@ function gradRetentionTableHTML(list, filter) {
   return head + `<tbody>${rows}</tbody>`;
 }
 
-// 毕业妹妹留存表：搜索过滤（纯前端，数据源已在内存中）
+// 毕业妹妹留存表：每页 20 条分页 + 搜索过滤（纯前端，数据源已在内存中）
 let _gradRetentionList = [];
-function grFilter() {
-  const kw = (document.getElementById('gr-search') || {}).value || '';
-  const kwT = kw.trim().toLowerCase();
-  const n = kwT
-    ? _gradRetentionList.filter(g => ((g.nickname || '') + (g.sister_uid2 || '') + (g.sister_nickname || '')).toLowerCase().includes(kwT)).length
-    : _gradRetentionList.length;
-  const cnt = document.getElementById('gr-count');
-  if (cnt) cnt.textContent = kwT ? `共 ${_gradRetentionList.length} 位 · 筛选出 ${n} 位` : `共 ${_gradRetentionList.length} 位`;
+let _grPage = 1;
+const GR_PAGE_SIZE = 20;
+
+function grFilteredList() {
+  const kw = ((document.getElementById('gr-search') || {}).value || '').trim().toLowerCase();
+  if (!kw) return _gradRetentionList;
+  return _gradRetentionList.filter(g => ((g.nickname || '') + (g.sister_uid2 || '') + (g.sister_nickname || '')).toLowerCase().includes(kw));
+}
+
+function grFilter() { _grPage = 1; grRenderPage(); }
+function grGoPage(p) { _grPage = p; grRenderPage(); }
+
+function grRenderPage() {
+  const list = grFilteredList();
+  const totalPages = Math.max(1, Math.ceil(list.length / GR_PAGE_SIZE));
+  if (_grPage > totalPages) _grPage = totalPages;
+  const pageRows = list.slice((_grPage - 1) * GR_PAGE_SIZE, _grPage * GR_PAGE_SIZE);
   const grTable = document.getElementById('gr-table');
-  if (grTable) grTable.innerHTML = gradRetentionTableHTML(_gradRetentionList, kw);
+  if (grTable) grTable.innerHTML = gradRetentionTableHTML(pageRows);
+  const cnt = document.getElementById('gr-count');
+  if (cnt) cnt.textContent = list.length === _gradRetentionList.length
+    ? `共 ${list.length} 位`
+    : `共 ${_gradRetentionList.length} 位 · 筛选出 ${list.length} 位`;
+  const pg = document.getElementById('gr-pagination');
+  if (!pg) return;
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  let h = `<span style="font-size:13px;color:#666;margin-right:12px;">第 ${_grPage}/${totalPages} 页</span>`;
+  if (_grPage > 1) h += `<button onclick="grGoPage(1)">首页</button><button onclick="grGoPage(${_grPage - 1})">上一页</button>`;
+  const s = Math.max(1, _grPage - 2), e = Math.min(totalPages, _grPage + 2);
+  if (s > 1) h += `<button onclick="grGoPage(1)">1</button>${s > 2 ? '<span class="pager-dots">…</span>' : ''}`;
+  for (let i = s; i <= e; i++) h += `<button class="${i === _grPage ? 'active' : ''}" onclick="grGoPage(${i})">${i}</button>`;
+  if (e < totalPages) h += `${e < totalPages - 1 ? '<span class="pager-dots">…</span>' : ''}<button onclick="grGoPage(${totalPages})">${totalPages}</button>`;
+  if (_grPage < totalPages) h += `<button onclick="grGoPage(${_grPage + 1})">下一页</button><button onclick="grGoPage(${totalPages})">末页</button>`;
+  pg.innerHTML = h;
 }
 
 // 近 8 周毕业趋势柱图（/api/grad-retention trend）

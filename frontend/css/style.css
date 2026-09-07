@@ -1227,6 +1227,4 @@ td.num, th.num {
 .uid-pane-tabs button:hover { border-color: var(--wb-accent); color: var(--wb-accent); }
 .uid-pane-tabs button.on { background: var(--wb-grad); color: #fff; border-color: transparent; font-weight: 600; }
 
-/* ── 毕业妹妹留存表：全量滚动 + 吸顶表头（2026-09-07） ── */
-.gr-scroll { max-height: 480px; overflow-y: auto; }
-.gr-scroll .rank-table thead th { position: sticky; top: 0; background: #fff; z-index: 2; box-shadow: 0 1px 0 var(--wb-line); }
+/* ── 毕业妹妹留存表：每页 20 条分页（2026-09-07） ── */
