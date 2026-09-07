@@ -426,14 +426,22 @@ async function loadGradRetention() {
     const res = await fetch(API_BASE + '/api/grad-retention?' + getHallParam().substring(1));
     const d = await res.json();
     const s = d.stats || {};
-    const setPct = (el, v) => { if (el) el.textContent = v == null ? '—' : Math.round(v) + '%'; };
-    setPct(owRet, s.retention_rate);
-    setPct(ow30d, s.retention_30d);
-    setPct(grRet, s.retention_rate);
-    setPct(gr30d, s.retention_30d);
+    // 数量口径（比「率」直观）：毕业妹妹总数 / 毕业后仍活跃 / 晋升为姐姐
+    const setCnt = (el, v, unit) => { if (el) el.textContent = v == null ? '—' : v + ' ' + unit; };
+    setCnt(owRet, s.total, '位');
+    setCnt(ow30d, s.retained, '位');
+    setCnt(grRet, s.total, '位');
+    setCnt(gr30d, s.retained, '位');
     const promotedTxt = s.promoted == null ? '—' : s.promoted + ' 人';
     if (owPro) owPro.textContent = promotedTxt;
     if (grPro) grPro.textContent = promotedTxt;
+    const pct = n => (s.total ? Math.round(n / s.total * 100) + '%' : '—');
+    const grRetNote = document.getElementById('gr-ret-note');
+    if (grRetNote) grRetNote.textContent = `其中满 30 天观察期 ${s.eligible_30d ?? '—'} 位`;
+    const gr30dNote = document.getElementById('gr-30d-note');
+    if (gr30dNote) gr30dNote.textContent = `占毕业总数 ${s.retention_rate ?? '—'}%（近似）`;
+    const grProNote = document.getElementById('gr-promoted-note');
+    if (grProNote) grProNote.textContent = `占毕业总数 ${pct(s.promoted || 0)}`;
     if (grTable) {
       _gradRetentionList = s.list || [];
       grFilter();
@@ -446,17 +454,14 @@ async function loadGradRetention() {
 }
 
 function gradRetentionTableHTML(list) {
-  const head = '<thead><tr><th>妹妹</th><th>妹妹UID</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>';
+  const arrow = k => _grSort.key === k
+    ? `<span style="color:#7C5CFF;">${_grSort.dir === 'asc' ? '▲' : '▼'}</span>`
+    : '<span style="color:#C9CDD4;">▲▼</span>';
+  const head = `<thead><tr><th>妹妹</th><th>妹妹UID</th><th onclick="grSort('grad_date')" style="cursor:pointer;" title="点击按毕业日期排序">毕业日期 ${arrow('grad_date')}</th><th>配对姐姐</th><th onclick="grSort('retained_days')" style="cursor:pointer;" title="点击按留存天数排序；4 个方框 = 毕业后第 1~4 周：实心=该周活跃 · 灰=无活跃 · 空心=未到，点击方框看该周流水/牌子">毕业后留存 ${arrow('retained_days')}</th><th>是否开始带妹妹</th><th>带妹代数</th><th>来源</th></tr></thead>`;
   if (!list.length) return head + `<tbody><tr><td colspan="8" style="color:#9CA3AF;">${_gradRetentionList.length ? '无匹配的妹妹' : '暂无毕业妹妹'}</td></tr></tbody>`;
   const rows = list.map(g => {
     const name = g.nickname || g.sister_uid2 || '-';
     const uid = g.sister_uid2 || '';
-    const days = g.retained_days;
-    const keep = (!g.retained || days == null || days <= 0)
-      ? '<span style="color:#6B7280;font-weight:700;">0 天</span>'
-      : days >= 90 ? '<span style="color:#16A34A;font-weight:700;">≥90 天</span>'
-      : days >= 30 ? '<span style="color:#16A34A;font-weight:700;">≥30 天</span>'
-      : `<span style="color:#B45309;font-weight:700;">${days} 天</span>`;
     const lineage = g.promoted
       ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" data-u="${esc(uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="点击查看她带的团">已开始带妹妹 · 看明细</span>`
       : '<span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span>';
@@ -465,7 +470,7 @@ function gradRetentionTableHTML(list) {
       <td>${uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${uid}')" style="color:#7C5CFF;text-decoration:none;">${uid}</a>` : '—'}</td>
       <td>${esc(g.grad_date || '—')}</td>
       <td>${esc(g.sister_nickname || '—')}</td>
-      <td>${keep}</td>
+      <td style="white-space:nowrap;">${grWeeksHtml(g)}</td>
       <td>${lineage}</td>
       <td style="color:#9CA3AF;">—</td>
       <td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td>
@@ -474,10 +479,83 @@ function gradRetentionTableHTML(list) {
   return head + `<tbody>${rows}</tbody>`;
 }
 
-// 毕业妹妹留存表：每页 20 条分页 + 搜索过滤（纯前端，数据源已在内存中）
+// 毕业后留存方框：4 格 = 毕业后第 1~4 周，实心=该周活跃，灰=无活跃，空心=未到
+function grWeeksHtml(g) {
+  const wa = g.weeks_active || [];
+  const grad = g.grad_date ? new Date(g.grad_date + 'T00:00:00') : null;
+  const now = new Date();
+  let out = '<span class="lw-strip">';
+  for (let i = 1; i <= 4; i++) {
+    const wStart = grad ? new Date(grad.getTime() + (7 * (i - 1) + 1) * 864e5) : null;
+    const future = !wStart || wStart > now;
+    const active = wa[i - 1] === 1;
+    const cls = future ? 'todo' : active ? 'done' : 'ended';
+    const tip = future ? `毕业后第${i}周 · 未到` : `毕业后第${i}周 · ${active ? '活跃' : '无活跃记录'}，点击查看该周数据`;
+    const click = future ? '' : ` onclick="grShowWeek(event,'${g.sister_uid2}',${i})"`;
+    out += `<span class="lw-sq ${cls}"${click} title="${tip}"></span>`;
+  }
+  out += '</span>';
+  const days = g.retained_days;
+  const daysTxt = (!g.retained || days == null || days <= 0)
+    ? '<span style="margin-left:3px;font-size:11px;color:#6B7280;">0天</span>'
+    : `<span style="margin-left:3px;font-size:11px;font-weight:600;color:${days >= 30 ? '#16A34A' : '#B45309'};">${days >= 90 ? '≥90' : days}天</span>`;
+  return out + daysTxt;
+}
+
+// 留存方框点击弹层：该周的流水/角色/牌子/所在大厅
+const _grWeekCache = {};
+async function grShowWeek(ev, uid, idx) {
+  if (!uid) return;
+  ev.stopPropagation();
+  lwClose();
+  const pop = document.createElement('div');
+  pop.className = 'lw-popover';
+  pop.id = 'lw-popover';
+  pop.innerHTML = '<div class="lw-pop-loading">加载中…</div>';
+  document.body.appendChild(pop);
+  const place = () => lwPlace(pop, ev);
+  place();
+  try {
+    if (!_grWeekCache[uid]) {
+      const res = await fetch(API_BASE + `/api/sister2/${uid}/post-grad-weeks`);
+      _grWeekCache[uid] = await res.json();
+    }
+    const d = _grWeekCache[uid];
+    const w = (d.weeks || []).find(x => x.idx === idx);
+    if (!w) { pop.innerHTML = '<div class="lw-pop-loading">无数据</div>'; place(); return; }
+    const stateTag = w.state === 'active'
+      ? `<span class="lw-tag cur">活跃 ${w.active_days} 天</span>`
+      : '<span class="lw-tag end">无活跃记录</span>';
+    const fmtD = s => (s || '').slice(5).replace('-', '/');
+    pop.innerHTML = `
+      <div class="lw-pop-head">${esc(d.nickname || '')} <span style="color:#9CA3AF;font-weight:400;">${d.uid}</span></div>
+      <div class="lw-pop-sub">毕业后第 ${w.idx} 周 · ${fmtD(w.start)} ~ ${fmtD(w.end)} ${stateTag}</div>
+      <div class="lw-pop-grid">
+        <span>周流水</span><b>${w.revenue == null ? '—' : '≈¥' + w.revenue.toLocaleString()}</b>
+        <span>角色</span><b>${w.role || '—'}</b>
+        <span>牌子</span><b>${w.level || '—'}</b>
+        <span>所在大厅</span><b style="text-align:right;">${(w.halls || []).join('、') || '—'}</b>
+      </div>
+      <div class="lw-pop-foot">毕业日期 ${d.grad_date} · 流水按自然周重叠天数折算（约值）</div>`;
+    place();
+  } catch (e) {
+    pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';
+    place();
+  }
+}
+
+// 毕业妹妹留存表：每页 20 条分页 + 搜索过滤 + 表头排序（纯前端，数据源已在内存中）
 let _gradRetentionList = [];
 let _grPage = 1;
+let _grSort = { key: '', dir: 'desc' };   // ''=后端默认（留存天数降序）
 const GR_PAGE_SIZE = 20;
+
+function grSort(key) {
+  if (_grSort.key === key) _grSort.dir = _grSort.dir === 'desc' ? 'asc' : 'desc';
+  else _grSort = { key, dir: 'desc' };
+  _grPage = 1;
+  grRenderPage();
+}
 
 function grFilteredList() {
   const kw = ((document.getElementById('gr-search') || {}).value || '').trim().toLowerCase();
@@ -490,6 +568,15 @@ function grGoPage(p) { _grPage = p; grRenderPage(); }
 
 function grRenderPage() {
   const list = grFilteredList();
+  // 表头排序（毕业日期 / 留存天数）
+  if (_grSort.key) {
+    const mul = _grSort.dir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      const va = _grSort.key === 'retained_days' ? (a.retained_days ?? -1) : (a.grad_date || '');
+      const vb = _grSort.key === 'retained_days' ? (b.retained_days ?? -1) : (b.grad_date || '');
+      return (va > vb ? 1 : va < vb ? -1 : 0) * mul;
+    });
+  }
   const totalPages = Math.max(1, Math.ceil(list.length / GR_PAGE_SIZE));
   if (_grPage > totalPages) _grPage = totalPages;
   const pageRows = list.slice((_grPage - 1) * GR_PAGE_SIZE, _grPage * GR_PAGE_SIZE);

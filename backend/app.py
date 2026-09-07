@@ -1360,6 +1360,33 @@ def grad_retention_stats(conn, hall='all'):
     """).fetchall():
         latest_seen[r['su']] = r['last_snap']
 
+    # 毕业后第 1~4 周活跃位图（供前端「留存方框」）：该 UID 任一角色在窗口内有快照即算活跃
+    grad_map = {g['su']: (g['grad_date'] or '')[:10] for g in grads}
+    weeks_active = {su: [0, 0, 0, 0] for su in grad_map}
+    if grad_map:
+        ph = ','.join('?' * len(grad_map))
+        pres = conn.execute(f"""
+            SELECT su, snapshot_date FROM (
+              SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
+              UNION ALL
+              SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
+            ) WHERE su IN ({ph}) GROUP BY su, snapshot_date
+        """, list(grad_map.keys())).fetchall()
+        for r in pres:
+            gd = grad_map.get(r['su'])
+            if not gd:
+                continue
+            try:
+                dd = (datetime.strptime(r['snapshot_date'], '%Y-%m-%d').date()
+                      - datetime.strptime(gd, '%Y-%m-%d').date()).days
+            except Exception:
+                continue
+            if dd <= 0:
+                continue  # 毕业当天及之前不计
+            wk = (dd - 1) // 7  # 毕业后第1周 = 第1~7天
+            if 0 <= wk <= 3:
+                weeks_active[r['su']][wk] = 1
+
     total = len(grads)
     retained = retained_30d = eligible_30d = promoted = 0
     ref_d = datetime.strptime(ref, '%Y-%m-%d').date() if ref else None
@@ -1394,6 +1421,7 @@ def grad_retention_stats(conn, hall='all'):
             'sister_nickname': g['sister_nickname'], 'grad_date': gd,
             'hall_name': g['hall_name'], 'retained': retained_flag,
             'retained_days': retained_days, 'promoted': promoted_flag,
+            'weeks_active': weeks_active.get(su),
         })
 
     list_out.sort(key=lambda x: -(x['retained_days'] if x['retained_days'] is not None else -1))
@@ -1418,6 +1446,83 @@ def api_grad_retention():
              for r in week_rows_all(conn, limit=8)]
     conn.close()
     return jsonify({'stats': stats, 'trend': trend})
+
+
+@app.route('/api/sister2/<uid>/post-grad-weeks')
+@login_required
+def api_sister2_post_grad_weeks(uid):
+    """毕业妹妹「留存方框」点击详情：毕业后第 1~4 周，每周的活跃天数/牌子/流水/所在团。
+    活跃 = 该 UID（姐姐或妹妹角色）在窗口内有快照；流水 = team_sister_revenue 自然周
+    按重叠天数折算（她在团里是什么角色就取哪列），无数据为 None。"""
+    conn = get_db_conn()
+    g = conn.execute(
+        "SELECT MAX(dissolve_date) AS gd FROM team_detail "
+        "WHERE CAST(sister_uid2 AS TEXT) = ? AND dissolve_reason = '毕业'", [uid]).fetchone()
+    gd = (g['gd'] or '')[:10] if g else ''
+    if not gd:
+        conn.close()
+        return jsonify({'error': '未找到毕业记录'}), 404
+    d0 = datetime.strptime(gd, '%Y-%m-%d').date()
+    end_d = d0 + timedelta(days=28)
+
+    # 窗口内每日快照：角色/牌子/大厅/团
+    snap_rows = conn.execute("""
+        SELECT snapshot_date, hall_name, team_id,
+               CASE WHEN CAST(sister_uid AS TEXT) = ? THEN '姐姐' ELSE '妹妹' END AS role,
+               CASE WHEN CAST(sister_uid AS TEXT) = ? THEN sister_level ELSE sister_max_level2 END AS lvl
+        FROM team_detail
+        WHERE (CAST(sister_uid2 AS TEXT) = ? OR CAST(sister_uid AS TEXT) = ?)
+          AND snapshot_date > ? AND snapshot_date <= ?
+          AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id, snapshot_date)
+        ORDER BY snapshot_date
+    """, [uid, uid, uid, uid, gd, end_d.isoformat()]).fetchall()
+
+    # 周流水（自然周，按角色取列）
+    rev_rows = conn.execute("""
+        SELECT week_start, week_end,
+               SUM(CASE WHEN CAST(sister_uid AS TEXT) = ? THEN sister_revenue ELSE 0 END) AS sis_rev,
+               SUM(CASE WHEN CAST(sister_uid2 AS TEXT) = ? THEN sister2_revenue ELSE 0 END) AS sis2_rev
+        FROM team_sister_revenue
+        WHERE (CAST(sister_uid AS TEXT) = ? OR CAST(sister_uid2 AS TEXT) = ?)
+        GROUP BY week_start, week_end
+    """, [uid, uid, uid, uid]).fetchall()
+
+    nick = conn.execute("""
+        SELECT COALESCE(MAX(CASE WHEN CAST(sister_uid2 AS TEXT) = ? THEN sister_nickname2 END),
+                          MAX(CASE WHEN CAST(sister_uid AS TEXT) = ? THEN sister_nickname END)) AS n
+        FROM team_detail WHERE CAST(sister_uid2 AS TEXT) = ? OR CAST(sister_uid AS TEXT) = ?
+    """, [uid, uid, uid, uid]).fetchone()['n']
+    conn.close()
+
+    today = datetime.now().date()
+    weeks = []
+    for i in range(4):
+        w0 = d0 + timedelta(days=7 * i) + timedelta(days=1)  # 毕业后第1周 = 毕业次日 ~ +7天
+        w1 = d0 + timedelta(days=7 * i + 7)
+        w0s, w1s = w0.isoformat(), w1.isoformat()
+        in_win = [r for r in snap_rows if w0s <= r['snapshot_date'] <= w1s]
+        rev = 0.0
+        has_rev = False
+        for rr in rev_rows:
+            try:
+                cws = datetime.strptime(rr['week_start'], '%Y-%m-%d').date()
+                cwe = datetime.strptime(rr['week_end'], '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                continue
+            ov = (min(cwe, w1) - max(cws, w0)).days + 1
+            if ov > 0:
+                rev += ((rr['sis_rev'] or 0) + (rr['sis2_rev'] or 0)) * ov / 7.0
+                has_rev = True
+        state = 'future' if w0 > today else ('active' if in_win else 'inactive')
+        weeks.append({
+            'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state,
+            'active_days': len(in_win),
+            'level': in_win[-1]['lvl'] if in_win else None,
+            'role': in_win[-1]['role'] if in_win else None,
+            'halls': sorted({r['hall_name'] for r in in_win if r['hall_name']}),
+            'revenue': round(rev, 1) if has_rev else None,
+        })
+    return jsonify({'uid': uid, 'nickname': nick or uid, 'grad_date': gd, 'weeks': weeks})
 
 
 @app.route('/api/talent-pool')

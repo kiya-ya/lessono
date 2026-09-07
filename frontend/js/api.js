@@ -330,6 +330,16 @@ window.addEventListener('resize', lwClose);
 
 function _lwMoney(v) { return v == null ? '—' : '¥' + Number(v).toFixed(1); }
 
+// 弹层定位（生命周期方框/毕业留存方框共用）：优先点击处右下方；实测高度，底部溢出则翻转到上方
+function lwPlace(pop, ev) {
+  const pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 120;
+  let left = Math.max(8, Math.min(ev.clientX, window.innerWidth - pw - 12));
+  let top = ev.clientY + 8;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, ev.clientY - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+
 async function lwShow(ev, teamId, idx) {
   ev.stopPropagation();
   lwClose();
@@ -338,15 +348,7 @@ async function lwShow(ev, teamId, idx) {
   pop.id = 'lw-popover';
   pop.innerHTML = '<div class="lw-pop-loading">加载中…</div>';
   document.body.appendChild(pop);
-  // 定位：优先点击处右下方；实测弹层高度，底部溢出则翻转到上方，左右防溢出
-  const place = () => {
-    const pw = pop.offsetWidth || 250, ph = pop.offsetHeight || 120;
-    let left = Math.max(8, Math.min(ev.clientX, window.innerWidth - pw - 12));
-    let top = ev.clientY + 8;
-    if (top + ph > window.innerHeight - 8) top = Math.max(8, ev.clientY - ph - 8);
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-  };
+  const place = () => lwPlace(pop, ev);
   place();
   try {
     if (!_lwCache[teamId]) {
