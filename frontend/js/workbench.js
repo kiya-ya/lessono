@@ -122,6 +122,7 @@ function wbRenderWall() {
 }
 
 let wbRankPeriod = 'week';  // week / month
+let wbRankFlow = 'pair';    // pair = 姐妹合计 / younger = 妹妹单边
 let wbRankSort = { key: 'sisRev', dir: 'desc' };  // 排行榜排序
 
 function wbSortRank(key) {
@@ -138,23 +139,37 @@ function setRankPeriod(p) {
   const title = document.getElementById('wb-rank-title');
   if (title) title.textContent = '厅排行榜 · ' + (p === 'week' ? '本周' : '本月');
   const hint = document.getElementById('wb-rank-hint');
-  if (hint) hint.textContent = p === 'week'
-    ? '按姐妹团周流水排名 · 位次为较上周变化 · 姐妹团周流水=姐姐+妹妹当周礼物总流水'
-    : '按姐妹团月流水排名 · 姐妹团月流水=姐姐+妹妹当月礼物总流水';
+  if (hint) hint.textContent = `按${wbRankFlow === 'younger' ? '妹妹' : '姐妹'}${p === 'week' ? '周' : '月'}流水排名 · 点厅名进入厅分析`;
+  wbRenderRank();
+}
+
+function setRankFlow(flow) {
+  wbRankFlow = flow === 'younger' ? 'younger' : 'pair';
+  const pair = document.getElementById('rank-flow-pair');
+  const younger = document.getElementById('rank-flow-younger');
+  if (pair) pair.classList.toggle('on', wbRankFlow === 'pair');
+  if (younger) younger.classList.toggle('on', wbRankFlow === 'younger');
+  wbRankSort = { key: 'sisRev', dir: 'desc' };
+  const hint = document.getElementById('wb-rank-hint');
+  if (hint) hint.textContent = `按${wbRankFlow === 'younger' ? '妹妹' : '姐妹'}${wbRankPeriod === 'week' ? '周' : '月'}流水排名 · 点厅名进入厅分析`;
   wbRenderRank();
 }
 
 function wbRenderRank() {
   const month = wbRankPeriod === 'month';
-  // 按姐妹团流水排名（本周/本月），并计算较上周位次变化
+  // 按姐妹合计流水或妹妹单边流水排名（本周/本月），并计算较上周位次变化
   const items = wbOverview.data.filter(d => d.weeks.length >= 1).map(d => {
     const last = d.weeks[d.weeks.length - 1];
     const prev = d.weeks.length > 1 ? d.weeks[d.weeks.length - 2] : null;
     const m = d.month || {};
+    const pairRev = month ? d.sister_monthly_revenue : d.sister_weekly_revenue;
+    const pairPrev = d.sister_prev_weekly_revenue;
+    const youngerRev = month ? d.younger_monthly_revenue : d.younger_weekly_revenue;
+    const youngerPrev = d.younger_prev_weekly_revenue;
     return {
       name: d.hall_name,
-      sisRev: month ? d.sister_monthly_revenue : d.sister_weekly_revenue,
-      sisPrev: d.sister_prev_weekly_revenue,
+      sisRev: wbRankFlow === 'younger' ? youngerRev : pairRev,
+      sisPrev: wbRankFlow === 'younger' ? youngerPrev : pairPrev,
       active: last.active_team_count_end || 0,
       ret: last.retention_rate || 0,
       newTeams: month ? (m.new_teams || 0) : (last.new_team_count || 0),
@@ -180,7 +195,7 @@ function wbRenderRank() {
     return va === vb ? 0 : (va > vb ? 1 : -1) * mul;
   }).slice(0, 20);
   const maxRev = Math.max(1, ...top.map(it => it.sisRev || 0));
-  const sisLabel = month ? '姐妹团月流水' : '姐妹团周流水';
+  const sisLabel = `${wbRankFlow === 'younger' ? '妹妹' : '姐妹'}${month ? '月' : '周'}流水`;
   const newLabel = month ? '月新成团' : '周新成团';
   const sortArrow = k => wbRankSort.key === k ? `<span class="sort-arrow">${wbRankSort.dir === 'asc' ? '▲' : '▼'}</span>` : '';
   const thSort = (k, extra) => ` class="sortable${extra ? ' ' + extra : ''}" onclick="wbSortRank('${k}')"`;

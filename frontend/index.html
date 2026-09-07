@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>姐妹团数据统计报表</title>
 <script src="js/echarts.min.js?v=1"></script>
-<link rel="stylesheet" href="css/style.css?v=55">
+<link rel="stylesheet" href="css/style.css?v=56">
 <!-- 认证检查：未登录时立即跳转登录页（同步执行，避免页面闪烁） -->
 <script>
 (function() {
@@ -335,12 +335,18 @@
       <div id="wb-rank-board" class="chart-card" style="display:none">
         <div class="section-head" style="margin:0 0 6px;">
           <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
-          <div class="seg">
-            <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
-            <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+          <div class="rank-switches">
+            <div class="seg">
+              <button id="rank-flow-pair" class="on" onclick="setRankFlow('pair')">姐妹</button>
+              <button id="rank-flow-younger" onclick="setRankFlow('younger')">妹妹</button>
+            </div>
+            <div class="seg">
+              <button id="rank-week" class="on" onclick="setRankPeriod('week')">本周</button>
+              <button id="rank-month" onclick="setRankPeriod('month')">本月</button>
+            </div>
           </div>
         </div>
-        <span class="hint" id="wb-rank-hint">按姐妹团周流水排名 · 点厅名进入厅分析</span>
+        <span class="hint" id="wb-rank-hint">按姐妹周流水排名 · 点厅名进入厅分析</span>
         <div id="wb-rank-mini"></div>
         <button class="expand-btn" id="wb-rank-toggle" onclick="toggleRankFull()">查看全部 ▼</button>
         <div id="wb-rank-full" style="display:none;margin-top:10px;">
@@ -834,10 +840,10 @@
           <span>精英队长：<strong id="res-elite">--</strong></span>
         </div>
       </div>
-      <!-- 模块切换：姐妹团参与明细（默认） / 本周 vs 上周 对比 -->
+      <!-- 模块切换：姐妹团参与明细（默认） / 个人信息详情 -->
       <div class="uid-pane-tabs">
         <button id="uid-pane-btn-teams" class="on" onclick="uidSwitchPane('teams')">姐妹团参与明细</button>
-        <button id="uid-pane-btn-week" onclick="uidSwitchPane('week')">本周 vs 上周 对比</button>
+        <button id="uid-pane-btn-week" onclick="uidSwitchPane('week')">个人信息详情</button>
       </div>
       <div id="uid-pane-teams">
       <!-- 姐妹团参与明细 -->
@@ -859,7 +865,7 @@
       <div id="uid-pane-week" style="display:none;">
       <div class="uid-result-card">
         <h3 style="display:flex; justify-content:space-between; align-items:center;">
-          <span>本周 vs 上周 对比分析</span>
+          <span>个人信息详情</span>
           <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">导出CSV</button>
         </h3>
         <table class="compare-table">
@@ -1062,9 +1068,9 @@
 <script src="js/filter-combobox.js?v=1"></script>
 <script src="js/api.js?v=65"></script>
 <script src="js/auth.js?v=42"></script>
-<script src="js/render.js?v=57"></script>
+<script src="js/render.js?v=58"></script>
 <script src="js/app.js?v=66"></script>
-<script src="js/workbench.js?v=64"></script>
+<script src="js/workbench.js?v=65"></script>
 <script src="js/insight.js?v=63"></script>
 <script src="js/warncenter.js?v=7"></script>
 <script src="js/lyingflat.js?v=3"></script>
