@@ -83,6 +83,14 @@ def main():
         except Exception as pe:
             print(f'[WARN] 保护期同步失败: {pe}')
 
+        # 姐妹团周流水（server1：姐姐+妹妹当周礼物总流水，本周至今每日刷新；
+        # 概览厅排行榜「本周/本月」流水的数据源）
+        try:
+            from team_weekly_revenue import run as sync_team_weekly_revenue
+            sync_team_weekly_revenue(weeks=1)
+        except Exception as te:
+            print(f'[WARN] 姐妹团周流水同步失败: {te}')
+
         # 抓取成功后运行预警检测
         try:
             from alerts_engine import run_alerts_check

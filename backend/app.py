@@ -646,6 +646,9 @@ def api_hall_overview():
     ).fetchone()['c'] > 0
     # 本月起始日期（用于厅排行榜「本周/本月」切换）
     month_start = datetime.now().date().replace(day=1).isoformat()
+    # 本周一（用于周流水新鲜度防护：team_sister_revenue 非本周数据 → 视为过期，不冒充「本周」）
+    _today = datetime.now().date()
+    cur_week_start = (_today - timedelta(days=_today.weekday())).isoformat()
     # 姐妹团周流水（姐姐+妹妹当周礼物总流水合计，来自 team_sister_revenue 批量查询）
     has_sister_rev = conn.execute(
         "SELECT COUNT(*) AS c FROM sqlite_master WHERE type='table' AND name='team_sister_revenue'"
@@ -657,6 +660,9 @@ def api_hall_overview():
         prev_sw = conn.execute(
             'SELECT MAX(week_start) AS w FROM team_sister_revenue WHERE week_start < ?', (latest_sw,)
         ).fetchone()['w']
+        # 新鲜度防护：最新周流水不是本周 → 本周/上周位次数据一律置空（宁缺毋滥）
+        if latest_sw != cur_week_start:
+            latest_sw = prev_sw = None
     for h in halls:
         # 逐周从 team_detail 重算（口径定稿 2026-08-17）
         week_items = week_list_from_detail(conn, limit=weeks)
@@ -686,9 +692,9 @@ def api_hall_overview():
                     (h, month_start)).fetchone()
                 if mrev['n']:
                     month['revenue'] = round(mrev['s'], 1)
-            # 月汇总改从已重算的周行聚合（本月各周流水/新成团）
-            month_rev = sum((w.get('weekly_revenue') or 0) for w in week_list if w['week_start'] >= month_start)
-            month_new = sum((w.get('new_team_count') or 0) for w in week_list if w['week_start'] >= month_start)
+            # 月汇总改从已重算的周行聚合（本月各周流水/新成团；跨界周按 week_end 归入本月）
+            month_rev = sum((w.get('weekly_revenue') or 0) for w in week_list if w['week_end'] >= month_start)
+            month_new = sum((w.get('new_team_count') or 0) for w in week_list if w['week_end'] >= month_start)
             month['sis_revenue'] = round(month_rev, 1)
             month['new_teams'] = int(month_new)
             # 姐妹团周/月流水（真·流水 = 姐姐+妹妹当周礼物总流水合计）
@@ -708,8 +714,9 @@ def api_hall_overview():
                         (h, prev_sw)).fetchone()
                     if sp and sp['s'] is not None:
                         sister_prev_weekly = round(sp['s'], 1)
+                # 姐妹团月流水：与本月有交集的周都计入（周跨界按整周归入，如 08-31~09-06 计入 9 月）
                 sm = conn.execute(
-                    'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_start >= ?',
+                    'SELECT SUM(total_revenue) AS s FROM team_sister_revenue WHERE hall_name = ? AND week_end >= ?',
                     (h, month_start)).fetchone()
                 if sm and sm['s'] is not None:
                     sister_monthly = round(sm['s'], 1)

@@ -96,6 +96,7 @@ def run(weeks: int = 1, max_workers: int = 8, limit: int = None):
 
         # 并行查询
         rev = {}
+        retry_uids = []   # Cookie 过期导致的失败，重登后补查
         done = 0
         with ThreadPoolExecutor(max_workers=max_workers) as ex:
             futs = {ex.submit(query_one_uid, u, ws, we): u for u in uids}
@@ -104,14 +105,38 @@ def run(weeks: int = 1, max_workers: int = 8, limit: int = None):
                 done += 1
                 try:
                     rev[u] = round(fut.result(), 2)
-                except CookieExpiredError as e:
-                    print(f'\n[Cookie过期] 终止查询：{e}')
-                    raise
+                except CookieExpiredError:
+                    # server1 会话 TTL 极短：不中断整批，记录下来稍后自愈重试
+                    retry_uids.append(u)
                 except Exception as e:
                     rev[u] = 0.0
                     print(f'  [UID {u} 查询失败] {str(e)[:80]}')
                 if done % 100 == 0:
                     print(f'  进度 {done}/{len(uids)}')
+
+        # Cookie 过期自愈：重登后串行补查（query_one_uid 每次新建 UIDCrawler，热加载新 cookie）
+        heal_round = 0
+        while retry_uids and heal_round < 3:
+            heal_round += 1
+            print(f'  [Cookie自愈] 第 {heal_round} 轮：重登后补查 {len(retry_uids)} 个 UID')
+            try:
+                from auto_login import refresh_uid_cookie
+                refresh_uid_cookie()
+            except Exception as he:
+                print(f'  [Cookie自愈失败] {he}')
+                break
+            pending, retry_uids = retry_uids, []
+            for u in pending:
+                try:
+                    rev[u] = round(query_one_uid(u, ws, we), 2)
+                except CookieExpiredError:
+                    retry_uids.append(u)
+                except Exception:
+                    rev[u] = 0.0
+        if retry_uids:
+            print(f'  [WARN] {len(retry_uids)} 个 UID 因 Cookie 问题未查到，按 0 计')
+            for u in retry_uids:
+                rev.setdefault(u, 0.0)
 
         # 聚合到团队
         team_rev = {}  # team_id -> {sister_revenue, sister2_revenue, total}
