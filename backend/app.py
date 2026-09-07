@@ -1695,6 +1695,79 @@ def api_sister_detail():
     })
 
 
+@app.route('/api/lineage-tree')
+@login_required
+def api_lineage_tree():
+    """传承链树（毕业妹妹留存「是否开始带妹妹」的树状图数据源）：
+    根 = 毕业妹妹（已晋升为姐姐）；每层 = 她带的妹妹（按团），妹妹若也晋升为姐姐则递归向下。
+    深度 ≤4 代 + visited 防环。数据来自最新快照（一次查询，Python 内建树）。"""
+    uid = request.args.get('uid', '')
+    if not uid:
+        return jsonify({'error': '缺少 uid'}), 400
+    conn = get_db_conn()
+    rows = conn.execute(f"""
+        SELECT team_id, hall_name, CAST(sister_uid AS TEXT) AS su, sister_nickname AS sn,
+               sister_level, CAST(sister_uid2 AS TEXT) AS su2, sister_nickname2 AS sn2,
+               form_date, dissolve_date, {DAYS_SINCE_FORMED_SQL} AS days
+        FROM team_detail
+        WHERE rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+    """).fetchall()
+    conn.close()
+
+    by_sister = {}   # 姐姐uid -> [她带的团]
+    nick = {}        # uid -> 昵称（任一角色）
+    for r in rows:
+        if r['su']:
+            by_sister.setdefault(r['su'], []).append(r)
+            nick.setdefault(r['su'], r['sn'])
+        if r['su2']:
+            nick.setdefault(r['su2'], r['sn2'])
+
+    if uid not in by_sister:
+        return jsonify({'error': '暂无带团记录'}), 404
+
+    stats = {'descendants': 0, 'generations': 0, 'active_teams': 0}
+
+    def build(su, depth, seen):
+        kids = []
+        # 按「人」聚合：同一对姐妹的多个团合并为一个节点（teams 列表保留每团明细）
+        agg = {}
+        for t in by_sister.get(su, []):
+            k = t['su2'] or f"team:{t['team_id']}"
+            a = agg.setdefault(k, {'uid': t['su2'], 'nickname': t['sn2'] or t['su2'] or '—',
+                                   'teams': [], 'active': 0})
+            status = 'active' if (not t['dissolve_date'] or t['dissolve_date'] == '') else 'dissolved'
+            a['teams'].append({'team_id': t['team_id'], 'hall_name': t['hall_name'],
+                               'form_date': t['form_date'], 'dissolve_date': t['dissolve_date'],
+                               'days': t['days'], 'status': status})
+            if status == 'active':
+                a['active'] += 1
+        for a in agg.values():
+            stats['descendants'] += len(a['teams'])
+            stats['active_teams'] += a['active']
+            stats['generations'] = max(stats['generations'], depth)
+            node = {
+                'uid': a['uid'], 'nickname': a['nickname'],
+                'team_count': len(a['teams']), 'active_count': a['active'],
+                'status': 'active' if a['active'] else 'dissolved',
+                'teams': a['teams'],
+                'became_sister': bool(a['uid'] and a['uid'] in by_sister),
+            }
+            if a['uid'] and a['uid'] in by_sister and a['uid'] not in seen and depth < 4:
+                node['children'] = build(a['uid'], depth + 1, seen | {a['uid']})
+            kids.append(node)
+        # 进行中置顶，其余按带团次数降序
+        kids.sort(key=lambda x: -x['team_count'])
+        kids.sort(key=lambda x: x['status'] != 'active')
+        return kids
+
+    tree = {
+        'uid': uid, 'nickname': nick.get(uid) or uid,
+        'children': build(uid, 1, {uid}),
+    }
+    return jsonify({'root': {'uid': uid, 'nickname': tree['nickname']}, 'tree': tree, 'stats': stats})
+
+
 @app.route('/api/captains')
 @login_required
 def api_captains():

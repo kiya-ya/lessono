@@ -539,32 +539,91 @@ function renderGradLine(trend) {
   }
 }
 
-// 传承链弹窗：毕业妹妹晋升姐姐后带团明细（复用 /api/sister-detail 真实数据）
+// 传承链弹窗：树状图（毕业妹妹 → 晋升姐姐 → 她带的妹妹 → 妹妹再晋升…代际展开）
 async function openLineage(name, uid) {
   if (!uid) return;
   try {
-    const res = await fetch(API_BASE + '/api/sister-detail?uid=' + encodeURIComponent(uid));
+    const res = await fetch(API_BASE + '/api/lineage-tree?uid=' + encodeURIComponent(uid));
     const d = await res.json();
-    if (d.error || !d.teams || !d.teams.length) {
+    if (d.error || !d.tree || !(d.tree.children || []).length) {
       if (typeof showToast === 'function') showToast(`「${name}」暂无带团记录`, 'info');
       return;
     }
-    const teams = d.teams;
-    const active = teams.filter(t => t.status === 'active').length;
-    const rows = teams.map(t => `<tr>
+    const st = d.stats || {};
+    // 直接带的团明细表（按人聚合 → 展开为每团一行）
+    const directRows = [];
+    (d.tree.children || []).forEach(p => {
+      (p.teams || []).forEach(t => directRows.push({ ...t, nickname: p.nickname, uid: p.uid, became_sister: p.became_sister }));
+    });
+    const rows = directRows.map(t => `<tr>
       <td>${t.team_id}</td>
       <td>${esc(t.hall_name || '-')}</td>
-      <td>${esc(t.sister_nickname2 || '-')}${t.sister_uid2 ? ` <span style="color:#9CA3AF;font-size:11px;">(${t.sister_uid2})</span>` : ''}</td>
+      <td>${esc(t.nickname || '-')}${t.uid ? ` <span style="color:#9CA3AF;font-size:11px;">(${t.uid})</span>` : ''}${t.became_sister ? ' <span class="chip up" style="font-size:10px;">也当了姐姐</span>' : ''}</td>
       <td>${esc(t.form_date || '-')}</td>
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
-      <td>${t.days_since_formed} 天</td>
+      <td>${t.days} 天</td>
     </tr>`).join('');
     openWarnModal(`传承链 · ${esc(name)}`,
-      `<div style="font-size:12px;color:#6B7280;margin-bottom:8px;">毕业后晋升为姐姐 · 当前牌子 <b>${esc(d.level || '无')}</b> · 共带 ${teams.length} 团（进行中 ${active}）</div>
+      `<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个</div>
+       <div id="lineage-tree-chart" style="width:100%;height:380px;"></div>
+       <div style="font-size:12px;color:#9CA3AF;margin:6px 0;">直接带的 ${directRows.length} 个团：</div>
        <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
+    renderLineageTree(d.tree);
   } catch (e) {
     if (typeof showToast === 'function') showToast('传承链加载失败: ' + e.message, 'error');
   }
+}
+
+// ECharts 树状图渲染：节点=妹妹（团），颜色区分状态；「也当了姐姐」的节点紫色描边可继续展开
+let _lineageChart = null;
+function renderLineageTree(root) {
+  const el = document.getElementById('lineage-tree-chart');
+  if (!el || !window.echarts) return;
+  if (_lineageChart) { _lineageChart.dispose(); _lineageChart = null; }
+  const toNode = n => ({
+    name: n.nickname + (n.team_count > 1 ? ` ×${n.team_count}` : ''),
+    value: n.uid,
+    teamInfo: n,
+    symbolSize: n.became_sister ? 12 : 8,
+    itemStyle: {
+      color: n.status === 'active' ? '#3D9A6C' : '#C0C4CC',
+      borderColor: n.became_sister ? '#7C5CFF' : '#fff',
+      borderWidth: n.became_sister ? 2 : 1,
+    },
+    label: { fontWeight: n.became_sister ? 700 : 400 },
+    children: (n.children || []).map(toNode),
+  });
+  const data = {
+    name: root.nickname, value: root.uid, teamInfo: root,
+    symbolSize: 14, itemStyle: { color: '#7C5CFF', borderColor: '#5B3EC4', borderWidth: 2 },
+    label: { fontWeight: 700 },
+    children: (root.children || []).map(toNode),
+  };
+  _lineageChart = echarts.init(el);
+  _lineageChart.setOption({
+    tooltip: {
+      trigger: 'item', triggerOn: 'mousemove',
+      formatter: p => {
+        const t = p.data.teamInfo || {};
+        if (t.team_count == null) return `<b>${esc(p.name)}</b><br/>UID: ${t.uid || ''}`;
+        const teamLines = (t.teams || []).slice(0, 5).map(x =>
+          `#${x.team_id} ${esc(x.hall_name || '—')} · ${x.form_date || '—'} · ${x.status === 'active' ? '进行中' : '解散于 ' + (x.dissolve_date || '—')}`).join('<br/>');
+        return `<b>${esc(t.nickname || p.name)}</b>（${t.uid || '—'}）<br/>带过 ${t.team_count} 个团 · 进行中 ${t.active_count}${t.became_sister ? ' · 她也晋升为姐姐' : ''}<br/><span style="color:#9CA3AF;">${teamLines}${(t.teams || []).length > 5 ? '<br/>…' : ''}</span>`;
+      },
+    },
+    series: [{
+      type: 'tree', data: [data],
+      left: '14%', right: '22%', top: '4%', bottom: '4%',
+      orient: 'LR', symbol: 'circle',
+      expandAndCollapse: true, initialTreeDepth: 2,
+      label: { position: 'right', verticalAlign: 'middle', fontSize: 11, color: '#374151', distance: 6 },
+      leaves: { label: { position: 'right', fontSize: 11, color: '#374151' } },
+      lineStyle: { color: '#D9D5F0', width: 1.2, curveness: 0.5 },
+      emphasis: { focus: 'descendant' },
+      animationDuration: 300,
+    }],
+  });
+  el.oncontextmenu = ev => ev.preventDefault();
 }
 
 function setPoolPerPage(v) { poolPerPage = parseInt(v) || 20; poolPage = 0; renderTalentPool(); }
