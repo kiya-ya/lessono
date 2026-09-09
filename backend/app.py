@@ -1338,6 +1338,7 @@ def grad_retention_stats(conn, hall='all'):
         SELECT CAST(sister_uid2 AS TEXT) AS su,
                MAX(sister_nickname2) AS nickname,
                MAX(sister_nickname) AS sister_nickname,
+               MAX(CAST(sister_uid AS TEXT)) AS sister_uid,
                MAX(dissolve_date) AS grad_date,
                MAX(hall_name) AS hall_name
         FROM team_detail
@@ -1418,7 +1419,8 @@ def grad_retention_stats(conn, hall='all'):
                 pass
         list_out.append({
             'sister_uid2': su, 'nickname': g['nickname'],
-            'sister_nickname': g['sister_nickname'], 'grad_date': gd,
+            'sister_nickname': g['sister_nickname'], 'sister_uid': g['sister_uid'],
+            'grad_date': gd,
             'hall_name': g['hall_name'], 'retained': retained_flag,
             'retained_days': retained_days, 'promoted': promoted_flag,
             'weeks_active': weeks_active.get(su),

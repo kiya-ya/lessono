@@ -496,13 +496,17 @@ function gradRetentionTableHTML(list) {
     const lineage = g.promoted
       ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" data-u="${esc(uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="点击查看她带的团">已开始带妹妹 · 看明细</span>`
       : '<span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span>';
+    // 「+」向上穿梭：直接看她姐姐的传承链（不进弹窗点师承链）
+    const shuttleUp = g.sister_uid
+      ? ` <span class="chip" style="cursor:pointer;background:#F1EDFF;color:#7C5CFF;font-weight:700;padding:2px 8px;" data-n="${esc(g.sister_nickname || '')}" data-u="${esc(g.sister_uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="向上穿梭：她姐姐「${esc(g.sister_nickname || '')}」的传承链">+</span>`
+      : '';
     return `<tr>
       <td>${esc(name)}</td>
       <td>${uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${uid}')" style="color:#7C5CFF;text-decoration:none;">${uid}</a>` : '—'}</td>
       <td>${esc(g.grad_date || '—')}</td>
       <td>${esc(g.sister_nickname || '—')}</td>
       <td style="white-space:nowrap;">${grWeeksHtml(g)}</td>
-      <td>${lineage}</td>
+      <td>${lineage}${shuttleUp}</td>
       <td style="color:#9CA3AF;">—</td>
       <td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td>
     </tr>`;
@@ -684,7 +688,7 @@ async function openLineage(name, uid) {
     const rows = directRows.map(t => `<tr>
       <td>${t.team_id}</td>
       <td>${esc(t.hall_name || '-')}</td>
-      <td>${esc(t.nickname || '-')}${t.uid ? ` <span style="color:#9CA3AF;font-size:11px;">(${t.uid})</span>` : ''}${t.became_sister ? ' <span class="chip up" style="font-size:10px;">也当了姐姐</span>' : ''}</td>
+      <td>${esc(t.nickname || '-')}${t.uid ? ` <span style="color:#9CA3AF;font-size:11px;">(${t.uid})</span>` : ''}${t.became_sister ? ` <span class="chip up" style="font-size:10px;cursor:pointer;" data-n="${esc(t.nickname || '')}" data-u="${esc(t.uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="向下穿梭：看她的传承链">也当了姐姐 +</span>` : ''}</td>
       <td>${esc(t.form_date || '-')}</td>
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
       <td>${t.days} 天</td>
