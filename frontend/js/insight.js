@@ -496,17 +496,13 @@ function gradRetentionTableHTML(list) {
     const lineage = g.promoted
       ? `<span class="chip up" style="cursor:pointer;" data-n="${esc(name)}" data-u="${esc(uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="点击查看她带的团">已开始带妹妹 · 看明细</span>`
       : '<span style="display:inline-flex;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;color:#6B7280;background:#F3F4F6;">未开始带妹妹</span>';
-    // 「+」向上穿梭：直接看她姐姐的传承链（不进弹窗点师承链）
-    const shuttleUp = g.sister_uid
-      ? ` <span class="chip" style="cursor:pointer;background:#F1EDFF;color:#7C5CFF;font-weight:700;padding:2px 8px;" data-n="${esc(g.sister_nickname || '')}" data-u="${esc(g.sister_uid)}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="向上穿梭：她姐姐「${esc(g.sister_nickname || '')}」的传承链">+</span>`
-      : '';
     return `<tr>
       <td>${esc(name)}</td>
       <td>${uid ? `<a href="javascript:void(0)" onclick="jumpToUID('${uid}')" style="color:#7C5CFF;text-decoration:none;">${uid}</a>` : '—'}</td>
       <td>${esc(g.grad_date || '—')}</td>
       <td>${esc(g.sister_nickname || '—')}</td>
       <td style="white-space:nowrap;">${grWeeksHtml(g)}</td>
-      <td>${lineage}${shuttleUp}</td>
+      <td>${lineage}</td>
       <td style="color:#9CA3AF;">—</td>
       <td><span style="font-size:10.5px;color:#92400E;background:#FFFBEB;border-radius:6px;padding:2px 6px;">近似</span></td>
     </tr>`;
@@ -693,12 +689,15 @@ async function openLineage(name, uid) {
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
       <td>${t.days} 天</td>
     </tr>`).join('');
-    // 师承链（向上）：祖师 → … → 她的姐姐 → 当前人（高亮）；每位可点击跳转她的传承链
+    // 师承链（向上）：祖师 → … → [+ 她的姐姐] → 当前人（高亮）
+    // 姐姐做成带 + 的按钮：点击往上回溯一层；更上游的祖师们保持文字链接可继续上溯
     const anc = d.ancestry || [];
     const chainHtml = anc.length
-      ? `<div style="font-size:12.5px;margin-bottom:8px;padding:8px 10px;background:#FAF9FF;border:1px solid #EDE9FB;border-radius:8px;line-height:1.9;">
+      ? `<div style="font-size:12.5px;margin-bottom:8px;padding:8px 10px;background:#FAF9FF;border:1px solid #EDE9FB;border-radius:8px;line-height:1.9;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
           <span style="color:#9CA3AF;font-size:11px;font-weight:600;">师承 </span>
-          ${anc.map(a => `<a href="javascript:void(0)" onclick="openLineage('${esc(a.nickname || '').replace(/'/g, "\\'")}','${a.uid}')" style="color:#7C5CFF;text-decoration:none;" title="查看 ${esc(a.nickname || '')} 的传承链">${esc(a.nickname || a.uid)}</a>`).join(' <span style="color:#C9CDD4;">→</span> ')}
+          ${anc.slice(0, -1).map(a => `<a href="javascript:void(0)" data-n="${esc(a.nickname || '')}" data-u="${a.uid}" onclick="openLineage(this.dataset.n, this.dataset.u)" style="color:#7C5CFF;text-decoration:none;" title="查看 ${esc(a.nickname || '')} 的传承链">${esc(a.nickname || a.uid)}</a><span style="color:#C9CDD4;">→</span>`).join(' ')}
+          <button data-n="${esc(anc[anc.length - 1].nickname || '')}" data-u="${anc[anc.length - 1].uid}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="往上回溯：她姐姐「${esc(anc[anc.length - 1].nickname || '')}」的传承链"
+            style="padding:3px 10px;border:1px solid #DDD6FE;background:#F1EDFF;color:#5B3EC4;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;">+ ${esc(anc[anc.length - 1].nickname || anc[anc.length - 1].uid)}</button>
           <span style="color:#C9CDD4;">→</span> <b style="color:var(--wb-text);">${esc(name)}</b><span style="color:#9CA3AF;font-size:11px;">（当前）</span>
         </div>`
       : '';
