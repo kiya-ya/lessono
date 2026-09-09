@@ -1843,16 +1843,37 @@ def api_lineage_tree():
     conn.close()
 
     by_sister = {}   # 姐姐uid -> [她带的团]
+    by_sister2 = {}  # 妹妹uid -> [她待过的团]（向上追溯用）
     nick = {}        # uid -> 昵称（任一角色）
     for r in rows:
         if r['su']:
             by_sister.setdefault(r['su'], []).append(r)
             nick.setdefault(r['su'], r['sn'])
         if r['su2']:
+            by_sister2.setdefault(r['su2'], []).append(r)
             nick.setdefault(r['su2'], r['sn2'])
 
     if uid not in by_sister:
         return jsonify({'error': '暂无带团记录'}), 404
+
+    # 师承链（向上）：她当妹妹时最近一次团里的姐姐 → 该姐姐又是谁的妹妹 → …最多 6 代、防环
+    # 数据基础：99% 的妹妹历史只有一个姐姐，单链不分叉；链止于「没当过妹妹的人」（祖师）
+    ancestry = []
+    seen_up = {uid}
+    cur = uid
+    for _ in range(6):
+        teams_as_sister2 = by_sister2.get(cur)
+        if not teams_as_sister2:
+            break
+        # 最近一次团（form_date 老格式混在，team_id 递增兜底排序）
+        last_team = sorted(teams_as_sister2, key=lambda t: (t['form_date'] or '', t['team_id']))[-1]
+        up = last_team['su']
+        if not up or up in seen_up:
+            break
+        seen_up.add(up)
+        ancestry.append({'uid': up, 'nickname': nick.get(up) or up})
+        cur = up
+    ancestry.reverse()  # 祖师 → … → 她的姐姐
 
     stats = {'descendants': 0, 'generations': 0, 'active_teams': 0}
 
@@ -1893,7 +1914,8 @@ def api_lineage_tree():
         'uid': uid, 'nickname': nick.get(uid) or uid,
         'children': build(uid, 1, {uid}),
     }
-    return jsonify({'root': {'uid': uid, 'nickname': tree['nickname']}, 'tree': tree, 'stats': stats})
+    return jsonify({'root': {'uid': uid, 'nickname': tree['nickname']}, 'tree': tree, 'stats': stats,
+                    'ancestry': ancestry})
 
 
 @app.route('/api/captains')

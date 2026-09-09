@@ -689,8 +689,18 @@ async function openLineage(name, uid) {
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
       <td>${t.days} 天</td>
     </tr>`).join('');
+    // 师承链（向上）：祖师 → … → 她的姐姐 → 当前人（高亮）；每位可点击跳转她的传承链
+    const anc = d.ancestry || [];
+    const chainHtml = anc.length
+      ? `<div style="font-size:12.5px;margin-bottom:8px;padding:8px 10px;background:#FAF9FF;border:1px solid #EDE9FB;border-radius:8px;line-height:1.9;">
+          <span style="color:#9CA3AF;font-size:11px;font-weight:600;">师承 </span>
+          ${anc.map(a => `<a href="javascript:void(0)" onclick="openLineage('${esc(a.nickname || '').replace(/'/g, "\\'")}','${a.uid}')" style="color:#7C5CFF;text-decoration:none;" title="查看 ${esc(a.nickname || '')} 的传承链">${esc(a.nickname || a.uid)}</a>`).join(' <span style="color:#C9CDD4;">→</span> ')}
+          <span style="color:#C9CDD4;">→</span> <b style="color:var(--wb-text);">${esc(name)}</b><span style="color:#9CA3AF;font-size:11px;">（当前）</span>
+        </div>`
+      : '';
     openWarnModal(`传承链 · ${esc(name)}`,
-      `<div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点节点收起/展开）</span></div>
+      `${chainHtml}
+       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点节点收起/展开）</span></div>
        <div id="lineage-tree-chart" style="width:100%;height:420px;"></div>
        <div style="font-size:12px;color:#9CA3AF;margin:6px 0;">直接带的 ${directRows.length} 个团：</div>
        <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
