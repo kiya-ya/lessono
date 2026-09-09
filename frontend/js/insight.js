@@ -689,33 +689,32 @@ async function openLineage(name, uid) {
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
       <td>${t.days} 天</td>
     </tr>`).join('');
-    // 师承链（向上）：祖师 → … → [+ 她的姐姐] → 当前人（高亮）
-    // 姐姐做成带 + 的按钮：点击往上回溯一层；更上游的祖师们保持文字链接可继续上溯
+    // 师承链（向上）：祖师 → … → 她的姐姐 → 当前人（高亮），文字链接仅作路径参考；
+    // 穿梭的「+」在树的圆圈节点上（见 renderLineageTree）
     const anc = d.ancestry || [];
     const chainHtml = anc.length
-      ? `<div style="font-size:12.5px;margin-bottom:8px;padding:8px 10px;background:#FAF9FF;border:1px solid #EDE9FB;border-radius:8px;line-height:1.9;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+      ? `<div style="font-size:12.5px;margin-bottom:8px;padding:8px 10px;background:#FAF9FF;border:1px solid #EDE9FB;border-radius:8px;line-height:1.9;">
           <span style="color:#9CA3AF;font-size:11px;font-weight:600;">师承 </span>
-          ${anc.slice(0, -1).map(a => `<a href="javascript:void(0)" data-n="${esc(a.nickname || '')}" data-u="${a.uid}" onclick="openLineage(this.dataset.n, this.dataset.u)" style="color:#7C5CFF;text-decoration:none;" title="查看 ${esc(a.nickname || '')} 的传承链">${esc(a.nickname || a.uid)}</a><span style="color:#C9CDD4;">→</span>`).join(' ')}
-          <button data-n="${esc(anc[anc.length - 1].nickname || '')}" data-u="${anc[anc.length - 1].uid}" onclick="openLineage(this.dataset.n, this.dataset.u)" title="往上回溯：她姐姐「${esc(anc[anc.length - 1].nickname || '')}」的传承链"
-            style="padding:3px 10px;border:1px solid #DDD6FE;background:#F1EDFF;color:#5B3EC4;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;">+ ${esc(anc[anc.length - 1].nickname || anc[anc.length - 1].uid)}</button>
+          ${anc.map(a => `<a href="javascript:void(0)" data-n="${esc(a.nickname || '')}" data-u="${a.uid}" onclick="openLineage(this.dataset.n, this.dataset.u)" style="color:#7C5CFF;text-decoration:none;" title="查看 ${esc(a.nickname || '')} 的传承链">${esc(a.nickname || a.uid)}</a>`).join(' <span style="color:#C9CDD4;">→</span> ')}
           <span style="color:#C9CDD4;">→</span> <b style="color:var(--wb-text);">${esc(name)}</b><span style="color:#9CA3AF;font-size:11px;">（当前）</span>
         </div>`
       : '';
     openWarnModal(`传承链 · ${esc(name)}`,
       `${chainHtml}
-       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点节点收起/展开）</span></div>
+       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点带 ⊕ 的节点穿梭）</span></div>
        <div id="lineage-tree-chart" style="width:100%;height:420px;"></div>
        <div style="font-size:12px;color:#9CA3AF;margin:6px 0;">直接带的 ${directRows.length} 个团：</div>
        <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
-    renderLineageTree(d.tree);
+    renderLineageTree(d.tree, anc);
   } catch (e) {
     if (typeof showToast === 'function') showToast('传承链加载失败: ' + e.message, 'error');
   }
 }
 
-// ECharts 树状图渲染：节点=妹妹（团），颜色区分状态；「也当了姐姐」的节点紫色描边可继续展开
+// ECharts 树状图渲染：节点=妹妹（团），颜色区分状态；
+// 「⊕」紫圆加号标在节点名前：根节点 ⊕ = 往上回溯她的姐姐；妹妹节点 ⊕ = 她也当了姐姐，点节点穿梭进她的传承链
 let _lineageChart = null;
-function renderLineageTree(root) {
+function renderLineageTree(root, ancestry) {
   const el = document.getElementById('lineage-tree-chart');
   if (!el || !window.echarts) return;
   if (_lineageChart) { _lineageChart.dispose(); _lineageChart = null; }
@@ -723,19 +722,26 @@ function renderLineageTree(root) {
     name: n.nickname + (n.team_count > 1 ? ` ×${n.team_count}` : ''),
     value: n.uid,
     teamInfo: n,
+    shuttle: n.became_sister ? n.uid : null,   // 点节点穿梭目标
     symbolSize: n.became_sister ? 12 : 8,
     itemStyle: {
       color: n.status === 'active' ? '#3D9A6C' : '#C0C4CC',
       borderColor: n.became_sister ? '#7C5CFF' : '#fff',
       borderWidth: n.became_sister ? 2 : 1,
     },
-    label: { fontWeight: n.became_sister ? 700 : 400 },
+    label: {
+      fontWeight: n.became_sister ? 700 : 400,
+      formatter: p => (p.data.shuttle ? '{pl|+} ' : '') + p.name,
+    },
     children: (n.children || []).map(toNode),
   });
+  const rootUp = (ancestry && ancestry.length) ? ancestry[ancestry.length - 1] : null;
   const data = {
     name: root.nickname, value: root.uid, teamInfo: root,
+    isRoot: true,
+    shuttle: rootUp ? rootUp.uid : null,       // 根节点的 ⊕ = 往上回溯她的姐姐
     symbolSize: 14, itemStyle: { color: '#7C5CFF', borderColor: '#5B3EC4', borderWidth: 2 },
-    label: { fontWeight: 700 },
+    label: { fontWeight: 700, formatter: p => (p.data.shuttle ? '{pl|+} ' : '') + p.name },
     children: (root.children || []).map(toNode),
   };
   _lineageChart = echarts.init(el);
@@ -744,10 +750,14 @@ function renderLineageTree(root) {
       trigger: 'item', triggerOn: 'mousemove',
       formatter: p => {
         const t = p.data.teamInfo || {};
-        if (t.team_count == null) return `<b>${esc(p.name)}</b><br/>UID: ${t.uid || ''}`;
+        if (t.team_count == null) {
+          const upHint = p.data.shuttle ? '<br/><span style="color:#7C5CFF;">点 ⊕ 往上回溯她的姐姐</span>' : '';
+          return `<b>${esc(p.name)}</b><br/>UID: ${t.uid || ''}${upHint}`;
+        }
         const teamLines = (t.teams || []).slice(0, 5).map(x =>
           `#${x.team_id} ${esc(x.hall_name || '—')} · ${x.form_date || '—'} · ${x.status === 'active' ? '进行中' : '解散于 ' + (x.dissolve_date || '—')}`).join('<br/>');
-        return `<b>${esc(t.nickname || p.name)}</b>（${t.uid || '—'}）<br/>带过 ${t.team_count} 个团 · 进行中 ${t.active_count}${t.became_sister ? ' · 她也晋升为姐姐' : ''}<br/><span style="color:#9CA3AF;">${teamLines}${(t.teams || []).length > 5 ? '<br/>…' : ''}</span>`;
+        const shHint = t.became_sister ? '<br/><span style="color:#7C5CFF;">点 ⊕ 穿梭进她的传承链</span>' : '';
+        return `<b>${esc(t.nickname || p.name)}</b>（${t.uid || '—'}）<br/>带过 ${t.team_count} 个团 · 进行中 ${t.active_count}${t.became_sister ? ' · 她也晋升为姐姐' : ''}${shHint}<br/><span style="color:#9CA3AF;">${teamLines}${(t.teams || []).length > 5 ? '<br/>…' : ''}</span>`;
       },
     },
     series: [{
@@ -757,12 +767,27 @@ function renderLineageTree(root) {
       roam: true,                    // 滚轮缩放 + 拖拽平移（妹妹多时查看局部）
       scaleLimit: { min: 0.4, max: 3 },
       expandAndCollapse: true, initialTreeDepth: 2,
-      label: { position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5 },
-      leaves: { label: { position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5 } },
+      label: {
+        position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5,
+        rich: { pl: { backgroundColor: '#7C5CFF', color: '#fff', fontSize: 9, fontWeight: 700, padding: [1, 4], borderRadius: 7 } },
+      },
+      leaves: { label: { position: 'bottom', verticalAlign: 'top', fontSize: 11, color: '#374151', distance: 5,
+        rich: { pl: { backgroundColor: '#7C5CFF', color: '#fff', fontSize: 9, fontWeight: 700, padding: [1, 4], borderRadius: 7 } } } },
       lineStyle: { color: '#D9D5F0', width: 1.2, curveness: 0.5 },
       emphasis: { focus: 'descendant' },
       animationDuration: 300,
     }],
+  });
+  // 点带 ⊕ 的节点穿梭：根 → 她的姐姐；妹妹 → 她的传承链
+  _lineageChart.off('click');
+  _lineageChart.on('click', p => {
+    const t = p.data && p.data.teamInfo;
+    if (!p.data || !p.data.shuttle) return;   // 无 ⊕ 的节点走默认收起/展开
+    if (p.data.isRoot) {
+      if (rootUp) openLineage(rootUp.nickname, rootUp.uid);
+    } else if (t && t.uid) {
+      openLineage(t.nickname, t.uid);
+    }
   });
   el.oncontextmenu = ev => ev.preventDefault();
 }
