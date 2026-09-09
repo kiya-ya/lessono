@@ -18,6 +18,7 @@ function setCaptainPeriod(p) {
 let captainRewardMap = {};   // uid → { reward, halls }
 
 async function loadCaptains() {
+  updateCaptainHallTitle();
   try {
     const res = await fetch(API_BASE + `/api/captains?limit=200&period=${captainPeriod}&` + getHallParam().substring(1));
     const d = await res.json();
@@ -29,6 +30,15 @@ async function loadCaptains() {
     (d.data || []).forEach(c => { captainRewardMap[c.uid] = { reward: c.total_reward, halls: c.halls || '' }; });
     applyCaptainReward();
   } catch (e) { console.error('姐姐奖励排行加载失败:', e); }
+}
+
+function updateCaptainHallTitle() {
+  const el = document.getElementById('captains-current-hall');
+  if (!el) return;
+  const hall = typeof getHall === 'function' ? getHall() : currentHall;
+  const select = document.getElementById('hall-select');
+  const option = select && Array.from(select.options).find(o => o.value === hall);
+  el.textContent = '当前所属厅：' + (hall === 'all' ? '全部大厅' : (option ? option.textContent.trim() : hall));
 }
 
 // 把 /api/captains 的奖励/大厅合并进 /api/sister-profile 画像列表，形成「姐姐总览」合并表
@@ -50,7 +60,7 @@ async function loadOverviewCaptains() {
     const d = await res.json();
     const list = (d.data || []).slice(0, 3);
     el.innerHTML = list.length
-      ? `<ul class="mini-preview">${list.map((c, i) => `<li onclick="switchTab('captains')" style="cursor:pointer;" title="点击查看姐姐分析">
+      ? `<ul class="mini-preview">${list.map((c, i) => `<li onclick="jumpToCaptainOverview()" style="cursor:pointer;" title="点击查看姐姐总览">
           <span class="mp-rank ${i < 3 ? 'top' : ''}">${i + 1}</span>
           <span class="mp-name">${c.nickname} <span class="mp-sub">(${c.uid})</span></span>
           <span class="mp-val">${wbFmtMoney(c.total_reward)}</span>
@@ -66,6 +76,7 @@ let sisterProfileGraduates = [];
 let sisterProfilePage = 0;
 let sisterProfilePerPage = 20;
 let sisterProfileSort = 'reward';
+let sisterProfileTag = '';
 let gradRange = 'week';   // 毕业妹妹时间档：today / week / month
 
 function getSisterWeekParam() {
@@ -181,6 +192,10 @@ function renderSisterCharts() {
         ],
       }]
     });
+    charts['sisterTag'].on('click', p => {
+      const tags = { '头部': 'head', '风险': 'risk', '普通': 'normal' };
+      if (tags[p.name]) setSisterTagFilter(tags[p.name]);
+    });
   }
   // 2) 姐妹关系持续率分段直方图（分箱避免散点重叠）
   const retEl = document.getElementById('chart-sister-ret');
@@ -214,8 +229,17 @@ function renderSisterCharts() {
 function setSisterProfileSort(v) { sisterProfileSort = v; sisterProfilePage = 0; renderSisterProfile(); }
 function setSisterProfilePerPage(v) { sisterProfilePerPage = parseInt(v) || 20; sisterProfilePage = 0; renderSisterProfile(); }
 
+function setSisterTagFilter(tag) {
+  sisterProfileTag = tag || '';
+  sisterProfilePage = 0;
+  renderSisterProfile();
+  setTimeout(() => focusModule('#sister-overview-card'), 40);
+}
+
+function clearSisterTagFilter() { setSisterTagFilter(''); }
+
 function renderSisterProfile() {
-  const list = [...sisterProfileList];
+  const list = sisterProfileTag ? sisterProfileList.filter(x => x.tag === sisterProfileTag) : [...sisterProfileList];
   const key = sisterProfileSort;
   list.sort((a, b) => {
     const va = a[key], vb = b[key];
@@ -232,6 +256,12 @@ function renderSisterProfile() {
   const page = list.slice(start, start + sisterProfilePerPage);
   const tag = x => x === 'head' ? '<span class="chip up">头部</span>' : x === 'risk' ? '<span class="chip down">风险</span>' : '<span class="chip flat">普通</span>';
   const rewardTh = CAPTAIN_PERIOD_LABEL[captainPeriod] + '奖励';
+  const tagFilter = document.getElementById('sister-tag-filter');
+  if (tagFilter) {
+    const labels = { head: '头部', risk: '风险', normal: '普通' };
+    tagFilter.classList.toggle('visible', !!sisterProfileTag);
+    tagFilter.textContent = sisterProfileTag ? `已筛选：${labels[sisterProfileTag]} ×` : '';
+  }
   document.getElementById('sister-profile-table').innerHTML = `
     <tr><th>#</th><th>姐姐</th><th>姐姐UID</th><th>标签</th><th>带团</th><th>进行中</th><th>姐妹关系持续率</th><th>所在大厅</th><th>等级</th><th>${rewardTh}</th></tr>
     ${page.map((x, i) => `<tr>

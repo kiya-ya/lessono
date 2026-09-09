@@ -121,19 +121,19 @@
       <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
     </div>
     <div class="warn-grid" id="overview-warn-grid">
-      <div class="warn-card severe" onclick="switchTab('alerts')">
+      <div class="warn-card severe" onclick="jumpToAlertModule('retention')">
         <div class="top"><span class="dot red"></span><span id="ow-ret-title">姐妹团留存率预警</span><span class="lvl" id="ow-ret-lvl">—</span></div>
         <div class="val" id="ow-ret-val">--</div>
         <div class="foot" id="ow-ret-foot">—</div>
         <span class="go">进入预警中心 →</span>
       </div>
-      <div class="warn-card warning" onclick="switchTab('alerts')">
+      <div class="warn-card warning" onclick="jumpToAlertModule('active_diss')">
         <div class="top"><span class="dot amber"></span><span id="ow-diss-title">主动解散占比预警</span><span class="lvl" id="ow-diss-lvl">—</span></div>
         <div class="val" id="ow-diss-val">--</div>
         <div class="foot" id="ow-diss-foot">—</div>
         <span class="go">进入预警中心 →</span>
       </div>
-      <div class="warn-card notice" onclick="switchTab('alerts')">
+      <div class="warn-card notice" onclick="jumpToAlertModule('new_team')">
         <div class="top"><span class="dot violet"></span><span id="ow-new-title">新成团数预警</span><span class="lvl" id="ow-new-lvl">—</span></div>
         <div class="val" id="ow-new-val">--</div>
         <div class="foot" id="ow-new-foot">—</div>
@@ -360,7 +360,7 @@
         </div>
         <span class="hint">当日奖励 TOP3 · 点击查看完整姐姐分析</span>
         <div id="overview-captain-preview"></div>
-        <button class="expand-btn" onclick="switchTab('captains')">查看全部姐姐 →</button>
+        <button class="expand-btn" onclick="jumpToCaptainOverview()">查看全部姐姐 →</button>
       </div>
     </div>
     </section>
@@ -631,6 +631,7 @@
   <div id="tab-captains" class="tab-panel">
     <div class="section-head">
       <h2>姐姐分析</h2>
+      <h2 class="captains-current-hall" id="captains-current-hall">当前所属厅：全部大厅</h2>
       <select id="sister-week-select" class="wb-select" onchange="loadSisterProfile()" title="切换画像统计周（本周流水 / 环比）"></select>
       <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
     </div>
@@ -664,9 +665,9 @@
         <div class="chart-container" id="chart-sister-ret" style="height:240px;"></div>
       </div>
     </div>
-    <div class="chart-card">
+    <div class="chart-card" id="sister-overview-card">
       <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <span>姐姐总览</span>
+        <span>姐姐总览 <button class="sister-tag-filter" id="sister-tag-filter" onclick="clearSisterTagFilter()" title="取消标签筛选"></button></span>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <div class="seg">
             <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
@@ -1074,9 +1075,9 @@
 <script src="js/api.js?v=65"></script>
 <script src="js/auth.js?v=42"></script>
 <script src="js/render.js?v=58"></script>
-<script src="js/app.js?v=66"></script>
+<script src="js/app.js?v=67"></script>
 <script src="js/workbench.js?v=65"></script>
-<script src="js/insight.js?v=63"></script>
+<script src="js/insight.js?v=64"></script>
 <script src="js/warncenter.js?v=7"></script>
 <script src="js/lyingflat.js?v=3"></script>
 </body>

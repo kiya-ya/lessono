@@ -30,6 +30,27 @@ function goPage(name, context) {
   switchPage(name);
 }
 
+function focusModule(selector, attempts = 12) {
+  const el = document.querySelector(selector);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (attempts > 0) setTimeout(() => focusModule(selector, attempts - 1), 120);
+}
+
+// 概览预警卡 → 预警中心对应指标模块
+function jumpToAlertModule(key) {
+  switchTab('alerts');
+  setTimeout(() => focusModule('#wc-' + key), 140);
+}
+
+// 概览姐姐排行 → 姐姐分析的姐姐总览模块
+function jumpToCaptainOverview() {
+  switchTab('captains');
+  setTimeout(() => focusModule('#sister-overview-card'), 180);
+}
+
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
 const DRILL_TARGETS = {
   retention:   { tab: 'compare' },                      // 留存率 → 对比分析
