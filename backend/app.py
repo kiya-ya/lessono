@@ -1323,6 +1323,10 @@ def api_sister2_profile():
     })
 
 
+# 毕业妹妹产出线（定稿 2026-09-14）：新人阶梯 336/672/1008/1344，毕业后按老人要求 ≥1344/周
+GRAD_PROD_BAR = 1344
+
+
 def grad_retention_stats(conn, hall='all'):
     """毕业妹妹留存（近似兜底）：毕业后仍留存/产出、毕业后30天留存、晋升为姐姐。
     毕业妹妹 = 有「毕业」记录的去重妹妹（sister_uid2，取最近一次毕业日）。
@@ -1434,10 +1438,10 @@ def grad_retention_stats(conn, hall='all'):
     list_out.sort(key=lambda x: -(x['retained_days'] if x['retained_days'] is not None else -1))
 
     # ── 产出留存口径（定稿 2026-09-14， grilling 结论）──
-    # 毕业后第 N 周（窗口 = 毕业次日+7(N-1) ~ +7N）内有产出 = team_sister_revenue 中与窗口
-    # 有交集的自然周里她的流水 > 0（按她在团内的角色取姐/妹列合计）。
-    # 覆盖：team_sister_revenue 自 2026-08-03 起（每日同步进行中团）；窗口与数据范围无交集 →
-    # 未覆盖（None），不进留存率分母。已知近似：毕业当周残留流水会溢入第 1 周（周粒度限制）。
+    # 毕业后第 N 周（窗口 = 毕业次日+7(N-1) ~ +7N）内有产出 = 与窗口有交集的自然周里
+    # 她的周流水 ≥ GRAD_PROD_BAR（1344，新人阶梯第四档）；数据源 member_weekly（个人精确）
+    # 优先、team_sister_revenue（团队折算）兜底。覆盖：流水数据自 2026-08-03 起；窗口与数据
+    # 范围无交集 → 未覆盖（None），不进留存率分母。已知近似：毕业当周旧团残留流水溢入第 1 周。
     rev_map = {}   # uid -> {week_start: 流水合计（姐+妹角色各自所在团）}
     rev_min = rev_max = None
     try:
@@ -1456,6 +1460,14 @@ def grad_retention_stats(conn, hall='all'):
                 um[r['week_start']] = um.get(r['week_start'], 0.0) + v
     except Exception:
         pass
+    # member_weekly（毕业妹妹个人周流水追踪，精确到人）覆盖团队折算口径
+    try:
+        for r in conn.execute("SELECT uid, week_start, week_end, revenue FROM member_weekly").fetchall():
+            rev_min = r['week_start'] if rev_min is None else min(rev_min, r['week_start'])
+            rev_max = r['week_end'] if rev_max is None else max(rev_max, r['week_end'])
+            rev_map.setdefault(r['uid'], {})[r['week_start']] = r['revenue'] or 0.0
+    except Exception:
+        pass  # 表可能尚未建立（member_weekly_sync 未运行过）
 
     weeks_productive = {}
     w1_cov = w1_prod = w4_cov = w4_prod = 0
@@ -1480,7 +1492,7 @@ def grad_retention_stats(conn, hall='all'):
                     for ws, rev in uweeks.items():
                         cws = datetime.strptime(ws, '%Y-%m-%d').date()
                         cwe = cws + timedelta(days=6)
-                        if rev > 0 and cwe >= w0 and cws <= w1:
+                        if rev >= GRAD_PROD_BAR and cwe >= w0 and cws <= w1:
                             bm[i] = 1
                             break
         weeks_productive[su] = bm

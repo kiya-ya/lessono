@@ -91,6 +91,13 @@ def main():
         except Exception as te:
             print(f'[WARN] 姐妹团周流水同步失败: {te}')
 
+        # 毕业妹妹追踪：个人周流水/排档天数（毕业留存「产出」口径的主数据源）
+        try:
+            from member_weekly_sync import sync as sync_member_weekly
+            sync_member_weekly(weeks=1)
+        except Exception as me:
+            print(f'[WARN] 毕业妹妹追踪失败: {me}')
+
         # 抓取成功后运行预警检测
         try:
             from alerts_engine import run_alerts_check
