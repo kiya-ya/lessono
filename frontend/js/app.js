@@ -7,18 +7,24 @@ function switchPage(name) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'overview') setTimeout(() => {
     if (typeof wbResizeCharts === 'function') wbResizeCharts();
-    // 团分析 + 姐姐小框并入概览页：切回概览时重绘（自愈隐藏态 0×0 图表）
-    if (typeof loadSurvival === 'function') loadSurvival();
-    if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
+    // 概览=驾驶舱：师门榜 / 毕业妹妹卡 / 模块预览区（团分析与明细已独立成页）
     if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
     if (typeof loadGradRetention === 'function') loadGradRetention();
+    if (typeof loadOverviewPreviews === 'function') loadOverviewPreviews();
   }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (name === 'captains') {
     if (typeof switchCaptainView === 'function') switchCaptainView('profile');
     setTimeout(() => { if (typeof loadCaptains === 'function') loadCaptains(); if (typeof loadSisterProfile === 'function') loadSisterProfile(); if (typeof loadGradRetention === 'function') loadGradRetention(); }, 100);
   }
-  if (name === 'alerts') setTimeout(() => { if (typeof loadWarncenter === 'function') loadWarncenter(); if (typeof loadLyingFlat === 'function') loadLyingFlat(); }, 100);
+  if (name === 'alerts') setTimeout(() => {
+    if (typeof loadWarncenter === 'function') loadWarncenter();
+    if (typeof loadLyingFlat === 'function') loadLyingFlat();
+    // 团分析图表已并入预警中心：存活分析 + 解散原因分布
+    if (typeof loadSurvival === 'function') loadSurvival();
+    if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
+  }, 100);
+  if (name === 'detail') setTimeout(() => { if (typeof loadDetailTable === 'function') loadDetailTable(); }, 60);
 }
 
 // 旧名兼容：index.html 里的 onclick="switchTab(...)" 仍走这里
@@ -51,14 +57,48 @@ function jumpToCaptainOverview() {
   setTimeout(() => focusModule('#sister-overview-card'), 180);
 }
 
+// 概览模块预览：团分析摘要（点 → 预警中心） + 明细计数（点 → 明细页）
+async function loadOverviewPreviews() {
+  const teamEl = document.getElementById('overview-team-preview');
+  if (teamEl) {
+    try {
+      const res = await fetch(API_BASE + '/api/dissolve-reasons' + (currentHall !== 'all' ? '?hall=' + encodeURIComponent(currentHall) : ''));
+      const d = await res.json();
+      const top = (d.buckets || [])[0];
+      teamEl.innerHTML = top
+        ? `累计解散 <b>${d.total}</b> 团 · 最大类「${top.name}」${top.count} 个（${top.share}%）<br><span style="color:var(--wb-text-3);font-size:12px;">存活分析 / 解散原因钻取已并入预警中心</span>`
+        : '暂无解散数据。';
+    } catch (e) { teamEl.textContent = '加载失败'; }
+  }
+  const detEl = document.getElementById('overview-detail-preview');
+  if (detEl) {
+    try {
+      const [a, b] = await Promise.all([
+        fetch(API_BASE + '/api/detail-table?per_page=1' + getHallParam()).then(r => r.json()),
+        fetch(API_BASE + '/api/detail-table?per_page=1&status=active' + getHallParam()).then(r => r.json()),
+      ]);
+      detEl.innerHTML = `共 <b>${a.total}</b> 个姐妹团 · 进行中 <b style="color:#3D9A6C;">${b.total}</b> · 已结束 <b>${a.total - b.total}</b>`;
+    } catch (e) { detEl.textContent = '加载失败'; }
+  }
+}
+
+// 明细预览 → 明细数据页（带搜索词）
+function overviewGoDetail() {
+  const q = (document.getElementById('overview-detail-search') || {}).value || '';
+  switchTab('detail');
+  const ds = document.getElementById('detail-search');
+  if (ds) ds.value = q.trim();
+  loadDetailTable(1);
+}
+
 // 趋势图下钻：工作台 6 张趋势图 → 对应详情视角（自动带入当前大厅/周）
 const DRILL_TARGETS = {
   retention:   { tab: 'compare' },                      // 留存率 → 对比分析
-  dissolution: { tab: 'overview', status: 'dissolved' }, // 解散率 → 概览 · 明细已解散
+  dissolution: { tab: 'detail', status: 'dissolved' },  // 解散率 → 明细数据 · 已解散
   revenue:     { tab: 'compare' },                      // 礼物奖励 → 对比分析（大厅流水对比）
   activity:    { tab: 'compare' },                      // 任务活跃度 → 对比分析（指标对比表）
-  dailyNew:    { tab: 'overview', status: 'active' },   // 日级新成团 → 概览 · 明细进行中
-  dailyDiss:   { tab: 'overview', status: 'dissolved' }, // 日级解散 → 概览 · 明细已解散
+  dailyNew:    { tab: 'detail', status: 'active' },     // 日级新成团 → 明细数据 · 进行中
+  dailyDiss:   { tab: 'detail', status: 'dissolved' },  // 日级解散 → 明细数据 · 已解散
 };
 
 function drillTo(key) {
@@ -73,8 +113,9 @@ function drillTo(key) {
   }
 }
 
-// 明细下钻统一落点：切到团分析页后滚动到明细表（避免落在顶部存活/解散图上）
+// 明细下钻统一落点：切到明细数据页后滚动到明细表
 function focusDetailTable() {
+  if (state.page !== 'detail') switchTab('detail');
   const card = document.getElementById('detail-table-card');
   if (!card) return;
   setTimeout(() => {
@@ -93,7 +134,7 @@ function drillToHall(hall) {
   if (ds) ds.value = '';
   refreshData();
   if (typeof loadWorkbenchOverview === 'function') loadWorkbenchOverview();
-  switchTab('overview');
+  switchTab('detail');
   loadDetailTable(1);
   focusDetailTable();
 }
@@ -101,7 +142,7 @@ function drillToHall(hall) {
 // 饼图点击下钻：按解散原因跳到明细（已解散 + 原因筛选）
 function drillToReason(reason) {
   if (!reason) return;
-  switchTab('overview');
+  switchTab('detail');
   const st = document.getElementById('detail-status');
   if (st) st.value = 'dissolved';
   const dr = document.getElementById('detail-reason');
@@ -116,7 +157,7 @@ function drillToReason(reason) {
 function drillToDays(label) {
   const m = (label || '').match(/(\d+)-(\d+)/);
   const val = label === '30天以上' ? '30+' : m ? `${m[1]}-${m[2]}` : '';
-  switchTab('overview');
+  switchTab('detail');
   const st = document.getElementById('detail-status');
   if (st) st.value = 'active';
   const dd = document.getElementById('detail-days');
@@ -134,7 +175,7 @@ function drillToDate(field, min, max, status) {
   detailDateField = field || '';
   detailDateMin = min || '';
   detailDateMax = max || '';
-  switchTab('overview');
+  switchTab('detail');
   const st = document.getElementById('detail-status');
   if (st) st.value = status || 'all';
   const dd = document.getElementById('detail-days');
@@ -219,6 +260,7 @@ function refreshData() {
   if (typeof loadSisterProfile === 'function') loadSisterProfile();
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
   if (typeof loadGradRetention === 'function') loadGradRetention();
+  if (typeof loadOverviewPreviews === 'function') loadOverviewPreviews();
   if (typeof loadWarncenter === 'function') loadWarncenter();
   if (typeof loadLyingFlat === 'function') loadLyingFlat();
   initCompareChart();
@@ -413,11 +455,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 工作台初始化（卡墙/排行榜 + KPI + 趋势图）
   if (typeof initWorkbench === 'function') await initWorkbench();
   loadDetailTable();
-  // 团分析 + 姐姐小框已并入概览页：首屏渲染
-  if (typeof loadSurvival === 'function') loadSurvival();
-  if (typeof loadDissolveReasons === 'function') loadDissolveReasons();
+  // 概览驾驶舱首屏：师门榜 / 毕业妹妹卡 / 模块预览（团分析与明细已独立成页，入页时再加载）
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
   if (typeof loadGradRetention === 'function') loadGradRetention();
+  if (typeof loadOverviewPreviews === 'function') loadOverviewPreviews();
   if (typeof loadWarncenter === 'function') loadWarncenter();
 
   // 明细搜索框自动补全

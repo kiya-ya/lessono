@@ -50,6 +50,7 @@
       <button class="tab active" onclick="switchTab('overview')"><span class="tab-txt"><b>概览页</b><small>团分析 · 指标 · 明细</small></span></button>
       <button class="tab" onclick="switchTab('alerts')"><span class="tab-txt"><b>预警中心</b><small>规则 · 下钻</small></span></button>
       <button class="tab" onclick="switchTab('compare')"><span class="tab-txt"><b>厅分析</b><small>厅排行 · 单厅下钻</small></span></button>
+      <button class="tab" onclick="switchTab('detail')"><span class="tab-txt"><b>明细数据</b><small>搜索 · 排序 · 方框</small></span></button>
       <button class="tab" id="side-captains" onclick="switchTab('captains')"><span class="tab-txt"><b>姐姐分析</b><small>画像 · 毕业妹妹</small></span></button>
       <button class="tab sub" id="side-filter" onclick="openCaptainPool()"><span class="tab-txt"><b>姐姐筛选</b></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
@@ -297,39 +298,8 @@
     </div>
     </section>
 
-    <!-- 团分析：说明、图表、厅排行与姐姐排行 -->
+    <!-- 厅排行榜 + 师门产量榜（厅分析/姐姐分析预览） -->
     <section class="overview-cluster overview-team-analysis" aria-label="团分析">
-    <div class="section-head">
-      <h2>团分析</h2>
-      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
-    </div>
-    <div class="dn-footer">
-      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
-      <div class="dn-line">
-        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
-        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
-        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
-      </div>
-      <div class="dn-notes">
-        <span class="dn-tag">注意</span>
-        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
-      </div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card" id="survival-card">
-        <h3>姐妹团存活分析</h3>
-        <div class="chart-src" id="survival-src">基于最新快照</div>
-        <div class="survival-chips" id="survival-chips"></div>
-        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
-        <div class="chart-insight" id="survival-insight"></div>
-      </div>
-      <div class="chart-card" id="dissolve-reasons-card">
-        <h3>解散原因分布 <a id="dr-back" href="javascript:void(0)" onclick="drBackToBuckets()" style="display:none;font-size:12px;font-weight:400;color:var(--wb-accent);text-decoration:none;margin-left:8px;">← 返回大类</a></h3>
-        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 点大块（主动/系统/毕业）看细分原因</div>
-        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
-        <div class="chart-insight" id="dissolve-reasons-insight"></div>
-      </div>
-    </div>
 
     <!-- 厅排行榜 + 姐姐排行 并列小框（管理员看两个；厅运营只看姐姐） -->
     <div class="chart-grid">
@@ -366,70 +336,27 @@
     </div>
     </section>
 
-    <!-- 明细搜索（原「团分析」页的明细表，合并进概览末位） -->
-    <div class="section-head">
-      <h2>明细搜索</h2>
-      <span class="hint">全量团明细 · 筛选 / 排序 / 导出</span>
-    </div>
-    <div class="search-box" style="flex-wrap:wrap;">
-      <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
-        <input type="text" id="detail-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="width:100%;" autocomplete="off">
-        <div class="search-suggest" id="search-suggest" style="display:none;"></div>
+    <!-- 模块预览：团分析（并入预警中心） + 明细数据（独立页） -->
+    <div class="chart-grid">
+      <div class="chart-card" style="cursor:pointer;" onclick="switchTab('alerts')">
+        <div class="section-head" style="margin:0 0 6px;">
+          <h2>团分析</h2>
+        </div>
+        <span class="hint">存活分析 · 解散原因分布（已并入预警中心）</span>
+        <div id="overview-team-preview" style="margin:10px 0 6px;font-size:13px;color:var(--wb-text-2);line-height:1.8;">加载中…</div>
+        <span style="font-size:12px;font-weight:600;color:var(--wb-accent);">进入预警中心 · 团分析 →</span>
       </div>
-      <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="all">全部状态</option>
-        <option value="active">进行中</option>
-        <option value="dissolved">已解散</option>
-      </select>
-      <select id="detail-reason" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="">全部原因</option>
-        <option value="手动解散">手动解散</option>
-        <option value="任务未完成自动解散">任务未完成自动解散</option>
-        <option value="生态违规">生态违规</option>
-        <option value="等级低于铜牌">等级低于铜牌</option>
-        <option value="毕业">毕业</option>
-        <option value="注销">注销</option>
-        <option value="姐姐离职">姐姐离职</option>
-        <option value="妹妹离职">妹妹离职</option>
-        <option value="双方同日离职">双方同日离职</option>
-        <option value="离职">离职（未细分/换厅）</option>
-        <option value="其他">其他</option>
-      </select>
-      <select id="detail-days" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="">已成团天数</option>
-        <option value="0-3">0-3天</option>
-        <option value="4-7">4-7天</option>
-        <option value="8-14">8-14天</option>
-        <option value="15-30">15-30天</option>
-        <option value="30+">30天以上</option>
-      </select>
-      <select id="detail-per-page" onchange="loadDetailTable(1)" class="wb-select">
-        <option value="10">10条/页</option>
-        <option value="20" selected>20条/页</option>
-        <option value="50">50条/页</option>
-        <option value="100">100条/页</option>
-      </select>
-      <button onclick="loadDetailTable(1)">搜索</button>
-      <button onclick="exportDetail()">导出CSV</button>
-    </div>
-    <div class="chart-card" id="detail-table-card">
-      <table class="data-table">
-        <thead><tr>
-<th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
-<th onclick="toggleSort('form_date')" style="cursor:pointer;">成团日期 <span id="sort-form_date">▲▼</span></th>
-<th onclick="toggleSort('hall_name')" style="cursor:pointer;">大厅 <span id="sort-hall_name">▲▼</span></th>
-<th>姐姐</th>
-<th>妹妹</th>
-<th title="妹妹的保护期结束时间（UID 查询系统同步，橙色 = 3 天内到期）">保护期结束</th>
-<th onclick="toggleSort('days_since_formed')" style="cursor:pointer;" title="4 个方框 = 30 天生命周期的 4 周：实心=已经历 · 描边高亮=当前周 · 灰色=未经历；点击方框查看该周流水/牌子">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
-<th>状态</th>
-<th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
-<th>解散原因</th>
-</tr></thead>
-        <tbody id="detail-table-body"></tbody>
-      </table>
-      <div class="pagination" id="detail-pagination"></div>
-      <div class="chart-insight" id="detail-insight"></div>
+      <div class="chart-card">
+        <div class="section-head" style="margin:0 0 6px;">
+          <h2>明细数据</h2>
+        </div>
+        <span class="hint">搜索 · 排序 · 生命周期方框（独立页）</span>
+        <div id="overview-detail-preview" style="margin:10px 0;font-size:13px;color:var(--wb-text-2);line-height:1.8;">加载中…</div>
+        <div class="search-box" style="margin:0 0 10px;">
+          <input type="text" id="overview-detail-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;" onkeydown="if(event.key==='Enter') overviewGoDetail()">
+        </div>
+        <button class="expand-btn" onclick="overviewGoDetail()">进入明细数据 →</button>
+      </div>
     </div>
 
   </div>
@@ -529,6 +456,40 @@
       <div class="rank-scroll"><table class="rank-table" id="ly-list-table"></table></div>
       <button class="expand-btn" onclick="openLyFull()">查看全部躺平名单 →</button>
     </div>
+
+    <!-- 团分析（2026-09-14 从概览页并入）：存活分析 + 解散原因分布 -->
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
+      </div>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>解散原因分布 <a id="dr-back" href="javascript:void(0)" onclick="drBackToBuckets()" style="display:none;font-size:12px;font-weight:400;color:var(--wb-accent);text-decoration:none;margin-left:8px;">← 返回大类</a></h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 点大块（主动/系统/毕业）看细分原因</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+      </div>
+    </div>
+
   </div>
 
   <!-- 对比 -->
@@ -626,6 +587,74 @@
       </div>
     </div>
     </div><!-- /compare-main -->
+  </div>
+
+  <!-- 明细数据（2026-09-14 从概览页独立成页） -->
+  <div id="tab-detail" class="tab-panel">
+    <div class="section-head">
+      <h2>明细数据</h2>
+      <span class="hint">全量团明细 · 筛选 / 排序 / 生命周期方框</span>
+    </div>
+    <div class="search-box" style="flex-wrap:wrap;">
+      <div class="search-autocomplete-wrap" style="flex:1;min-width:180px;position:relative;">
+        <input type="text" id="detail-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="width:100%;" autocomplete="off">
+        <div class="search-suggest" id="search-suggest" style="display:none;"></div>
+      </div>
+      <select id="detail-status" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="all">全部状态</option>
+        <option value="active">进行中</option>
+        <option value="dissolved">已解散</option>
+      </select>
+      <select id="detail-reason" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="">全部原因</option>
+        <option value="手动解散">手动解散</option>
+        <option value="任务未完成自动解散">任务未完成自动解散</option>
+        <option value="生态违规">生态违规</option>
+        <option value="等级低于铜牌">等级低于铜牌</option>
+        <option value="毕业">毕业</option>
+        <option value="注销">注销</option>
+        <option value="姐姐离职">姐姐离职</option>
+        <option value="妹妹离职">妹妹离职</option>
+        <option value="双方同日离职">双方同日离职</option>
+        <option value="离职">离职（未细分/换厅）</option>
+        <option value="其他">其他</option>
+      </select>
+      <select id="detail-days" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="">已成团天数</option>
+        <option value="0-3">0-3天</option>
+        <option value="4-7">4-7天</option>
+        <option value="8-14">8-14天</option>
+        <option value="15-30">15-30天</option>
+        <option value="30+">30天以上</option>
+      </select>
+      <select id="detail-per-page" onchange="loadDetailTable(1)" class="wb-select">
+        <option value="10">10条/页</option>
+        <option value="20" selected>20条/页</option>
+        <option value="50">50条/页</option>
+        <option value="100">100条/页</option>
+      </select>
+      <button onclick="loadDetailTable(1)">搜索</button>
+      <button onclick="exportDetail()">导出CSV</button>
+    </div>
+    <div class="chart-card" id="detail-table-card">
+      <table class="data-table">
+        <thead><tr>
+<th onclick="toggleSort('team_id')" style="cursor:pointer;">姐妹团ID <span id="sort-team_id">▲▼</span></th>
+<th onclick="toggleSort('form_date')" style="cursor:pointer;">成团日期 <span id="sort-form_date">▲▼</span></th>
+<th onclick="toggleSort('hall_name')" style="cursor:pointer;">大厅 <span id="sort-hall_name">▲▼</span></th>
+<th>姐姐</th>
+<th>妹妹</th>
+<th title="妹妹的保护期结束时间（UID 查询系统同步，橙色 = 3 天内到期）">保护期结束</th>
+<th onclick="toggleSort('days_since_formed')" style="cursor:pointer;" title="4 个方框 = 30 天生命周期的 4 周：实心=已经历 · 描边高亮=当前周 · 灰色=未经历；点击方框查看该周流水/牌子">已成团天数 <span id="sort-days_since_formed">▲▼</span></th>
+<th>状态</th>
+<th onclick="toggleSort('dissolve_date')" style="cursor:pointer;">解散日期 <span id="sort-dissolve_date">▲▼</span></th>
+<th>解散原因</th>
+</tr></thead>
+        <tbody id="detail-table-body"></tbody>
+      </table>
+      <div class="pagination" id="detail-pagination"></div>
+      <div class="chart-insight" id="detail-insight"></div>
+    </div>
   </div>
 
   <!-- 姐姐分析 -->

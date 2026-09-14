@@ -166,10 +166,10 @@ function openWarnModal(title, bodyHTML) {
 }
 function closeWarnModal() { const m = document.getElementById('warn-full-modal'); if (m) m.classList.remove('active'); }
 
-// 下钻：解散时间分布 → 概览已解散明细；其余 → 概览切换状态
+// 下钻：解散时间分布 → 明细页已解散；新成团 → 明细页进行中；其余 → 概览
 function drillWarn(key) {
   if (key === 'dissolve_time' || key === 'active_diss') {
-    switchTab('overview');
+    switchTab('detail');
     const st = document.getElementById('detail-status'); if (st) st.value = 'dissolved';
     const dr = document.getElementById('detail-reason'); if (dr) dr.value = '';
     const ds = document.getElementById('detail-search'); if (ds) ds.value = '';
@@ -178,7 +178,7 @@ function drillWarn(key) {
     return;
   }
   if (key === 'new_team') {
-    switchTab('overview');
+    switchTab('detail');
     const st = document.getElementById('detail-status'); if (st) st.value = 'active';
     loadDetailTable(1);
     if (typeof focusDetailTable === 'function') focusDetailTable();
