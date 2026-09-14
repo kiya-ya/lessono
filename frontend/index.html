@@ -149,7 +149,8 @@
     <div class="chart-card" style="cursor:pointer;margin-bottom:16px;" onclick="jumpToGrad()">
       <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
         <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">毕业妹妹总数</div><div style="font-size:26px;font-weight:700;color:#7C5CFF;" id="ow-grad-ret">—</div></div>
-        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">毕业后第1周有产出</div><div style="font-size:26px;font-weight:700;color:#16A34A;" id="ow-grad-30d">—</div></div>
+        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">还在排档（人在平台）</div><div style="font-size:26px;font-weight:700;color:#0EA5A4;" id="ow-grad-sched">—</div></div>
+        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">产出达标（≥1344）</div><div style="font-size:26px;font-weight:700;color:#16A34A;" id="ow-grad-30d">—</div></div>
         <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">晋升为姐姐</div><div style="font-size:26px;font-weight:700;" id="ow-grad-promoted">—</div></div>
         <div style="flex:1;min-width:220px;font-size:12px;color:var(--wb-text-2);line-height:1.7;">补充「姐妹关系持续率」只看关系能否顺利维持、不看毕业后价值的缺口。</div>
         <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--wb-accent);white-space:nowrap;">查看毕业妹妹 →</span>
@@ -728,8 +729,8 @@
       <div class="chart-src">妹妹留存率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充「姐妹关系持续率」只看关系能否维持、不看毕业后价值的缺口</div>
       <div class="grad-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
         <div class="kpi-card"><div class="kpi-label"><span class="dot violet"></span> 毕业妹妹总数</div><div class="kpi-value" id="gr-ret">—</div><div class="kpi-note" id="gr-ret-note">满 30 天观察期 —</div></div>
-        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 第1周产出留存率</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note" id="gr-30d-note">占毕业总数 —</div></div>
-        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 晋升为姐姐</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note" id="gr-promoted-note">占毕业总数 —</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 第1周仍在排档</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note" id="gr-30d-note">占毕业总数 —</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 第1周产出达标</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note" id="gr-promoted-note">占毕业总数 —</div></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
         <input type="text" id="gr-search" class="wb-input wb-search" placeholder="搜索妹妹 / UID / 配对姐姐…" style="max-width:240px;" oninput="grFilter()">
@@ -739,7 +740,7 @@
       <div class="pagination" id="gr-pagination" style="justify-content:flex-start;"></div>
       <div class="dn-notes" style="margin-top:10px;">
         <span class="dn-tag">口径</span>
-        <span><b>第1周产出留存率</b>（主口径）= 毕业后第 1 周内产出达标（周流水 ≥ 1344，新人阶梯第四档）的妹妹 ÷ 数据覆盖到的毕业妹妹 × 100%，健康线 60%；流水数据自 08-03 起（未覆盖的不进分母），毕业当周旧团残留流水会溢入第 1 周（周粒度近似）。「晋升为姐姐」由妹妹 UID 命中晋升集回填真数。</span>
+        <span><b>第1周仍在排档</b>（主口径）= 毕业后第 1 周仍有排档记录（人在平台）的妹妹占比；<b>第1周产出达标</b>（质量口径）= 当周流水 ≥ 1344（新人阶梯第四档，毕业按老人要求），健康线 60%。数据源 member_weekly（按人追踪，自 08-17 起，未覆盖不进分母）+ team_sister_revenue 兜底。「晋升为姐姐」由妹妹 UID 命中晋升集回填真数。</span>
       </div>
       <div class="chart-src" style="margin-top:8px;">点击明细「已开始带妹妹 · 看链」徽标 → 展开该妹妹的传承链（代际传承，待落地）</div>
     </div>

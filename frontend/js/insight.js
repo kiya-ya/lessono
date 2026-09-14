@@ -456,28 +456,34 @@ async function loadGradRetention() {
     const res = await fetch(API_BASE + '/api/grad-retention?' + getHallParam().substring(1));
     const d = await res.json();
     const s = d.stats || {};
-    // 数量口径（比「率」直观）：毕业妹妹总数 / 毕业后第1周有产出 / 晋升为姐姐
+    // 漏斗口径：毕业妹妹总数 / 还在排档（人在平台）/ 产出达标（≥1344）/ 晋升姐姐
     const setCnt = (el, v, unit) => { if (el) el.textContent = v == null ? '—' : v + ' ' + unit; };
     setCnt(owRet, s.total, '位');
+    setCnt(document.getElementById('ow-grad-sched'), s.w1_scheduled, '位');
     setCnt(ow30d, s.w1_productive, '位');
     setCnt(grRet, s.total, '位');
-    // 第1周产出留存率（主口径）：低于 60% 健康线标红
+    // 第1周仍在排档（人在平台，主口径）
     if (gr30d) {
-      gr30d.textContent = s.w1_rate == null ? '—' : Math.round(s.w1_rate) + '%';
-      gr30d.style.color = (s.w1_rate != null && s.w1_rate < 60) ? '#DC2626' : '';
+      gr30d.textContent = s.w1s_rate == null ? '—' : Math.round(s.w1s_rate) + '%';
+      gr30d.style.color = '';
+    }
+    // 第1周产出达标（质量口径）：低于 60% 健康线标红
+    if (grPro) {
+      grPro.textContent = s.w1_rate == null ? '—' : Math.round(s.w1_rate) + '%';
+      grPro.style.color = (s.w1_rate != null && s.w1_rate < 60) ? '#DC2626' : '';
     }
     const promotedTxt = s.promoted == null ? '—' : s.promoted + ' 人';
     if (owPro) owPro.textContent = promotedTxt;
-    if (grPro) grPro.textContent = promotedTxt;
-    const pct = n => (s.total ? Math.round(n / s.total * 100) + '%' : '—');
     const grRetNote = document.getElementById('gr-ret-note');
-    if (grRetNote) grRetNote.textContent = `其中满 30 天观察期 ${s.eligible_30d ?? '—'} 位`;
+    if (grRetNote) grRetNote.textContent = `其中满 30 天观察期 ${s.eligible_30d ?? '—'} 位 · 晋升姐姐 ${s.promoted ?? '—'} 人`;
     const gr30dNote = document.getElementById('gr-30d-note');
-    if (gr30dNote) gr30dNote.textContent = s.w1_rate == null
-      ? '流水数据未覆盖（自 08-03 起）'
-      : `${s.w1_productive}/${s.w1_covered} 位有产出 · 第4周 ${s.w4_rate ?? '—'}% · 健康线 60%`;
+    if (gr30dNote) gr30dNote.textContent = s.w1s_rate == null
+      ? '追踪数据未覆盖（自 08-17 起）'
+      : `${s.w1_scheduled}/${s.w1s_covered} 位 · 第4周 ${s.w4s_rate ?? '—'}%`;
     const grProNote = document.getElementById('gr-promoted-note');
-    if (grProNote) grProNote.textContent = `占毕业总数 ${pct(s.promoted || 0)}`;
+    if (grProNote) grProNote.textContent = s.w1_rate == null
+      ? '流水数据未覆盖（自 08-03 起）'
+      : `${s.w1_productive}/${s.w1_covered} 位 · 健康线 60%`;
     if (grTable) {
       _gradRetentionList = s.list || [];
       _grDataStart = s.data_start || '';
@@ -516,23 +522,24 @@ function gradRetentionTableHTML(list) {
   return head + `<tbody>${rows}</tbody>`;
 }
 
-// 毕业后留存方框：4 格 = 毕业后第 1~4 周，实心=该周活跃，灰=无活跃，空心=未到
+// 毕业后留存方框：4 格 = 毕业后第 1~4 周是否仍在排档（人在平台，member_weekly 追踪）
 function grWeeksHtml(g) {
-  const wa = g.weeks_active || [];
+  const wa = g.weeks_scheduled || [];
   const grad = g.grad_date ? new Date(g.grad_date + 'T00:00:00') : null;
   const now = new Date();
   let out = '<span class="lw-strip">';
   for (let i = 1; i <= 4; i++) {
     const wStart = grad ? new Date(grad.getTime() + (7 * (i - 1) + 1) * 864e5) : null;
     const wEnd = grad ? new Date(grad.getTime() + 7 * i * 864e5) : null;
+    const v = wa[i - 1];
     // 窗口完全在快照采集起点之前 → 无数据（不是不活跃）
-    const noData = wEnd && _grDataStart && wEnd < new Date(_grDataStart + 'T00:00:00');
+    const noData = v == null || (wEnd && _grDataStart && wEnd < new Date(_grDataStart + 'T00:00:00'));
     const future = !wStart || wStart > now;
-    const active = wa[i - 1] === 1;
+    const active = v === 1;
     const cls = noData || future ? 'todo' : active ? 'done' : 'ended';
-    const tip = noData ? `毕业后第${i}周 · 无快照数据（采集起点 ${_grDataStart} 之前）`
-      : future ? `毕业后第${i}周 · 未到`
-      : `毕业后第${i}周 · ${active ? '活跃' : '无活跃记录'}，点击查看该周数据`;
+    const tip = future ? `毕业后第${i}周 · 未到`
+      : noData ? `毕业后第${i}周 · 无追踪数据（08-17 起）`
+      : `毕业后第${i}周 · ${active ? '仍在排档' : '未排档'}，点击查看该周数据`;
     const click = (future || noData) ? '' : ` onclick="grShowWeek(event,'${g.sister_uid2}',${i})"`;
     out += `<span class="lw-sq ${cls}"${click} title="${tip}"></span>`;
   }
@@ -566,21 +573,25 @@ async function grShowWeek(ev, uid, idx) {
     const w = (d.weeks || []).find(x => x.idx === idx);
     if (!w) { pop.innerHTML = '<div class="lw-pop-loading">无数据</div>'; place(); return; }
     const stateTag = w.state === 'active'
-      ? `<span class="lw-tag cur">活跃 ${w.active_days} 天</span>`
+      ? `<span class="lw-tag cur">在团 ${w.active_days} 天</span>`
       : w.state === 'no_data'
         ? '<span class="lw-tag">无快照数据</span>'
-        : '<span class="lw-tag end">无活跃记录</span>';
+        : '<span class="lw-tag end">不在团</span>';
+    const schedTag = w.schedule_days != null
+      ? `<span class="lw-tag ${w.schedule_days > 0 ? 'cur' : 'end'}">排档 ${w.schedule_days > 0 ? w.schedule_days + ' 天' : '无'}</span>`
+      : '';
     const fmtD = s => (s || '').slice(5).replace('-', '/');
     pop.innerHTML = `
       <div class="lw-pop-head">${esc(d.nickname || '')} <span style="color:#9CA3AF;font-weight:400;">${d.uid}</span></div>
-      <div class="lw-pop-sub">毕业后第 ${w.idx} 周 · ${fmtD(w.start)} ~ ${fmtD(w.end)} ${stateTag}</div>
+      <div class="lw-pop-sub">毕业后第 ${w.idx} 周 · ${fmtD(w.start)} ~ ${fmtD(w.end)} ${schedTag}${stateTag}</div>
       <div class="lw-pop-grid">
-        <span>周流水</span><b>${w.revenue == null ? '—' : '≈¥' + w.revenue.toLocaleString()}</b>
-        <span>角色</span><b>${w.role || '—'}</b>
+        <span>周流水</span><b>${w.revenue == null ? '—' : (w.rev_exact ? '' : '≈') + '¥' + w.revenue.toLocaleString()}</b>
+        <span>排档天数</span><b>${w.schedule_days == null ? '—' : w.schedule_days + ' 天'}</b>
+        <span>团内角色</span><b>${w.role || '—'}</b>
         <span>牌子</span><b>${w.level || '—'}</b>
         <span>所在大厅</span><b style="text-align:right;">${(w.halls || []).join('、') || '—'}</b>
       </div>
-      <div class="lw-pop-foot">毕业日期 ${d.grad_date} · 流水按自然周重叠天数折算（约值）</div>`;
+      <div class="lw-pop-foot">毕业日期 ${d.grad_date} · 流水带 ≈ 为自然周折算，无 ≈ 为个人精确值</div>`;
     place();
   } catch (e) {
     pop.innerHTML = '<div class="lw-pop-loading">加载失败，请重试</div>';

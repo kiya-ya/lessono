@@ -1469,53 +1469,94 @@ def grad_retention_stats(conn, hall='all'):
     except Exception:
         pass  # 表可能尚未建立（member_weekly_sync 未运行过）
 
+    # 排档口径（人在平台，定稿 2026-09-14）：毕业后第 N 周仍在平台 = 该周有排档记录
+    # （member_weekly.schedule_days > 0）。这是「毕业妹妹留存率」的主口径；
+    # 产出达标（≥1344）是质量口径，二者分开看（漏斗：在排档 → 达标）。
+    sched_map = {}   # uid -> {week_start: schedule_days}
+    mw_min = mw_max = None
+    try:
+        for r in conn.execute("SELECT uid, week_start, week_end, schedule_days FROM member_weekly").fetchall():
+            mw_min = r['week_start'] if mw_min is None else min(mw_min, r['week_start'])
+            mw_max = r['week_end'] if mw_max is None else max(mw_max, r['week_end'])
+            sched_map.setdefault(r['uid'], {})[r['week_start']] = r['schedule_days'] or 0
+    except Exception:
+        pass
+
     weeks_productive = {}
+    weeks_scheduled = {}
     w1_cov = w1_prod = w4_cov = w4_prod = 0
+    w1s_cov = w1s = w4s_cov = w4s = 0
     for g in grads:
         su, gd = g['su'], (g['grad_date'] or '')[:10]
         bm = [None, None, None, None]
-        if gd and rev_min:
+        sm = [None, None, None, None]
+        if gd and (rev_min or mw_min):
             try:
                 gd_d = datetime.strptime(gd, '%Y-%m-%d').date()
-                rev_min_d = datetime.strptime(rev_min, '%Y-%m-%d').date()
-                rev_max_d = datetime.strptime(rev_max, '%Y-%m-%d').date()
+                rev_min_d = datetime.strptime(rev_min, '%Y-%m-%d').date() if rev_min else None
+                rev_max_d = datetime.strptime(rev_max, '%Y-%m-%d').date() if rev_max else None
+                mw_min_d = datetime.strptime(mw_min, '%Y-%m-%d').date() if mw_min else None
+                mw_max_d = datetime.strptime(mw_max, '%Y-%m-%d').date() if mw_max else None
             except Exception:
                 gd_d = None
             if gd_d:
                 uweeks = rev_map.get(su, {})
+                usched = sched_map.get(su, {})
                 for i in range(4):
                     w0 = gd_d + timedelta(days=7 * i + 1)
                     w1 = gd_d + timedelta(days=7 * i + 7)
-                    if w1 < rev_min_d or w0 > rev_max_d:
-                        continue  # 数据未覆盖
-                    bm[i] = 0
-                    for ws, rev in uweeks.items():
-                        cws = datetime.strptime(ws, '%Y-%m-%d').date()
-                        cwe = cws + timedelta(days=6)
-                        if rev >= GRAD_PROD_BAR and cwe >= w0 and cws <= w1:
-                            bm[i] = 1
-                            break
+                    # 产出口径（团队折算 + 个人覆盖）
+                    if rev_min_d and not (w1 < rev_min_d or w0 > rev_max_d):
+                        bm[i] = 0
+                        for ws, rev in uweeks.items():
+                            cws = datetime.strptime(ws, '%Y-%m-%d').date()
+                            cwe = cws + timedelta(days=6)
+                            if rev >= GRAD_PROD_BAR and cwe >= w0 and cws <= w1:
+                                bm[i] = 1
+                                break
+                    # 排档口径（人在平台）：member_weekly 有该行即为已查询覆盖
+                    if mw_min_d and not (w1 < mw_min_d or w0 > mw_max_d):
+                        sm[i] = 0
+                        for ws, days in usched.items():
+                            cws = datetime.strptime(ws, '%Y-%m-%d').date()
+                            cwe = cws + timedelta(days=6)
+                            if days > 0 and cwe >= w0 and cws <= w1:
+                                sm[i] = 1
+                                break
         weeks_productive[su] = bm
+        weeks_scheduled[su] = sm
         if bm[0] is not None:
             w1_cov += 1
             w1_prod += bm[0]
         if bm[3] is not None:
             w4_cov += 1
             w4_prod += bm[3]
+        if sm[0] is not None:
+            w1s_cov += 1
+            w1s += sm[0]
+        if sm[3] is not None:
+            w4s_cov += 1
+            w4s += sm[3]
 
     for item in list_out:
         item['weeks_productive'] = weeks_productive.get(item['sister_uid2'])
+        item['weeks_scheduled'] = weeks_scheduled.get(item['sister_uid2'])
 
     return {
         'total': total, 'retained': retained, 'promoted': promoted,
         'retention_rate': round(retained / total * 100, 1) if total else None,
         'retained_30d': retained_30d, 'eligible_30d': eligible_30d,
         'retention_30d': round(retained_30d / eligible_30d * 100, 1) if eligible_30d else None,
-        # 产出留存（主口径）：毕业后第 1 周 / 第 4 周有产出（流水>0）的占比，健康线 60%
+        # 产出留存（质量口径）：毕业后第 1/4 周流水 ≥1344 的占比，健康线 60%
         'w1_covered': w1_cov, 'w1_productive': w1_prod,
         'w1_rate': round(w1_prod / w1_cov * 100, 1) if w1_cov else None,
         'w4_covered': w4_cov, 'w4_productive': w4_prod,
         'w4_rate': round(w4_prod / w4_cov * 100, 1) if w4_cov else None,
+        # 排档留存（主口径，人在平台）：毕业后第 1/4 周仍在排档的占比
+        'w1s_covered': w1s_cov, 'w1_scheduled': w1s,
+        'w1s_rate': round(w1s / w1s_cov * 100, 1) if w1s_cov else None,
+        'w4s_covered': w4s_cov, 'w4_scheduled': w4s,
+        'w4s_rate': round(w4s / w4s_cov * 100, 1) if w4s_cov else None,
         'rev_data_start': rev_min,
         'ref_date': ref, 'list': list_out,
     }
@@ -1585,6 +1626,14 @@ def api_sister2_post_grad_weeks(uid):
                           MAX(CASE WHEN CAST(sister_uid AS TEXT) = ? THEN sister_nickname END)) AS n
         FROM team_detail WHERE CAST(sister_uid2 AS TEXT) = ? OR CAST(sister_uid AS TEXT) = ?
     """, [uid, uid, uid, uid]).fetchone()['n']
+
+    # member_weekly：个人精确周数据（排档天数 + 流水），有则覆盖团队折算值
+    try:
+        mw_rows = conn.execute(
+            "SELECT week_start, week_end, revenue, schedule_days FROM member_weekly WHERE uid = ?",
+            (uid,)).fetchall()
+    except Exception:
+        mw_rows = []
     conn.close()
 
     today = datetime.now().date()
@@ -1606,10 +1655,32 @@ def api_sister2_post_grad_weeks(uid):
             if ov > 0:
                 rev += ((rr['sis_rev'] or 0) + (rr['sis2_rev'] or 0)) * ov / 7.0
                 has_rev = True
+        # member_weekly 覆盖：个人精确周流水/排档天数（同样按重叠天数折算到窗口）
+        mw_rev = 0.0
+        mw_days = 0.0
+        mw_hit = False
+        for r in mw_rows:
+            try:
+                cws = datetime.strptime(r['week_start'], '%Y-%m-%d').date()
+                cwe = datetime.strptime(r['week_end'], '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                continue
+            ov = (min(cwe, w1) - max(cws, w0)).days + 1
+            if ov > 0:
+                mw_rev += (r['revenue'] or 0) * ov / 7.0
+                mw_days += (r['schedule_days'] or 0) * ov / 7.0
+                mw_hit = True
+        rev_exact = False
+        if mw_hit:
+            rev = mw_rev
+            has_rev = True
+            rev_exact = True
         state = 'no_data' if w1s < data_start else ('future' if w0 > today else ('active' if in_win else 'inactive'))
         weeks.append({
             'idx': i + 1, 'start': w0s, 'end': w1s, 'state': state,
             'active_days': len(in_win),
+            'schedule_days': round(mw_days, 1) if mw_hit else None,
+            'rev_exact': rev_exact,
             'level': in_win[-1]['lvl'] if in_win else None,
             'role': in_win[-1]['role'] if in_win else None,
             'halls': sorted({r['hall_name'] for r in in_win if r['hall_name']}),
