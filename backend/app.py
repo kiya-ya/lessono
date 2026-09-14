@@ -2081,6 +2081,46 @@ def api_lineage_tree():
                     'ancestry': ancestry})
 
 
+@app.route('/api/lineage-rank')
+@login_required
+def api_lineage_rank():
+    """师门产量榜：姐姐带出的毕业妹妹数 / 其中晋升为姐姐数（传承链视角）。
+    排序：晋升数优先，毕业数次之。点人 → 传承链弹窗。"""
+    hall = request.args.get('hall', 'all')
+    limit = min(int(request.args.get('limit', 5)), 50)
+    conn = get_db_conn()
+    hc = '' if hall == 'all' else 'AND hall_name = ?'
+    hp = [] if hall == 'all' else [hall]
+    promoted_set = {r['su'] for r in conn.execute(
+        "SELECT DISTINCT CAST(sister_uid AS TEXT) AS su FROM team_detail "
+        "WHERE sister_uid IS NOT NULL AND sister_uid != ''").fetchall()}
+    rows = conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su, MAX(sister_nickname) AS nickname,
+               COUNT(DISTINCT sister_uid2) AS grad_count,
+               COUNT(DISTINCT team_id) AS teams
+        FROM team_detail
+        WHERE dissolve_reason = '毕业' AND sister_uid IS NOT NULL AND sister_uid != '' {hc}
+        GROUP BY su
+    """, hp).fetchall()
+    # 每位姐姐带出的毕业妹妹（去重人），其中晋升为姐姐的人数
+    pairs = conn.execute(f"""
+        SELECT CAST(sister_uid AS TEXT) AS su, CAST(sister_uid2 AS TEXT) AS su2
+        FROM team_detail
+        WHERE dissolve_reason = '毕业' AND sister_uid IS NOT NULL AND sister_uid != '' {hc}
+        GROUP BY su, su2
+    """, hp).fetchall()
+    promo_map = {}
+    for r in pairs:
+        if r['su2'] in promoted_set:
+            promo_map.setdefault(r['su'], set()).add(r['su2'])
+    out = [{'uid': r['su'], 'nickname': r['nickname'], 'grad_count': r['grad_count'],
+            'promoted_count': len(promo_map.get(r['su'], set())), 'teams': r['teams']}
+           for r in rows]
+    out.sort(key=lambda x: (-x['promoted_count'], -x['grad_count']))
+    conn.close()
+    return jsonify({'data': out[:limit]})
+
+
 @app.route('/api/captains')
 @login_required
 def api_captains():
