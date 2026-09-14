@@ -1350,14 +1350,17 @@ def grad_retention_stats(conn, hall='all'):
         'SELECT DISTINCT CAST(sister_uid AS TEXT) AS su FROM team_detail '
         'WHERE sister_uid IS NOT NULL AND sister_uid != ""').fetchall()}
 
-    # 每个 UID 最近一次出现快照日（作为姐姐或妹妹任一角色）
+    # 每个 UID 最近一次「真实在团」快照日（作为姐姐或妹妹任一角色）
+    # 注意：已解散团在快照中会持续残留（僵尸行），必须排除 dissolve_date < snapshot_date 的行，
+    # 否则毕业妹妹会因旧团残留被误判为「仍活跃」（2026-09-14 查实：真实再成团率仅 ~2%）
     latest_seen = {}
     for r in conn.execute("""
         SELECT su, MAX(snapshot_date) AS last_snap FROM (
-          SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
+          SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date, dissolve_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
           UNION ALL
-          SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
-        ) GROUP BY su
+          SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date, dissolve_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
+        ) WHERE dissolve_date IS NULL OR dissolve_date = '' OR dissolve_date >= snapshot_date
+        GROUP BY su
     """).fetchall():
         latest_seen[r['su']] = r['last_snap']
 
@@ -1368,10 +1371,12 @@ def grad_retention_stats(conn, hall='all'):
         ph = ','.join('?' * len(grad_map))
         pres = conn.execute(f"""
             SELECT su, snapshot_date FROM (
-              SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
+              SELECT CAST(sister_uid2 AS TEXT) AS su, snapshot_date, dissolve_date FROM team_detail WHERE sister_uid2 IS NOT NULL AND sister_uid2 != ''
               UNION ALL
-              SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
-            ) WHERE su IN ({ph}) GROUP BY su, snapshot_date
+              SELECT CAST(sister_uid AS TEXT) AS su, snapshot_date, dissolve_date FROM team_detail WHERE sister_uid IS NOT NULL AND sister_uid != ''
+            ) WHERE su IN ({ph})
+              AND (dissolve_date IS NULL OR dissolve_date = '' OR dissolve_date >= snapshot_date)
+            GROUP BY su, snapshot_date
         """, list(grad_map.keys())).fetchall()
         for r in pres:
             gd = grad_map.get(r['su'])
@@ -1427,11 +1432,79 @@ def grad_retention_stats(conn, hall='all'):
         })
 
     list_out.sort(key=lambda x: -(x['retained_days'] if x['retained_days'] is not None else -1))
+
+    # ── 产出留存口径（定稿 2026-09-14， grilling 结论）──
+    # 毕业后第 N 周（窗口 = 毕业次日+7(N-1) ~ +7N）内有产出 = team_sister_revenue 中与窗口
+    # 有交集的自然周里她的流水 > 0（按她在团内的角色取姐/妹列合计）。
+    # 覆盖：team_sister_revenue 自 2026-08-03 起（每日同步进行中团）；窗口与数据范围无交集 →
+    # 未覆盖（None），不进留存率分母。已知近似：毕业当周残留流水会溢入第 1 周（周粒度限制）。
+    rev_map = {}   # uid -> {week_start: 流水合计（姐+妹角色各自所在团）}
+    rev_min = rev_max = None
+    try:
+        for r in conn.execute("""
+            SELECT week_start, week_end,
+                   CAST(sister_uid AS TEXT) AS su, sister_revenue,
+                   CAST(sister_uid2 AS TEXT) AS su2, sister2_revenue
+            FROM team_sister_revenue
+        """).fetchall():
+            rev_min = r['week_start'] if rev_min is None else min(rev_min, r['week_start'])
+            rev_max = r['week_end'] if rev_max is None else max(rev_max, r['week_end'])
+            for u, v in ((r['su'], r['sister_revenue'] or 0), (r['su2'], r['sister2_revenue'] or 0)):
+                if not u:
+                    continue
+                um = rev_map.setdefault(u, {})
+                um[r['week_start']] = um.get(r['week_start'], 0.0) + v
+    except Exception:
+        pass
+
+    weeks_productive = {}
+    w1_cov = w1_prod = w4_cov = w4_prod = 0
+    for g in grads:
+        su, gd = g['su'], (g['grad_date'] or '')[:10]
+        bm = [None, None, None, None]
+        if gd and rev_min:
+            try:
+                gd_d = datetime.strptime(gd, '%Y-%m-%d').date()
+                rev_min_d = datetime.strptime(rev_min, '%Y-%m-%d').date()
+                rev_max_d = datetime.strptime(rev_max, '%Y-%m-%d').date()
+            except Exception:
+                gd_d = None
+            if gd_d:
+                uweeks = rev_map.get(su, {})
+                for i in range(4):
+                    w0 = gd_d + timedelta(days=7 * i + 1)
+                    w1 = gd_d + timedelta(days=7 * i + 7)
+                    if w1 < rev_min_d or w0 > rev_max_d:
+                        continue  # 数据未覆盖
+                    bm[i] = 0
+                    for ws, rev in uweeks.items():
+                        cws = datetime.strptime(ws, '%Y-%m-%d').date()
+                        cwe = cws + timedelta(days=6)
+                        if rev > 0 and cwe >= w0 and cws <= w1:
+                            bm[i] = 1
+                            break
+        weeks_productive[su] = bm
+        if bm[0] is not None:
+            w1_cov += 1
+            w1_prod += bm[0]
+        if bm[3] is not None:
+            w4_cov += 1
+            w4_prod += bm[3]
+
+    for item in list_out:
+        item['weeks_productive'] = weeks_productive.get(item['sister_uid2'])
+
     return {
         'total': total, 'retained': retained, 'promoted': promoted,
         'retention_rate': round(retained / total * 100, 1) if total else None,
         'retained_30d': retained_30d, 'eligible_30d': eligible_30d,
         'retention_30d': round(retained_30d / eligible_30d * 100, 1) if eligible_30d else None,
+        # 产出留存（主口径）：毕业后第 1 周 / 第 4 周有产出（流水>0）的占比，健康线 60%
+        'w1_covered': w1_cov, 'w1_productive': w1_prod,
+        'w1_rate': round(w1_prod / w1_cov * 100, 1) if w1_cov else None,
+        'w4_covered': w4_cov, 'w4_productive': w4_prod,
+        'w4_rate': round(w4_prod / w4_cov * 100, 1) if w4_cov else None,
+        'rev_data_start': rev_min,
         'ref_date': ref, 'list': list_out,
     }
 
@@ -1472,7 +1545,7 @@ def api_sister2_post_grad_weeks(uid):
     ds_row = conn.execute('SELECT MIN(snapshot_date) AS s FROM team_detail').fetchone()
     data_start = ds_row['s'] if ds_row and ds_row['s'] else '1970-01-01'
 
-    # 窗口内每日快照：角色/牌子/大厅/团
+    # 窗口内每日快照：角色/牌子/大厅/团（排除已解散团的僵尸残留行）
     snap_rows = conn.execute("""
         SELECT snapshot_date, hall_name, team_id,
                CASE WHEN CAST(sister_uid AS TEXT) = ? THEN '姐姐' ELSE '妹妹' END AS role,
@@ -1480,6 +1553,7 @@ def api_sister2_post_grad_weeks(uid):
         FROM team_detail
         WHERE (CAST(sister_uid2 AS TEXT) = ? OR CAST(sister_uid AS TEXT) = ?)
           AND snapshot_date > ? AND snapshot_date <= ?
+          AND (dissolve_date IS NULL OR dissolve_date = '' OR dissolve_date >= snapshot_date)
           AND rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id, snapshot_date)
         ORDER BY snapshot_date
     """, [uid, uid, uid, uid, gd, end_d.isoformat()]).fetchall()
@@ -1661,7 +1735,7 @@ def api_talent_actions():
         sister_uid = str(data.get('sister_uid', '')).strip()
         action_type = data.get('action_type', '').strip()
         action_date = data.get('action_date', '').strip()
-        if not sister_uid or action_type not in ('send_sister', 'promote') or not action_date:
+        if not sister_uid or action_type not in ('send_sister', 'promote', 'resource', 'recall') or not action_date:
             conn.close()
             return jsonify({'success': False, 'error': '参数不完整'}), 400
         conn.execute(

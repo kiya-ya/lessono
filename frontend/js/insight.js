@@ -456,12 +456,16 @@ async function loadGradRetention() {
     const res = await fetch(API_BASE + '/api/grad-retention?' + getHallParam().substring(1));
     const d = await res.json();
     const s = d.stats || {};
-    // 数量口径（比「率」直观）：毕业妹妹总数 / 毕业后仍活跃 / 晋升为姐姐
+    // 数量口径（比「率」直观）：毕业妹妹总数 / 毕业后第1周有产出 / 晋升为姐姐
     const setCnt = (el, v, unit) => { if (el) el.textContent = v == null ? '—' : v + ' ' + unit; };
     setCnt(owRet, s.total, '位');
-    setCnt(ow30d, s.retained, '位');
+    setCnt(ow30d, s.w1_productive, '位');
     setCnt(grRet, s.total, '位');
-    setCnt(gr30d, s.retained, '位');
+    // 第1周产出留存率（主口径）：低于 60% 健康线标红
+    if (gr30d) {
+      gr30d.textContent = s.w1_rate == null ? '—' : Math.round(s.w1_rate) + '%';
+      gr30d.style.color = (s.w1_rate != null && s.w1_rate < 60) ? '#DC2626' : '';
+    }
     const promotedTxt = s.promoted == null ? '—' : s.promoted + ' 人';
     if (owPro) owPro.textContent = promotedTxt;
     if (grPro) grPro.textContent = promotedTxt;
@@ -469,7 +473,9 @@ async function loadGradRetention() {
     const grRetNote = document.getElementById('gr-ret-note');
     if (grRetNote) grRetNote.textContent = `其中满 30 天观察期 ${s.eligible_30d ?? '—'} 位`;
     const gr30dNote = document.getElementById('gr-30d-note');
-    if (gr30dNote) gr30dNote.textContent = `占毕业总数 ${s.retention_rate ?? '—'}%（近似）`;
+    if (gr30dNote) gr30dNote.textContent = s.w1_rate == null
+      ? '流水数据未覆盖（自 08-03 起）'
+      : `${s.w1_productive}/${s.w1_covered} 位有产出 · 第4周 ${s.w4_rate ?? '—'}% · 健康线 60%`;
     const grProNote = document.getElementById('gr-promoted-note');
     if (grProNote) grProNote.textContent = `占毕业总数 ${pct(s.promoted || 0)}`;
     if (grTable) {
@@ -688,6 +694,7 @@ async function openLineage(name, uid) {
       <td>${esc(t.form_date || '-')}</td>
       <td>${t.status === 'active' ? '<span style="color:#16A34A;">进行中</span>' : esc(t.dissolve_date || '-')}</td>
       <td>${t.days} 天</td>
+      <td>${t.status !== 'active' && t.uid ? `<button class="mini-btn" data-n="${esc(t.nickname || '')}" data-u="${esc(t.uid)}" onclick="openTalentActionModal(this.dataset.u, 'recall', this.dataset.n)" title="记录一次召回动作">召回</button>` : ''}</td>
     </tr>`).join('');
     // 师承链（向上）：祖师 → … → 她的姐姐 → 当前人（高亮），文字链接仅作路径参考；
     // 穿梭的「+」在树的圆圈节点上（见 renderLineageTree）
@@ -701,10 +708,10 @@ async function openLineage(name, uid) {
       : '';
     openWarnModal(`传承链 · ${esc(name)}`,
       `${chainHtml}
-       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点带 ⊕ 的节点穿梭）</span></div>
+       <div style="font-size:12px;color:#6B7280;margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;">代际传承 <b>${st.generations || 1}</b> 代 · 累计带出 <b>${st.descendants || directRows.length}</b> 个团 · 进行中 <b>${st.active_teams || 0}</b> 个 <span style="color:#9CA3AF;">（滚轮缩放 · 拖拽平移 · 点带 ⊕ 的节点穿梭）</span><button class="mini-btn" style="margin-left:auto;" data-n="${esc(d.root.nickname || '')}" data-u="${d.root.uid}" onclick="openTalentActionModal(this.dataset.u, 'resource', this.dataset.n)" title="记录一次对她的资源倾斜动作">记一笔 · 资源倾斜她</button></div>
        <div id="lineage-tree-chart" style="width:100%;height:420px;"></div>
        <div style="font-size:12px;color:#9CA3AF;margin:6px 0;">直接带的 ${directRows.length} 个团：</div>
-       <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th></tr></thead><tbody>${rows}</tbody></table>`);
+       <table class="rank-table"><thead><tr><th>团ID</th><th>大厅</th><th>带的妹妹</th><th>成团日期</th><th>状态</th><th>天数</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`);
     renderLineageTree(d.tree, anc);
   } catch (e) {
     if (typeof showToast === 'function') showToast('传承链加载失败: ' + e.message, 'error');
@@ -969,15 +976,15 @@ function openQuadrantList(items) {
 let taUid = '';
 let taNickname = '';
 
-function openTalentActionModal(uid) {
+function openTalentActionModal(uid, preset, nickname) {
   taUid = uid || '';
   const item = poolList.find(x => x.sister_uid === taUid);
-  taNickname = item ? item.sister_nickname : '';
+  taNickname = nickname || (item ? item.sister_nickname : '');
   const modal = document.getElementById('talent-action-modal');
   if (!modal) return;
   modal.classList.add('active');
   document.getElementById('ta-info').textContent = `${taNickname || taUid}（UID ${taUid}）`;
-  document.getElementById('ta-type').value = 'send_sister';
+  document.getElementById('ta-type').value = preset || 'send_sister';
   document.getElementById('ta-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('ta-note').value = '';
 }
@@ -1020,7 +1027,7 @@ async function loadTalentActions() {
     const res = await fetch(API_BASE + '/api/talent-actions');
     const d = await res.json();
     talentActionsList = d.list || [];
-    const typeName = t => t === 'send_sister' ? '<span class="chip up">输送妹妹</span>' : '<span class="chip warn">提拔管理</span>';
+    const typeName = t => t === 'send_sister' ? '<span class="chip up">输送妹妹</span>' : t === 'resource' ? '<span class="chip up" style="background:#F1EDFF;color:#5B3EC4;">资源倾斜</span>' : t === 'recall' ? '<span class="chip warn">召回妹妹</span>' : '<span class="chip warn">提拔管理</span>';
     const resultName = s => s === 'good' ? '<span class="chip up">效果佳</span>' : s === 'mixed' ? '<span class="chip warn">一般</span>' : s === 'bad' ? '<span class="chip down">效果差</span>' : '<span class="chip flat">待回填</span>';
     tableEl.innerHTML = `
       <tr><th>日期</th><th>姐姐</th><th>大厅</th><th>动作</th><th>结果</th><th>备注</th><th>记录时间</th><th>操作</th></tr>
