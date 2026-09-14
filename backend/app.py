@@ -829,12 +829,16 @@ def api_kpi():
     this_achieve = achieve_rate(ws, we)
     prev_achieve = achieve_rate(pws, pwe) if pws else 0.0
 
-    # 妹妹留存率（近似兜底：毕业后仍留存/产出的妹妹占比；回访真口径待落地）
+    # 妹妹留存率（主口径 2026-09-14：毕业后第 1 周仍在排档 = 人在平台，member_weekly 按人精确；
+    # 追踪未覆盖时兜底在团口径）
     grad_ret = grad_retention_stats(conn, hall)
     conn.close()
 
     this_retention = getv(this_row, 'retention_rate')
     prev_retention = getv(prev_row, 'retention_rate')
+    sis_ret_val = grad_ret.get('w1s_rate')
+    if sis_ret_val is None:
+        sis_ret_val = grad_ret['retention_rate']
     kpis = {
         'new_team':      {'value': this_row['new_team_count'],      'change': calc_pct(this_row['new_team_count'], getv(prev_row, 'new_team_count')),      'unit': '个'},
         'active_team':   {'value': this_row['active_team_count_end'],'change': calc_pct(this_row['active_team_count_end'], getv(prev_row, 'active_team_count_end')), 'unit': '个'},
@@ -846,8 +850,8 @@ def api_kpi():
         'active_dissolved_pct': {'value': this_row['active_dissolved_pct'], 'change': round(this_row['active_dissolved_pct'] - getv(prev_row, 'active_dissolved_pct'), 2), 'unit': '%', 'reverse': True},
         # 毕业妹妹数（满30天自动毕业计数，对齐 preview「毕业妹妹数」卡）
         'graduated_sisters': {'value': this_row['graduation_count'], 'change': calc_pct(this_row['graduation_count'], getv(prev_row, 'graduation_count')), 'unit': '人'},
-        # 妹妹留存率（近似兜底：毕业后仍留存/产出的妹妹占比；回访真口径待落地）
-        'sister_retention': {'value': grad_ret['retention_rate'], 'change': 0, 'unit': '%'},
+        # 妹妹留存率（主口径：毕业后第 1 周仍在排档）
+        'sister_retention': {'value': sis_ret_val, 'change': 0, 'unit': '%'},
     }
     week_label = f"{_d0.year}年{_d0.month}月" if is_month else this_row['week_label']
     return jsonify({'data': kpis, 'date': this_row['week_start'], 'week': week_label, 'period_type': period_type})

@@ -431,7 +431,7 @@ function wbRenderKPI() {
   const weeks = wbFilteredWeekly();
   const sparkOf = key => weeks.map(w => w[key] || 0);
   const heroes = [
-    { label: '妹妹留存率', num: wbKpi.sister_retention ? wbKpi.sister_retention.value : null, fmt: 'pct', c: 0, suf: 'pp', note: '近似 · 越高越好', accent: 'green', metric: 'sisretention', spark: [] },
+    { label: '妹妹留存率', num: wbKpi.sister_retention ? wbKpi.sister_retention.value : null, fmt: 'pct', c: 0, suf: 'pp', note: '毕业后第1周仍在排档', accent: 'green', metric: 'sisretention', spark: [] },
     { label: '解散率', num: wbKpi.dissolution.value, fmt: 'pct', c: -wbKpi.dissolution.change, suf: 'pp', note: '越低越好', accent: 'red', metric: 'dissolution', spark: sparkOf('dissolution_rate') },
     { label: '新成团数', num: wbKpi.new_team.value, fmt: 'int', c: wbKpi.new_team.change, suf: '%', note: '越高越好', accent: 'violet', metric: 'newteam', spark: sparkOf('new_team_count') },
     { label: '进行中姐妹团', num: wbKpi.active_team.value, fmt: 'int', c: wbKpi.active_team.change, suf: '%', note: '在榜团数', accent: 'teal', metric: 'activeteam', spark: sparkOf('active_team_count_end') },
