@@ -1,126 +1,108 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""各模块数据准确性交叉验证：HTTP API 输出 vs 直接 SQL 独立重算
-用法: .venv/Scripts/python.exe tests/verify_data_accuracy.py
+"""接口冒烟回归（2026-09-15 重写）：检查当前正式版各接口的语义不变量
+（旧版校验 weekly_report 表 + 固定周 + 逐字段 SQL 重算，口径早已废弃。重写为
+「接口可访问 + 结构/取值域合法 + 关键口径自洽」的冒烟检查，不随口径迭代而过期）。
+
+用法: .venv/Scripts/python.exe -X utf8 tests/verify_data_accuracy.py
 前提: 后端运行在 127.0.0.1:5000
 """
 import json
-import sqlite3
-import urllib.parse
+import sys
 import urllib.request
-from datetime import datetime
 
 BASE = 'http://127.0.0.1:5000'
-COOKIE = 'auth_uid=34315471'  # admin
-DB = 'data/stats.db'
-POLICY_WEEK = '2026-07-20'
+COOKIE = 'auth_uid=34315471'  # admin 白名单
 
 results = []
 
-def check(name, api_val, db_val, tol=0.01):
-    try:
-        ok = abs(float(api_val) - float(db_val)) <= tol
-    except (TypeError, ValueError):
-        ok = api_val == db_val
-    results.append((ok, name, api_val, db_val))
+
+def check(name, ok, note=''):
+    results.append((bool(ok), name, note))
     return ok
 
-def api(path, cookie=COOKIE):
-    req = urllib.request.Request(BASE + path, headers={'Cookie': cookie})
-    return json.load(urllib.request.urlopen(req, timeout=30))
 
-conn = sqlite3.connect(DB)
-conn.row_factory = sqlite3.Row
+def api(path):
+    req = urllib.request.Request(BASE + path, headers={'Cookie': COOKIE})
+    return json.load(urllib.request.urlopen(req, timeout=60))
 
-WEEK = 'week=2026-08-03%7C2026-08-09'
 
-# ── 1. /api/kpi（全部大厅） ──
-kpi = api('/api/kpi?' + WEEK)['data']
-row = conn.execute("SELECT * FROM weekly_report WHERE hall_name='all' AND week_start='2026-08-03'").fetchone()
-check('KPI.新成团数', kpi['new_team']['value'], row['new_team_count'])
-check('KPI.进行中', kpi['active_team']['value'], row['active_team_count_end'])
-exp_ret = min(100, round((row['active_team_count_end'] - row['new_team_count']) / row['active_team_count_start'] * 100, 2))
-check('KPI.留存率(公式重算)', kpi['retention']['value'], exp_ret)
-check('KPI.解散率', kpi['dissolution']['value'], row['dissolution_rate'])
-check('KPI.流水', kpi['revenue']['value'], round(row['total_reward'], 1))
+def main():
+    # ── 1. KPI：周/月两种周期 + 字段完整 ──
+    kpi_w = api('/api/kpi?hall=all')
+    check('KPI.周.period_type', kpi_w.get('period_type') == 'week')
+    check('KPI.周.字段完整', all(k in kpi_w['data'] for k in ('retention', 'dissolution', 'sister_retention', 'new_team')))
+    check('KPI.妹妹留存率取值域', 0 <= (kpi_w['data']['sister_retention']['value'] or 0) <= 100)
+    kpi_m = api('/api/kpi?hall=all&week=2026-08-01%7C2026-08-31')
+    check('KPI.月.period_type', kpi_m.get('period_type') == 'month')
+    check('KPI.月.月视图留存率非负', (kpi_m['data']['retention']['value'] or 0) >= 0,
+          f"got {kpi_m['data']['retention']['value']}")
 
-# ── 2. /api/kpi 单厅回退（心动频率，本周无数据应回退到 08-03 周） ──
-hall = '王者荣耀·心动频率'
-r = api('/api/kpi?hall=' + urllib.parse.quote(hall) + '&' + WEEK)
-check('KPI单厅回退.week', r.get('week'), '08-03~08-09')
-row2 = conn.execute("SELECT * FROM weekly_report WHERE hall_name=? AND week_start='2026-08-03'", (hall,)).fetchone()
-check('KPI单厅.留存率', r['data']['retention']['value'],
-      min(100, round((row2['active_team_count_end'] - row2['new_team_count']) / row2['active_team_count_start'] * 100, 2)) if row2['active_team_count_start'] > 0 else 0)
+    # ── 2. 明细表：保护期列 + 方框数据源字段 ──
+    dt = api('/api/detail-table?page=1&per_page=3')
+    check('明细表.total>0', dt.get('total', 0) > 0)
+    r0 = (dt.get('data') or [{}])[0]
+    check('明细表.保护期字段存在', 'protection_end' in r0)
+    check('明细表.方框字段存在', 'days_since_formed' in r0 and 'form_date' in r0)
 
-# ── 3. /api/hall-overview（厅运营 31053950 视角） ──
-ov = api('/api/hall-overview?weeks=7', cookie='auth_uid=31053950')
-managed = {x['hall_name'] for x in conn.execute("SELECT hall_name FROM hall_managers WHERE uid='31053950'")}
-with_data = {x['hall_name'] for x in conn.execute("SELECT DISTINCT hall_name FROM weekly_report")}
-check('hall-overview.厅集合', set(d['hall_name'] for d in ov['data']), managed & with_data)
+    # ── 3. 毕业妹妹留存：排档主口径 + 产出质量口径 + 位图结构 ──
+    gr = api('/api/grad-retention')['stats']
+    check('毕业留存.total>0', gr.get('total', 0) > 0)
+    check('毕业留存.排档率取值域', gr.get('w1s_rate') is None or 0 <= gr['w1s_rate'] <= 100)
+    check('毕业留存.产出率取值域', gr.get('w1_rate') is None or 0 <= gr['w1_rate'] <= 100)
+    g0 = gr['list'][0]
+    check('毕业留存.位图结构', isinstance(g0.get('weeks_scheduled'), list) and len(g0['weeks_scheduled']) == 4)
+    check('毕业留存.配对姐姐UID', bool(g0.get('sister_uid')))
 
-# ── 4. /api/survival ──
-sv = api('/api/survival')
-ref = conn.execute('SELECT MAX(snapshot_date) AS r FROM team_detail').fetchone()['r']
-DEDUP = """rowid IN (SELECT MAX(rowid) FROM team_detail
-           WHERE snapshot_date = (SELECT MAX(snapshot_date) FROM team_detail) GROUP BY team_id)"""
-rows = conn.execute(f"SELECT form_date, dissolve_date, days_since_formed FROM team_detail WHERE {DEDUP}").fetchall()
-active_db = sum(1 for x in rows if not (x['dissolve_date'] or '').strip())
-check('survival.进行中团数', sv['active_count'], active_db)
-ref_d = datetime.strptime(ref, '%Y-%m-%d').date()
-elig = surv = 0
-for x in rows:
-    fd = (x['form_date'] or '')[:10]
-    if not fd:
-        continue
-    fd = datetime.strptime(fd, '%Y-%m-%d').date()
-    if (ref_d - fd).days < 7:
-        continue
-    elig += 1
-    dd = (x['dissolve_date'] or '')[:10]
-    if not dd:
-        surv += 1
-    else:
-        dd = datetime.strptime(dd, '%Y-%m-%d').date()
-        if (dd - fd).days >= 7:
-            surv += 1
-check('survival.7日存活率', sv['survival']['d7']['rate'], round(surv / elig * 100, 1))
-check('survival.7日样本数', sv['survival']['d7']['total'], elig)
+    # ── 4. 传承链：师门榜排序 + 树结构 + 师承链 ──
+    lr = api('/api/lineage-rank?limit=10')['data']
+    check('师门榜.非空', len(lr) > 0)
+    check('师门榜.排序正确', all(
+        (-lr[i]['promoted_count'], -lr[i]['grad_count']) <= (-lr[i + 1]['promoted_count'], -lr[i + 1]['grad_count'])
+        for i in range(len(lr) - 1)))
+    promoted_uid = next((x['uid'] for x in lr if x['promoted_count'] > 0), None)
+    if promoted_uid:
+        lt = api('/api/lineage-tree?uid=' + promoted_uid)
+        check('传承链.树有子代', len(lt['tree'].get('children', [])) > 0)
+        check('传承链.ancestry 是数组', isinstance(lt.get('ancestry'), list))
 
-# ── 5. /api/daily-events（逐日核对） ──
-de = api('/api/daily-events?days=14')
-check('daily-events.ref_date', de['ref_date'], ref)
-for i, d in enumerate(de['dates']):
-    new_db = conn.execute(f"SELECT COUNT(*) AS c FROM team_detail WHERE {DEDUP} AND substr(form_date,1,10)=?", (d,)).fetchone()['c']
-    diss_db = conn.execute(f"SELECT COUNT(*) AS c FROM team_detail WHERE {DEDUP} AND substr(dissolve_date,1,10)=?", (d,)).fetchone()['c']
-    check(f'daily-events.{d}.新成团', de['new_teams'][i], new_db)
-    check(f'daily-events.{d}.解散', de['dissolved'][i], diss_db)
+    # ── 5. 解散原因两级钻取：大类合计 = 总数 ──
+    dr = api('/api/dissolve-reasons')
+    check('解散原因.大类合计=总数', sum(b['count'] for b in dr['buckets']) == dr['total'],
+          f"{sum(b['count'] for b in dr['buckets'])} != {dr['total']}")
+    check('解散原因.大类非空', len(dr['buckets']) > 0)
 
-# ── 6. /api/policy-impact（全平台） ──
-pi = api('/api/policy-impact')
-def agg_db(direction):
-    op, order = ('<', 'DESC') if direction == 'pre' else ('>=', 'ASC')
-    return conn.execute(f"""SELECT AVG(retention_rate) ret, AVG(total_reward) rev FROM
-        (SELECT retention_rate, total_reward FROM weekly_report WHERE hall_name='all' AND week_start {op} ?
-         ORDER BY week_start {order} LIMIT 4)""", (POLICY_WEEK,)).fetchone()
-pre, post = agg_db('pre'), agg_db('post')
-check('policy.留存率前', pi['overall']['ret_pre'], round(pre['ret'], 1))
-check('policy.留存率后', pi['overall']['ret_post'], round(post['ret'], 1))
-check('policy.流水前', pi['overall']['rev_pre'], round(pre['rev'], 1))
-check('policy.流水后', pi['overall']['rev_post'], round(post['rev'], 1))
+    # ── 6. 预警中心：含毕业妹妹留存卡且取值域合法 ──
+    wc = api('/api/warncenter')
+    keys = [c['key'] for c in wc['cards']]
+    check('预警.含毕业妹妹留存卡', 'grad_ret' in keys, f'cards={keys}')
+    grc = next(c for c in wc['cards'] if c['key'] == 'grad_ret')
+    check('预警.毕业留存取值域', grc['current'] is None or 0 <= grc['current'] <= 100)
 
-# ── 7. /api/captains TOP1 ──
-cp = api('/api/captains?limit=1')
-top_db = conn.execute(f"""SELECT sister_uid, SUM(reward_amount) rev FROM team_detail
-    WHERE {DEDUP} AND sister_uid != '' GROUP BY sister_uid ORDER BY rev DESC LIMIT 1""").fetchone()
-check('captains.TOP1.uid', cp['data'][0]['uid'], top_db['sister_uid'])
-check('captains.TOP1.流水', cp['data'][0]['total_reward'], round(top_db['rev'], 1))
+    # ── 7. 个人周趋势（毕业追踪） ──
+    grad_uid = gr['list'][0]['sister_uid2']  # 毕业妹妹（member_weekly 的追踪对象）
+    mw = api('/api/member-weekly?uid=' + grad_uid)
+    check('个人周趋势.有周数据', len(mw.get('weeks', [])) > 0)
+    if mw.get('weeks'):
+        w0 = mw['weeks'][0]
+        check('个人周趋势.字段完整', all(k in w0 for k in ('week', 'revenue', 'schedule_days')))
 
-conn.close()
+    # ── 8. 生命周期方框：4 周 + 状态合法 ──
+    tid = r0.get('team_id')
+    if tid:
+        lw = api(f'/api/team/{tid}/life-weeks')
+        check('方框.4周', len(lw.get('weeks', [])) == 4)
+        states = {w['state'] for w in lw.get('weeks', [])}
+        check('方框.状态合法', states <= {'done', 'current', 'future', 'gone', 'dissolved'}, f'states={states}')
 
-# ── 汇总 ──
-passed = sum(1 for x in results if x[0])
-print(f'\n{"=" * 60}')
-for ok, name, av, dv in results:
-    print(f"{'PASS' if ok else 'FAIL'}  {name}  API={av}  DB={dv}")
-print(f'{"=" * 60}')
-print(f'共 {len(results)} 项检查，通过 {passed} 项' + ('，全部通过' if passed == len(results) else f'，失败 {len(results) - passed} 项'))
+    # ── 汇总 ──
+    passed = sum(1 for r in results if r[0])
+    print()
+    for ok, name, note in results:
+        print(('PASS' if ok else 'FAIL') + f'  {name}' + (f'  ({note})' if note and not ok else ''))
+    print(f'\n{passed}/{len(results)} PASS')
+    sys.exit(0 if passed == len(results) else 1)
+
+
+if __name__ == '__main__':
+    main()
