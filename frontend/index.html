@@ -363,6 +363,39 @@
 
   <!-- 预警中心 -->
   <div id="tab-alerts" class="tab-panel">
+    <!-- 团分析（2026-09-14 从概览页并入）：存活分析 + 解散原因分布 -->
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
+      </div>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>解散原因分布 <a id="dr-back" href="javascript:void(0)" onclick="drBackToBuckets()" style="display:none;font-size:12px;font-weight:400;color:var(--wb-accent);text-decoration:none;margin-left:8px;">← 返回大类</a></h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 点大块（主动/系统/毕业）看细分原因</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+      </div>
+    </div>
+
     <div class="section-head">
       <h2>预警中心</h2>
       <span class="hint" id="alerts-ref">平台级预警 · 近 8 周</span>
@@ -457,38 +490,6 @@
       <button class="expand-btn" onclick="openLyFull()">查看全部躺平名单 →</button>
     </div>
 
-    <!-- 团分析（2026-09-14 从概览页并入）：存活分析 + 解散原因分布 -->
-    <div class="section-head">
-      <h2>团分析</h2>
-      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
-    </div>
-    <div class="dn-footer">
-      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
-      <div class="dn-line">
-        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
-        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
-        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
-      </div>
-      <div class="dn-notes">
-        <span class="dn-tag">注意</span>
-        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
-      </div>
-    </div>
-    <div class="chart-grid">
-      <div class="chart-card" id="survival-card">
-        <h3>姐妹团存活分析</h3>
-        <div class="chart-src" id="survival-src">基于最新快照</div>
-        <div class="survival-chips" id="survival-chips"></div>
-        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
-        <div class="chart-insight" id="survival-insight"></div>
-      </div>
-      <div class="chart-card" id="dissolve-reasons-card">
-        <h3>解散原因分布 <a id="dr-back" href="javascript:void(0)" onclick="drBackToBuckets()" style="display:none;font-size:12px;font-weight:400;color:var(--wb-accent);text-decoration:none;margin-left:8px;">← 返回大类</a></h3>
-        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 点大块（主动/系统/毕业）看细分原因</div>
-        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
-        <div class="chart-insight" id="dissolve-reasons-insight"></div>
-      </div>
-    </div>
 
   </div>
 
