@@ -2668,6 +2668,48 @@ def api_warncenter():
     diss_total = sum(diss_hist)
     # 触发判定：第 2 周（8-14 天）为高发周（解散最集中的存续周）
     diss_triggered = diss_hist[1] > 0 and diss_hist[1] == max(diss_hist)
+
+    # ---- 卡5：毕业妹妹留存预警（W 周毕业 → 下一自然周仍在排档，健康线 60%） ----
+    # cohort 口径：W 周毕业的妹妹，W+1 自然周有排档记录（member_weekly.schedule_days > 0）
+    gr_trend = []
+    gr_affected = []
+    gr_cur = gr_wow = None
+    gr_triggered = False
+    try:
+        mw = {}
+        mw_weeks = set()
+        for r in conn.execute("SELECT uid, week_start, schedule_days FROM member_weekly").fetchall():
+            mw[(r['uid'], r['week_start'])] = (r['schedule_days'] or 0)
+            mw_weeks.add(r['week_start'])
+        cohorts = {}
+        for r in conn.execute("""
+            SELECT CAST(sister_uid2 AS TEXT) AS su, MAX(sister_nickname2) AS nick, MAX(dissolve_date) AS gd
+            FROM team_detail WHERE dissolve_reason = '毕业' AND sister_uid2 IS NOT NULL AND sister_uid2 != ''
+            GROUP BY su
+        """).fetchall():
+            if not r['gd']:
+                continue
+            try:
+                gd = datetime.strptime(r['gd'][:10], '%Y-%m-%d').date()
+            except Exception:
+                continue
+            gws = (gd - timedelta(days=gd.weekday())).isoformat()  # 毕业周（周一）
+            cohorts.setdefault(gws, []).append({'uid': r['su'], 'nick': r['nick']})
+        for gws in sorted(cohorts):
+            nxt = (datetime.strptime(gws, '%Y-%m-%d').date() + timedelta(days=7)).isoformat()
+            if nxt not in mw_weeks:
+                continue  # 下一周追踪数据未覆盖
+            members = cohorts[gws]
+            hit = [m for m in members if mw.get((m['uid'], nxt), 0) > 0]
+            gr_trend.append({'week': f"{gws[5:]}毕业", 'value': round(len(hit) / len(members) * 100, 1)})
+            gr_cur = gr_trend[-1]['value']
+            gr_wow = round(gr_cur - gr_trend[-2]['value'], 2) if len(gr_trend) >= 2 else None
+            # 受影响 = 最新 cohort 中下一周未排档的妹妹
+            gr_affected = [{'hall': (m['nick'] or m['uid']), 'current': None, 'wow': None}
+                           for m in members if mw.get((m['uid'], nxt), 0) <= 0][:10]
+        gr_triggered = gr_cur is not None and gr_cur < 60
+    except Exception:
+        pass
     conn.close()
 
     return jsonify({
@@ -2690,6 +2732,10 @@ def api_warncenter():
              'hist': [{'label': b[0], 'count': c} for b, c in zip(diss_buckets, diss_hist)],
              'total': diss_total, 'triggered': diss_triggered,
              'affected_halls': diss_affected},
+            {'key': 'grad_ret', 'title': '毕业妹妹留存预警', 'level': 'warning',
+             'metric_note': 'W 周毕业的妹妹，下一自然周仍有排档记录（member_weekly 按人追踪）', 'threshold': '< 60% 健康线',
+             'trend': gr_trend, 'current': gr_cur, 'wow': gr_wow, 'triggered': gr_triggered,
+             'affected_halls': gr_affected},
         ],
     })
 

@@ -1,7 +1,7 @@
 // warncenter.js - 预警中心（平台级预警 4 卡：留存率 / 异常解散 / 新成团 / 解散时间分布）
 
 const WARN_LEVEL = { severe: { label: '严重', cls: 'down' }, warning: { label: '警告', cls: 'warn' }, notice: { label: '提醒', cls: 'flat' } };
-const WARN_TITLE = { retention: '姐妹团留存率预警', active_diss: '主动解散占比预警', new_team: '新成团数预警', dissolve_time: '解散时间分布' };
+const WARN_TITLE = { retention: '姐妹团留存率预警', active_diss: '主动解散占比预警', new_team: '新成团数预警', dissolve_time: '解散时间分布', grad_ret: '毕业妹妹留存预警' };
 
 let _warnData = null;
 
@@ -61,14 +61,16 @@ function warnCardHTML(card) {
 
   const hallHead = isHist
     ? '<thead><tr><th>大厅</th><th class="center">解散数</th><th class="center">高发周</th></tr></thead>'
-    : '<thead><tr><th>大厅</th><th class="center">当前</th><th class="center">较上周</th></tr></thead>';
+    : card.key === 'grad_ret'
+      ? '<thead><tr><th>未排档妹妹</th><th class="center"></th><th class="center"></th></tr></thead>'
+      : '<thead><tr><th>大厅</th><th class="center">当前</th><th class="center">较上周</th></tr></thead>';
 
   return `
     <h3 style="display:flex;justify-content:space-between;align-items:center;">${title}<span class="chip ${lv.cls}">${lv.label}</span></h3>
     <div class="chart-src">${card.metric_note || ''} · 阈值：${card.threshold || ''}</div>
     <div class="chart-box" id="wc-${card.key}" style="height:200px;"></div>
     <div class="chart-insight">${insight}</div>
-    <div style="font-weight:600;margin:12px 0 4px;font-size:12px;color:var(--wb-text-1);">${isHist ? '非毕业解散 · 受影响厅' : '受影响厅'}</div>
+    <div style="font-weight:600;margin:12px 0 4px;font-size:12px;color:var(--wb-text-1);">${isHist ? '非毕业解散 · 受影响厅' : card.key === 'grad_ret' ? '上周毕业 · 本周未排档的妹妹' : '受影响厅'}</div>
     <div class="rank-scroll"><table class="rank-table">${hallHead}<tbody>${hallRows || '<tr><td colspan="3" style="color:#9CA3AF;">暂无</td></tr>'}</tbody></table></div>
     <button class="expand-btn" onclick="openWarnHalls('${card.key}')">查看全部受影响厅 →</button>
     <button class="expand-btn" onclick="drillWarn('${card.key}')">下钻明细 →</button>`;
@@ -166,8 +168,12 @@ function openWarnModal(title, bodyHTML) {
 }
 function closeWarnModal() { const m = document.getElementById('warn-full-modal'); if (m) m.classList.remove('active'); }
 
-// 下钻：解散时间分布 → 明细页已解散；新成团 → 明细页进行中；其余 → 概览
+// 下钻：解散时间分布 → 明细页已解散；新成团 → 明细页进行中；毕业妹妹留存 → 姐姐分析毕业妹妹模块；其余 → 概览
 function drillWarn(key) {
+  if (key === 'grad_ret') {
+    if (typeof jumpToGrad === 'function') jumpToGrad();
+    return;
+  }
   if (key === 'dissolve_time' || key === 'active_diss') {
     switchTab('detail');
     const st = document.getElementById('detail-status'); if (st) st.value = 'dissolved';
