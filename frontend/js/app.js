@@ -307,6 +307,8 @@ function uidSwitchPane(pane) {
   if (bW) bW.classList.toggle('on', !isTeams);
   // 切回参与明细页时，姐姐vs妹妹图表需 resize（隐藏时 echarts 尺寸为 0）
   if (isTeams && typeof _partnerChart !== 'undefined' && _partnerChart) setTimeout(() => _partnerChart.resize(), 50);
+  // 切到个人信息详情页时，个人周趋势图同理
+  if (!isTeams && typeof _memberTrendChart !== 'undefined' && _memberTrendChart) setTimeout(() => _memberTrendChart.resize(), 50);
 }
 
 async function queryUID(teamId) {

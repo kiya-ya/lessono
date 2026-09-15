@@ -572,6 +572,7 @@ function renderUIDResult(data) {
   renderTeamInfo(data);
   renderBoundSisters(data);
   renderPartnerCompare(data);
+  renderMemberTrend(data.uid);
   // 模块分页默认落「姐妹团参与明细」；该 UID 无任何团数据时落到周对比页，明细页显示空状态 + 按钮标注
   const hasTeam = !!(data.team_info || (data.bound_sisters || []).length);
   const emptyEl = document.getElementById('uid-teams-empty');
@@ -686,6 +687,40 @@ function renderBoundSisters(data) {
 }
 
 let _partnerChart = null;
+
+/* 个人周趋势（member_weekly 毕业妹妹追踪）：周流水柱 + 排档天数线 */
+let _memberTrendChart = null;
+async function renderMemberTrend(uid) {
+  const card = document.getElementById('member-trend-card');
+  if (!card) return;
+  try {
+    const res = await fetch(API_BASE + '/api/member-weekly?uid=' + encodeURIComponent(uid));
+    const d = await res.json();
+    const weeks = d.weeks || [];
+    if (!weeks.length) { card.style.display = 'none'; return; }
+    card.style.display = '';
+    const el = document.getElementById('member-trend-chart');
+    if (_memberTrendChart) { _memberTrendChart.dispose(); _memberTrendChart = null; }
+    _memberTrendChart = echarts.init(el);
+    _memberTrendChart.setOption({
+      tooltip: { trigger: 'axis', formatter: ps => {
+        const w = weeks[ps[0].dataIndex];
+        return `${w.week}<br/>周流水 <b>¥${Number(w.revenue).toLocaleString()}</b>${w.revenue >= 1344 ? '（达标）' : ''}<br/>排档 ${w.schedule_days} 天${w.week_level ? ' · ' + w.week_level : ''}`;
+      } },
+      legend: { data: ['周流水', '排档天数'], right: 8, top: 0, textStyle: { fontSize: 11 } },
+      grid: { left: 8, right: 12, top: 30, bottom: 8, containLabel: true },
+      xAxis: { type: 'category', data: weeks.map(w => w.week), axisLabel: { fontSize: 10, color: '#6B7280' } },
+      yAxis: [
+        { type: 'value', axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { lineStyle: { color: '#F0F1F4' } } },
+        { type: 'value', max: 7, minInterval: 1, axisLabel: { fontSize: 10, color: '#9CA3AF' }, splitLine: { show: false } },
+      ],
+      series: [
+        { name: '周流水', type: 'bar', data: weeks.map(w => w.revenue), barMaxWidth: 34, itemStyle: { color: '#7C5CFF', borderRadius: [4, 4, 0, 0] }, markLine: { silent: true, symbol: 'none', lineStyle: { color: '#D97706', type: 'dashed' }, label: { fontSize: 10, color: '#D97706' }, data: [{ yAxis: 1344, label: { formatter: '达标线 1344' } }] } },
+        { name: '排档天数', type: 'line', yAxisIndex: 1, data: weeks.map(w => w.schedule_days), smooth: true, lineStyle: { color: '#0EA5A4', width: 2 }, itemStyle: { color: '#0EA5A4' } },
+      ],
+    });
+  } catch (e) { card.style.display = 'none'; }
+}
 
 async function renderPartnerCompare(data) {
   const card = document.getElementById('partner-compare-card');

@@ -1693,6 +1693,27 @@ def api_sister2_post_grad_weeks(uid):
     return jsonify({'uid': uid, 'nickname': nick or uid, 'grad_date': gd, 'weeks': weeks})
 
 
+@app.route('/api/member-weekly')
+@login_required
+def api_member_weekly():
+    """个人周趋势（member_weekly：毕业妹妹追踪的按人周流水/排档天数），UID 查询页用"""
+    uid = request.args.get('uid', '')
+    if not uid:
+        return jsonify({'error': '缺少 uid'}), 400
+    conn = get_db_conn()
+    try:
+        rows = conn.execute(
+            "SELECT week_start, week_end, revenue, schedule_days, week_level FROM member_weekly "
+            "WHERE uid = ? ORDER BY week_start", (uid,)).fetchall()
+    except Exception:
+        rows = []
+    conn.close()
+    return jsonify({'uid': uid, 'weeks': [
+        {'week': f"{r['week_start'][5:]}~{r['week_end'][5:]}", 'revenue': r['revenue'] or 0,
+         'schedule_days': r['schedule_days'] or 0, 'week_level': r['week_level'] or ''}
+        for r in rows]})
+
+
 @app.route('/api/talent-pool')
 @login_required
 def api_talent_pool():
