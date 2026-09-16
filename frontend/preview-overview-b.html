@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>预览B · 中枢聚焦</title>
+<script src="js/echarts.min.js"></script>
+<style>
+:root { --bg:#F2F3F7; --card:#fff; --tx:#1A1D26; --t2:#5C5C66; --t3:#9CA3AF; --ac:#7C5CFF; --up:#16A34A; --down:#DC2626; --warn:#D97706; --line:#ECEEF2; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--tx); min-height:100vh; }
+a { text-decoration:none; }
+.top { display:flex; align-items:baseline; gap:10px; padding:16px 26px 0; }
+.top h1 { font-size:18px; font-weight:700; }
+.top .sub { font-size:12px; color:var(--t3); }
+.top .nav { margin-left:auto; font-size:12px; color:var(--ac); }
+
+.layout { display:grid; grid-template-columns:300px 1fr; gap:16px; padding:16px 26px 26px; }
+
+/* 左轨：模块预览列表 */
+.rail { display:flex; flex-direction:column; gap:10px; }
+.rail-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; transition:transform .15s, box-shadow .15s; display:flex; gap:12px; align-items:center; }
+.rail-card:hover { transform:translateX(3px); box-shadow:0 4px 14px rgba(26,29,38,.08); }
+.rail-ico { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; }
+.rail-card .t { font-size:13px; font-weight:600; }
+.rail-card .s { font-size:11.5px; color:var(--t3); margin-top:2px; }
+.rail-card .v { margin-left:auto; text-align:right; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+.rail-card .v small { display:block; font-size:10px; color:var(--t3); font-weight:400; }
+
+/* 右侧主区：焦点数字 + KPI 行 + 图 */
+.hero { background:linear-gradient(135deg,#8F7BFF 0%,#7C5CFF 100%); border-radius:16px; padding:26px 30px; color:#fff; display:flex; align-items:center; gap:30px; flex-wrap:wrap; }
+.hero .big { font-size:56px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; }
+.hero .lbl { font-size:13px; opacity:.85; margin-top:6px; }
+.hero .side { margin-left:auto; display:flex; gap:26px; flex-wrap:wrap; }
+.hero .side .it { text-align:right; }
+.hero .side .it b { font-size:22px; font-variant-numeric:tabular-nums; }
+.hero .side .it span { display:block; font-size:11px; opacity:.8; margin-top:2px; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+.mk { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; }
+.mk .l { font-size:11px; color:var(--t3); }
+.mk .v { font-size:18px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.mk .d { font-size:10.5px; } .mk .d.up{color:var(--up);} .mk .d.down{color:var(--down);}
+.panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; }
+.panel .h { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.panel .h b { font-size:13.5px; }
+.panel .h a { font-size:11px; color:var(--ac); font-weight:600; }
+#dr-chart { height:240px; }
+.warn-line { display:flex; gap:8px; align-items:center; padding:5px 0; font-size:12.5px; color:var(--t2); border-bottom:1px dashed var(--line); }
+.warn-line:last-child { border-bottom:none; }
+.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+@media (max-width:900px){ .layout{grid-template-columns:1fr;} .kpi-row{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>姐妹团驾驶舱 <span style="font-size:10.5px;color:var(--t3);font-weight:400;">预览 B · 中枢聚焦</span></h1>
+  <span class="sub" id="ref-date">—</span>
+  <a class="nav" href="/">← 返回正式版</a>
+</div>
+
+<div class="layout">
+  <!-- 左轨：模块预览 -->
+  <div class="rail">
+    <div class="rail-card" onclick="location.href='/#alerts'">
+      <div class="rail-ico" style="background:#D56060;">警</div>
+      <div><div class="t">预警中心</div><div class="s">触发 <b id="warn-n">—</b> 项 · 含团分析</div></div>
+      <div class="v" id="warn-v">—<small>最严重</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#captains'">
+      <div class="rail-ico" style="background:#16A34A;">留</div>
+      <div><div class="t">毕业妹妹留存</div><div class="s">第1周仍在排档</div></div>
+      <div class="v" id="grad-v">—<small>人在平台</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#compare'">
+      <div class="rail-ico" style="background:#C98A2D;">厅</div>
+      <div><div class="t">厅分析</div><div class="s">本周流水 TOP 厅</div></div>
+      <div class="v" id="hall-v">—<small>第1名</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#captains'">
+      <div class="rail-ico" style="background:#7C5CFF;">师</div>
+      <div><div class="t">师门产量榜</div><div class="s">带出毕业/晋升 TOP</div></div>
+      <div class="v" id="lin-v">—<small>第1名</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#detail'">
+      <div class="rail-ico" style="background:#0EA5A4;">细</div>
+      <div><div class="t">明细数据</div><div class="s">全量团搜索/方框</div></div>
+      <div class="v" id="det-v">—<small>总团数</small></div>
+    </div>
+  </div>
+
+  <!-- 右侧：焦点 + KPI + 图 -->
+  <div>
+    <div class="hero">
+      <div>
+        <div class="big" id="hero-num">—</div>
+        <div class="lbl">进行中姐妹团</div>
+      </div>
+      <div class="side">
+        <div class="it"><b id="hero-new">—</b><span>本周新成团</span></div>
+        <div class="it"><b id="hero-grad">—</b><span>本周毕业</span></div>
+        <div class="it"><b id="hero-diss">—</b><span>解散率</span></div>
+      </div>
+    </div>
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="panel">
+      <div class="h"><b>团分析 · 解散原因构成</b><a href="/#alerts">进入预警中心 →</a></div>
+      <div id="dr-chart"></div>
+    </div>
+    <div class="panel">
+      <div class="h"><b>预警速览</b><a href="/#alerts">进入预警中心 →</a></div>
+      <div id="warn-list">加载中…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
+
+async function main() {
+  const k = await (await fetch('/api/kpi?hall=all')).json();
+  const kd = k.data;
+  $('ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
+  $('hero-num').textContent = kd.active_team.value;
+  $('hero-new').textContent = kd.new_team.value;
+  $('hero-grad').textContent = kd.graduated_sisters.value;
+  $('hero-diss').textContent = kd.dissolution.value.toFixed(1) + '%';
+
+  const kpis = [
+    { l:'妹妹留存率', v: Math.round(kd.sister_retention.value)+'%', d:'第1周仍在排档' },
+    { l:'姐妹团留存率', v: Math.round(kd.retention.value)+'%', d:(kd.retention.change>=0?'↑':'↓')+Math.abs(kd.retention.change)+'pp', c: kd.retention.change>=0 },
+    { l:'礼物奖励', v: money(kd.revenue.value), d:(kd.revenue.change>=0?'↑':'↓')+Math.abs(kd.revenue.change)+'%', c: kd.revenue.change>=0 },
+    { l:'主动解散占比', v: kd.active_dissolved_pct.value.toFixed(1)+'%', d:(-kd.active_dissolved_pct.change>=0?'↓':'↑')+Math.abs(kd.active_dissolved_pct.change)+'pp', c: kd.active_dissolved_pct.change<=0 },
+  ];
+  $('kpi-row').innerHTML = kpis.map(x => `<div class="mk"><div class="l">${x.l}</div><div class="v">${x.v}</div><div class="d ${x.c==null?'':(x.c?'up':'down')}">${x.d}</div></div>`).join('');
+
+  // 预警
+  const w = await (await fetch('/api/warncenter')).json();
+  const trig = w.cards.filter(c=>c.triggered).length;
+  $('warn-n').textContent = trig;
+  const worst = w.cards.find(c=>c.triggered) || w.cards[0];
+  $('warn-v').childNodes[0].textContent = worst.current != null ? worst.current + '%' : '—';
+  $('warn-list').innerHTML = w.cards.map(c => {
+    const color = c.triggered ? '#DC2626' : c.level==='severe' ? '#D56060' : c.level==='warning' ? '#D97706' : '#7C5CFF';
+    const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
+    return `<div class="warn-line"><span class="dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
+  }).join('');
+
+  // 毕业妹妹
+  const g = (await (await fetch('/api/grad-retention')).json()).stats;
+  $('grad-v').childNodes[0].textContent = (g.w1s_rate ?? '—') + '%';
+
+  // 厅 TOP1
+  const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
+  const top = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue)[0];
+  $('hall-v').childNodes[0].textContent = top ? money(top.sister_weekly_revenue) : '—';
+  $('hall-v').previousElementSibling.querySelector('.s').textContent = top ? top.hall_name.slice(0,10) : '本周暂无';
+
+  // 师门 TOP1
+  const lr = await (await fetch('/api/lineage-rank?limit=1')).json();
+  const top1 = (lr.data||[])[0];
+  $('lin-v').childNodes[0].textContent = top1 ? `毕业${top1.grad_count}` : '—';
+  $('lin-v').previousElementSibling.querySelector('.s').textContent = top1 ? top1.nickname.slice(0,10) : '暂无';
+
+  // 明细
+  const dt = await (await fetch('/api/detail-table?per_page=1')).json();
+  $('det-v').childNodes[0].textContent = dt.total;
+
+  // 解散原因图
+  const dr = await (await fetch('/api/dissolve-reasons')).json();
+  const chart = echarts.init($('dr-chart'));
+  chart.setOption({
+    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
+    legend:{orient:'vertical',right:6,top:'middle',itemWidth:10,itemHeight:10,textStyle:{fontSize:11,color:'#6B7280'}},
+    series:[{type:'pie',radius:['42%','70%'],center:['34%','50%'],
+      label:{show:true,position:'outside',formatter:'{c}',fontSize:10,color:'#6B7280'},
+      itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
+      data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
+  });
+}
+main().catch(e => { document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`); });
+</script>
+</body>
+</html>
