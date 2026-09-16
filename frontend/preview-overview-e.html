@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>预览E · 左中右三栏</title>
+<script src="js/echarts.min.js"></script>
+<style>
+:root { --bg:#F2F3F7; --card:#fff; --tx:#1A1D26; --t2:#5C5C66; --t3:#9CA3AF; --ac:#7C5CFF; --up:#16A34A; --down:#DC2626; --warn:#D97706; --line:#ECEEF2; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--tx); padding:18px 26px 26px; }
+a { text-decoration:none; }
+.top { display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+.top h1 { font-size:18px; font-weight:700; }
+.top .sub { font-size:12px; color:var(--t3); }
+.top .nav { margin-left:auto; font-size:12px; color:var(--ac); }
+
+/* 顶部 slim KPI 条（C） */
+.slim { display:flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+.slim .it { flex:1; padding:10px 14px; border-right:1px solid var(--line); }
+.slim .it:last-child { border-right:none; }
+.slim .l { font-size:10.5px; color:var(--t3); }
+.slim .v { font-size:17px; font-weight:700; margin-top:1px; font-variant-numeric:tabular-nums; }
+.slim .v small { font-size:10px; font-weight:400; margin-left:4px; }
+.slim .up { color:var(--up); } .slim .down { color:var(--down); }
+
+/* 三栏：左模块轨(B) | 中(B内容+C主图) | 右本周摘要(C) */
+.layout { display:grid; grid-template-columns:280px 1fr 280px; gap:14px; align-items:start; }
+
+/* 左轨（B） */
+.rail { display:flex; flex-direction:column; gap:10px; }
+.rail-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; transition:transform .15s, box-shadow .15s; display:flex; gap:12px; align-items:center; }
+.rail-card:hover { transform:translateX(3px); box-shadow:0 4px 14px rgba(26,29,38,.08); }
+.rail-ico { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; color:#fff; flex-shrink:0; }
+.rail-card .t { font-size:13px; font-weight:600; }
+.rail-card .s { font-size:11.5px; color:var(--t3); margin-top:2px; }
+.rail-card .v { margin-left:auto; text-align:right; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+.rail-card .v small { display:block; font-size:10px; color:var(--t3); font-weight:400; }
+
+/* 中列（B 内容） */
+.hero { background:linear-gradient(135deg,#8F7BFF 0%,#7C5CFF 100%); border-radius:16px; padding:22px 26px; color:#fff; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+.hero .big { font-size:48px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; }
+.hero .lbl { font-size:12.5px; opacity:.85; margin-top:5px; }
+.hero .side { margin-left:auto; display:flex; gap:22px; flex-wrap:wrap; }
+.hero .side .it { text-align:right; }
+.hero .side .it b { font-size:20px; font-variant-numeric:tabular-nums; }
+.hero .side .it span { display:block; font-size:10.5px; opacity:.8; margin-top:2px; }
+.panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; }
+.panel .h { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.panel .h b { font-size:13.5px; }
+.panel .h a, .panel .h .tag { font-size:11px; color:var(--t3); }
+.panel .h a { color:var(--ac); font-weight:600; }
+#week-chart { height:260px; }
+#dr-chart { height:220px; }
+.warn-line { display:flex; gap:8px; align-items:center; padding:5px 0; font-size:12.5px; color:var(--t2); border-bottom:1px dashed var(--line); }
+.warn-line:last-child { border-bottom:none; }
+.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* 右栏（C 摘要） */
+.rail-right { display:flex; flex-direction:column; gap:10px; }
+.sum-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.sum-card .l { font-size:11px; color:var(--t3); }
+.sum-card .v { font-size:20px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.sum-card .s { font-size:11px; color:var(--t2); margin-top:3px; line-height:1.5; }
+#grad-trend { height:110px; }
+@media (max-width:1100px){ .layout{grid-template-columns:1fr;} .slim{flex-wrap:wrap;} .slim .it{min-width:33%;} }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>姐妹团驾驶舱 <span style="font-size:10.5px;color:var(--t3);font-weight:400;">预览 E · 左中右三栏</span></h1>
+  <span class="sub" id="ref-date">—</span>
+  <a class="nav" href="/">← 返回正式版</a>
+</div>
+
+<div class="slim" id="slim"></div>
+
+<div class="layout">
+  <!-- 左：模块轨（B） -->
+  <div class="rail">
+    <div class="rail-card" onclick="location.href='/#alerts'">
+      <div class="rail-ico" style="background:#D56060;">警</div>
+      <div><div class="t">预警中心</div><div class="s">触发 <b id="warn-n">—</b> 项 · 含团分析</div></div>
+      <div class="v" id="warn-v">—<small>留存预警</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#captains'">
+      <div class="rail-ico" style="background:#16A34A;">留</div>
+      <div><div class="t">毕业妹妹留存</div><div class="s">第1周仍在排档</div></div>
+      <div class="v" id="grad-v">—<small>人在平台</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#compare'">
+      <div class="rail-ico" style="background:#C98A2D;">厅</div>
+      <div><div class="t">厅分析</div><div class="s" id="hall-s">本周流水 TOP 厅</div></div>
+      <div class="v" id="hall-v">—<small>第1名</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#captains'">
+      <div class="rail-ico" style="background:#7C5CFF;">师</div>
+      <div><div class="t">师门产量榜</div><div class="s" id="lin-s">带出毕业/晋升 TOP</div></div>
+      <div class="v" id="lin-v">—<small>第1名</small></div>
+    </div>
+    <div class="rail-card" onclick="location.href='/#detail'">
+      <div class="rail-ico" style="background:#0EA5A4;">细</div>
+      <div><div class="t">明细数据</div><div class="s">全量团搜索/方框</div></div>
+      <div class="v" id="det-v">—<small>总团数</small></div>
+    </div>
+  </div>
+
+  <!-- 中：B 的焦点内容 + C 的本周节奏图 -->
+  <div>
+    <div class="hero">
+      <div>
+        <div class="big" id="hero-num">—</div>
+        <div class="lbl">进行中姐妹团</div>
+      </div>
+      <div class="side">
+        <div class="it"><b id="hero-new">—</b><span>本周新成团</span></div>
+        <div class="it"><b id="hero-grad">—</b><span>本周毕业</span></div>
+        <div class="it"><b id="hero-diss">—</b><span>解散率</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="h"><b>本周节奏 · 每日新成团 vs 解散</b><span class="tag">实线=本周 · 虚线=上周</span></div>
+      <div id="week-chart"></div>
+    </div>
+    <div class="panel">
+      <div class="h"><b>团分析 · 解散原因构成</b><a href="/#alerts">进入预警中心 →</a></div>
+      <div id="dr-chart"></div>
+    </div>
+    <div class="panel">
+      <div class="h"><b>预警速览</b><a href="/#alerts">进入预警中心 →</a></div>
+      <div id="warn-list">加载中…</div>
+    </div>
+  </div>
+
+  <!-- 右：本周摘要（C） + 毕业趋势小图 -->
+  <div class="rail-right">
+    <div class="sum-card"><div class="l">预警触发</div><div class="v" id="sum-warn">—</div><div class="s" id="sum-warn-s">—</div></div>
+    <div class="sum-card"><div class="l">毕业妹妹 · 第1周仍在排档</div><div class="v" id="sum-grad" style="color:var(--up);">—</div><div class="s" id="sum-grad-s">—</div></div>
+    <div class="sum-card"><div class="l">本周毕业</div><div class="v" id="sum-gradd">—</div><div class="s">满 30 天自动毕业</div></div>
+    <div class="sum-card"><div class="l" style="margin-bottom:4px;">近 8 周毕业趋势</div><div id="grad-trend"></div></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
+
+async function main() {
+  const k = await (await fetch('/api/kpi?hall=all')).json();
+  const kd = k.data;
+  $('ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
+
+  // slim KPI 条（C）
+  const items = [
+    { l:'进行中姐妹团', v: kd.active_team.value, d: kd.active_team.change },
+    { l:'新成团数', v: kd.new_team.value, d: kd.new_team.change },
+    { l:'姐妹团留存率', v: Math.round(kd.retention.value)+'%', d: kd.retention.change, suf:'pp' },
+    { l:'解散率', v: kd.dissolution.value.toFixed(1)+'%', d: -kd.dissolution.change, suf:'pp' },
+    { l:'妹妹留存率', v: Math.round(kd.sister_retention.value)+'%', d: null },
+    { l:'礼物奖励', v: money(kd.revenue.value), d: kd.revenue.change },
+  ];
+  $('slim').innerHTML = items.map(x => `<div class="it"><div class="l">${x.l}</div><div class="v">${x.v}${x.d!=null?`<small class="${x.d>=0?'up':'down'}">${x.d>=0?'↑':'↓'}${Math.abs(x.d)}${x.suf||'%'}</small>`:''}</div></div>`).join('');
+
+  // hero（B）
+  $('hero-num').textContent = kd.active_team.value;
+  $('hero-new').textContent = kd.new_team.value;
+  $('hero-grad').textContent = kd.graduated_sisters.value;
+  $('hero-diss').textContent = kd.dissolution.value.toFixed(1) + '%';
+
+  // 本周节奏（C 主图）
+  const d = await (await fetch('/api/daily-events?days=14')).json();
+  const labels = ['周日','周一','周二','周三','周四','周五','周六'];
+  const dayName = s => labels[new Date(s+'T00:00:00').getDay()];
+  const x = d.dates.slice(7).map(dayName);
+  echarts.init($('week-chart')).setOption({
+    tooltip:{trigger:'axis'},
+    legend:{data:['本周新成团','上周新成团','本周解散','上周解散'],top:0,right:8,textStyle:{fontSize:11}},
+    grid:{left:8,right:12,top:34,bottom:8,containLabel:true},
+    xAxis:{type:'category',data:x,axisLabel:{fontSize:11,color:'#6B7280'}},
+    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+    series:[
+      {name:'本周新成团',type:'line',data:d.new_teams.slice(7),smooth:true,symbolSize:6,lineStyle:{width:3,color:'#7C5CFF'},itemStyle:{color:'#7C5CFF'},areaStyle:{color:'rgba(124,92,255,.10)'}},
+      {name:'上周新成团',type:'line',data:d.new_teams.slice(0,7),smooth:true,symbol:'none',lineStyle:{width:1.5,type:'dashed',color:'#B7A8FF'},itemStyle:{color:'#B7A8FF'}},
+      {name:'本周解散',type:'line',data:d.dissolved.slice(7),smooth:true,symbolSize:6,lineStyle:{width:3,color:'#D56060'},itemStyle:{color:'#D56060'},areaStyle:{color:'rgba(213,96,96,.08)'}},
+      {name:'上周解散',type:'line',data:d.dissolved.slice(0,7),smooth:true,symbol:'none',lineStyle:{width:1.5,type:'dashed',color:'#F0A3A3'},itemStyle:{color:'#F0A3A3'}},
+    ]
+  });
+
+  // 预警（B 速览 + 左轨 + 右栏）
+  const w = await (await fetch('/api/warncenter')).json();
+  const trig = w.cards.filter(c=>c.triggered).length;
+  $('warn-n').textContent = trig;
+  const retCard = w.cards.find(c=>c.key==='retention');
+  $('warn-v').childNodes[0].textContent = retCard && retCard.current != null ? retCard.current + '%' : '—';
+  $('sum-warn').textContent = trig + ' 项';
+  $('sum-warn').style.color = trig ? 'var(--down)' : 'var(--up)';
+  $('sum-warn-s').textContent = trig ? w.cards.filter(c=>c.triggered).map(c=>c.title).join('、') : '全部正常';
+  $('warn-list').innerHTML = w.cards.map(c => {
+    const color = c.triggered ? '#DC2626' : c.level==='severe' ? '#D56060' : c.level==='warning' ? '#D97706' : '#7C5CFF';
+    const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
+    return `<div class="warn-line"><span class="dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
+  }).join('');
+
+  // 毕业妹妹（左轨 + 右栏 + 趋势小图）
+  const gr = await (await fetch('/api/grad-retention')).json();
+  const g = gr.stats;
+  $('grad-v').childNodes[0].textContent = (g.w1s_rate ?? '—') + '%';
+  $('sum-grad').textContent = (g.w1s_rate ?? '—') + '%';
+  $('sum-grad-s').textContent = `${g.w1_scheduled}/${g.w1s_covered} 位 · 产出达标 ${g.w1_rate ?? '—'}%`;
+  $('sum-gradd').textContent = kd.graduated_sisters.value + ' 人';
+  echarts.init($('grad-trend')).setOption({
+    grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
+    xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
+    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+    series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:16,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
+    tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
+  });
+
+  // 解散原因（B 中列）
+  const dr = await (await fetch('/api/dissolve-reasons')).json();
+  echarts.init($('dr-chart')).setOption({
+    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
+    legend:{orient:'vertical',right:6,top:'middle',itemWidth:10,itemHeight:10,textStyle:{fontSize:11,color:'#6B7280'}},
+    series:[{type:'pie',radius:['42%','70%'],center:['32%','50%'],
+      label:{show:true,position:'outside',formatter:'{c}',fontSize:10,color:'#6B7280'},
+      itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
+      data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
+  });
+
+  // 左轨：厅 TOP1 / 师门 TOP1 / 明细总数
+  const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
+  const top = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue)[0];
+  $('hall-v').childNodes[0].textContent = top ? money(top.sister_weekly_revenue) : '—';
+  if (top) $('hall-s').textContent = top.hall_name.slice(0,10);
+  const lr = await (await fetch('/api/lineage-rank?limit=1')).json();
+  const top1 = (lr.data||[])[0];
+  $('lin-v').childNodes[0].textContent = top1 ? `毕业${top1.grad_count}` : '—';
+  if (top1) $('lin-s').textContent = top1.nickname.slice(0,10);
+  const dt = await (await fetch('/api/detail-table?per_page=1')).json();
+  $('det-v').childNodes[0].textContent = dt.total;
+}
+main().catch(e => { document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`); });
+</script>
+</body>
+</html>
