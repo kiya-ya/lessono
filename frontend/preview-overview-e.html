@@ -82,6 +82,9 @@ a { text-decoration:none; }
 .chips { display:flex; gap:6px; flex-wrap:wrap; }
 .chipx { background:#F8F9FB; border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:11px; text-align:center; flex:1; min-width:60px; }
 .chipx b { display:block; font-size:14px; margin-top:1px; }
+/* 回到顶部 */
+#back-top { position:fixed; right:22px; bottom:22px; width:42px; height:42px; border-radius:50%; background:var(--ac); color:#fff; border:none; font-size:18px; cursor:pointer; box-shadow:0 4px 14px rgba(124,92,255,.4); opacity:0; visibility:hidden; transform:translateY(8px); transition:all .25s; z-index:99; }
+#back-top.show { opacity:1; visibility:visible; transform:translateY(0); }
 @media (max-width:1100px){ .layout{grid-template-columns:1fr;} .slim{flex-wrap:wrap;} .slim .it{min-width:33%;} }
 </style>
 </head>
@@ -122,6 +125,11 @@ a { text-decoration:none; }
       <div><div class="t">明细数据</div><div class="s">全量团搜索/方框</div></div>
       <div class="v" id="det-v">—<small>总团数</small></div>
     </div>
+    <div class="rail-card" onclick="location.href='/#uid'">
+      <div class="rail-ico" style="background:#4C8DFF;">查</div>
+      <div><div class="t">UID 查询</div><div class="s">单人下钻 · 周趋势</div></div>
+      <div class="v">→<small>进入</small></div>
+    </div>
   </div>
 
   <!-- 中：B 的焦点内容 + C 的本周节奏图 -->
@@ -148,6 +156,10 @@ a { text-decoration:none; }
     <div class="panel">
       <div class="h"><b>团分析 · 解散原因构成</b><a href="/#alerts">进入预警中心 →</a></div>
       <div id="dr-chart"></div>
+    </div>
+    <div class="panel">
+      <div class="h"><b>团分析 · 解散时间分布</b><span class="tag">非毕业解散 · 成团→解散存续天数 4 桶（近 8 周）</span></div>
+      <div id="dt-chart" style="height:190px;"></div>
     </div>
     <div class="panel">
       <div class="h"><b>排行 TOP5</b><span class="tag">点模块轨进详情页</span></div>
@@ -188,10 +200,18 @@ a { text-decoration:none; }
         <div class="feed-it"><span class="tm">17:48</span><span class="feed-tag ft-new">新成团</span><span>和平精英·北极光 新组 2 团</span></div>
       </div>
     </div>
+    <div class="sum-card">
+      <div class="l" style="margin-bottom:6px;">数据新鲜度</div>
+      <div class="s" id="fresh-line" style="line-height:1.9;">—</div>
+    </div>
   </div>
 </div>
 
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
 <script>
+window.addEventListener('scroll', () => {
+  document.getElementById('back-top').classList.toggle('show', window.scrollY > 400);
+}, { passive: true });
 const $ = id => document.getElementById(id);
 const money = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
 
@@ -266,6 +286,20 @@ async function main() {
     tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
   });
 
+  // 解散时间分布（近 8 周非毕业解散，存续天数 4 桶，复用预警中心数据）
+  const dtCard = w.cards.find(c => c.key === 'dissolve_time');
+  if (dtCard && dtCard.hist) {
+    echarts.init($('dt-chart')).setOption({
+      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
+      grid:{left:8,right:12,top:24,bottom:8,containLabel:true},
+      xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
+      yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+      series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:44,
+        itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[5,5,0,0]},
+        label:{show:true,position:'top',fontSize:10,color:'#6B7280'}}]
+    });
+  }
+
   // 解散原因（B 中列）
   const dr = await (await fetch('/api/dissolve-reasons')).json();
   echarts.init($('dr-chart')).setOption({
@@ -319,6 +353,21 @@ async function main() {
     $('survival-chips').innerHTML = chips.map(([l, c]) =>
       `<div class="chipx"><span style="color:var(--t3);">存活 ${l}</span><b style="color:${c.rate>=60?'var(--up)':c.rate>=40?'var(--warn)':'var(--down)'};">${c.rate}%</b></div>`).join('') || '暂无';
   } catch (e) { $('survival-chips').textContent = '暂无数据'; }
+
+  // 数据新鲜度（抓取时间 + Cookie 保活状态）
+  try {
+    const [lu, ka] = await Promise.all([
+      fetch('/api/last-update').then(r => r.json()).catch(() => null),
+      fetch('/api/keepalive-status').then(r => r.json()).catch(() => null),
+    ]);
+    const fmt = s => (s || '').slice(5, 16);
+    const dot = ok => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ok ? 'var(--up)' : 'var(--down)'};margin-right:4px;"></span>`;
+    $('fresh-line').innerHTML = [
+      lu ? `${dot(lu.status === 'success')}最近抓取 ${fmt(lu.last_update)}` : '',
+      ka ? `${dot(ka.uid && ka.uid.ok)}UID 查询 Cookie · ${dot(ka.bigdata && ka.bigdata.ok)}抓取 Cookie` : '',
+      ka && ka.last_run ? `<span style="color:var(--t3);font-size:10.5px;">保活巡检 ${fmt(ka.last_run)}</span>` : '',
+    ].filter(Boolean).join('<br>');
+  } catch (e) {}
 }
 main().catch(e => { document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`); });
 </script>
