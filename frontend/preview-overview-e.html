@@ -183,6 +183,12 @@ a { text-decoration:none; }
       <div class="l">师门产量榜 TOP5</div>
       <table class="mini-tbl" id="lin-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
     </div>
+    <div class="side-card"><div class="l" style="margin-bottom:4px;">团分析 · 解散原因构成</div><div id="dr-chart"></div></div>
+    <div class="side-card"><div class="l" style="margin-bottom:4px;">解散时间分布<span style="color:#C9CDD4;">（存续天数 4 桶）</span></div><div id="dt-chart"></div></div>
+    <div class="side-card">
+      <div class="l" style="margin-bottom:6px;">团存活率（达 N 天占比）</div>
+      <div class="chips" id="survival-chips">加载中…</div>
+    </div>
   </div>
 
   <!-- 中：主要详细数据 + 说明 -->
@@ -243,13 +249,7 @@ a { text-decoration:none; }
       </div>
       <div id="uid-quick-res"></div>
     </div>
-    <div class="sum-card"><div class="l" style="margin-bottom:4px;">团分析 · 解散原因构成</div><div id="dr-chart"></div></div>
-    <div class="sum-card"><div class="l" style="margin-bottom:4px;">解散时间分布<span style="color:#C9CDD4;">（存续天数 4 桶）</span></div><div id="dt-chart"></div></div>
     <div class="sum-card"><div class="l" style="margin-bottom:4px;">近 8 周毕业趋势</div><div id="grad-trend"></div></div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">团存活率（达 N 天占比）</div>
-      <div class="chips" id="survival-chips">加载中…</div>
-    </div>
     <div class="sum-card">
       <div class="l" style="margin-bottom:6px;">保护期将到期（3 天内 + 刚过期）</div>
       <div class="mini-list" id="prot-list">加载中…</div>
