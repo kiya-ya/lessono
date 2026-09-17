@@ -24,6 +24,12 @@ a { text-decoration:none; }
 .slim .v small { font-size:10px; font-weight:400; margin-left:4px; }
 .slim .up { color:var(--up); } .slim .down { color:var(--down); }
 
+/* 筛选栏 */
+.filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:16px; }
+.filter-bar .fl { font-size:11.5px; color:var(--t3); font-weight:600; }
+.filter-bar select { padding:6px 10px; border:1px solid #DDE1E8; border-radius:8px; font-size:12.5px; background:#fff; color:var(--tx); max-width:200px; }
+.filter-bar select:focus { outline:none; border-color:var(--ac); }
+
 /* 三栏：左导航+排行 | 中主内容 | 右摘要+图 */
 .layout { display:grid; grid-template-columns:280px 1fr 300px; gap:14px; align-items:start; }
 
@@ -102,6 +108,19 @@ a { text-decoration:none; }
   <h1>姐妹团驾驶舱 <span style="font-size:10.5px;color:var(--t3);font-weight:400;">预览 E · 左中右三栏</span></h1>
   <span class="sub" id="ref-date">—</span>
   <a class="nav" href="/">← 返回正式版</a>
+</div>
+
+<!-- 全局筛选栏：时间（月+周） / 类型 / 组 / 大厅 -->
+<div class="filter-bar">
+  <span class="fl">时间</span>
+  <select id="f-month" onchange="onFilterMonth()"></select>
+  <select id="f-week" onchange="onFilter()"></select>
+  <span class="fl">类型</span>
+  <select id="f-type" onchange="onFilterType()"><option value="all">全部类型</option></select>
+  <span class="fl">组</span>
+  <select id="f-group" onchange="onFilterGroup()"><option value="all">全部组</option></select>
+  <span class="fl">大厅</span>
+  <select id="f-hall" onchange="onFilter()"><option value="all">全部大厅</option></select>
 </div>
 
 <div class="slim" id="slim"></div>
@@ -236,9 +255,94 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 const $ = id => document.getElementById(id);
 const money = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
+// 图表实例复用：重渲前 dispose（筛选切换会整页重渲）
+const mk = id => { const el = $(id); const old = echarts.getInstanceByDom(el); if (old) old.dispose(); return echarts.init(el); };
+
+/* ── 全局筛选：时间（月+周）/ 类型 / 组 / 大厅 ── */
+let F = { hall: 'all', week: '' };
+let HG = { types: [] };   // /api/hall-groups
+let ALL_WEEKS = [];       // [{value, label, ws, we}] 从新到旧
+let MONTHS = [];          // [{value, label, ws, we}]
+
+function hallParam() { return F.hall !== 'all' ? '&hall=' + encodeURIComponent(F.hall) : ''; }
+function weekParam() { return F.week ? '&week=' + encodeURIComponent(F.week) : ''; }
+
+async function loadFilters() {
+  // 时间：周列表（同正式版口径）+ 月候选（最早数据月~当前月）
+  const wr = await (await fetch('/api/weekly-report?limit=all' + hallParam())).json();
+  const dbWeeks = (wr.data || []).slice().reverse();
+  ALL_WEEKS = dbWeeks.map(w => ({ value: w.week_start + '|' + w.week_end, label: w.week_label || `${(w.week_start || '').slice(5)} ~ ${(w.week_end || '').slice(5)}`, ws: w.week_start, we: w.week_end }));
+  MONTHS = [];
+  {
+    const now = new Date();
+    const first = dbWeeks.length ? new Date(dbWeeks[dbWeeks.length - 1].week_start + 'T00:00:00') : now;
+    let y = now.getFullYear(), m = now.getMonth();
+    const ey = first.getFullYear(), em = first.getMonth();
+    while (y > ey || (y === ey && m >= em)) {
+      const mm = String(m + 1).padStart(2, '0');
+      const lastDay = new Date(y, m + 1, 0).getDate();
+      const isCur = y === now.getFullYear() && m === now.getMonth();
+      MONTHS.push({ value: `${y}-${mm}-01|${y}-${mm}-${lastDay}`, label: `${y}年${m + 1}月${isCur ? '·至今' : ''}`, ws: `${y}-${mm}-01`, we: `${y}-${mm}-${lastDay}` });
+      m--; if (m < 0) { m = 11; y--; }
+    }
+  }
+  $('f-month').innerHTML = MONTHS.map(x => `<option value="${x.value}">${x.label}</option>`).join('');
+  // 默认：当前月 + 最新周
+  const curWeek = ALL_WEEKS[0];
+  F.week = curWeek ? curWeek.value : '';
+  if (curWeek) {
+    const thu = new Date(curWeek.ws + 'T00:00:00'); thu.setDate(thu.getDate() + 3);
+    const ym = `${thu.getFullYear()}-${String(thu.getMonth() + 1).padStart(2, '0')}`;
+    const hit = MONTHS.find(x => x.ws.slice(0, 7) === ym);
+    if (hit) $('f-month').value = hit.value;
+  }
+  fillWeekSelect(F.week);
+  // 类型/组/大厅
+  HG = await (await fetch('/api/hall-groups')).json();
+  $('f-type').innerHTML = '<option value="all">全部类型</option>' + (HG.types || []).map(t => `<option value="${t.type}">${t.type.replace('队长周排行', '')}</option>`).join('');
+  fillGroupSelect();
+}
+
+function fillWeekSelect(prefer) {
+  const mv = $('f-month').value;
+  const m = MONTHS.find(x => x.value === mv);
+  const opts = m ? [`<option value="${m.value}">整月</option>`] : [];
+  (ALL_WEEKS || []).forEach(w => { if (!m || (w.we >= m.ws && w.ws <= m.we)) opts.push(`<option value="${w.value}">${w.label}</option>`); });
+  $('f-week').innerHTML = opts.join('');
+  if (prefer && opts.some(o => o.includes(`value="${prefer}"`))) $('f-week').value = prefer;
+  F.week = $('f-week').value;
+}
+
+function fillGroupSelect() {
+  const tv = $('f-type').value;
+  const t = (HG.types || []).find(x => x.type === tv);
+  const groups = tv === 'all' ? (HG.types || []).flatMap(x => x.groups) : (t ? t.groups : []);
+  $('f-group').innerHTML = '<option value="all">全部组</option>' + groups.map(g => `<option value="${g.group}">${g.group}</option>`).join('');
+  fillHallSelect();
+}
+
+function fillHallSelect() {
+  const tv = $('f-type').value, gv = $('f-group').value;
+  let groups = (HG.types || []).flatMap(x => x.groups);
+  if (tv !== 'all') groups = groups.filter(g => (HG.types.find(x => x.type === tv) || { groups: [] }).groups.includes(g));
+  if (gv !== 'all') groups = groups.filter(g => g.group === gv);
+  const halls = [...new Set(groups.flatMap(g => g.halls))];
+  const cur = F.hall;
+  $('f-hall').innerHTML = '<option value="all">全部大厅</option>' + halls.map(h => `<option value="${h}">${h}</option>`).join('');
+  if (cur !== 'all' && halls.includes(cur)) $('f-hall').value = cur; else F.hall = 'all';
+}
+
+function onFilterMonth() { fillWeekSelect(); F.week = $('f-week').value; main(); }
+function onFilterType() { fillGroupSelect(); F.hall = $('f-hall').value; main(); }
+function onFilterGroup() { fillHallSelect(); F.hall = $('f-hall').value; main(); }
+function onFilter() {
+  F.week = $('f-week').value;
+  F.hall = $('f-hall').value;
+  main();
+}
 
 async function main() {
-  const k = await (await fetch('/api/kpi?hall=all')).json();
+  const k = await (await fetch('/api/kpi?hall=' + encodeURIComponent(F.hall) + weekParam())).json();
   const kd = k.data;
   $('ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
 
@@ -258,11 +362,11 @@ async function main() {
   $('hero-diss').textContent = kd.dissolution.value.toFixed(1) + '%';
 
   // 本周节奏（C 主图）
-  const d = await (await fetch('/api/daily-events?days=14')).json();
+  const d = await (await fetch('/api/daily-events?days=14' + (F.hall !== 'all' ? '&hall=' + encodeURIComponent(F.hall) : ''))).json();
   const labels = ['周日','周一','周二','周三','周四','周五','周六'];
   const dayName = s => labels[new Date(s+'T00:00:00').getDay()];
   const x = d.dates.slice(7).map(dayName);
-  echarts.init($('week-chart')).setOption({
+  mk('week-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['本周新成团','上周新成团','本周解散','上周解散'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:34,bottom:8,containLabel:true},
@@ -292,7 +396,7 @@ async function main() {
   }).join('');
   const dtCard = w.cards.find(c => c.key === 'dissolve_time');
   if (dtCard && dtCard.hist) {
-    echarts.init($('dt-chart')).setOption({
+    mk('dt-chart').setOption({
       tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
       grid:{left:8,right:8,top:20,bottom:4,containLabel:true},
       xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:9,color:'#6B7280',interval:0}},
@@ -304,13 +408,13 @@ async function main() {
   }
 
   // 毕业妹妹
-  const gr = await (await fetch('/api/grad-retention')).json();
+  const gr = await (await fetch('/api/grad-retention?x=1' + hallParam())).json();
   const g = gr.stats;
   $('grad-v').childNodes[0].textContent = (g.w1s_rate ?? '—') + '%';
   $('sum-grad').textContent = (g.w1s_rate ?? '—') + '%';
   $('sum-grad-s').textContent = `${g.w1_scheduled}/${g.w1s_covered} 位 · 产出达标 ${g.w1_rate ?? '—'}%`;
   $('sum-gradd').textContent = kd.graduated_sisters.value + ' 人';
-  echarts.init($('grad-trend')).setOption({
+  mk('grad-trend').setOption({
     grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
     xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
     yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
@@ -319,9 +423,9 @@ async function main() {
   });
 
   // 近 8 周留存/解散趋势
-  const wr = await (await fetch('/api/weekly-report?limit=all')).json();
+  const wr = await (await fetch('/api/weekly-report?limit=all' + hallParam())).json();
   const weeks = (wr.data || []).slice(-8);
-  echarts.init($('wk8-chart')).setOption({
+  mk('wk8-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['姐妹团留存率','解散率'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
@@ -333,7 +437,7 @@ async function main() {
     ]
   });
   // 近 8 周新成团 vs 毕业
-  echarts.init($('wk8n-chart')).setOption({
+  mk('wk8n-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['新成团','毕业'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
@@ -346,8 +450,8 @@ async function main() {
   });
 
   // 解散原因构成
-  const dr = await (await fetch('/api/dissolve-reasons')).json();
-  echarts.init($('dr-chart')).setOption({
+  const dr = await (await fetch('/api/dissolve-reasons?x=1' + hallParam())).json();
+  mk('dr-chart').setOption({
     tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
     series:[{type:'pie',radius:['38%','68%'],center:['50%','50%'],
       label:{show:true,position:'outside',formatter:'{c}',fontSize:9,color:'#6B7280'},labelLine:{length:6,length2:4},
@@ -363,18 +467,18 @@ async function main() {
   if (top) $('hall-s').textContent = top.hall_name.slice(0,10);
   $('hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${h.hall_name}</td><td class="num">${money(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:var(--t3);">本周暂无流水数据</td></tr>') + '</tbody>';
 
-  const lr = await (await fetch('/api/lineage-rank?limit=5')).json();
+  const lr = await (await fetch('/api/lineage-rank?limit=5' + (hallParam() ? '?' + hallParam().slice(1) : ''))).json();
   const top1 = (lr.data||[])[0];
   $('lin-v').childNodes[0].textContent = top1 ? `毕业${top1.grad_count}` : '—';
   if (top1) $('lin-s').textContent = top1.nickname.slice(0,10);
   $('lin-top5').innerHTML = '<tbody>' + ((lr.data||[]).map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:var(--t3);">暂无数据</td></tr>') + '</tbody>';
 
-  const dt = await (await fetch('/api/detail-table?per_page=1')).json();
+  const dt = await (await fetch('/api/detail-table?per_page=1' + hallParam())).json();
   $('det-v').childNodes[0].textContent = dt.total;
 
   // 存活率 chips
   try {
-    const sv = await (await fetch('/api/survival')).json();
+    const sv = await (await fetch('/api/survival?x=1' + hallParam())).json();
     const chips = [['7天', sv.survival?.d7], ['14天', sv.survival?.d14], ['30天', sv.survival?.d30]].filter(x => x[1]);
     $('survival-chips').innerHTML = chips.map(([l, c]) =>
       `<div class="chipx"><span style="color:var(--t3);">存活 ${l}</span><b style="color:${c.rate>=60?'var(--up)':c.rate>=40?'var(--warn)':'var(--down)'};">${c.rate}%</b></div>`).join('') || '暂无';
@@ -415,7 +519,7 @@ async function main() {
     ].filter(Boolean).join('<br>');
   } catch (e) {}
 }
-main().catch(e => { document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`); });
+loadFilters().then(main).catch(e => { document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`); });
 </script>
 </body>
 </html>
