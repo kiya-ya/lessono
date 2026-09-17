@@ -15,7 +15,7 @@ a { text-decoration:none; }
 .top .sub { font-size:12px; color:var(--t3); }
 .top .nav { margin-left:auto; font-size:12px; color:var(--ac); }
 
-/* 顶部 slim KPI 条（C） */
+/* 顶部 slim KPI 条 */
 .slim { display:flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:16px; }
 .slim .it { flex:1; padding:10px 14px; border-right:1px solid var(--line); }
 .slim .it:last-child { border-right:none; }
@@ -24,10 +24,10 @@ a { text-decoration:none; }
 .slim .v small { font-size:10px; font-weight:400; margin-left:4px; }
 .slim .up { color:var(--up); } .slim .down { color:var(--down); }
 
-/* 三栏：左模块轨(B) | 中(B内容+C主图) | 右本周摘要(C) */
-.layout { display:grid; grid-template-columns:280px 1fr 280px; gap:14px; align-items:start; }
+/* 三栏：左导航+排行 | 中主内容 | 右摘要+图 */
+.layout { display:grid; grid-template-columns:280px 1fr 300px; gap:14px; align-items:start; }
 
-/* 左轨（B） */
+/* 左轨：模块导航 + 快捷入口 + 排行 */
 .rail { display:flex; flex-direction:column; gap:10px; }
 .rail-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; transition:transform .15s, box-shadow .15s; display:flex; gap:12px; align-items:center; }
 .rail-card:hover { transform:translateX(3px); box-shadow:0 4px 14px rgba(26,29,38,.08); }
@@ -36,8 +36,17 @@ a { text-decoration:none; }
 .rail-card .s { font-size:11.5px; color:var(--t3); margin-top:2px; }
 .rail-card .v { margin-left:auto; text-align:right; font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
 .rail-card .v small { display:block; font-size:10px; color:var(--t3); font-weight:400; }
+.side-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.side-card .l { font-size:11px; color:var(--t3); margin-bottom:6px; }
+.type-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.type-chip { padding:5px 10px; border:1px solid var(--line); border-radius:999px; font-size:11.5px; color:var(--t2); cursor:pointer; background:#fff; transition:all .15s; }
+.type-chip:hover { border-color:var(--ac); color:var(--ac); }
+.mini-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.mini-tbl td { padding:5px 4px; border-bottom:1px solid #F3F4F6; }
+.mini-tbl tr:last-child td { border-bottom:none; }
+.mini-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
 
-/* 中列（B 内容） */
+/* 中列 */
 .hero { background:linear-gradient(135deg,#8F7BFF 0%,#7C5CFF 100%); border-radius:16px; padding:22px 26px; color:#fff; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
 .hero .big { font-size:48px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; }
 .hero .lbl { font-size:12.5px; opacity:.85; margin-top:5px; }
@@ -51,37 +60,37 @@ a { text-decoration:none; }
 .panel .h a, .panel .h .tag { font-size:11px; color:var(--t3); }
 .panel .h a { color:var(--ac); font-weight:600; }
 #week-chart { height:260px; }
-#dr-chart { height:220px; }
+#wk8-chart { height:200px; }
+#wk8n-chart { height:180px; }
 .warn-line { display:flex; gap:8px; align-items:center; padding:5px 0; font-size:12.5px; color:var(--t2); border-bottom:1px dashed var(--line); }
 .warn-line:last-child { border-bottom:none; }
 .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
-/* 右栏（C 摘要） */
+/* 右栏 */
 .rail-right { display:flex; flex-direction:column; gap:10px; }
 .sum-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
 .sum-card .l { font-size:11px; color:var(--t3); }
 .sum-card .v { font-size:20px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
 .sum-card .s { font-size:11px; color:var(--t2); margin-top:3px; line-height:1.5; }
-#grad-trend { height:110px; }
-/* 双排小表（厅排行/师门榜 TOP5） */
-.duo { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.mini-tbl { width:100%; border-collapse:collapse; font-size:12px; }
-.mini-tbl td, .mini-tbl th { padding:6px 6px; border-bottom:1px solid #F3F4F6; text-align:left; }
-.mini-tbl th { font-size:10.5px; color:var(--t3); font-weight:500; }
-.mini-tbl tr:last-child td { border-bottom:none; }
-.mini-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-/* 今日动态 feed */
-.feed { display:flex; flex-direction:column; gap:0; }
+#grad-trend { height:100px; }
+#dr-chart { height:190px; }
+#dt-chart { height:170px; }
+.chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chipx { background:#F8F9FB; border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:11px; text-align:center; flex:1; min-width:60px; }
+.chipx b { display:block; font-size:14px; margin-top:1px; }
 .feed-it { display:flex; gap:8px; padding:6px 0; border-bottom:1px dashed var(--line); font-size:12px; align-items:baseline; }
 .feed-it:last-child { border-bottom:none; }
 .feed-it .tm { color:var(--t3); font-size:10.5px; flex-shrink:0; font-variant-numeric:tabular-nums; }
 .feed-tag { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; flex-shrink:0; }
 .ft-new { background:#F3F0FF; color:#5B3EC4; } .ft-diss { background:#FDECEC; color:#DC2626; }
 .ft-grad { background:#E8F6EE; color:#16A34A; } .ft-pro { background:#FFFBEB; color:#D97706; }
-/* 存活 chips */
-.chips { display:flex; gap:6px; flex-wrap:wrap; }
-.chipx { background:#F8F9FB; border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:11px; text-align:center; flex:1; min-width:60px; }
-.chipx b { display:block; font-size:14px; margin-top:1px; }
+.mini-list { display:flex; flex-direction:column; }
+.mini-it { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:12px; }
+.mini-it:last-child { border-bottom:none; }
+.mini-it .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.badge { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; flex-shrink:0; }
+.badge.red { background:#FDECEC; color:#DC2626; } .badge.amber { background:#FFFBEB; color:#D97706; }
+
 /* 回到顶部 */
 #back-top { position:fixed; right:22px; bottom:22px; width:42px; height:42px; border-radius:50%; background:var(--ac); color:#fff; border:none; font-size:18px; cursor:pointer; box-shadow:0 4px 14px rgba(124,92,255,.4); opacity:0; visibility:hidden; transform:translateY(8px); transition:all .25s; z-index:99; }
 #back-top.show { opacity:1; visibility:visible; transform:translateY(0); }
@@ -98,7 +107,7 @@ a { text-decoration:none; }
 <div class="slim" id="slim"></div>
 
 <div class="layout">
-  <!-- 左：模块轨（B） -->
+  <!-- 左：模块导航 + 快捷入口 + 排行榜 -->
   <div class="rail">
     <div class="rail-card" onclick="location.href='/#alerts'">
       <div class="rail-ico" style="background:#D56060;">警</div>
@@ -130,9 +139,31 @@ a { text-decoration:none; }
       <div><div class="t">UID 查询</div><div class="s">单人下钻 · 周趋势</div></div>
       <div class="v">→<small>进入</small></div>
     </div>
+    <div class="rail-card" onclick="location.href='/#captains'">
+      <div class="rail-ico" style="background:#9333EA;">筛</div>
+      <div><div class="t">姐姐筛选</div><div class="s">候选池 · 四因子证据</div></div>
+      <div class="v">→<small>进入</small></div>
+    </div>
+    <div class="side-card">
+      <div class="l">类型快捷筛选</div>
+      <div class="type-chips">
+        <span class="type-chip" onclick="location.href='/#detail'">王者</span>
+        <span class="type-chip" onclick="location.href='/#detail'">和平</span>
+        <span class="type-chip" onclick="location.href='/#detail'">娱乐</span>
+        <span class="type-chip" onclick="location.href='/#detail'">其他</span>
+      </div>
+    </div>
+    <div class="side-card">
+      <div class="l">厅排行 · 本周流水 TOP5</div>
+      <table class="mini-tbl" id="hall-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
+    </div>
+    <div class="side-card">
+      <div class="l">师门产量榜 TOP5</div>
+      <table class="mini-tbl" id="lin-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
+    </div>
   </div>
 
-  <!-- 中：B 的焦点内容 + C 的本周节奏图 -->
+  <!-- 中：主要详细数据 -->
   <div>
     <div class="hero">
       <div>
@@ -151,28 +182,11 @@ a { text-decoration:none; }
     </div>
     <div class="panel">
       <div class="h"><b>近 8 周趋势 · 留存率 vs 解散率</b><span class="tag">周粒度</span></div>
-      <div id="wk8-chart" style="height:200px;"></div>
+      <div id="wk8-chart"></div>
     </div>
     <div class="panel">
-      <div class="h"><b>团分析 · 解散原因构成</b><a href="/#alerts">进入预警中心 →</a></div>
-      <div id="dr-chart"></div>
-    </div>
-    <div class="panel">
-      <div class="h"><b>团分析 · 解散时间分布</b><span class="tag">非毕业解散 · 成团→解散存续天数 4 桶（近 8 周）</span></div>
-      <div id="dt-chart" style="height:190px;"></div>
-    </div>
-    <div class="panel">
-      <div class="h"><b>排行 TOP5</b><span class="tag">点模块轨进详情页</span></div>
-      <div class="duo">
-        <div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:4px;">厅排行 · 本周流水</div>
-          <table class="mini-tbl" id="hall-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--t3);margin-bottom:4px;">师门产量榜 · 毕业/晋升</div>
-          <table class="mini-tbl" id="lin-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
-        </div>
-      </div>
+      <div class="h"><b>近 8 周 · 新成团 vs 毕业</b><span class="tag">姐妹团进出平衡</span></div>
+      <div id="wk8n-chart"></div>
     </div>
     <div class="panel">
       <div class="h"><b>预警速览</b><a href="/#alerts">进入预警中心 →</a></div>
@@ -180,25 +194,33 @@ a { text-decoration:none; }
     </div>
   </div>
 
-  <!-- 右：本周摘要（C） + 毕业趋势小图 -->
+  <!-- 右：本周摘要 + 图 + 名单 -->
   <div class="rail-right">
     <div class="sum-card"><div class="l">预警触发</div><div class="v" id="sum-warn">—</div><div class="s" id="sum-warn-s">—</div></div>
     <div class="sum-card"><div class="l">毕业妹妹 · 第1周仍在排档</div><div class="v" id="sum-grad" style="color:var(--up);">—</div><div class="s" id="sum-grad-s">—</div></div>
     <div class="sum-card"><div class="l">本周毕业</div><div class="v" id="sum-gradd">—</div><div class="s">满 30 天自动毕业</div></div>
+    <div class="sum-card"><div class="l" style="margin-bottom:4px;">团分析 · 解散原因构成</div><div id="dr-chart"></div></div>
+    <div class="sum-card"><div class="l" style="margin-bottom:4px;">解散时间分布<span style="color:#C9CDD4;">（存续天数 4 桶）</span></div><div id="dt-chart"></div></div>
     <div class="sum-card"><div class="l" style="margin-bottom:4px;">近 8 周毕业趋势</div><div id="grad-trend"></div></div>
     <div class="sum-card">
       <div class="l" style="margin-bottom:6px;">团存活率（达 N 天占比）</div>
       <div class="chips" id="survival-chips">加载中…</div>
     </div>
     <div class="sum-card">
+      <div class="l" style="margin-bottom:6px;">保护期将到期（3 天内 + 刚过期）</div>
+      <div class="mini-list" id="prot-list">加载中…</div>
+    </div>
+    <div class="sum-card">
+      <div class="l" style="margin-bottom:6px;">躺平预警 TOP</div>
+      <div class="mini-list" id="lying-list">加载中…</div>
+    </div>
+    <div class="sum-card">
       <div class="l" style="margin-bottom:6px;">今日动态 <span style="color:#C9CDD4;">（示意）</span></div>
-      <div class="feed">
-        <div class="feed-it"><span class="tm">09:12</span><span class="feed-tag ft-new">新成团</span><span>王者荣耀·海棠醉日 新组 3 团</span></div>
-        <div class="feed-it"><span class="tm">10:40</span><span class="feed-tag ft-pro">晋升</span><span>星辰 晋升为姐姐</span></div>
-        <div class="feed-it"><span class="tm">13:05</span><span class="feed-tag ft-grad">毕业</span><span>本周累计毕业 28 人</span></div>
-        <div class="feed-it"><span class="tm">15:22</span><span class="feed-tag ft-diss">解散</span><span>三角洲·揽月之恋 解散 2 团</span></div>
-        <div class="feed-it"><span class="tm">17:48</span><span class="feed-tag ft-new">新成团</span><span>和平精英·北极光 新组 2 团</span></div>
-      </div>
+      <div class="feed-it"><span class="tm">09:12</span><span class="feed-tag ft-new">新成团</span><span>王者荣耀·海棠醉日 新组 3 团</span></div>
+      <div class="feed-it"><span class="tm">10:40</span><span class="feed-tag ft-pro">晋升</span><span>星辰 晋升为姐姐</span></div>
+      <div class="feed-it"><span class="tm">13:05</span><span class="feed-tag ft-grad">毕业</span><span>本周累计毕业 28 人</span></div>
+      <div class="feed-it"><span class="tm">15:22</span><span class="feed-tag ft-diss">解散</span><span>三角洲·揽月之恋 解散 2 团</span></div>
+      <div class="feed-it"><span class="tm">17:48</span><span class="feed-tag ft-new">新成团</span><span>和平精英·北极光 新组 2 团</span></div>
     </div>
     <div class="sum-card">
       <div class="l" style="margin-bottom:6px;">数据新鲜度</div>
@@ -220,7 +242,6 @@ async function main() {
   const kd = k.data;
   $('ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
 
-  // slim KPI 条（C）
   const items = [
     { l:'进行中姐妹团', v: kd.active_team.value, d: kd.active_team.change },
     { l:'新成团数', v: kd.new_team.value, d: kd.new_team.change },
@@ -231,7 +252,6 @@ async function main() {
   ];
   $('slim').innerHTML = items.map(x => `<div class="it"><div class="l">${x.l}</div><div class="v">${x.v}${x.d!=null?`<small class="${x.d>=0?'up':'down'}">${x.d>=0?'↑':'↓'}${Math.abs(x.d)}${x.suf||'%'}</small>`:''}</div></div>`).join('');
 
-  // hero（B）
   $('hero-num').textContent = kd.active_team.value;
   $('hero-new').textContent = kd.new_team.value;
   $('hero-grad').textContent = kd.graduated_sisters.value;
@@ -256,7 +276,7 @@ async function main() {
     ]
   });
 
-  // 预警（B 速览 + 左轨 + 右栏）
+  // 预警（速览 + 左轨 + 右栏摘要 + 解散时间分布）
   const w = await (await fetch('/api/warncenter')).json();
   const trig = w.cards.filter(c=>c.triggered).length;
   $('warn-n').textContent = trig;
@@ -270,8 +290,20 @@ async function main() {
     const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
     return `<div class="warn-line"><span class="dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
   }).join('');
+  const dtCard = w.cards.find(c => c.key === 'dissolve_time');
+  if (dtCard && dtCard.hist) {
+    echarts.init($('dt-chart')).setOption({
+      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
+      grid:{left:8,right:8,top:20,bottom:4,containLabel:true},
+      xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:9,color:'#6B7280',interval:0}},
+      yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+      series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:30,
+        itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[4,4,0,0]},
+        label:{show:true,position:'top',fontSize:9,color:'#6B7280'}}]
+    });
+  }
 
-  // 毕业妹妹（左轨 + 右栏 + 趋势小图）
+  // 毕业妹妹
   const gr = await (await fetch('/api/grad-retention')).json();
   const g = gr.stats;
   $('grad-v').childNodes[0].textContent = (g.w1s_rate ?? '—') + '%';
@@ -282,71 +314,65 @@ async function main() {
     grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
     xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
     yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:16,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
+    series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:14,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
     tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
   });
 
-  // 解散时间分布（近 8 周非毕业解散，存续天数 4 桶，复用预警中心数据）
-  const dtCard = w.cards.find(c => c.key === 'dissolve_time');
-  if (dtCard && dtCard.hist) {
-    echarts.init($('dt-chart')).setOption({
-      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
-      grid:{left:8,right:12,top:24,bottom:8,containLabel:true},
-      xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
-      yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-      series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:44,
-        itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[5,5,0,0]},
-        label:{show:true,position:'top',fontSize:10,color:'#6B7280'}}]
-    });
-  }
+  // 近 8 周留存/解散趋势
+  const wr = await (await fetch('/api/weekly-report?limit=all')).json();
+  const weeks = (wr.data || []).slice(-8);
+  echarts.init($('wk8-chart')).setOption({
+    tooltip:{trigger:'axis'},
+    legend:{data:['姐妹团留存率','解散率'],top:0,right:8,textStyle:{fontSize:11}},
+    grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
+    xAxis:{type:'category',data:weeks.map(w=>w.week_label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
+    yAxis:{type:'value',axisLabel:{fontSize:10,color:'#9CA3AF',formatter:'{value}%'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+    series:[
+      {name:'姐妹团留存率',type:'line',data:weeks.map(w=>Math.round(w.retention_rate)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#16A34A'},itemStyle:{color:'#16A34A'}},
+      {name:'解散率',type:'line',data:weeks.map(w=>Math.round(w.dissolution_rate)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#D56060'},itemStyle:{color:'#D56060'}},
+    ]
+  });
+  // 近 8 周新成团 vs 毕业
+  echarts.init($('wk8n-chart')).setOption({
+    tooltip:{trigger:'axis'},
+    legend:{data:['新成团','毕业'],top:0,right:8,textStyle:{fontSize:11}},
+    grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
+    xAxis:{type:'category',data:weeks.map(w=>w.week_label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
+    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+    series:[
+      {name:'新成团',type:'bar',data:weeks.map(w=>w.new_team_count),barMaxWidth:22,itemStyle:{color:'#7C5CFF',borderRadius:[4,4,0,0]}},
+      {name:'毕业',type:'bar',data:weeks.map(w=>w.graduation_count||0),barMaxWidth:22,itemStyle:{color:'#C9A0DC',borderRadius:[4,4,0,0]}},
+    ]
+  });
 
-  // 解散原因（B 中列）
+  // 解散原因构成
   const dr = await (await fetch('/api/dissolve-reasons')).json();
   echarts.init($('dr-chart')).setOption({
     tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
-    legend:{orient:'vertical',right:6,top:'middle',itemWidth:10,itemHeight:10,textStyle:{fontSize:11,color:'#6B7280'}},
-    series:[{type:'pie',radius:['42%','70%'],center:['32%','50%'],
-      label:{show:true,position:'outside',formatter:'{c}',fontSize:10,color:'#6B7280'},
+    series:[{type:'pie',radius:['38%','68%'],center:['50%','50%'],
+      label:{show:true,position:'outside',formatter:'{c}',fontSize:9,color:'#6B7280'},labelLine:{length:6,length2:4},
       itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
       data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
   });
 
-  // 左轨：厅 TOP1 / 师门 TOP1 / 明细总数
+  // 左轨排行 TOP5
   const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
-  const top = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue)[0];
+  const halls = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue);
+  const top = halls[0];
   $('hall-v').childNodes[0].textContent = top ? money(top.sister_weekly_revenue) : '—';
   if (top) $('hall-s').textContent = top.hall_name.slice(0,10);
-  const lr = await (await fetch('/api/lineage-rank?limit=1')).json();
+  $('hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${h.hall_name}</td><td class="num">${money(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:var(--t3);">本周暂无流水数据</td></tr>') + '</tbody>';
+
+  const lr = await (await fetch('/api/lineage-rank?limit=5')).json();
   const top1 = (lr.data||[])[0];
   $('lin-v').childNodes[0].textContent = top1 ? `毕业${top1.grad_count}` : '—';
   if (top1) $('lin-s').textContent = top1.nickname.slice(0,10);
+  $('lin-top5').innerHTML = '<tbody>' + ((lr.data||[]).map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:var(--t3);">暂无数据</td></tr>') + '</tbody>';
+
   const dt = await (await fetch('/api/detail-table?per_page=1')).json();
   $('det-v').childNodes[0].textContent = dt.total;
 
-  // 近 8 周留存/解散趋势（真实周报数据）
-  try {
-    const wr = await (await fetch('/api/weekly-report?limit=all')).json();
-    const weeks = (wr.data || []).slice(-8);
-    echarts.init($('wk8-chart')).setOption({
-      tooltip:{trigger:'axis'},
-      legend:{data:['姐妹团留存率','解散率'],top:0,right:8,textStyle:{fontSize:11}},
-      grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
-      xAxis:{type:'category',data:weeks.map(w=>w.week_label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
-      yAxis:{type:'value',axisLabel:{fontSize:10,color:'#9CA3AF',formatter:'{value}%'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-      series:[
-        {name:'姐妹团留存率',type:'line',data:weeks.map(w=>Math.round(w.retention_rate)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#16A34A'},itemStyle:{color:'#16A34A'}},
-        {name:'解散率',type:'line',data:weeks.map(w=>Math.round(w.dissolution_rate)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#D56060'},itemStyle:{color:'#D56060'}},
-      ]
-    });
-  } catch (e) {}
-
-  // 排行 TOP5 双表（真实数据）
-  const ho5 = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue).slice(0,5);
-  $('hall-top5').innerHTML = '<tbody>' + (ho5.length ? ho5.map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;">${h.hall_name}</td><td class="num">${money(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:var(--t3);">本周暂无流水数据</td></tr>') + '</tbody>';
-  const lr5 = await (await fetch('/api/lineage-rank?limit=5')).json();
-  $('lin-top5').innerHTML = '<tbody>' + ((lr5.data||[]).map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:var(--t3);">暂无数据</td></tr>') + '</tbody>';
-
-  // 团存活率 chips（真实 survival 口径）
+  // 存活率 chips
   try {
     const sv = await (await fetch('/api/survival')).json();
     const chips = [['7天', sv.survival?.d7], ['14天', sv.survival?.d14], ['30天', sv.survival?.d30]].filter(x => x[1]);
@@ -354,7 +380,27 @@ async function main() {
       `<div class="chipx"><span style="color:var(--t3);">存活 ${l}</span><b style="color:${c.rate>=60?'var(--up)':c.rate>=40?'var(--warn)':'var(--down)'};">${c.rate}%</b></div>`).join('') || '暂无';
   } catch (e) { $('survival-chips').textContent = '暂无数据'; }
 
-  // 数据新鲜度（抓取时间 + Cookie 保活状态）
+  // 保护期将到期名单
+  try {
+    const pe = await (await fetch('/api/protection-expiring?days=3')).json();
+    const list = pe.list || [];
+    $('prot-list').innerHTML = list.length ? list.slice(0,6).map(r => {
+      const dl = r.days_left;
+      const badge = dl == null ? '' : dl < 0 ? `<span class="badge red">已过${-dl}天</span>` : dl === 0 ? '<span class="badge red">今天</span>' : `<span class="badge amber">${dl}天后</span>`;
+      return `<div class="mini-it"><span class="nm">${r.nickname}</span>${badge}</div>`;
+    }).join('') : '<div style="color:var(--t3);font-size:12px;">暂无将到期</div>';
+  } catch (e) { $('prot-list').textContent = '加载失败'; }
+
+  // 躺平预警 TOP
+  try {
+    const lf = await (await fetch('/api/lying-flat')).json();
+    const list = (lf.list || []).slice(0, 4);
+    $('lying-list').innerHTML = list.length ? list.map(r =>
+      `<div class="mini-it"><span class="nm">${r.sister_nickname2 || r.sister_nickname2 === '' ? (r.sister_nickname2 || r.sister_nickname) : r.sister_nickname}</span><span class="badge red">${r.accompany_streak}天未陪档</span></div>`).join('')
+      : '<div style="color:var(--t3);font-size:12px;">暂无躺平团</div>';
+  } catch (e) { $('lying-list').textContent = '加载失败'; }
+
+  // 数据新鲜度
   try {
     const [lu, ka] = await Promise.all([
       fetch('/api/last-update').then(r => r.json()).catch(() => null),

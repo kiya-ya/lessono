@@ -1693,6 +1693,40 @@ def api_sister2_post_grad_weeks(uid):
     return jsonify({'uid': uid, 'nickname': nick or uid, 'grad_date': gd, 'weeks': weeks})
 
 
+@app.route('/api/protection-expiring')
+@login_required
+def api_protection_expiring():
+    """保护期将到期名单（明细表「保护期结束」列的运营预警视角）：
+    进行中团妹妹的保护期在 N 天内到期（含已过期），按到期日升序。"""
+    days = min(int(request.args.get('days', 3)), 30)
+    conn = get_db_conn()
+    today = datetime.now().date()
+    until = (today + timedelta(days=days)).isoformat()
+    since = (today - timedelta(days=7)).isoformat()  # 刚过期一周内也列出（红色标注）
+    rows = conn.execute("""
+        SELECT mp.uid, mp.protection_end,
+               MAX(COALESCE(t.sister_nickname2, '')) AS nickname,
+               MAX(t.hall_name) AS hall_name, MAX(t.team_id) AS team_id
+        FROM member_protection mp
+        LEFT JOIN team_detail t
+          ON CAST(t.sister_uid2 AS TEXT) = mp.uid
+          AND t.rowid IN (SELECT MAX(rowid) FROM team_detail GROUP BY team_id)
+        WHERE mp.protection_end IS NOT NULL AND mp.protection_end != ''
+          AND mp.protection_end >= ? AND mp.protection_end <= ?
+        GROUP BY mp.uid ORDER BY mp.protection_end LIMIT 20
+    """, (since, until)).fetchall()
+    conn.close()
+    out = []
+    for r in rows:
+        try:
+            left = (datetime.strptime(r['protection_end'], '%Y-%m-%d').date() - today).days
+        except Exception:
+            left = None
+        out.append({'uid': r['uid'], 'nickname': r['nickname'] or r['uid'], 'hall_name': r['hall_name'],
+                    'team_id': r['team_id'], 'protection_end': r['protection_end'], 'days_left': left})
+    return jsonify({'days': days, 'list': out})
+
+
 @app.route('/api/member-weekly')
 @login_required
 def api_member_weekly():
