@@ -395,6 +395,9 @@ async function refreshWorkbench() {
     wbRenderKPI();
     wbRenderCharts();
     if (typeof loadInlineAlerts === 'function') loadInlineAlerts();
+    // 三栏壳：所有刷新路径（周/厅/类型/组切换）都同步刷新驾驶舱与左右栏
+    if (typeof loadShellOverview === 'function') loadShellOverview();
+    if (typeof loadShellRails === 'function') loadShellRails();
   } catch (e) { console.error('工作台刷新失败:', e); }
 }
 

@@ -55,6 +55,27 @@
       <button class="tab sub" id="side-filter" onclick="openCaptainPool()"><span class="tab-txt"><b>姐姐筛选</b></span></button>
       <button class="tab" onclick="switchTab('uid')"><span class="tab-txt"><b>UID查询</b><small>单用户下钻</small></span></button>
     </nav>
+    <!-- 三栏壳 · 左轨（筛选 + 榜单 + 图） -->
+    <div class="sh-rail-card">
+      <div class="sh-l">筛选（时间 / 类型 / 组 / 大厅）</div>
+      <select id="month-select" onchange="onMonthChange()"></select>
+      <select id="week-select" onchange="onWeekChange()"></select>
+      <select id="type-select" onchange="onTypeSelect()"><option value="all">全部类型</option></select>
+      <select id="group-select" onchange="onGroupSelect()"><option value="all">全部组</option></select>
+      <select id="hall-select" onchange="onHallSelect()"></select>
+    </div>
+    <div class="sh-rail-card">
+      <div class="sh-l">厅排行 · 本周流水 TOP5</div>
+      <table class="rank-table" id="sh-hall-top5"><tbody><tr><td style="color:var(--wb-text-3);">加载中…</td></tr></tbody></table>
+    </div>
+    <div class="sh-rail-card">
+      <div class="sh-l">师门产量榜 TOP5</div>
+      <table class="rank-table" id="sh-lin-top5"><tbody><tr><td style="color:var(--wb-text-3);">加载中…</td></tr></tbody></table>
+    </div>
+    <div class="sh-rail-card"><div class="sh-l">团分析 · 解散原因构成</div><div id="sh-dr-chart" style="height:190px;"></div></div>
+    <div class="sh-rail-card"><div class="sh-l">解散时间分布<span style="color:var(--wb-text-3);font-weight:400;">（存续 4 桶）</span></div><div id="sh-dt-chart" style="height:170px;"></div></div>
+    <div class="sh-rail-card"><div class="sh-l">团存活率（达 N 天占比）</div><div class="sh-chips" id="sh-survival-chips">加载中…</div></div>
+
     <div class="side-status" id="side-status" title="Cookie 有效性：绿=有效，红=失效（自动重登中），点击手动兜底刷新">
       <div class="ss-head">数据连接<span class="ss-auto">自动刷新</span></div>
       <div class="ss-row" onclick="openCookieModal()">
@@ -86,20 +107,15 @@
       </div>
     </div>
 
-    <div class="content wb-wrap">
 
-  <!-- 概览页 -->
+    <!-- 顶部 slim KPI 条 -->
+    <div class="sh-slim" id="sh-slim"></div>
+
+    <div class="sh-body">
+    <div id="sh-center" class="content wb-wrap">
+
+  <!-- 概览页（驾驶舱，2026-09-20 三栏壳落地） -->
   <div id="tab-overview" class="tab-panel active">
-    <!-- 看板导览（可关闭） -->
-    <div class="wb-guide" id="wb-guide">
-      <span class="wb-guide-tag">导览</span>
-      <span class="wb-guide-item">姐妹团 = 姐姐 + 妹妹 配对</span>
-      <span class="wb-guide-item">留存率：上周的团还剩多少（↑好） · 解散率：本周解散占比（↓好）</span>
-      <span class="wb-guide-item">流水分两口径：姐妹团礼物奖励 / 厅总流水</span>
-      <span class="wb-guide-item">左侧切视角，点卡片/柱状图联动明细</span>
-      <button class="wb-guide-close" onclick="closeWbGuide()" title="收起">✕</button>
-    </div>
-
     <!-- 厅体检卡墙（厅运营） -->
     <div id="wb-hall-wall" style="display:none">
       <div class="section-head">
@@ -109,200 +125,31 @@
       <div class="hall-grid" id="wb-hall-grid"></div>
     </div>
 
-    <!-- 预警与毕业妹妹留存：不受下方时间筛选影响 -->
-    <section class="overview-cluster overview-realtime" aria-label="预警与毕业妹妹留存">
-    <!-- 平台级预警（小 KPI 窗口，点击跳预警中心） -->
-    <div class="section-head">
-      <h2>预警</h2>
-      <span class="hint">平台级预警 · 点击进入预警中心查看规则与下钻</span>
-    </div>
-    <div class="warn-note">
-      <div class="wn-item"><span class="wn-tag severe">严重</span>跌破健康线（如姐妹团留存率 &lt; 60%）或环比连续骤降</div>
-      <div class="wn-item"><span class="wn-tag warning">警告</span>连续 2 周恶化（如主动解散占比连续升高）</div>
-      <div class="wn-item"><span class="wn-tag notice">提醒</span>增速放缓、需关注（如新成团数连续下降）</div>
-    </div>
-    <div class="warn-grid" id="overview-warn-grid">
-      <div class="warn-card severe" onclick="jumpToAlertModule('retention')">
-        <div class="top"><span class="dot red"></span><span id="ow-ret-title">姐妹团留存率预警</span><span class="lvl" id="ow-ret-lvl">—</span></div>
-        <div class="val" id="ow-ret-val">--</div>
-        <div class="foot" id="ow-ret-foot">—</div>
-        <span class="go">进入预警中心 →</span>
+    <!-- 焦点大卡 -->
+    <div class="sh-hero">
+      <div>
+        <div class="big" id="sh-hero-num">—</div>
+        <div class="lbl">进行中姐妹团</div>
       </div>
-      <div class="warn-card warning" onclick="jumpToAlertModule('active_diss')">
-        <div class="top"><span class="dot amber"></span><span id="ow-diss-title">主动解散占比预警</span><span class="lvl" id="ow-diss-lvl">—</span></div>
-        <div class="val" id="ow-diss-val">--</div>
-        <div class="foot" id="ow-diss-foot">—</div>
-        <span class="go">进入预警中心 →</span>
-      </div>
-      <div class="warn-card notice" onclick="jumpToAlertModule('new_team')">
-        <div class="top"><span class="dot violet"></span><span id="ow-new-title">新成团数预警</span><span class="lvl" id="ow-new-lvl">—</span></div>
-        <div class="val" id="ow-new-val">--</div>
-        <div class="foot" id="ow-new-foot">—</div>
-        <span class="go">进入预警中心 →</span>
+      <div class="side">
+        <div class="it"><b id="sh-hero-new">—</b><span>本周新成团</span></div>
+        <div class="it"><b id="sh-hero-grad">—</b><span>本周毕业</span></div>
+        <div class="it"><b id="sh-hero-ret">—</b><span>姐妹团留存率</span></div>
+        <div class="it"><b id="sh-hero-diss">—</b><span>解散率</span></div>
+        <div class="it"><b id="sh-hero-sis">—</b><span>妹妹留存率</span></div>
+        <div class="it"><b id="sh-hero-rev">—</b><span>本周礼物奖励</span></div>
+        <div class="it"><b id="sh-hero-tnew">—</b><span>今日新成团</span></div>
+        <div class="it"><b id="sh-hero-tdiss">—</b><span>今日解散</span></div>
       </div>
     </div>
 
-    <!-- 毕业妹妹留存（跳转入口） -->
-    <div class="section-head" style="margin-top:18px;">
-      <h2>毕业妹妹留存</h2>
-      <span class="hint">毕业后仍留存且优秀的妹妹占比 · 点击进入姐姐分析毕业妹妹模块</span>
-    </div>
-    <div class="chart-card" style="cursor:pointer;margin-bottom:16px;" onclick="jumpToGrad()">
-      <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;">
-        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">毕业妹妹总数</div><div style="font-size:26px;font-weight:700;color:#7C5CFF;" id="ow-grad-ret">—</div></div>
-        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">还在排档（人在平台）</div><div style="font-size:26px;font-weight:700;color:#0EA5A4;" id="ow-grad-sched">—</div></div>
-        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">产出达标（≥1344）</div><div style="font-size:26px;font-weight:700;color:#16A34A;" id="ow-grad-30d">—</div></div>
-        <div style="min-width:110px;"><div style="font-size:11px;color:var(--wb-text-3);">晋升为姐姐</div><div style="font-size:26px;font-weight:700;" id="ow-grad-promoted">—</div></div>
-        <div style="flex:1;min-width:220px;font-size:12px;color:var(--wb-text-2);line-height:1.7;">补充「姐妹关系持续率」只看关系能否顺利维持、不看毕业后价值的缺口。</div>
-        <span style="margin-left:auto;font-size:12px;font-weight:600;color:var(--wb-accent);white-space:nowrap;">查看毕业妹妹 →</span>
-      </div>
-    </div>
-    </section>
-
-    <!-- 筛选条件与核心指标 -->
-    <section class="overview-cluster overview-periodic" aria-label="筛选条件与核心指标">
-    <!-- 全局筛选栏：时间/类型/组/大厅（联动下方全部数据） -->
-    <div class="chart-card" id="overview-topbar" style="margin-bottom:16px;padding:12px 16px;">
-      <div class="search-box" style="margin-bottom:0;flex-wrap:wrap;align-items:center;gap:8px;">
-        <span class="wb-searchbar-lbl">时间</span>
-        <select id="month-select" class="wb-select" onchange="onMonthChange()" title="先选月份"></select>
-        <select id="week-select" class="wb-select" onchange="onWeekChange()" title="再选「整月」或该月某一周（联动 KPI 与趋势图）"></select>
-        <span class="wb-searchbar-lbl">类型</span>
-        <select id="type-select" class="wb-select" onchange="onTypeSelect()" title="类型（王者/和平/娱乐/其他 队长周排行）"><option value="all">全部类型</option></select>
-        <span class="wb-searchbar-lbl">组</span>
-        <select id="group-select" class="wb-select" onchange="onGroupSelect()" title="组（父集，选中后大厅下拉联动）"><option value="all">全部组</option></select>
-        <span class="wb-searchbar-lbl">大厅</span>
-        <select id="hall-select" class="wb-select" onchange="onHallSelect()" title="选择大厅（联动下方全部数据）"></select>
-        <button id="wb-hall-reset" class="mini-btn" style="display:none;" onclick="wbResetHall()" title="切回全部大厅视图">全部大厅</button>
-      </div>
+    <!-- 本周节奏 -->
+    <div class="chart-card" style="margin-top:14px;">
+      <h3>本周节奏 · 每日新成团 vs 解散<span class="chart-src" style="display:inline;font-weight:400;">实线=本周 · 虚线=上周</span></h3>
+      <div class="chart-box" id="sh-week-chart" style="height:260px;"></div>
     </div>
 
-    <div class="section-head">
-      <h2 id="wb-kpi-title">核心指标</h2>
-      <span class="hint" id="wb-kpi-subtitle"></span>
-    </div>
-    <div class="dn-footer">
-      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算方式</span></div>
-      <div class="dn-line">
-        <span class="dni"><b>妹妹留存率</b><code>毕业后第1周仍在排档的妹妹 ÷ 毕业妹妹总数</code><span>人在平台（排档追踪），越高越好</span></span>
-        <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
-        <span class="dni"><b>新成团数</b><code>周期计数</code><span>新配对成团数</span></span>
-        <span class="dni"><b>进行中姐妹团</b><code>期末在榜计数</code><span>未解散团数</span></span>
-        <span class="dni"><b>姐妹团留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存，越高越好</span></span>
-        <span class="dni"><b>毕业妹妹数</b><code>周期内满 30 天自动毕业计数</code><span>毕业节奏</span></span>
-      </div>
-      <div class="dn-notes">
-        <span class="dn-tag">注意</span>
-        <span><b>妹妹留存率</b>（毕业后第 1 周仍在排档的妹妹占比，口径：人在平台 · 按人追踪，member_weekly）与 <b>姐妹团留存率</b>（团口径、老团留存）是两个概念，请勿混读。毕业 = 满 30 天正常流程、不计入流失；数据对齐所选大厅与统计周期，按周时对比上一周、按月时对比上一月。按月视图下计数类指标（新成团/毕业等）为整月合计，率类指标（留存率/解散率等）为月内各周的周均值（姐妹团 30 天生命周期，跨整月留存无意义）。点各指标卡展开趋势 / 分布明细。</span>
-      </div>
-    </div>
-    <div class="kpi-hero" id="wb-kpi-hero"></div>
-    <div class="kpi-sub" id="wb-kpi-sub"></div>
-
-    <!-- KPI 卡点击展开的明细面板：留存/解散/金额三张趋势图并入此处 -->
-    <div class="kpi-detail" id="wb-kpi-detail">
-      <div class="kpi-detail-card" data-metric="retention">
-        <div class="kpi-detail-head">
-          <h3>姐妹团留存率<span class="chart-kpi" id="chart-kpi-retention"></span></h3>
-          <div class="kpi-detail-tabs">
-            <button class="on" data-tab="trend" onclick="wbRetentionTab('trend')">趋势</button>
-            <button data-tab="dist" onclick="wbRetentionTab('dist')">分布</button>
-            <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-          </div>
-        </div>
-        <div class="chart-src">上周就在的团，这周还剩多少 · 越高越好</div>
-        <div class="kpi-detail-grid" data-view="trend">
-          <div class="chart-box" id="wb-c-retention"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-retention"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-retention"></div>
-          </div>
-        </div>
-        <div class="kpi-detail-grid" data-view="dist" style="display:none;">
-          <div class="chart-container" id="chart-retention-dist"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="retention-dist-insight"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-detail-card" data-metric="dissolution">
-        <div class="kpi-detail-head">
-          <h3>解散率<span class="chart-kpi" id="chart-kpi-dissolution"></span></h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-        </div>
-        <div class="chart-src">本周有多少团解散 · 越低越好</div>
-        <div class="kpi-detail-grid">
-          <div class="chart-box" id="wb-c-dissolution"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-dissolution"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-dissolution"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-detail-card" data-metric="revenue">
-        <div class="kpi-detail-head">
-          <h3>礼物奖励金额<span class="chart-kpi" id="chart-kpi-revenue"></span></h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-        </div>
-        <div class="chart-src">本周发放的礼物奖励总额</div>
-        <div class="kpi-detail-grid">
-          <div class="chart-box" id="wb-c-revenue"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-revenue"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-revenue"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-detail-card" data-metric="newteam">
-        <div class="kpi-detail-head">
-          <h3>新成团数 · 日级明细</h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-        </div>
-        <div class="chart-src">每天新成团数 · 本周实线 vs 上周虚线</div>
-        <div class="kpi-detail-grid">
-          <div class="chart-box" id="chart-daily-new"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-newteam"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-newteam"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-detail-card" data-metric="activeteam">
-        <div class="kpi-detail-head">
-          <h3>进行中姐妹团</h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-        </div>
-        <div class="chart-src">每周在榜团数 · 越高越好</div>
-        <div class="kpi-detail-grid">
-          <div class="chart-box" id="wb-c-activeteam"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-activeteam"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-activeteam"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kpi-detail-card" data-metric="activediss">
-        <div class="kpi-detail-head">
-          <h3>主动解散占比 · 日级明细</h3>
-          <button class="kpi-detail-close" onclick="wbCloseKpiDetail()" title="收起">✕</button>
-        </div>
-        <div class="chart-src">每天解散数（主动+被动）· 本周实线 vs 上周虚线</div>
-        <div class="kpi-detail-grid">
-          <div class="chart-box" id="chart-daily-diss"></div>
-          <div class="kpi-detail-side">
-            <div class="chart-insight" id="wb-insight-activediss"></div>
-            <div class="kpi-detail-table" id="kpi-detail-table-activediss"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    </section>
-
-    <!-- 厅排行榜 + 师门产量榜（厅分析/姐姐分析预览） -->
-    <section class="overview-cluster overview-team-analysis" aria-label="团分析">
-
-    <!-- 厅排行榜 + 姐姐排行 并列小框（管理员看两个；厅运营只看姐姐） -->
-    <div class="chart-grid">
+    <!-- 厅排行榜（管理员，保留原交互） -->
       <div id="wb-rank-board" class="chart-card" style="display:none">
         <div class="section-head" style="margin:0 0 6px;">
           <h2 id="wb-rank-title">厅排行榜 · 本周</h2>
@@ -325,40 +172,52 @@
           <div class="rank-note" id="wb-rank-note"></div>
         </div>
       </div>
-      <div class="chart-card" id="overview-captain-box">
-        <div class="section-head" style="margin:0 0 6px;">
-          <h2>师门产量榜</h2>
-        </div>
-        <span class="hint">带出毕业妹妹 / 晋升姐姐 TOP3 · 点人看传承链</span>
-        <div id="overview-captain-preview"></div>
-        <button class="expand-btn" onclick="jumpToCaptainOverview()">查看全部姐姐 →</button>
-      </div>
-    </div>
-    </section>
 
-    <!-- 模块预览：团分析（并入预警中心） + 明细数据（独立页） -->
+    <!-- 核心指标明细 -->
+    <div class="chart-card">
+      <h3>核心指标明细 · 本期 vs 环比<span class="hint" id="sh-kpi-sub" style="font-weight:400;"></span></h3>
+      <table class="rank-table" id="sh-kpi-tbl"></table>
+    </div>
+
+    <!-- 近 8 周双趋势 -->
     <div class="chart-grid">
-      <div class="chart-card" style="cursor:pointer;" onclick="switchTab('alerts')">
-        <div class="section-head" style="margin:0 0 6px;">
-          <h2>团分析</h2>
-        </div>
-        <span class="hint">存活分析 · 解散原因分布（已并入预警中心）</span>
-        <div id="overview-team-preview" style="margin:10px 0 6px;font-size:13px;color:var(--wb-text-2);line-height:1.8;">加载中…</div>
-        <span style="font-size:12px;font-weight:600;color:var(--wb-accent);">进入预警中心 · 团分析 →</span>
+      <div class="chart-card"><h3>近 8 周趋势 · 留存率 vs 解散率</h3><div class="chart-box" id="sh-wk8-chart" style="height:200px;"></div></div>
+      <div class="chart-card"><h3>近 8 周 · 新成团 vs 毕业<span class="chart-src" style="display:inline;font-weight:400;">姐妹团进出平衡</span></h3><div class="chart-box" id="sh-wk8n-chart" style="height:180px;"></div></div>
+    </div>
+
+    <!-- 明细紧凑表 -->
+    <div class="chart-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">明细数据<a href="javascript:void(0)" onclick="switchTab('detail')" style="font-size:11px;color:var(--wb-accent);text-decoration:none;font-weight:600;">进入明细数据页 →</a></h3>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <input type="text" id="sh-mini-dt-search" class="wb-input wb-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter'){miniDtPage=1;loadMiniDetail();}">
+        <select id="sh-mini-dt-status" class="wb-select" onchange="miniDtPage=1;loadMiniDetail();">
+          <option value="all">全部状态</option><option value="active">进行中</option><option value="dissolved">已结束</option>
+        </select>
       </div>
-      <div class="chart-card">
-        <div class="section-head" style="margin:0 0 6px;">
-          <h2>明细数据</h2>
-        </div>
-        <span class="hint">搜索 · 排序 · 生命周期方框（独立页）</span>
-        <div id="overview-detail-preview" style="margin:10px 0;font-size:13px;color:var(--wb-text-2);line-height:1.8;">加载中…</div>
-        <div class="search-box" style="margin:0 0 10px;">
-          <input type="text" id="overview-detail-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;" onkeydown="if(event.key==='Enter') overviewGoDetail()">
-        </div>
-        <button class="expand-btn" onclick="overviewGoDetail()">进入明细数据 →</button>
+      <table class="rank-table" id="sh-mini-dt-tbl"></table>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--wb-text-3);">
+        <button class="mini-btn" onclick="miniDtPage=Math.max(1,miniDtPage-1);loadMiniDetail();">上一页</button>
+        <span id="sh-mini-dt-page">第 1 页</span>
+        <button class="mini-btn" onclick="miniDtPage++;loadMiniDetail();">下一页</button>
+        <span id="sh-mini-dt-total" style="margin-left:auto;"></span>
       </div>
     </div>
 
+    <!-- 数据说明（折叠） -->
+    <div class="chart-card" style="padding:0;">
+      <details class="sh-note">
+        <summary>数据说明 · 指标口径 · 数据覆盖范围（点击展开）</summary>
+        <div class="note-body">
+          <div>· <b>妹妹留存率</b> = 毕业后第 1 周仍在排档的妹妹占比（人在平台，按人追踪 member_weekly）</div>
+          <div>· <b>姐妹团留存率</b> =（期末进行中 − 本周新成团）÷ 期初进行中；<b>解散率</b> = 非毕业解散 ÷ 期初进行中，毕业不计流失</div>
+          <div>· <b>产出达标线</b> = 周流水 ≥ 1344（新人阶梯 336/672/1008/1344，毕业按老人要求）</div>
+          <div>· <b>月视图</b>：率类 = 月内各周均值，计数类 = 整月合计，对比上一月</div>
+          <div>· 流水两套口径：<code>姐妹团礼物奖励</code>（团内）与 <code>厅总流水</code>（厅级，约 3 倍差）</div>
+          <div>· <b>数据覆盖</b>：团快照自 07-27 起 · 流水自 08-03 起 · 毕业生按人追踪自 08-17 起 · 数据 T+1（每日抓取）</div>
+          <div>· <b>离职细分</b>：解散原因中「离职」按 UID 查询的最近离职时间比对，细分姐姐/妹妹/双方</div>
+        </div>
+      </details>
+    </div>
   </div>
 
   <!-- 预警中心 -->
@@ -926,7 +785,32 @@
   </div>
   </div>
 
-    </div><!-- /.content -->
+      <aside id="sh-rail-right">
+        <div class="sh-rail-card"><div class="sh-l">预警速览</div><div id="sh-warn-list">加载中…</div></div>
+        <div class="sh-rail-card"><div class="sh-l">预警触发</div><div class="sh-v" id="sh-sum-warn">—</div><div class="sh-s" id="sh-sum-warn-s"></div></div>
+        <div class="sh-rail-card"><div class="sh-l">毕业妹妹 · 第1周仍在排档</div><div class="sh-v" id="sh-sum-grad" style="color:var(--wb-up);">—</div><div class="sh-s" id="sh-sum-grad-s"></div></div>
+        <div class="sh-rail-card"><div class="sh-l">毕业妹妹总数</div><div class="sh-v" id="sh-sum-gradd">—</div><div class="sh-s">满 30 天自动毕业</div></div>
+        <div class="sh-rail-card">
+          <div class="sh-l">UID 快查</div>
+          <div class="sh-uidq">
+            <input type="text" id="sh-uid-quick-input" placeholder="输入 UID…" onkeydown="if(event.key==='Enter')shUidQuick()">
+            <button onclick="shUidQuick()">查</button>
+          </div>
+          <div id="sh-uid-quick-res"></div>
+        </div>
+        <div class="sh-rail-card"><div class="sh-l">近 8 周毕业趋势</div><div id="sh-grad-trend" style="height:100px;"></div></div>
+        <div class="sh-rail-card"><div class="sh-l">保护期将到期（3 天内 + 刚过期）</div><div id="sh-prot-list">加载中…</div></div>
+        <div class="sh-rail-card"><div class="sh-l">躺平预警 TOP</div><div id="sh-lying-list">加载中…</div></div>
+        <div class="sh-rail-card">
+          <div class="sh-l">今日动态<span style="color:var(--wb-text-3);font-weight:400;">（示意）</span></div>
+          <div class="sh-mini-it"><span style="color:var(--wb-text-3);font-size:10.5px;">09:12</span><span class="sh-badge" style="background:#F3F0FF;color:#5B3EC4;">新成团</span><span>王者荣耀·海棠醉日 新组 3 团</span></div>
+          <div class="sh-mini-it"><span style="color:var(--wb-text-3);font-size:10.5px;">10:40</span><span class="sh-badge amber">晋升</span><span>星辰 晋升为姐姐</span></div>
+          <div class="sh-mini-it"><span style="color:var(--wb-text-3);font-size:10.5px;">13:05</span><span class="sh-badge" style="background:#E8F6EE;color:#16A34A;">毕业</span><span>本周累计毕业 28 人</span></div>
+          <div class="sh-mini-it"><span style="color:var(--wb-text-3);font-size:10.5px;">15:22</span><span class="sh-badge red">解散</span><span>三角洲·揽月之恋 解散 2 团</span></div>
+        </div>
+        <div class="sh-rail-card"><div class="sh-l">数据新鲜度</div><div class="sh-s" id="sh-fresh-line" style="line-height:1.9;">—</div></div>
+      </aside>
+    </div><!-- /.sh-body -->
   </div><!-- /.main -->
 </div><!-- /.layout -->
 
@@ -1117,5 +1001,12 @@
 <script src="js/insight.js?v=64"></script>
 <script src="js/warncenter.js?v=7"></script>
 <script src="js/lyingflat.js?v=3"></script>
+<script src="js/shell.js?v=1"></script>
+<div style="display:none;" aria-hidden="true">
+  <span id="wb-kpi-title"></span><span id="wb-kpi-subtitle"></span>
+  <div id="wb-kpi-hero"></div><div id="wb-kpi-sub"></div>
+</div>
+<button id="sh-back-top" onclick="document.getElementById('sh-center').scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
 </body>
 </html>

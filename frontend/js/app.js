@@ -7,10 +7,10 @@ function switchPage(name) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'overview') setTimeout(() => {
     if (typeof wbResizeCharts === 'function') wbResizeCharts();
-    // 概览=驾驶舱：师门榜 / 毕业妹妹卡 / 模块预览区（团分析与明细已独立成页）
-    if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
+    // 三栏壳：概览驾驶舱 + 左右栏
+    if (typeof loadShellOverview === 'function') loadShellOverview();
+    if (typeof loadShellRails === 'function') loadShellRails();
     if (typeof loadGradRetention === 'function') loadGradRetention();
-    if (typeof loadOverviewPreviews === 'function') loadOverviewPreviews();
   }, 100);
   if (name === 'compare') setTimeout(() => { initCompareChart(); if (typeof initRetentionDist === 'function') initRetentionDist(); }, 300);
   if (name === 'captains') {
@@ -456,6 +456,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   setInterval(() => { if (typeof refreshCookieStatus === 'function') refreshCookieStatus(); }, 60000);
   // 工作台初始化（卡墙/排行榜 + KPI + 趋势图）
   if (typeof initWorkbench === 'function') await initWorkbench();
+  // 三栏壳：概览驾驶舱 + 左右栏模块
+  if (typeof loadShellOverview === 'function') await loadShellOverview();
+  if (typeof loadShellRails === 'function') loadShellRails();
+  if (typeof initShellScroll === 'function') initShellScroll();
   loadDetailTable();
   // 概览驾驶舱首屏：师门榜 / 毕业妹妹卡 / 模块预览（团分析与明细已独立成页，入页时再加载）
   if (typeof loadOverviewCaptains === 'function') loadOverviewCaptains();
