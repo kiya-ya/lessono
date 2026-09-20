@@ -34,6 +34,10 @@ body { background:#F2F3F7; display:flex; flex-direction:column; height:100vh; ov
 /* 预览版预警中心：删除「主动解散占比预警」卡 */
 .pv-center-page .chart-card:has(#wc-active_diss) { display:none; }
 .pv-rail, .pv-rail-right { display:flex; flex-direction:column; gap:10px; }
+/* 筛选卡内 combobox 拉满宽度（覆盖正式版 --group 120px / --hall 220px 定宽） */
+.pv-side-card .wb-combobox, .pv-side-card .wb-combobox--group, .pv-side-card .wb-combobox--hall { width:100%; min-width:0; }
+.pv-side-card .wb-combobox-input { width:100%; }
+
 /* 导航（无大字图标） */
 .pv-nav-item { display:flex; align-items:baseline; gap:8px; background:#fff; border:1px solid #ECEEF2; border-radius:10px; padding:9px 13px; cursor:pointer; transition:all .15s; flex-shrink:0; }
 .pv-nav-item:hover { border-color:#D9D5F0; }
