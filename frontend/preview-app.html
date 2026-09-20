@@ -21,6 +21,9 @@ body { background:#F2F3F7; }
 .pv-layout { display:grid; grid-template-columns:270px minmax(0,1fr) 300px; gap:14px; padding:0 26px 26px; align-items:start; }
 /* minmax(0,1fr)：防止中列宽表/宽图把 grid 撑出页面 */
 .pv-center-page { min-width:0; }
+/* 图表 canvas 越界时硬裁剪在卡片内（不溢出到右栏） */
+#pv-center { min-width:0; overflow:hidden; }
+.pv-center-page .chart-card, .pv-center-page .pv-panel { overflow:hidden; }
 .pv-center-page .chart-box, .pv-center-page .chart-container, .pv-center-page .rank-scroll { max-width:100%; }
 /* 预览版预警中心：删除「主动解散占比预警」卡 */
 .pv-center-page .chart-card:has(#wc-active_diss) { display:none; }
@@ -857,6 +860,8 @@ function pvGo(name) {
     (PV_LOADERS[name] || (() => {}))();
     try { if (typeof resizeAllCharts === 'function') resizeAllCharts(); } catch (e) {}
   }, 60);
+  // 图表在隐藏态初始化过的话，再补一次 resize（防 canvas 保持错误宽度）
+  setTimeout(() => { try { if (typeof resizeAllCharts === 'function') resizeAllCharts(); } catch (e) {} }, 450);
 }
 function pvReload() { pvGo(PV_CUR); pvLoadRails(); }
 
