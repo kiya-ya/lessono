@@ -441,11 +441,8 @@ function initInfoFolds() {
 document.addEventListener('DOMContentLoaded', async () => {
   initInfoFolds();
   initSearchableHallFilters();
-  // 恢复侧栏折叠状态
-  if (localStorage.getItem('wb_sidebar') === 'collapsed') {
-    const layout = document.querySelector('.layout');
-    if (layout) layout.classList.add('side-collapsed');
-  }
+  // 三栏壳布局下侧栏始终展开（不再恢复旧的折叠状态；用户仍可手动点 « 折叠）
+  localStorage.setItem('wb_sidebar', 'expanded');
   await loadHalls();
   await loadWeeks();
   loadHallGroups();
