@@ -1289,3 +1289,11 @@ td.num, th.num {
 #sh-back-top.show { opacity:1; visibility:visible; transform:translateY(0); }
 .sidebar { overflow-y:auto; }
 @media (max-width:1100px){ .sh-body{grid-template-columns:1fr;} #sh-center,#sh-rail-right{max-height:none;} .sh-slim{flex-wrap:wrap;} .sh-slim .it{min-width:33%;} }
+
+/* ── 三栏壳布局修正（2026-09-20）：侧栏加宽容纳左轨卡、导航不被挤压 ── */
+.sidebar { width: 250px; }
+.main { margin-left: 250px; }
+.side-nav { flex: 0 0 auto; }
+@media (max-width: 720px) {
+  .main { margin-left: 0; }
+}
