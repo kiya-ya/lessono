@@ -18,7 +18,12 @@ body { background:#F2F3F7; }
 .pv-slim .it:last-child { border-right:none; }
 .pv-slim .l { font-size:10.5px; color:#9CA3AF; }
 .pv-slim .v { font-size:17px; font-weight:700; margin-top:1px; font-variant-numeric:tabular-nums; }
-.pv-layout { display:grid; grid-template-columns:270px 1fr 300px; gap:14px; padding:0 26px 26px; align-items:start; }
+.pv-layout { display:grid; grid-template-columns:270px minmax(0,1fr) 300px; gap:14px; padding:0 26px 26px; align-items:start; }
+/* minmax(0,1fr)：防止中列宽表/宽图把 grid 撑出页面 */
+.pv-center-page { min-width:0; }
+.pv-center-page .chart-box, .pv-center-page .chart-container, .pv-center-page .rank-scroll { max-width:100%; }
+/* 预览版预警中心：删除「主动解散占比预警」卡 */
+.pv-center-page .chart-card:has(#wc-active_diss) { display:none; }
 .pv-rail, .pv-rail-right { display:flex; flex-direction:column; gap:10px; position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto; scrollbar-width:thin; }
 /* 导航（无大字图标） */
 .pv-nav-item { display:flex; align-items:baseline; gap:8px; background:#fff; border:1px solid #ECEEF2; border-radius:10px; padding:9px 13px; cursor:pointer; transition:all .15s; flex-shrink:0; }
@@ -952,20 +957,24 @@ async function pvLoadRails() {
     pv$('pv-sum-warn').textContent = trig + ' 项';
     pv$('pv-sum-warn').style.color = trig ? '#DC2626' : '#16A34A';
     pv$('pv-sum-warn-s').textContent = trig ? w.cards.filter(c=>c.triggered).map(c=>c.title).join('、') : '全部正常';
-    pv$('pv-warn-list').innerHTML = w.cards.map(c => {
+    pv$('pv-warn-list').innerHTML = w.cards.filter(c => c.key !== 'active_diss').map(c => {
       const color = c.triggered ? '#DC2626' : c.level==='severe' ? '#D56060' : c.level==='warning' ? '#D97706' : '#7C5CFF';
       const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
-      return `<div class="pv-warn-line"><span class="pv-dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
+      return `<div class="pv-warn-line" onclick="pvGo('alerts')" style="cursor:pointer;" title="进入预警中心"><span class="pv-dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
     }).join('');
     const dtCard = w.cards.find(c => c.key === 'dissolve_time');
     if (dtCard && dtCard.hist) {
-      pvMk('pv-dt-chart').setOption({
-        tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
+      const dtc = pvMk('pv-dt-chart');
+      dtc.setOption({
+        tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个<br/><span style="color:#9CA3AF;font-size:10px;">点击进入预警中心</span>`},
         grid:{left:8,right:8,top:20,bottom:4,containLabel:true},
         xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:9,color:'#6B7280',interval:0}},
         yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
         series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:30,itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9,color:'#6B7280'}}]
       });
+      dtc.off('click');
+      dtc.on('click', () => pvGo('alerts'));
+      pv$('pv-dt-chart').style.cursor = 'pointer';
     }
   } catch (e) { console.warn('rails warn:', e); }
   try {
@@ -974,35 +983,43 @@ async function pvLoadRails() {
     pv$('pv-grad-v').textContent = (g.w1s_rate ?? '—') + '%';
     pv$('pv-sum-grad').textContent = (g.w1s_rate ?? '—') + '%';
     pv$('pv-sum-grad-s').textContent = `${g.w1_scheduled}/${g.w1s_covered} 位 · 产出达标 ${g.w1_rate ?? '—'}%`;
-    pvMk('pv-grad-trend').setOption({
+    const gtc = pvMk('pv-grad-trend');
+    gtc.setOption({
       grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
       xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
       yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
       series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:14,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
-      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
+      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人<br/><span style="color:#9CA3AF;font-size:10px;">点击进入姐姐分析</span>`}
     });
+    gtc.off('click');
+    gtc.on('click', () => pvGo('captains'));
+    pv$('pv-grad-trend').style.cursor = 'pointer';
   } catch (e) {}
   try {
     const dr = await (await fetch('/api/dissolve-reasons?x=1' + hp)).json();
-    pvMk('pv-dr-chart').setOption({
-      tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
+    const drc = pvMk('pv-dr-chart');
+    drc.setOption({
+      tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）<br/><span style="color:#9CA3AF;font-size:10px;">点击进预警中心看细分</span>`},
       series:[{type:'pie',radius:['38%','68%'],center:['50%','50%'],
         label:{show:true,position:'outside',formatter:'{c}',fontSize:9,color:'#6B7280'},labelLine:{length:6,length2:4},
         itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
         data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
     });
+    drc.off('click');
+    drc.on('click', () => pvGo('alerts'));
+    pv$('pv-dr-chart').style.cursor = 'pointer';
   } catch (e) {}
   try {
     const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
     const halls = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue);
     const top = halls[0];
     pv$('pv-hall-v').textContent = top ? pvMoney(top.sister_weekly_revenue) : '—';
-    pv$('pv-hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">${h.hall_name}</td><td class="num">${pvMoney(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:#9CA3AF;">本周暂无流水数据</td></tr>') + '</tbody>';
+    pv$('pv-hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr onclick="pvGo('compare')" style="cursor:pointer;" title="进入厅分析"><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">${h.hall_name}</td><td class="num">${pvMoney(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:#9CA3AF;">本周暂无流水数据</td></tr>') + '</tbody>';
   } catch (e) {}
   try {
     const lr = await (await fetch('/api/lineage-rank?limit=5' + (hp ? '?' + hp.slice(1) : ''))).json();
     const list = lr.data || [];
-    pv$('pv-lin-top5').innerHTML = '<tbody>' + (list.map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:#9CA3AF;">暂无数据</td></tr>') + '</tbody>';
+    pv$('pv-lin-top5').innerHTML = '<tbody>' + (list.map((c,i)=>`<tr onclick="pvGo('captains')" style="cursor:pointer;" title="进入姐姐分析"><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:#9CA3AF;">暂无数据</td></tr>') + '</tbody>';
   } catch (e) {}
   try {
     const sv = await (await fetch('/api/survival?x=1' + hp)).json();
