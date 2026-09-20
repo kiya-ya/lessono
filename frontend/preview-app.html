@@ -126,6 +126,22 @@ body { background:#F2F3F7; display:flex; flex-direction:column; height:100vh; ov
   <div class="pv-panel"><div class="h"><b>核心指标明细 · 本期 vs 环比</b><span class="tag" id="pv-kpi-sub">—</span></div><table class="pv-kpi-tbl" id="pv-kpi-tbl"></table></div>
   <div class="pv-panel"><div class="h"><b>近 8 周趋势 · 留存率 vs 解散率</b><span class="tag">周粒度</span></div><div id="pv-wk8-chart" style="height:200px;"></div></div>
   <div class="pv-panel"><div class="h"><b>近 8 周 · 新成团 vs 毕业</b><span class="tag">姐妹团进出平衡</span></div><div id="pv-wk8n-chart" style="height:180px;"></div></div>
+  <div class="pv-panel">
+    <div class="h"><b>明细数据</b><a onclick="pvGo('detail')" style="color:#7C5CFF;font-size:11px;font-weight:600;cursor:pointer;" title="预览版无独立明细页，此入口暂指向概览">进入明细数据页 →</a></div>
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+      <input type="text" id="mini-dt-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #DDE1E8;border-radius:8px;font-size:12.5px;" onkeydown="if(event.key==='Enter'){miniDtPage=1;loadMiniDetail();}">
+      <select id="mini-dt-status" onchange="miniDtPage=1;loadMiniDetail();" style="padding:7px 10px;border:1px solid #DDE1E8;border-radius:8px;font-size:12.5px;">
+        <option value="all">全部状态</option><option value="active">进行中</option><option value="dissolved">已结束</option>
+      </select>
+    </div>
+    <table class="pv-kpi-tbl" id="mini-dt-tbl"></table>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#9CA3AF;">
+      <button style="padding:4px 10px;border:1px solid #ECEEF2;background:#fff;border-radius:7px;cursor:pointer;font-size:12px;" onclick="miniDtPage=Math.max(1,miniDtPage-1);loadMiniDetail();">上一页</button>
+      <span id="mini-dt-page">第 1 页</span>
+      <button style="padding:4px 10px;border:1px solid #ECEEF2;background:#fff;border-radius:7px;cursor:pointer;font-size:12px;" onclick="miniDtPage++;loadMiniDetail();">下一页</button>
+      <span id="mini-dt-total" style="margin-left:auto;"></span>
+    </div>
+  </div>
 </div>
 <div class="pv-center-page" id="pv-page-alerts">  <div id="tab-alerts">
     <!-- 团分析（2026-09-14 从概览页并入）：存活分析 + 解散原因分布 -->
@@ -823,7 +839,7 @@ body { background:#F2F3F7; display:flex; flex-direction:column; height:100vh; ov
   </div>
 </div>
 
-<!-- 一键回到顶部 --><button id="pv-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+<!-- 一键回到顶部（滚中列容器） --><button id="pv-back-top" onclick="document.getElementById('pv-center').scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
 <script src="js/config.js?v=45"></script>
 <script src="js/utils.js?v=43"></script>
 <script src="js/filter-combobox.js?v=1"></script>
@@ -838,8 +854,8 @@ body { background:#F2F3F7; display:flex; flex-direction:column; height:100vh; ov
 
 <script>
 /* ═══════ 预览壳驱动（叠加在正式版 JS 之上） ═══════ */
-window.addEventListener('scroll', () => {
-  document.getElementById('pv-back-top').classList.toggle('show', window.scrollY > 400);
+document.getElementById('pv-center').addEventListener('scroll', e => {
+  document.getElementById('pv-back-top').classList.toggle('show', e.target.scrollTop > 400);
 }, { passive: true });
 const pv$ = id => document.getElementById(id);
 const pvMoney = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
@@ -954,6 +970,25 @@ async function pvLoadOverview() {
       {name:'毕业',type:'bar',data:weeks.map(w=>w.graduation_count||0),barMaxWidth:22,itemStyle:{color:'#C9A0DC',borderRadius:[4,4,0,0]}},
     ]
   });
+  loadMiniDetail();
+}
+
+/* 明细紧凑表（概览中列底部） */
+let miniDtPage = 1;
+async function loadMiniDetail() {
+  const tbl = pv$('mini-dt-tbl');
+  if (!tbl) return;
+  const hp = (typeof getHallParam === 'function') ? getHallParam() : '';
+  const q = encodeURIComponent((pv$('mini-dt-search') || {}).value || '');
+  const st = (pv$('mini-dt-status') || {}).value || 'all';
+  const d = await (await fetch(`/api/detail-table?page=${miniDtPage}&per_page=8&search=${q}&status=${st}` + hp)).json();
+  const rows = d.data || [];
+  tbl.innerHTML = '<thead><tr><th>团ID</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>保护期结束</th><th style="text-align:right;">状态</th></tr></thead><tbody>' +
+    (rows.map(r => `<tr><td>#${r.team_id}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.hall_name || '—'}</td><td>${r.sister_nickname || '—'}</td><td>${r.sister_nickname2 || '—'}</td><td>${r.protection_end || '—'}</td><td class="num" style="color:${r.dissolve_date ? '#DC2626' : '#16A34A'};">${r.dissolve_date ? '已结束' : '进行中'}</td></tr>`).join('') || '<tr><td colspan="6" style="color:#9CA3AF;">无匹配记录</td></tr>') + '</tbody>';
+  const totalPages = Math.max(1, Math.ceil((d.total || 0) / 8));
+  if (miniDtPage > totalPages) { miniDtPage = totalPages; return loadMiniDetail(); }
+  pv$('mini-dt-page').textContent = `第 ${miniDtPage}/${totalPages} 页`;
+  pv$('mini-dt-total').textContent = `共 ${d.total} 条`;
 }
 
 /* 左右栏（预览壳自有） */
