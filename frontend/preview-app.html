@@ -3,478 +3,883 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>预览 · 全站三栏壳</title>
+<title>预览 · 全站三栏壳（COPY正式版）</title>
+<link rel="stylesheet" href="css/style.css">
 <script src="js/echarts.min.js"></script>
 <style>
-:root { --bg:#F2F3F7; --card:#fff; --tx:#1A1D26; --t2:#5C5C66; --t3:#9CA3AF; --ac:#7C5CFF; --up:#16A34A; --down:#DC2626; --warn:#D97706; --line:#ECEEF2; }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif; background:var(--bg); color:var(--tx); padding:18px 26px 26px; }
-a { text-decoration:none; }
-.top { display:flex; align-items:baseline; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
-.top h1 { font-size:18px; font-weight:700; }
-.top .sub { font-size:12px; color:var(--t3); }
-.top .nav { margin-left:auto; font-size:12px; color:var(--ac); }
-
-.slim { display:flex; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:14px; }
-.slim .it { flex:1; padding:10px 14px; border-right:1px solid var(--line); }
-.slim .it:last-child { border-right:none; }
-.slim .l { font-size:10.5px; color:var(--t3); }
-.slim .v { font-size:17px; font-weight:700; margin-top:1px; font-variant-numeric:tabular-nums; }
-.slim .v small { font-size:10px; font-weight:400; margin-left:4px; }
-.slim .up { color:var(--up); } .slim .down { color:var(--down); }
-
-/* 三栏（两侧 sticky） */
-.layout { display:grid; grid-template-columns:270px 1fr 300px; gap:14px; align-items:start; }
-.rail, .rail-right { display:flex; flex-direction:column; gap:10px; position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto; scrollbar-width:thin; }
-.rail::-webkit-scrollbar, .rail-right::-webkit-scrollbar { width:4px; }
-.rail::-webkit-scrollbar-thumb, .rail-right::-webkit-scrollbar-thumb { background:#DDE1E8; border-radius:2px; }
-
-/* 左轨：纯文字导航菜单（无大字图标） + 筛选 + 榜单 */
-.nav-item { display:flex; align-items:baseline; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 13px; cursor:pointer; transition:all .15s; flex-shrink:0; }
-.nav-item:hover { border-color:#D9D5F0; }
-.nav-item.on { border-color:var(--ac); background:#F7F5FF; }
-.nav-item .t { font-size:13px; font-weight:600; }
-.nav-item.on .t { color:var(--ac); }
-.nav-item .s { font-size:10.5px; color:var(--t3); }
-.nav-item .v { margin-left:auto; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--tx); }
-.side-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; flex-shrink:0; }
-.side-card .l { font-size:11px; color:var(--t3); margin-bottom:6px; font-weight:600; }
-.side-card select { width:100%; margin-bottom:6px; padding:6px 10px; border:1px solid #DDE1E8; border-radius:8px; font-size:12.5px; background:#fff; color:var(--tx); }
-.side-card select:last-child { margin-bottom:0; }
-.mini-tbl { width:100%; border-collapse:collapse; font-size:12px; }
-.mini-tbl td { padding:5px 4px; border-bottom:1px solid #F3F4F6; }
-.mini-tbl tr:last-child td { border-bottom:none; }
-.mini-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-
-/* 中列 */
-.center-page { display:none; }
-.center-page.on { display:block; }
-.hero { background:linear-gradient(135deg,#8F7BFF 0%,#7C5CFF 100%); border-radius:16px; padding:22px 26px; color:#fff; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
-.hero .big { font-size:48px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; }
-.hero .lbl { font-size:12.5px; opacity:.85; margin-top:5px; }
-.hero .side { margin-left:auto; display:grid; grid-template-columns:repeat(4,auto); gap:12px 26px; }
-.hero .side .it { text-align:right; }
-.hero .side .it b { font-size:20px; font-variant-numeric:tabular-nums; }
-.hero .side .it span { display:block; font-size:10.5px; opacity:.8; margin-top:2px; }
-.panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; }
-.panel .h { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px; }
-.panel .h b { font-size:13.5px; }
-.panel .h a, .panel .h .tag { font-size:11px; color:var(--t3); }
-.panel .h a { color:var(--ac); font-weight:600; cursor:pointer; }
-#week-chart { height:260px; } #wk8-chart { height:200px; } #wk8n-chart { height:180px; }
-#survival-chart { height:210px; } #dr2-chart { height:260px; } #hall-chart { height:340px; }
-#hall-trend-chart { height:200px; } #grad-trend2 { height:150px; } #uid-trend-chart { height:230px; }
-.kpi-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
-.kpi-tbl th { font-size:11px; color:var(--t3); font-weight:500; text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
-.kpi-tbl td { padding:7px 8px; border-bottom:1px solid #F3F4F6; }
-.kpi-tbl tr:last-child td { border-bottom:none; }
-.kpi-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
-.kpi-tbl tr:hover td { background:#F8F7FF; }
-.kpi-tbl th.sortable { cursor:pointer; }
-.note-list { font-size:12.5px; color:var(--t2); line-height:1.9; }
-.note-list b { color:var(--tx); }
-.note-list code { background:#F3F0FF; color:#5B3EC4; padding:1px 5px; border-radius:4px; font-size:11px; }
-.note-details summary { padding:12px 16px; font-size:12.5px; font-weight:600; color:var(--t2); cursor:pointer; list-style:none; display:flex; align-items:center; user-select:none; }
-.note-details summary::-webkit-details-marker { display:none; }
-.note-details summary::after { content:'▾'; margin-left:auto; color:var(--t3); transition:transform .15s; }
-.note-details[open] summary::after { transform:rotate(180deg); }
-.note-details .note-list { padding:0 16px 12px; }
-.seg { display:inline-flex; gap:4px; }
-.seg button { padding:4px 12px; border:1px solid var(--line); background:#fff; font-size:12px; border-radius:999px; cursor:pointer; color:var(--t2); }
-.seg button.on { background:var(--ac); color:#fff; border-color:transparent; }
-.wcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
-.wcard { border:1px solid var(--line); border-radius:12px; padding:12px 14px; cursor:pointer; transition:box-shadow .15s; }
-.wcard:hover { box-shadow:0 4px 14px rgba(26,29,38,.08); }
-.wcard .t { font-size:12px; color:var(--t2); display:flex; justify-content:space-between; align-items:center; }
-.wcard .v { font-size:22px; font-weight:700; margin-top:4px; font-variant-numeric:tabular-nums; }
-.wcard .s { font-size:10.5px; color:var(--t3); margin-top:3px; }
-.pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:10.5px; font-weight:600; }
-.pill.red { background:#FDECEC; color:var(--down); } .pill.amber { background:#FFFBEB; color:var(--warn); } .pill.violet { background:#F3F0FF; color:#5B3EC4; } .pill.green { background:#E8F6EE; color:var(--up); }
-.sq-strip { display:inline-flex; gap:3px; vertical-align:middle; }
-.sq { width:12px; height:12px; border-radius:3px; border:1.5px solid #D4D7DD; display:inline-block; }
-.sq.done { background:var(--ac); border-color:var(--ac); }
-.sq.ended { background:#EEF0F3; border-color:#E3E6EB; }
-.sq.todo { background:#fff; }
-.pager { display:flex; align-items:center; gap:8px; margin-top:10px; font-size:12px; color:var(--t3); flex-wrap:wrap; }
-.pager button { padding:4px 10px; border:1px solid var(--line); background:#fff; border-radius:7px; cursor:pointer; font-size:12px; }
-.pager button.on { background:var(--ac); color:#fff; border-color:transparent; }
-.inputs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-.inputs input, .inputs select { padding:7px 10px; border:1px solid #DDE1E8; border-radius:8px; font-size:12.5px; background:#fff; }
-.inputs input:focus, .inputs select:focus { outline:none; border-color:var(--ac); }
-.btn-p { padding:8px 16px; border:none; border-radius:8px; background:var(--ac); color:#fff; font-size:12.5px; font-weight:600; cursor:pointer; }
-.uinfo { display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--t2); }
-.uinfo b { color:var(--tx); }
-
-/* 右栏 */
-.sum-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; flex-shrink:0; }
-.sum-card .l { font-size:11px; color:var(--t3); }
-.sum-card .v { font-size:20px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
-.sum-card .s { font-size:11px; color:var(--t2); margin-top:3px; line-height:1.5; }
-.warn-line { display:flex; gap:8px; align-items:center; padding:5px 0; font-size:12.5px; color:var(--t2); border-bottom:1px dashed var(--line); }
-.warn-line:last-child { border-bottom:none; }
-.dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-#grad-trend { height:100px; }
-.chips { display:flex; gap:6px; flex-wrap:wrap; }
-.chipx { background:#F8F9FB; border:1px solid var(--line); border-radius:8px; padding:5px 9px; font-size:11px; text-align:center; flex:1; min-width:60px; }
-.chipx b { display:block; font-size:14px; margin-top:1px; }
-.feed-it { display:flex; gap:8px; padding:6px 0; border-bottom:1px dashed var(--line); font-size:12px; align-items:baseline; }
-.feed-it:last-child { border-bottom:none; }
-.feed-it .tm { color:var(--t3); font-size:10.5px; flex-shrink:0; font-variant-numeric:tabular-nums; }
-.feed-tag { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; flex-shrink:0; }
-.ft-new { background:#F3F0FF; color:#5B3EC4; } .ft-diss { background:#FDECEC; color:#DC2626; }
-.ft-grad { background:#E8F6EE; color:#16A34A; } .ft-pro { background:#FFFBEB; color:#D97706; }
-.mini-it { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line); font-size:12px; }
-.mini-it:last-child { border-bottom:none; }
-.mini-it .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.badge { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; flex-shrink:0; }
-.badge.red { background:#FDECEC; color:#DC2626; } .badge.amber { background:#FFFBEB; color:#D97706; }
-.uid-quick { display:flex; gap:6px; }
-.uid-quick input { flex:1; padding:7px 10px; border:1px solid #DDE1E8; border-radius:8px; font-size:12.5px; }
-.uid-quick button { padding:7px 12px; border:none; border-radius:8px; background:var(--ac); color:#fff; font-size:12px; cursor:pointer; }
-#uid-quick-res { margin-top:8px; font-size:12px; color:var(--t2); line-height:1.8; display:none; }
-
-#back-top { position:fixed; right:22px; bottom:22px; width:42px; height:42px; border-radius:50%; background:var(--ac); color:#fff; border:none; font-size:18px; cursor:pointer; box-shadow:0 4px 14px rgba(124,92,255,.4); opacity:0; visibility:hidden; transform:translateY(8px); transition:all .25s; z-index:99; }
-#back-top.show { opacity:1; visibility:visible; transform:translateY(0); }
-@media (max-width:1100px){ .layout{grid-template-columns:1fr;} .rail,.rail-right{position:static;max-height:none;} .slim{flex-wrap:wrap;} .slim .it{min-width:33%;} }
+/* 预览壳自有样式（页面内容用正式版 style.css） */
+body { background:#F2F3F7; }
+.pv-top { display:flex; align-items:baseline; gap:10px; padding:16px 26px 0; flex-wrap:wrap; }
+.pv-top h1 { font-size:18px; font-weight:700; }
+.pv-top .sub { font-size:12px; color:#9CA3AF; }
+.pv-top .nav { margin-left:auto; font-size:12px; color:#7C5CFF; }
+.pv-slim { display:flex; background:#fff; border:1px solid #ECEEF2; border-radius:12px; overflow:hidden; margin:12px 26px 14px; }
+.pv-slim .it { flex:1; padding:10px 14px; border-right:1px solid #ECEEF2; }
+.pv-slim .it:last-child { border-right:none; }
+.pv-slim .l { font-size:10.5px; color:#9CA3AF; }
+.pv-slim .v { font-size:17px; font-weight:700; margin-top:1px; font-variant-numeric:tabular-nums; }
+.pv-layout { display:grid; grid-template-columns:270px 1fr 300px; gap:14px; padding:0 26px 26px; align-items:start; }
+.pv-rail, .pv-rail-right { display:flex; flex-direction:column; gap:10px; position:sticky; top:14px; max-height:calc(100vh - 28px); overflow-y:auto; scrollbar-width:thin; }
+/* 导航（无大字图标） */
+.pv-nav-item { display:flex; align-items:baseline; gap:8px; background:#fff; border:1px solid #ECEEF2; border-radius:10px; padding:9px 13px; cursor:pointer; transition:all .15s; flex-shrink:0; }
+.pv-nav-item:hover { border-color:#D9D5F0; }
+.pv-nav-item.on { border-color:#7C5CFF; background:#F7F5FF; }
+.pv-nav-item .t { font-size:13px; font-weight:600; }
+.pv-nav-item.on .t { color:#7C5CFF; }
+.pv-nav-item .s { font-size:10.5px; color:#9CA3AF; }
+.pv-nav-item .v { margin-left:auto; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; }
+.pv-side-card { background:#fff; border:1px solid #ECEEF2; border-radius:12px; padding:12px 14px; flex-shrink:0; }
+.pv-side-card .l { font-size:11px; color:#9CA3AF; margin-bottom:6px; font-weight:600; }
+.pv-side-card select { width:100%; margin-bottom:6px; padding:6px 10px; border:1px solid #DDE1E8; border-radius:8px; font-size:12.5px; background:#fff; }
+.pv-side-card select:last-child { margin-bottom:0; }
+.pv-center-page { display:none; }
+.pv-center-page.on { display:block; }
+.pv-center-page .chart-card { margin-bottom:14px; }
+.pv-hero { background:linear-gradient(135deg,#8F7BFF 0%,#7C5CFF 100%); border-radius:16px; padding:22px 26px; color:#fff; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+.pv-hero .big { font-size:48px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; }
+.pv-hero .lbl { font-size:12.5px; opacity:.85; margin-top:5px; }
+.pv-hero .side { margin-left:auto; display:grid; grid-template-columns:repeat(4,auto); gap:12px 26px; }
+.pv-hero .side .it { text-align:right; }
+.pv-hero .side .it b { font-size:20px; font-variant-numeric:tabular-nums; }
+.pv-hero .side .it span { display:block; font-size:10.5px; opacity:.8; margin-top:2px; }
+.pv-panel { background:#fff; border:1px solid #ECEEF2; border-radius:14px; padding:14px 16px; margin-top:14px; }
+.pv-panel .h { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:8px; }
+.pv-panel .h b { font-size:13.5px; }
+.pv-panel .h .tag { font-size:11px; color:#9CA3AF; }
+.pv-mini-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.pv-mini-tbl td { padding:5px 4px; border-bottom:1px solid #F3F4F6; }
+.pv-mini-tbl tr:last-child td { border-bottom:none; }
+.pv-mini-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.pv-kpi-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+.pv-kpi-tbl th { font-size:11px; color:#9CA3AF; font-weight:500; text-align:left; padding:6px 8px; border-bottom:1px solid #ECEEF2; }
+.pv-kpi-tbl td { padding:7px 8px; border-bottom:1px solid #F3F4F6; }
+.pv-kpi-tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.pv-warn-line { display:flex; gap:8px; align-items:center; padding:5px 0; font-size:12.5px; color:#5C5C66; border-bottom:1px dashed #ECEEF2; }
+.pv-warn-line:last-child { border-bottom:none; }
+.pv-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.pv-sum { background:#fff; border:1px solid #ECEEF2; border-radius:12px; padding:12px 14px; flex-shrink:0; }
+.pv-sum .l { font-size:11px; color:#9CA3AF; }
+.pv-sum .v { font-size:20px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.pv-sum .s { font-size:11px; color:#5C5C66; margin-top:3px; line-height:1.5; }
+#pv-back-top { position:fixed; right:22px; bottom:22px; width:42px; height:42px; border-radius:50%; background:#7C5CFF; color:#fff; border:none; font-size:18px; cursor:pointer; box-shadow:0 4px 14px rgba(124,92,255,.4); opacity:0; visibility:hidden; transform:translateY(8px); transition:all .25s; z-index:99; }
+#pv-back-top.show { opacity:1; visibility:visible; transform:translateY(0); }
+@media (max-width:1100px){ .pv-layout{grid-template-columns:1fr;} .pv-rail,.pv-rail-right{position:static;max-height:none;} .pv-slim{flex-wrap:wrap;} .pv-slim .it{min-width:33%;} }
 </style>
 </head>
 <body>
-<div class="top">
-  <h1>姐妹团驾驶舱 <span style="font-size:10.5px;color:var(--t3);font-weight:400;">全站预览 · 三栏壳</span></h1>
-  <span class="sub" id="ref-date">—</span>
+<div class="pv-top">
+  <h1>姐妹团驾驶舱 <span style="font-size:10.5px;color:#9CA3AF;font-weight:400;">全站预览 · 三栏壳 · 正式版内容COPY</span></h1>
+  <span class="sub" id="pv-ref-date">—</span>
   <a class="nav" href="/">← 返回正式版</a>
 </div>
-
-<div class="slim" id="slim"></div>
-
-<div class="layout">
-  <!-- 左：纯文字导航 + 筛选 + 榜单 + 图（全站不变） -->
-  <div class="rail">
-    <div class="nav-item on" data-page="overview" onclick="goPage('overview')"><span class="t">概览</span><span class="s">驾驶舱</span><span class="v" id="nav-ov">·</span></div>
-    <div class="nav-item" data-page="alerts" onclick="goPage('alerts')"><span class="t">预警中心</span><span class="s">触发 <b id="warn-n">—</b> 项</span><span class="v" id="warn-v">—</span></div>
-    <div class="nav-item" data-page="compare" onclick="goPage('compare')"><span class="t">厅分析</span><span class="s" id="hall-s">本周 TOP 厅</span><span class="v" id="hall-v">—</span></div>
-    <div class="nav-item" data-page="captains" onclick="goPage('captains')"><span class="t">姐姐分析</span><span class="s">毕业留存 · 师门榜</span><span class="v" id="grad-v">—</span></div>
-    <div class="nav-item" data-page="detail" onclick="goPage('detail')"><span class="t">明细数据</span><span class="s">搜索 · 方框</span><span class="v" id="det-v">—</span></div>
-    <div class="nav-item" data-page="uid" onclick="goPage('uid')"><span class="t">UID 查询</span><span class="s">单人下钻</span><span class="v">→</span></div>
-    <div class="nav-item" onclick="goPage('captains')"><span class="t">姐姐筛选</span><span class="s">候选池四因子</span><span class="v">→</span></div>
-    <div class="side-card">
+<div class="pv-slim" id="pv-slim"></div>
+<div class="pv-layout">
+  <div class="pv-rail">
+    <div class="pv-nav-item on" data-page="overview" onclick="pvGo('overview')"><span class="t">概览</span><span class="s">驾驶舱</span><span class="v" id="pv-nav-ov">·</span></div>
+    <div class="pv-nav-item" data-page="alerts" onclick="pvGo('alerts')"><span class="t">预警中心</span><span class="s">含团分析</span><span class="v" id="pv-warn-n">—</span></div>
+    <div class="pv-nav-item" data-page="compare" onclick="pvGo('compare')"><span class="t">厅分析</span><span class="s">厅排行 · 下钻</span><span class="v" id="pv-hall-v">—</span></div>
+    <div class="pv-nav-item" data-page="captains" onclick="pvGo('captains')"><span class="t">姐姐分析</span><span class="s">毕业留存 · 师门榜</span><span class="v" id="pv-grad-v">—</span></div>
+    <div class="pv-nav-item" data-page="uid" onclick="pvGo('uid')"><span class="t">UID 查询</span><span class="s">单人下钻</span><span class="v">→</span></div>
+    <div class="pv-nav-item" onclick="pvGo('captains')"><span class="t">姐姐筛选</span><span class="s">候选池四因子</span><span class="v">→</span></div>
+    <div class="pv-side-card">
       <div class="l">筛选（时间 / 类型 / 组 / 大厅）</div>
-      <select id="f-month" onchange="onFilterMonth()"></select>
-      <select id="f-week" onchange="onFilter()"></select>
-      <select id="f-type" onchange="onFilterType()"><option value="all">全部类型</option></select>
-      <select id="f-group" onchange="onFilterGroup()"><option value="all">全部组</option></select>
-      <select id="f-hall" onchange="onFilter()"><option value="all">全部大厅</option></select>
+      <select id="month-select" onchange="try{onMonthChange()}catch(e){};pvReload()"></select>
+      <select id="week-select" onchange="try{onWeekChange()}catch(e){};pvReload()"></select>
+      <select id="type-select" onchange="try{onTypeSelect()}catch(e){};pvReload()"><option value="all">全部类型</option></select>
+      <select id="group-select" onchange="try{onGroupSelect()}catch(e){};pvReload()"><option value="all">全部组</option></select>
+      <select id="hall-select" onchange="try{onHallSelect()}catch(e){};pvReload()"><option value="all">全部大厅</option></select>
     </div>
-    <div class="side-card">
-      <div class="l">厅排行 · 本周流水 TOP5</div>
-      <table class="mini-tbl" id="hall-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
-    </div>
-    <div class="side-card">
-      <div class="l">师门产量榜 TOP5</div>
-      <table class="mini-tbl" id="lin-top5"><tbody><tr><td style="color:var(--t3);">加载中…</td></tr></tbody></table>
-    </div>
-    <div class="side-card"><div class="l" style="margin-bottom:4px;">团分析 · 解散原因构成</div><div id="dr-chart" style="height:190px;"></div></div>
-    <div class="side-card"><div class="l" style="margin-bottom:4px;">解散时间分布<span style="color:#C9CDD4;">（存续 4 桶）</span></div><div id="dt-chart" style="height:170px;"></div></div>
-    <div class="side-card">
-      <div class="l" style="margin-bottom:6px;">团存活率（达 N 天占比）</div>
-      <div class="chips" id="survival-chips">加载中…</div>
+    <div class="pv-side-card"><div class="l">厅排行 · 本周流水 TOP5</div><table class="pv-mini-tbl" id="pv-hall-top5"><tbody><tr><td style="color:#9CA3AF;">加载中…</td></tr></tbody></table></div>
+    <div class="pv-side-card"><div class="l">师门产量榜 TOP5</div><table class="pv-mini-tbl" id="pv-lin-top5"><tbody><tr><td style="color:#9CA3AF;">加载中…</td></tr></tbody></table></div>
+    <div class="pv-side-card"><div class="l" style="margin-bottom:4px;">团分析 · 解散原因构成</div><div id="pv-dr-chart" style="height:190px;"></div></div>
+    <div class="pv-side-card"><div class="l" style="margin-bottom:4px;">解散时间分布<span style="color:#C9CDD4;">（存续 4 桶）</span></div><div id="pv-dt-chart" style="height:170px;"></div></div>
+    <div class="pv-side-card"><div class="l" style="margin-bottom:6px;">团存活率（达 N 天占比）</div><div style="display:flex;gap:6px;flex-wrap:wrap;" id="pv-survival-chips">加载中…</div></div>
+  </div>
+  <div id="pv-center">
+<div class="pv-center-page on" id="pv-page-overview">
+  <div class="pv-hero">
+    <div><div class="big" id="pv-hero-num">—</div><div class="lbl">进行中姐妹团</div></div>
+    <div class="side">
+      <div class="it"><b id="pv-hero-new">—</b><span>本周新成团</span></div>
+      <div class="it"><b id="pv-hero-grad">—</b><span>本周毕业</span></div>
+      <div class="it"><b id="pv-hero-ret">—</b><span>姐妹团留存率</span></div>
+      <div class="it"><b id="pv-hero-diss">—</b><span>解散率</span></div>
+      <div class="it"><b id="pv-hero-sis">—</b><span>妹妹留存率</span></div>
+      <div class="it"><b id="pv-hero-rev">—</b><span>本周礼物奖励</span></div>
+      <div class="it"><b id="pv-hero-tnew">—</b><span>今日新成团</span></div>
+      <div class="it"><b id="pv-hero-tdiss">—</b><span>今日解散</span></div>
     </div>
   </div>
-
-  <!-- 中：按页切换 -->
-  <div id="center"></div>
-
-  <!-- 右：总体概览（全站不变） -->
-  <div class="rail-right">
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">预警速览</div>
-      <div id="warn-list">加载中…</div>
-    </div>
-    <div class="sum-card"><div class="l">预警触发</div><div class="v" id="sum-warn">—</div><div class="s" id="sum-warn-s">—</div></div>
-    <div class="sum-card"><div class="l">毕业妹妹 · 第1周仍在排档</div><div class="v" id="sum-grad" style="color:var(--up);">—</div><div class="s" id="sum-grad-s">—</div></div>
-    <div class="sum-card"><div class="l">本周毕业</div><div class="v" id="sum-gradd">—</div><div class="s">满 30 天自动毕业</div></div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">UID 快查</div>
-      <div class="uid-quick">
-        <input type="text" id="uid-quick-input" placeholder="输入 UID…" onkeydown="if(event.key==='Enter') uidQuickQuery()">
-        <button onclick="uidQuickQuery()">查</button>
-      </div>
-      <div id="uid-quick-res"></div>
-    </div>
-    <div class="sum-card"><div class="l" style="margin-bottom:4px;">近 8 周毕业趋势</div><div id="grad-trend"></div></div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">保护期将到期（3 天内 + 刚过期）</div>
-      <div class="mini-list" id="prot-list">加载中…</div>
-    </div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">躺平预警 TOP</div>
-      <div class="mini-list" id="lying-list">加载中…</div>
-    </div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">今日动态 <span style="color:#C9CDD4;">（示意）</span></div>
-      <div class="feed-it"><span class="tm">09:12</span><span class="feed-tag ft-new">新成团</span><span>王者荣耀·海棠醉日 新组 3 团</span></div>
-      <div class="feed-it"><span class="tm">10:40</span><span class="feed-tag ft-pro">晋升</span><span>星辰 晋升为姐姐</span></div>
-      <div class="feed-it"><span class="tm">13:05</span><span class="feed-tag ft-grad">毕业</span><span>本周累计毕业 28 人</span></div>
-      <div class="feed-it"><span class="tm">15:22</span><span class="feed-tag ft-diss">解散</span><span>三角洲·揽月之恋 解散 2 团</span></div>
-    </div>
-    <div class="sum-card">
-      <div class="l" style="margin-bottom:6px;">数据新鲜度</div>
-      <div class="s" id="fresh-line" style="line-height:1.9;">—</div>
-    </div>
-  </div>
+  <div class="pv-panel"><div class="h"><b>本周节奏 · 每日新成团 vs 解散</b><span class="tag">实线=本周 · 虚线=上周</span></div><div id="pv-week-chart" style="height:260px;"></div></div>
+  <div class="pv-panel"><div class="h"><b>核心指标明细 · 本期 vs 环比</b><span class="tag" id="pv-kpi-sub">—</span></div><table class="pv-kpi-tbl" id="pv-kpi-tbl"></table></div>
+  <div class="pv-panel"><div class="h"><b>近 8 周趋势 · 留存率 vs 解散率</b><span class="tag">周粒度</span></div><div id="pv-wk8-chart" style="height:200px;"></div></div>
+  <div class="pv-panel"><div class="h"><b>近 8 周 · 新成团 vs 毕业</b><span class="tag">姐妹团进出平衡</span></div><div id="pv-wk8n-chart" style="height:180px;"></div></div>
 </div>
-
-<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
-<script>
-window.addEventListener('scroll', () => {
-  document.getElementById('back-top').classList.toggle('show', window.scrollY > 400);
-}, { passive: true });
-const $ = id => document.getElementById(id);
-const money = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
-const mk = id => { const el = $(id); const old = echarts.getInstanceByDom(el); if (old) old.dispose(); return echarts.init(el); };
-const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-/* ── 全局筛选（左栏） ── */
-let F = { hall: 'all', week: '' };
-let HG = { types: [] }, ALL_WEEKS = [], MONTHS = [];
-function hallParam() { return F.hall !== 'all' ? '&hall=' + encodeURIComponent(F.hall) : ''; }
-function weekParam() { return F.week ? '&week=' + encodeURIComponent(F.week) : ''; }
-
-async function loadFilters() {
-  const wr = await (await fetch('/api/weekly-report?limit=all')).json();
-  const dbWeeks = (wr.data || []).slice().reverse();
-  ALL_WEEKS = dbWeeks.map(w => ({ value: w.week_start + '|' + w.week_end, label: w.week_label || `${(w.week_start || '').slice(5)} ~ ${(w.week_end || '').slice(5)}`, ws: w.week_start, we: w.week_end }));
-  MONTHS = [];
-  const now = new Date();
-  const first = dbWeeks.length ? new Date(dbWeeks[dbWeeks.length - 1].week_start + 'T00:00:00') : now;
-  let y = now.getFullYear(), m = now.getMonth();
-  const ey = first.getFullYear(), em = first.getMonth();
-  while (y > ey || (y === ey && m >= em)) {
-    const mm = String(m + 1).padStart(2, '0');
-    const lastDay = new Date(y, m + 1, 0).getDate();
-    const isCur = y === now.getFullYear() && m === now.getMonth();
-    MONTHS.push({ value: `${y}-${mm}-01|${y}-${mm}-${lastDay}`, label: `${y}年${m + 1}月${isCur ? '·至今' : ''}`, ws: `${y}-${mm}-01`, we: `${y}-${mm}-${lastDay}` });
-    m--; if (m < 0) { m = 11; y--; }
-  }
-  $('f-month').innerHTML = MONTHS.map(x => `<option value="${x.value}">${x.label}</option>`).join('');
-  const curWeek = ALL_WEEKS[0];
-  F.week = curWeek ? curWeek.value : '';
-  if (curWeek) {
-    const thu = new Date(curWeek.ws + 'T00:00:00'); thu.setDate(thu.getDate() + 3);
-    const ym = `${thu.getFullYear()}-${String(thu.getMonth() + 1).padStart(2, '0')}`;
-    const hit = MONTHS.find(x => x.ws.slice(0, 7) === ym);
-    if (hit) $('f-month').value = hit.value;
-  }
-  fillWeekSelect(F.week);
-  HG = await (await fetch('/api/hall-groups')).json();
-  $('f-type').innerHTML = '<option value="all">全部类型</option>' + (HG.types || []).map(t => `<option value="${t.type}">${t.type.replace('队长周排行', '')}</option>`).join('');
-  fillGroupSelect();
-}
-function fillWeekSelect(prefer) {
-  const mv = $('f-month').value;
-  const m = MONTHS.find(x => x.value === mv);
-  const opts = m ? [`<option value="${m.value}">整月</option>`] : [];
-  (ALL_WEEKS || []).forEach(w => { if (!m || (w.we >= m.ws && w.ws <= m.we)) opts.push(`<option value="${w.value}">${w.label}</option>`); });
-  $('f-week').innerHTML = opts.join('');
-  if (prefer && opts.some(o => o.includes(`value="${prefer}"`))) $('f-week').value = prefer;
-  F.week = $('f-week').value;
-}
-function fillGroupSelect() {
-  const tv = $('f-type').value;
-  const t = (HG.types || []).find(x => x.type === tv);
-  const groups = tv === 'all' ? (HG.types || []).flatMap(x => x.groups) : (t ? t.groups : []);
-  $('f-group').innerHTML = '<option value="all">全部组</option>' + groups.map(g => `<option value="${g.group}">${g.group}</option>`).join('');
-  fillHallSelect();
-}
-function fillHallSelect() {
-  const tv = $('f-type').value, gv = $('f-group').value;
-  let groups = (HG.types || []).flatMap(x => x.groups);
-  if (tv !== 'all') groups = (HG.types.find(x => x.type === tv) || { groups: [] }).groups;
-  if (gv !== 'all') groups = groups.filter(g => g.group === gv);
-  const halls = [...new Set(groups.flatMap(g => g.halls))];
-  const cur = F.hall;
-  $('f-hall').innerHTML = '<option value="all">全部大厅</option>' + halls.map(h => `<option value="${h}">${h}</option>`).join('');
-  if (cur !== 'all' && halls.includes(cur)) $('f-hall').value = cur; else F.hall = 'all';
-}
-function onFilterMonth() { fillWeekSelect(); F.week = $('f-week').value; reloadPage(); }
-function onFilterType() { fillGroupSelect(); F.hall = $('f-hall').value; reloadPage(); }
-function onFilterGroup() { fillHallSelect(); F.hall = $('f-hall').value; reloadPage(); }
-function onFilter() { F.week = $('f-week').value; F.hall = $('f-hall').value; reloadPage(); }
-
-/* ── 中列页面模板（按页渲染进 #center） ── */
-const PAGES = {
-  overview: () => `
-    <div class="center-page on">
-      <div class="hero">
-        <div><div class="big" id="hero-num">—</div><div class="lbl">进行中姐妹团</div></div>
-        <div class="side">
-          <div class="it"><b id="hero-new">—</b><span>本周新成团</span></div>
-          <div class="it"><b id="hero-grad">—</b><span>本周毕业</span></div>
-          <div class="it"><b id="hero-ret">—</b><span>姐妹团留存率</span></div>
-          <div class="it"><b id="hero-diss">—</b><span>解散率</span></div>
-          <div class="it"><b id="hero-sis">—</b><span>妹妹留存率</span></div>
-          <div class="it"><b id="hero-rev">—</b><span>本周礼物奖励</span></div>
-          <div class="it"><b id="hero-tnew">—</b><span>今日新成团</span></div>
-          <div class="it"><b id="hero-tdiss">—</b><span>今日解散</span></div>
-        </div>
+<div class="pv-center-page" id="pv-page-alerts">  <div id="tab-alerts">
+    <!-- 团分析（2026-09-14 从概览页并入）：存活分析 + 解散原因分布 -->
+    <div class="section-head">
+      <h2>团分析</h2>
+      <span class="hint">存活 · 解散 · 点柱/饼下钻明细</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">团分析口径与计算方式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>团存活率</b><code>存活达 N 天 ÷ 成团已满 N 天</code><span>成团满 N 天仍存活的比例</span></span>
+        <span class="dni"><b>天数分布</b><code>在榜团按龄分组</code><span>当前各年龄段团数量</span></span>
+        <span class="dni"><b>解散原因</b><code>累计结束团分类</code><span>毕业 = 满 30 天正常流程</span></span>
       </div>
-      <div class="panel"><div class="h"><b>本周节奏 · 每日新成团 vs 解散</b><span class="tag">实线=本周 · 虚线=上周</span></div><div id="week-chart"></div></div>
-      <div class="panel"><div class="h"><b>核心指标明细 · 本期 vs 环比</b><span class="tag" id="kpi-tbl-sub">—</span></div><table class="kpi-tbl" id="kpi-tbl"></table></div>
-      <div class="panel"><div class="h"><b>近 8 周趋势 · 留存率 vs 解散率</b><span class="tag">周粒度</span></div><div id="wk8-chart"></div></div>
-      <div class="panel"><div class="h"><b>近 8 周 · 新成团 vs 毕业</b><span class="tag">姐妹团进出平衡</span></div><div id="wk8n-chart"></div></div>
-      <div class="panel">
-        <div class="h"><b>明细数据</b><a onclick="goPage('detail')">进入明细数据页 →</a></div>
-        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <input type="text" id="mini-dt-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #DDE1E8;border-radius:8px;font-size:12.5px;" onkeydown="if(event.key==='Enter'){miniDtPage=1;loadMiniDetail();}">
-          <select id="mini-dt-status" onchange="miniDtPage=1;loadMiniDetail();" style="padding:7px 10px;border:1px solid #DDE1E8;border-radius:8px;font-size:12.5px;">
-            <option value="all">全部状态</option><option value="active">进行中</option><option value="dissolved">已结束</option>
+      <div class="dn-notes">
+        <span class="dn-tag">注意</span>
+        <span>上方存活 chips 与下方天数分布是两套指标，请勿混读；毕业不计入解散率。解散原因共 8 类：<b>毕业</b>（满 30 天）· <b>主动解散</b>＝手动解绑 / 离职含换厅 / 注销 · <b>系统解散</b>＝连续 5 日未陪档 / 生态违规（假车·买卖流水·一人多号·内部挖人·涉黄）/ 等级同时低于铜牌 / 其他。重新绑定新团后任务与成就按新团重算。</span>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card" id="survival-card">
+        <h3>姐妹团存活分析</h3>
+        <div class="chart-src" id="survival-src">基于最新快照</div>
+        <div class="survival-chips" id="survival-chips"></div>
+        <div class="chart-container" id="chart-survival" style="height:220px;"></div>
+        <div class="chart-insight" id="survival-insight"></div>
+      </div>
+      <div class="chart-card" id="dissolve-reasons-card">
+        <h3>解散原因分布 <a id="dr-back" href="javascript:void(0)" onclick="drBackToBuckets()" style="display:none;font-size:12px;font-weight:400;color:var(--wb-accent);text-decoration:none;margin-left:8px;">← 返回大类</a></h3>
+        <div class="chart-src" id="dissolve-reasons-src">所有已解散团的解散原因归类 · 点大块（主动/系统/毕业）看细分原因</div>
+        <div class="chart-container" id="chart-dissolve-reasons" style="height:280px;"></div>
+        <div class="chart-insight" id="dissolve-reasons-insight"></div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>预警中心</h2>
+      <span class="hint" id="alerts-ref">平台级预警 · 近 8 周</span>
+    </div>
+    <div class="warn-rule">
+      <div class="wr-head">预警规则<span style="color:var(--wb-text-3);font-weight:400;">计算方式 · 触发阈值 · 数据来源</span></div>
+      <table class="rule-table">
+        <thead>
+          <tr><th>预警项</th><th>等级</th><th>计算方式</th><th>触发阈值（原因）</th><th>数据来源</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>姐妹团留存率</td>
+            <td><span class="wn-tag severe">严重</span></td>
+            <td>(期末进行中 − 本周新成团) ÷ 期初进行中 × 100%</td>
+            <td>&lt; 60% 健康线</td>
+            <td><code>team_detail</code> 按 team_id 去重</td>
+          </tr>
+          <tr>
+            <td>主动解散占比</td>
+            <td><span class="wn-tag notice">提醒</span></td>
+            <td>主动解散 ÷ 非毕业解散 × 100%</td>
+            <td>连续 2 周环比升高</td>
+            <td><code>team_detail.dissolve_reason</code></td>
+          </tr>
+          <tr>
+            <td>新成团数</td>
+            <td><span class="wn-tag notice">提醒</span></td>
+            <td>form_date 落在本周的团计数</td>
+            <td>连续 2 周环比下降</td>
+            <td><code>team_detail.form_date</code></td>
+          </tr>
+          <tr>
+            <td>解散时间分布</td>
+            <td><span class="wn-tag notice">分析</span></td>
+            <td>非毕业解散按「成团 → 解散」存续天数分 4 桶</td>
+            <td>1-7 / 8-14 / 15-21 / 22-29 天</td>
+            <td><code>dissolve_date − form_date</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:var(--wb-text-3);margin-top:4px;">平台级预警按近 8 周趋势判断；解散时间分布只统计<b>非毕业解散</b>，用来回答「最容易在哪段时间破裂」。</div>
+    </div>
+    <div class="chart-grid" id="alerts-grid"></div>
+
+    <!-- 躺平预警（妹妹维度） -->
+    <div class="section-head" style="margin-top:26px;">
+      <h2>躺平预警</h2>
+      <span class="hint">妹妹维度 · 进行中团连续未完成陪档 · 接近自动解散</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">日常任务与预警口径</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>陪档任务</b><code>姐姐主持档时妹妹陪档 20 分钟</code><span>日任务 ①</span></span>
+        <span class="dni"><b>开车任务</b><code>姐妹一起共同和老板有效开车打一局</code><span>日任务 ②</span></span>
+        <span class="dni"><b>收送礼任务</b><code>姐妹总共收到10个用户礼物或姐妹一起总共送出20个老板礼物</code><span>日任务 ③</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">规则</span>
+        <span><b>躺平</b> = 进行中团连续 <b>≥4 天</b> 未完成陪档；<b>提醒</b> = 连续 <b>1~3 天</b> 未陪档。自动解散线为「连续 5 日未完成陪档」，预警阈值取 4 天以便提前介入。连续天数按快照日计（快照有断档，实际自然日略多）。</span>
+      </div>
+    </div>
+    <div class="lying-kpis" id="lying-kpis">
+      <div class="lying-kpi danger"><div class="lk-label"><span class="dot red"></span>躺平团数</div><div class="lk-val" id="ly-lying">--</div><div class="lk-foot">连续 ≥4 天未陪档</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot amber"></span>提醒团数</div><div class="lk-val" id="ly-warning">--</div><div class="lk-foot">连续 1~3 天未陪档</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot green"></span>陪档活跃率</div><div class="lk-val" id="ly-rate">--</div><div class="lk-foot">最新快照日有陪档团 ÷ 进行中团</div></div>
+      <div class="lying-kpi"><div class="lk-label"><span class="dot violet"></span>参考日期</div><div class="lk-val" id="ly-ref">--</div><div class="lk-foot">最新快照日</div></div>
+    </div>
+    <div class="warn-rule">
+      <div class="wr-head">判定规则<span style="color:var(--wb-text-3);font-weight:400;">妹妹维度</span></div>
+      <div class="wr-line"><span class="wn-tag severe">躺平</span>进行中团连续 <b>≥4 天</b> 未完成「陪档」任务（成团日之前不计）</div>
+      <div class="wr-line"><span class="wn-tag warning">提醒</span>连续 <b>1~3 天</b> 未陪档，列入观察名单</div>
+      <div class="wr-line"><span class="wn-tag warning">注意</span>长期未陪档团多已接近 30 天毕业线，属毕业前自然停滞，需与真正流失区分</div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>连续未陪档天数分布</h3>
+        <div class="chart-src">进行中团按连续未陪档天数分组 · 点柱下钻</div>
+        <div class="chart-box" id="ly-days" style="height:220px;"></div>
+        <div class="chart-insight" id="ly-days-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3>躺平团 · 大厅分布</h3>
+        <div class="chart-src">受影响厅 · 按躺平团数降序 · 点行下钻</div>
+        <div class="rank-scroll"><table class="rank-table" id="ly-hall-table"></table></div>
+        <button class="expand-btn" onclick="openLyHalls()">查看全部大厅分布 →</button>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-top:14px;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">躺平团名单<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">按连续未陪档天数降序 · 点团ID查看</span></h3>
+      <div class="rank-scroll"><table class="rank-table" id="ly-list-table"></table></div>
+      <button class="expand-btn" onclick="openLyFull()">查看全部躺平名单 →</button>
+    </div>
+
+
+  </div>
+
+  <!-- 对比 --></div>
+<div class="pv-center-page" id="pv-page-compare">  <div id="tab-compare">
+    <div class="section-head">
+      <h2>厅分析</h2>
+      <select id="hall-week-select" class="wb-select" onchange="initCompareChart()" title="切换厅排行周增量流水统计周"></select>
+      <span class="hint">厅排行 · 点柱子钻取单厅分析 · 流水为周增量</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">指标口径与计算公式</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>进行中团数</b><code>期末在榜团数</code><span>厅规模</span></span>
+        <span class="dni"><b>总团数</b><code>历史累计团数</code><span>厅累计</span></span>
+        <span class="dni"><b>解散数</b><code>累计解散团数</code><span>含毕业与非毕业</span></span>
+        <span class="dni"><b>本周流水</b><code>本周礼物流水（周增量）</code><span>非累计</span></span>
+        <span class="dni"><b>姐妹团留存率</b><code>(期末进行中 − 本周新成团) ÷ 期初进行中</code><span>老团留存</span></span>
+        <span class="dni"><b>解散率</b><code>非毕业解散 ÷ 期初进行中</code><span>毕业不计入流失</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>厅排行榜流水为<b>周增量</b>（本周 vs 上周），非累计总流水；点柱子展开单厅趋势与本周/上周对比。数据来自 team_detail 每日快照，按最新快照去重。</span>
+      </div>
+    </div>
+    <div id="compare-main">
+    <!-- 常驻导航：各大厅数据对比 -->
+    <div class="chart-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>各大厅数据对比</span>
+        <div class="hall-compare-controls" style="display:flex;gap:8px;align-items:center;">
+          <input type="text" id="hall-compare-search" placeholder="搜索大厅名称..." class="wb-input wb-search" oninput="onHallCompareSearch()">
+          <select id="hall-compare-sort" onchange="onHallCompareSortChange()" class="wb-select">
+            <option value="active_count|desc" selected>进行中团数 ↓</option>
+            <option value="active_count|asc">进行中团数 ↑</option>
+            <option value="team_count|desc">总团数 ↓</option>
+            <option value="team_count|asc">总团数 ↑</option>
+            <option value="dissolved_count|desc">解散数 ↓</option>
+            <option value="dissolved_count|asc">解散数 ↑</option>
+            <option value="total_revenue|desc">本周流水 ↓</option>
+            <option value="total_revenue|asc">本周流水 ↑</option>
           </select>
         </div>
-        <table class="kpi-tbl" id="mini-dt-tbl"></table>
-        <div class="pager">
-          <button onclick="miniDtPage=Math.max(1,miniDtPage-1);loadMiniDetail();">上一页</button>
-          <span id="mini-dt-page">第 1 页</span>
-          <button onclick="miniDtPage++;loadMiniDetail();">下一页</button>
-          <span id="mini-dt-total" style="margin-left:auto;"></span>
+      </h3>
+      <div class="chart-src">点柱子 → 展开该厅分析并填入对比 A 厅</div>
+      <div class="chart-container" id="chart-hall-compare"></div>
+      <div class="pagination" id="hall-compare-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="hall-compare-insight"></div>
+    </div>
+    <!-- 各厅进行中团占比 + 各厅礼物流水周趋势 -->
+    <div class="chart-grid" style="margin-top:14px;">
+      <div class="chart-card">
+        <h3>各厅进行中团占比</h3>
+        <div class="chart-src">按最新快照 · TOP5 厅 · 点扇区钻取</div>
+        <div class="chart-box" id="hall-share"></div>
+        <div class="chart-insight" id="hall-share-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3>各厅礼物流水周趋势</h3>
+        <div class="chart-src">近 8 周 · TOP5 厅 · 点折线/图例钻取</div>
+        <div class="chart-box" id="hall-trend"></div>
+        <div class="chart-insight" id="hall-trend-insight"></div>
+      </div>
+    </div>
+    <!-- 厅分析揭示面板：点击大厅后展开 -->
+    <div class="chart-card hall-focus" id="hall-focus" style="display:none;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <span><span id="hf-title">厅分析</span></span>
+        <button class="kpi-detail-close" onclick="closeHallFocus()" title="收起">✕</button>
+      </h3>
+      <div class="chart-src" id="hf-src">—</div>
+      <div class="policy-grid" id="hf-cards" style="margin-bottom:12px;"></div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>留存率趋势</h3><div class="chart-box" id="hf-chart-ret"></div></div>
+        <div class="chart-card"><h3>流水趋势</h3><div class="chart-box" id="hf-chart-rev"></div></div>
+        <div class="chart-card" style="grid-column:1/-1;"><h3>该厅 本周 vs 上周</h3><table class="data-table"><tbody id="hf-table"></tbody></table></div>
+      </div>
+      <div style="margin-top:14px;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">解散原因构成<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅已解散团 · 环形占比 + 近8周趋势 · 点扇区下钻</span></h3>
+        <div class="chart-src" id="hf-diss-src" style="margin-top:6px;">—</div>
+        <div class="chart-grid">
+          <div class="chart-card"><h3>环形占比</h3><div class="chart-box" id="hf-diss"></div></div>
+          <div class="chart-card"><h3>近 8 周各原因趋势</h3><div class="chart-box" id="hf-diss-trend"></div></div>
+        </div>
+        <div class="chart-insight" id="hf-diss-insight"></div>
+      </div>
+      <div style="margin-top:14px;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">该厅团明细<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">该厅全量团 · 点团ID查看</span></h3>
+        <div class="chart-src" id="hf-team-list-src" style="margin-top:6px;">—</div>
+        <div class="rank-scroll" style="max-height:360px;"><table class="rank-table" id="hf-team-list"></table></div>
+      </div>
+      <div class="chart-src" style="margin-top:10px;">点留存率/流水趋势图任一周数据点 → 展开该周该厅团明细</div>
+      <div id="hf-week-drill" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--wb-line);"></div>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="mini-btn" onclick="drillHallFocus()">在明细页查看该厅 →</button>
+      </div>
+    </div>
+    </div><!-- /compare-main -->
+  </div>
+
+  <!-- 明细数据（2026-09-14 从概览页独立成页） --></div>
+<div class="pv-center-page" id="pv-page-captains">  <div id="tab-captains">
+    <div class="section-head">
+      <h2>姐姐分析</h2>
+      <h2 class="captains-current-hall" id="captains-current-hall">当前所属厅：全部大厅</h2>
+      <select id="sister-week-select" class="wb-select" onchange="loadSisterProfile()" title="切换画像统计周（本周流水 / 环比）"></select>
+      <span class="hint" id="captains-hint">数据为最新一天 · 会随所选大厅变化</span>
+    </div>
+    <div id="captains-main">
+    <div class="section-head" style="margin-top:4px;">
+      <h2>姐姐总览（画像 + 排行）</h2>
+      <span class="hint">点行下钻 · 排名随奖励口径切换</span>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">打标口径与指标计算</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>头部</b><code>周流水 ≥ P80 且 持续率 ≥ 65%</code><span>头部核心</span></span>
+        <span class="dni"><b>风险</b><code>环比 ≤ -50% 且上周 ≥ ¥1000，或带团 ≥ 3 且持续率 &lt; 65%</code><span>重点跟进</span></span>
+        <span class="dni"><b>普通</b><code>其余姐姐</code><span>常规观察</span></span>
+        <span class="dni"><b>姐妹关系持续率</b><code>Σ已结束团实际存续天数 ÷ (已结束团数×30)</code><span>毕业率作辅助副行</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span><b>持续率 ≥ 65% 为定稿阈值</b>（实测全量 45% / 已结束团≥2 口径 38% 达标，天然 ≥ 毕业率）。「牌子等级」（铜/银/金/王牌/大神）衡量姐姐自身等级经验，与「画像」（头部/风险/普通）是两码事——高牌子≠会带妹妹，画像看「流水 P80 + 持续率」，与牌子解耦。</span>
+      </div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>打标分布</h3>
+        <div class="chart-src">头部（流水前20%且持续率≥65%）· 风险（暴跌或带团多持续率低）· 其余普通</div>
+        <div class="chart-container" id="chart-sister-tag" style="height:240px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3>姐妹关系持续率分布</h3>
+        <div class="chart-src">姐姐按持续率分段统计 · 一眼看清留存水位</div>
+        <div class="chart-container" id="chart-sister-ret" style="height:240px;"></div>
+      </div>
+    </div>
+    <div class="chart-card" id="sister-overview-card">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <span>姐姐总览 <button class="sister-tag-filter" id="sister-tag-filter" onclick="clearSisterTagFilter()" title="取消标签筛选"></button></span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="seg">
+            <button id="cap-day" class="on" onclick="setCaptainPeriod('day')">当日</button>
+            <button id="cap-week" onclick="setCaptainPeriod('week')">当周</button>
+            <button id="cap-month" onclick="setCaptainPeriod('month')">当月</button>
+          </div>
+          <select id="sister-profile-sort" onchange="setSisterProfileSort(this.value)" class="wb-select">
+            <option value="reward" selected>奖励 ↓</option>
+            <option value="retention">持续率 ↓</option>
+            <option value="total_teams">带团数 ↓</option>
+            <option value="active_teams">进行中 ↓</option>
+          </select>
+          <select id="sister-profile-per-page" onchange="setSisterProfilePerPage(this.value)" class="wb-select">
+            <option value="20" selected>20条/页</option>
+            <option value="30">30条/页</option>
+          </select>
+        </div>
+      </h3>
+      <div class="chart-src">画像=流水 P80 + 持续率打标 · 持续率=Σ已结束团存续天数÷(已结束团数×30) · 奖励随「当日/当周/当月」切换 · 点行下钻</div>
+      <div class="tag-legend">
+        <span class="tag-legend-item"><span class="chip up">头部</span>流水前20%且持续率≥65%</span>
+        <span class="tag-legend-item"><span class="chip down">风险</span>流水环比↓≥50% 或 带团≥3但持续率&lt;65%</span>
+        <span class="tag-legend-item"><span class="chip flat">普通</span>其余</span>
+        <span class="tag-legend-item"><b>毕业率</b>=自然毕业团÷已结束团（持续率副行）</span>
+      </div>
+      <div class="survival-chips" id="sister-profile-sum"></div>
+      <div class="rank-scroll"><table class="rank-table" id="sister-profile-table"></table></div>
+      <div class="pagination" id="sister-profile-pagination" style="margin-top:8px;justify-content:center;"></div>
+      <div class="chart-insight" id="sister-profile-insight"></div>
+    </div>
+    <div class="section-head" id="grad-sec" style="margin-top:24px;">
+      <h2>毕业妹妹</h2>
+      <span class="hint">近 8 周毕业趋势 · 名单切换 · 妹妹留存率与毕业后轨迹</span>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>近 8 周毕业趋势</h3>
+        <div class="chart-src">每周满 30 天自动毕业的妹妹数</div>
+        <div class="chart-box" id="cap-grad-line"></div>
+        <div class="chart-insight" id="grad-line-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>毕业妹妹名单</span>
+          <div class="seg">
+            <button id="grad-today" onclick="setGradRange('today')">今天</button>
+            <button id="grad-week" class="on" onclick="setGradRange('week')">近一周</button>
+            <button id="grad-month" onclick="setGradRange('month')">近一月</button>
+          </div>
+        </h3>
+        <div class="chart-src">满 30 天自动毕业 · 点行查看配对姐姐</div>
+        <div id="grad-preview"></div>
+        <button class="expand-btn" id="grad-expand" onclick="openGradFull()">展开全部 →</button>
+      </div>
+    </div>
+    <div class="chart-card" id="grad-retention-sec" style="margin-top:14px;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">毕业妹妹留存<span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">近似兜底</span></h3>
+      <div class="chart-src">妹妹留存率 = 毕业后仍持续留存/产出的妹妹 ÷ 毕业妹妹总数 · 补充「姐妹关系持续率」只看关系能否维持、不看毕业后价值的缺口</div>
+      <div class="grad-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px;">
+        <div class="kpi-card"><div class="kpi-label"><span class="dot violet"></span> 毕业妹妹总数</div><div class="kpi-value" id="gr-ret">—</div><div class="kpi-note" id="gr-ret-note">满 30 天观察期 —</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 第1周仍在排档</div><div class="kpi-value" id="gr-30d">—</div><div class="kpi-note" id="gr-30d-note">占毕业总数 —</div></div>
+        <div class="kpi-card"><div class="kpi-label"><span class="dot green"></span> 第1周产出达标</div><div class="kpi-value" id="gr-promoted">—</div><div class="kpi-note" id="gr-promoted-note">占毕业总数 —</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;">
+        <input type="text" id="gr-search" class="wb-input wb-search" placeholder="搜索妹妹 / UID / 配对姐姐…" style="max-width:240px;" oninput="grFilter()">
+        <span id="gr-count" style="font-size:12px;color:var(--wb-text-3);"></span>
+      </div>
+      <div class="rank-scroll" style="margin-top:8px;"><table class="rank-table" id="gr-table"></table></div>
+      <div class="pagination" id="gr-pagination" style="justify-content:flex-start;"></div>
+      <div class="dn-notes" style="margin-top:10px;">
+        <span class="dn-tag">口径</span>
+        <span><b>第1周仍在排档</b>（主口径）= 毕业后第 1 周仍有排档记录（人在平台）的妹妹占比；<b>第1周产出达标</b>（质量口径）= 当周流水 ≥ 1344（新人阶梯第四档，毕业按老人要求），健康线 60%。数据源 member_weekly（按人追踪，自 08-17 起，未覆盖不进分母）+ team_sister_revenue 兜底。「晋升为姐姐」由妹妹 UID 命中晋升集回填真数。</span>
+      </div>
+      <div class="chart-src" style="margin-top:8px;">点击明细「已开始带妹妹 · 看链」徽标 → 展开该妹妹的传承链（代际传承，待落地）</div>
+    </div>
+    </div><!-- /captains-main -->
+
+    <!-- 候选池（阶段B）：并列展示四因子证据 + 结果记录 -->
+    <div id="captains-pool" style="display:none;">
+      <div class="dn-footer">
+        <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">培养力指标口径</span></div>
+        <div class="dn-line">
+          <span class="dni"><b>带团(总/进行)</b><code>历史带团总数 / 当前进行中</code><span>带团规模</span></span>
+          <span class="dni"><b>姐妹关系持续率</b><code>Σ已结束团实际存续天数 ÷ (已结束团数×30)</code><span>毕业率作辅助</span></span>
+          <span class="dni"><b>妹妹成长</b><code>难度加权成长分/月</code><span>培养速度</span></span>
+          <span class="dni"><b>培养升牌率</b><code>妹妹有成长的团占比 %</code><span>升级覆盖</span></span>
+          <span class="dni"><b>培养力总分</b><code>0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率</code><span>排序参考</span></span>
+          <span class="dni"><b>候选判定</b><code>持续率≥65% 且 妹妹成长&gt;0 且 牌子≥银牌</code><span>是否进候选</span></span>
+        </div>
+        <div class="dn-notes">
+          <span class="dn-tag">口径</span>
+          <span><b>妹妹成长</b> =（末期难度分 − 初期难度分）÷ 团龄天数 × 30，只对有成长的团取平均，封顶映射 <code>min(成长,20)/20×100</code>（T=20 定稿）；<b>培养升牌率</b> = 妹妹有成长的团数 ÷ 历史带团总数 × 100%。难度分指数递增 铜牌2→银牌8→金牌16→王牌32→大神64（升级难度翻倍）。本表并列展示、不做权威排序，仅候选优先 + 牌子等级分组。</span>
+        </div>
+        <div class="dn-notes" style="margin-top:9px;padding-top:8px;border-top:1px dashed var(--wb-line);">
+          <span class="dn-tag">未入选原因</span>
+          <span>未入选姐姐会在「候选判定」列标注差在哪一条：<b>持续率 &lt; 65%</b>（团多夭折/早夭）、<b>妹妹成长 = 0</b>（带不动妹妹）、<b>牌子 &lt; 银牌</b>（等级基础不够）。牌子只作最低门槛、不参与打分排序——银牌但妹妹成长快的姐姐，比王牌但妹妹不成长的更值得培养。</span>
         </div>
       </div>
-      <div class="panel" style="padding:0;">
-        <details class="note-details">
-          <summary>数据说明 · 指标口径 · 数据覆盖范围（点击展开）</summary>
-          <div class="note-list" style="padding:2px 2px 4px;">
-            <div>· <b>妹妹留存率</b> = 毕业后第 1 周仍在排档的妹妹占比（人在平台，按人追踪 member_weekly）</div>
-            <div>· <b>姐妹团留存率</b> =（期末进行中 − 本周新成团）÷ 期初进行中；<b>解散率</b> = 非毕业解散 ÷ 期初进行中，毕业不计流失</div>
-            <div>· <b>产出达标线</b> = 周流水 ≥ 1344（新人阶梯 336/672/1008/1344，毕业按老人要求）</div>
-            <div>· <b>月视图</b>：率类 = 月内各周均值，计数类 = 整月合计，对比上一月</div>
-            <div>· 流水两套口径：<code>姐妹团礼物奖励</code>（团内）与 <code>厅总流水</code>（厅级，约 3 倍差）</div>
-            <div>· <b>数据覆盖</b>：团快照自 07-27 起 · 流水自 08-03 起 · 毕业生按人追踪自 08-17 起 · 数据 T+1（每日抓取）</div>
-            <div>· <b>离职细分</b>：解散原因中「离职」按 UID 查询的最近离职时间比对，细分姐姐/妹妹/双方</div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>培养力象限（妹妹成长 × 培养升牌率）</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="hint">只显示候选 · 密集区聚合</span>
+            <select id="quadrant-hall-select" class="wb-select" onchange="setQuadrantHall(this.value)"><option value="all">全部大厅</option></select>
+          </div>
+        </h3>
+        <div class="chart-src">X 轴培养升牌率 · Y 轴妹妹成长(分/月) · 单点显示姓名、密集格聚合为「N 位」气泡 · 点单点/气泡名单跳 UID 查询</div>
+        <div class="chart-container" id="chart-talent-quadrant" style="height:320px;"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>培养力候选池</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="hint">并列展示，不做权威排序</span>
+            <select id="pool-per-page" onchange="setPoolPerPage(this.value)" class="wb-select">
+              <option value="20" selected>20条/页</option>
+              <option value="30">30条/页</option>
+            </select>
+          </div>
+        </h3>
+        <div class="chart-src">四因子证据：持续率（≥65%）· 妹妹成长（月成长分&gt;0）· 培养升牌率 · 牌子等级（银牌起）；培养力总分 = 0.4×持续率 + 0.35×妹妹成长(封顶T=20) + 0.25×培养升牌率（仅排序参考，不进候选硬门槛）</div>
+        <div class="survival-chips" id="pool-sum"></div>
+        <div class="rank-scroll"><table class="rank-table" id="pool-table"></table></div>
+        <div class="pagination" id="pool-pagination" style="margin-top:8px;justify-content:center;"></div>
+        <div class="chart-insight" id="pool-insight"></div>
+      </div>
+      <div class="chart-card">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <span>结果记录（输送妹妹 / 提拔管理）</span>
+          <button class="btn-save" onclick="loadTalentActions()" style="padding:4px 12px;">刷新</button>
+        </h3>
+        <div class="chart-src">记录每次倾斜动作，攒成功案例后据此学习培养力权重（动作发生在点点开黑平台，需人工回填）</div>
+        <div class="rank-scroll"><table class="rank-table" id="talent-actions-table"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UID查询 --></div>
+<div class="pv-center-page" id="pv-page-uid">  <div id="tab-uid">
+    <div class="uid-query-bar">
+      <div class="row">
+        <label>类型分类：</label>
+        <select id="uid-type"><option value="game">新队长-游戏</option><option value="karaoke">新队长-歌房</option><option value="werewolf">新队长-狼人杀</option><option value="live">实时-乐园杀</option></select>
+        <label>UID：</label>
+        <input type="text" id="uid-input" placeholder="输入UID，如 26482359">
+        <button onclick="queryUID()">查询</button>
+      </div>
+    </div>
+    <div class="dn-footer">
+      <div class="dn-foot-head">数据说明<span style="color:var(--wb-text-3);font-weight:400;">流水口径与字段对照</span></div>
+      <div class="dn-line">
+        <span class="dni"><b>姐妹团累计流水</b><code>姐姐本人累计流水</code><span>关联信息卡 · team_total_revenue</span></span>
+        <span class="dni"><b>当周礼物流水</b><code>本周礼物流水</code><span>周对比表行</span></span>
+        <span class="dni"><b>妹妹累计流水</b><code>团内妹妹的流水</code><span>参与明细列 · sister_revenue</span></span>
+      </div>
+      <div class="dn-notes">
+        <span class="dn-tag">口径</span>
+        <span>本页出现多处「流水」，口径不同勿混读：顶部「姐妹团累计流水」是<b>姐姐本人</b>的累计；周对比表「当周礼物流水」是<b>本周</b>礼物；参与明细「妹妹累计流水」是<b>团内妹妹</b>的累计。环比 = 本周 vs 上周的差值或变化率。</span>
+      </div>
+    </div>
+    <div id="uid-loading" class="uid-loading" style="display:none;">正在查询 UID 数据，请稍候...</div>
+    <div id="uid-error" class="uid-error" style="display:none;"></div>
+    <div id="uid-result" style="display:none;">
+      <div class="uid-result-card">
+        <h3><span id="uid-result-title">UID 查询结果</span></h3>
+        <div class="user-info">
+          <span>UID：<strong id="res-uid">--</strong></span>
+          <span>昵称：<strong id="res-nickname">--</strong></span>
+          <span>类型：<strong id="res-type">--</strong></span>
+          <span>所属大厅：<strong id="res-hall">--</strong></span>
+          <span>精英队长：<strong id="res-elite">--</strong></span>
+        </div>
+      </div>
+      <!-- 模块切换：姐妹团参与明细（默认） / 个人信息详情 -->
+      <div class="uid-pane-tabs">
+        <button id="uid-pane-btn-teams" class="on" onclick="uidSwitchPane('teams')">姐妹团参与明细<span id="uid-teams-flag" style="display:none;font-size:11px;font-weight:400;opacity:.75;">（无记录）</span></button>
+        <button id="uid-pane-btn-week" onclick="uidSwitchPane('week')">个人信息详情</button>
+      </div>
+      <div id="uid-pane-teams">
+      <!-- 无姐妹团数据时的空状态（避免误以为没加载出来） -->
+      <div class="uid-result-card" id="uid-teams-empty" style="display:none;text-align:center;padding:28px 16px;color:var(--wb-text-3);font-size:13px;">
+        该 UID 暂无姐妹团参与记录（未在任何姐妹团快照中出现）<br>
+        <span style="font-size:12px;">可切换到「个人信息详情」查看个人排档数据</span>
+      </div>
+      <!-- 姐妹团参与明细 -->
+      <div class="uid-result-card" id="team-info-card" style="display:none;">
+        <h3>姐妹团参与明细</h3>
+        <div id="team-info-body"></div>
+      </div>
+      <div class="uid-result-card" id="partner-compare-card" style="display:none;">
+        <h3>姐姐 vs 妹妹 本周数据对比</h3>
+        <div id="partner-compare-chart" style="width:100%; height:300px;"></div>
+        <div id="partner-compare-table" style="margin-top:12px;"></div>
+      </div>
+      <!-- 绑定妹妹列表 -->
+      <div class="uid-result-card" id="bound-sisters-card" style="display:none;">
+        <h3>绑定妹妹列表</h3>
+        <div id="bound-sisters-body"></div>
+      </div>
+      </div>
+      <div id="uid-pane-week" style="display:none;">
+      <div class="uid-result-card">
+        <h3 style="display:flex; justify-content:space-between; align-items:center;">
+          <span>个人信息详情</span>
+          <button onclick="exportUIDResult()" style="padding:4px 12px; border:1px solid #d9d9d9; background:white; border-radius:4px; font-size:12px; cursor:pointer; color:#667eea;">导出CSV</button>
+        </h3>
+        <table class="compare-table">
+          <thead><tr><th>指标</th><th id="th-this-week">本周</th><th id="th-last-week">上周</th><th>环比变化</th><th>变化率</th><th>趋势</th></tr></thead>
+          <tbody id="uid-compare-body"></tbody>
+        </table>
+      </div>
+      <div class="uid-result-card" id="member-trend-card" style="display:none;">
+        <h3>个人周趋势 <span style="font-size:11px;color:var(--wb-text-3);font-weight:400;">毕业妹妹追踪 · 周流水 + 排档天数</span></h3>
+        <div id="member-trend-chart" style="width:100%;height:260px;"></div>
+      </div>
+      <div class="uid-result-card">
+        <h3>关联信息</h3>
+        <div class="user-info">
+          <span>保护期结束：<strong id="res-protection">--</strong></span>
+          <span>姐妹团累计流水：<strong id="res-total-revenue">--</strong></span>
+          <span>历史最高等级：<strong id="res-hist-level">--</strong></span>
+        </div>
+      </div>
+      </div>
+  </div>
+  </div>
+</div>
+  </div>
+  <div class="pv-rail-right">
+    <div class="pv-sum"><div class="l" style="margin-bottom:6px;">预警速览</div><div id="pv-warn-list">加载中…</div></div>
+    <div class="pv-sum"><div class="l">预警触发</div><div class="v" id="pv-sum-warn">—</div><div class="s" id="pv-sum-warn-s">—</div></div>
+    <div class="pv-sum"><div class="l">毕业妹妹 · 第1周仍在排档</div><div class="v" id="pv-sum-grad" style="color:#16A34A;">—</div><div class="s" id="pv-sum-grad-s">—</div></div>
+    <div class="pv-sum"><div class="l">本周毕业</div><div class="v" id="pv-sum-gradd">—</div><div class="s">满 30 天自动毕业</div></div>
+    <div class="pv-sum"><div class="l" style="margin-bottom:4px;">近 8 周毕业趋势</div><div id="pv-grad-trend" style="height:100px;"></div></div>
+    <div class="pv-sum"><div class="l" style="margin-bottom:6px;">保护期将到期（3 天内 + 刚过期）</div><div id="pv-prot-list">加载中…</div></div>
+    <div class="pv-sum"><div class="l" style="margin-bottom:6px;">躺平预警 TOP</div><div id="pv-lying-list">加载中…</div></div>
+    <div class="pv-sum"><div class="l" style="margin-bottom:6px;">数据新鲜度</div><div class="s" id="pv-fresh-line" style="line-height:1.9;">—</div></div>
+  </div>
+</div>
+<div style="display:none;" aria-hidden="true">
+  <div id="wb-kpi-title"></div><div id="wb-kpi-subtitle"></div><div id="wb-kpi-hero"></div><div id="wb-kpi-sub"></div>
+  <div id="wb-kpi-detail"></div><div id="wb-hall-reset"></div><div id="wb-rank-title"></div><div id="wb-rank-mini"></div>
+  <div id="wb-rank-table"></div><div id="wb-rank-note"></div><div id="wb-rank-full"></div><div id="wb-rank-toggle"></div>
+  <div id="wb-hall-wall"></div><div id="wb-hall-grid"></div><div id="wb-wall-title"></div><div id="wb-rank-hint"></div>
+  <input id="detail-search"><select id="detail-per-page"><option>20</option></select><select id="detail-status"><option>all</option></select>
+  <select id="detail-reason"><option value=""></option></select><select id="detail-days"><option value=""></option></select>
+  <div id="detail-table-body"></div><div id="detail-pagination"></div><div id="detail-insight"></div>
+  <div id="overview-topbar"></div><div id="wb-guide"></div><div id="overview-warn-grid"></div><div id="grad-preview"></div>
+  <div id="gr-table"></div><div id="gr-pagination"></div><div id="gr-search-wrap"></div><input id="gr-search"><div id="gr-count"></div>
+  <div id="cap-grad-line"></div><div id="grad-line-insight"></div><div id="survival-chips"></div><div id="chart-survival"></div>
+  <div id="survival-insight"></div><div id="survival-src"></div><div id="chart-dissolve-reasons"></div><div id="dissolve-reasons-insight"></div>
+  <div id="dissolve-reasons-src"></div><div id="overview-team-preview"></div><div id="overview-detail-preview"></div><input id="overview-detail-search">
+  <div id="rank-flow-pair"></div><div id="rank-flow-younger"></div><div id="rank-week"></div><div id="rank-month"></div>
+</div>
+<!-- Cookie 管理弹窗 -->
+<div class="cookie-modal" id="cookie-modal">
+  <div class="cookie-modal-content" style="width:720px; max-width:95%;">
+    <h3>Cookie 管理</h3>
+    <div class="cookie-dual-grid">
+      <!-- 左栏：UID 查询 -->
+      <div class="cookie-panel">
+        <div class="cookie-panel-title">
+          <span class="cookie-dot" id="panel-dot-uid" style="background:#faad14;"></span>
+          <strong>UID 查询 Cookie</strong>
+          <span class="cookie-panel-sub">server1.tuwan.com:10010</span>
+        </div>
+        <div class="cookie-panel-status" id="panel-status-uid">检测中...</div>
+        <button class="btn-refresh" id="refresh-btn-uid" onclick="manualRefreshCookie('uid')">立即刷新（自动重登）</button>
+        <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
+        <details class="cookie-advanced">
+          <summary>手动粘贴（高级）</summary>
+          <textarea id="cookie-input-uid" placeholder="在此粘贴 UID 查询页面的完整 Cookie..."></textarea>
+          <div class="hint">获取方式：打开 UID 查询页 → F12 → Network → 点击查询 → 找到 play_user_newcaptian.php → Headers → 复制 Cookie</div>
+          <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
+            <button class="btn-save" onclick="saveCookie('uid')">保存 UID 查询 Cookie</button>
           </div>
         </details>
       </div>
-    </div>`,
-  alerts: () => `
-    <div class="center-page on">
-      <div class="panel" style="margin-top:0;"><div class="h"><b>平台级预警</b><span class="tag" id="alerts-ref2">近 8 周 · 点卡下钻</span></div>
-        <div class="wcards" id="warn-cards"></div>
-      </div>
-      <div class="panel"><div class="h"><b>姐妹团存活分析</b><span class="tag">点柱下钻明细（预览不含）</span></div>
-        <div class="chips" id="survival-chips2" style="margin-bottom:8px;">加载中…</div>
-        <div id="survival-chart"></div>
-      </div>
-      <div class="panel"><div class="h"><b>解散原因分布</b><span class="tag">点大块看细分（预览不含二级钻取）</span></div><div id="dr2-chart"></div></div>
-      <div class="panel"><div class="h"><b>躺平预警 · 连续未陪档 TOP</b><span class="tag">接近自动解散线（连续 5 日）</span></div>
-        <table class="kpi-tbl" id="lying-tbl"></table>
-      </div>
-    </div>`,
-  compare: () => `
-    <div class="center-page on">
-      <div class="panel" style="margin-top:0;">
-        <div class="h"><b>厅排行 · 姐妹团流水</b>
-          <div class="seg"><button class="on" id="cp-w" onclick="cpPeriod('week')">本周</button><button id="cp-m" onclick="cpPeriod('month')">本月</button></div>
+      <!-- 右栏：数据抓取 -->
+      <div class="cookie-panel">
+        <div class="cookie-panel-title">
+          <span class="cookie-dot" id="panel-dot-bigdata" style="background:#faad14;"></span>
+          <strong>数据抓取 Cookie</strong>
+          <span class="cookie-panel-sub">bigdata.tuwan.com</span>
         </div>
-        <div id="hall-chart"></div>
+        <div class="cookie-panel-status" id="panel-status-bigdata">检测中...</div>
+        <button class="btn-refresh" id="refresh-btn-bigdata" onclick="manualRefreshCookie('bigdata')">立即刷新（自动重登）</button>
+        <div class="cookie-advanced-hint">失效时系统自动重登；红灯即自动重登失败，可点上面手动兜底。</div>
+        <details class="cookie-advanced">
+          <summary>手动粘贴（高级）</summary>
+          <textarea id="cookie-input-bigdata" placeholder="在此粘贴 bigdata 统计页的完整 Cookie..."></textarea>
+          <div class="hint">获取方式：打开 bigdata.tuwan.com/sisters/tj → F12 → Network → 刷新 → 找到 sisters/tj → Headers → 复制 Cookie</div>
+          <div class="cookie-modal-actions" style="justify-content:flex-end; margin-top:10px;">
+            <button class="btn-save" onclick="saveCookie('bigdata')">保存抓取 Cookie</button>
+          </div>
+        </details>
       </div>
-      <div class="panel" id="hall-drill" style="display:none;">
-        <div class="h"><b id="hall-drill-name">—</b><span class="tag">逐周姐妹团流水</span></div>
-        <div id="hall-trend-chart"></div>
+    </div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-refresh" id="refresh-btn-all" onclick="manualRefreshCookie('all')">一键重登全部</button>
+      <span style="flex:1;"></span>
+      <button class="btn-cancel" onclick="closeCookieModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 姐姐下钻弹窗 -->
+<div class="cookie-modal" id="sister-detail-modal">
+  <div class="cookie-modal-content" style="width:860px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span><span id="sd-name">姐姐详情</span></span>
+      <button onclick="closeSisterDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="survival-chips" id="sd-chips"></div>
+    <div class="chart-src">等级轨迹（当日等级随快照日）</div>
+    <div id="sd-level-chart" style="height:160px;margin:4px 0 8px;"></div>
+    <div class="chart-src" id="sd-chart-src">每日礼物流水</div>
+    <div id="sd-chart" style="height:200px;margin:4px 0 8px;"></div>
+    <div class="rank-scroll" style="max-height:340px;"><table class="rank-table" id="sd-table"></table></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="sdGoUID()">在 UID 查询中查看完整资料 →</button>
+      <button class="btn-cancel" onclick="closeSisterDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 姐妹团详情弹窗（明细表整行点击） -->
+<div class="cookie-modal" id="team-detail-modal">
+  <div class="cookie-modal-content" style="width:680px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>姐妹团 <span id="td-team-id"></span></span>
+      <button onclick="closeTeamDetail()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div id="td-body"></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="tdGoUID()">在 UID 查询中查看姐姐 →</button>
+      <button class="btn-cancel" onclick="closeTeamDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 培养力结果记录弹窗 -->
+<div class="cookie-modal" id="talent-action-modal">
+  <div class="cookie-modal-content" style="width:520px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>记录倾斜动作 · <span id="ta-info">—</span></span>
+      <button onclick="closeTalentActionModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">动作发生在点点开黑平台，此处仅回填记录，用于后续学习培养力权重</div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">动作类型</label>
+      <select id="ta-type" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+        <option value="send_sister">输送妹妹</option>
+        <option value="promote">提拔管理</option>
+        <option value="resource">资源倾斜</option>
+        <option value="recall">召回妹妹</option>
+      </select>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">动作日期</label>
+      <input type="date" id="ta-date" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">备注（可选）</label>
+      <input type="text" id="ta-note" placeholder="如：输送妹妹到 XX 厅" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="saveTalentAction()">保存记录</button>
+      <button class="btn-cancel" onclick="closeTalentActionModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 培养力结果回填弹窗 -->
+<div class="cookie-modal" id="talent-result-modal">
+  <div class="cookie-modal-content" style="width:520px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>补填结果 · <span id="tr-info">—</span></span>
+      <button onclick="closeTalentResultModal()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">回填这次倾斜动作的后续效果，用于攒成功案例、学习培养力权重</div>
+    <div style="margin:14px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:8px;">结果勾选（可多选）</label>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="font-size:14px;"><input type="checkbox" id="tr-sister-promoted"> 妹妹已毕业/升级</label>
+        <label style="font-size:14px;"><input type="checkbox" id="tr-team-alive"> 团仍存活</label>
+        <label style="font-size:14px;"><input type="checkbox" id="tr-revenue-up"> 流水有增长</label>
       </div>
-    </div>`,
-  captains: () => `
-    <div class="center-page on">
-      <div class="panel" style="margin-top:0;">
-        <div class="h"><b>毕业妹妹留存</b><span class="tag">满 30 天自动毕业 · 按人追踪</span></div>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;margin:8px 0 4px;">
-          <div><div style="font-size:11px;color:var(--t3);">毕业妹妹总数</div><div style="font-size:24px;font-weight:700;color:#7C5CFF;" id="gr-total">—</div></div>
-          <div><div style="font-size:11px;color:var(--t3);">第1周仍在排档</div><div style="font-size:24px;font-weight:700;color:#16A34A;" id="gr-sched">—</div></div>
-          <div><div style="font-size:11px;color:var(--t3);">第1周产出达标</div><div style="font-size:24px;font-weight:700;" id="gr-prod">—</div></div>
-          <div><div style="font-size:11px;color:var(--t3);">晋升为姐姐</div><div style="font-size:24px;font-weight:700;" id="gr-pro">—</div></div>
-        </div>
-        <div id="grad-trend2"></div>
-      </div>
-      <div class="panel">
-        <div class="h"><b>毕业妹妹名单</b><span class="tag">方框=毕业后第1~4周是否在排档</span></div>
-        <table class="kpi-tbl" id="gr-tbl"></table>
-        <div class="pager">
-          <button onclick="grPage=Math.max(1,grPage-1);renderGrTable();">上一页</button>
-          <span id="gr-page">第 1 页</span>
-          <button onclick="grPage++;renderGrTable();">下一页</button>
-          <span id="gr-total2" style="margin-left:auto;"></span>
-        </div>
-      </div>
-      <div class="panel"><div class="h"><b>师门产量榜</b><span class="tag">带出毕业妹妹 / 晋升姐姐</span></div>
-        <table class="kpi-tbl" id="lin-tbl"></table>
-      </div>
-    </div>`,
-  detail: () => `
-    <div class="center-page on">
-      <div class="panel" style="margin-top:0;">
-        <div class="h"><b>明细数据</b><span class="tag">全量团明细 · 预览版为紧凑交互</span></div>
-        <div class="inputs">
-          <input type="text" id="dt-search" placeholder="搜索团ID / 姐姐 / 妹妹 / 大厅…" style="flex:1;min-width:200px;" onkeydown="if(event.key==='Enter'){dtPage=1;loadDetailPage();}">
-          <select id="dt-status" onchange="dtPage=1;loadDetailPage();"><option value="all">全部状态</option><option value="active">进行中</option><option value="dissolved">已结束</option></select>
-          <select id="dt-reason" onchange="dtPage=1;loadDetailPage();"><option value="">全部原因</option><option value="手动解散">手动解散</option><option value="任务未完成自动解散">任务未完成</option><option value="姐姐离职">姐姐离职</option><option value="妹妹离职">妹妹离职</option><option value="双方同日离职">双方同日离职</option><option value="离职">离职（未细分/换厅）</option><option value="毕业">毕业</option><option value="注销">注销</option></select>
-        </div>
-        <table class="kpi-tbl" id="dt-tbl"></table>
-        <div class="pager" id="dt-pager"></div>
-      </div>
-    </div>`,
-  uid: () => `
-    <div class="center-page on">
-      <div class="panel" style="margin-top:0;">
-        <div class="h"><b>UID 查询</b></div>
-        <div class="inputs">
-          <select id="uid-type"><option value="game">新队长-游戏</option><option value="karaoke">新队长-歌房</option><option value="werewolf">新队长-狼人杀</option><option value="live">实时-乐园杀</option></select>
-          <input type="text" id="uid-input" placeholder="输入 UID，如 26482359" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter') queryUidFull()">
-          <button class="btn-p" onclick="queryUidFull()">查询</button>
-        </div>
-        <div id="uid-res" style="display:none;">
-          <div class="uinfo" id="uid-info"></div>
-          <div class="panel" style="margin-top:12px;"><div class="h"><b>个人周趋势</b><span class="tag">毕业追踪口径（若被追踪）</span></div><div id="uid-trend-chart"></div></div>
-          <div class="panel"><div class="h"><b>本周 vs 上周</b></div><table class="kpi-tbl" id="uid-cmp-tbl"></table></div>
-        </div>
-      </div>
-    </div>`,
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">总体判断</label>
+      <select id="tr-status" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+        <option value="good">效果佳</option>
+        <option value="mixed">一般</option>
+        <option value="bad">效果差</option>
+      </select>
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">结果说明</label>
+      <input type="text" id="tr-note" placeholder="如：妹妹从铜牌升到银牌，团满30天正常解锁" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div style="margin:12px 0;">
+      <label style="display:block;font-size:13px;margin-bottom:4px;">回填日期</label>
+      <input type="date" id="tr-date" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;font-size:14px;">
+    </div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-save" onclick="saveTalentResult()">保存结果</button>
+      <button class="btn-cancel" onclick="closeTalentResultModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 最近一周毕业妹妹全量弹窗 -->
+<div class="cookie-modal" id="grad-full-modal">
+  <div class="cookie-modal-content" style="width:760px; max-width:95%;">
+    <h3 style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span>毕业妹妹名单</span>
+      <button onclick="closeGradFull()" style="padding:4px 12px;background:#f0f0f0;color:#666;border:none;border-radius:6px;cursor:pointer;">✕</button>
+    </h3>
+    <div class="chart-src">姐妹团满 30 天自动毕业（与牌子无关）· 妹妹 UID / 姐姐 UID / 大厅 / 妹妹最高牌子 / 流水一览</div>
+    <div class="rank-scroll" style="max-height:60vh;"><table class="rank-table" id="grad-full-table"></table></div>
+    <div class="cookie-modal-actions" style="border-top:1px solid #f0f0f0; padding-top:12px; margin-top:12px;">
+      <button class="btn-cancel" onclick="closeGradFull()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 一键回到顶部 --><button id="pv-back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+<script src="js/config.js?v=45"></script>
+<script src="js/utils.js?v=43"></script>
+<script src="js/filter-combobox.js?v=1"></script>
+<script src="js/api.js?v=65"></script>
+<script src="js/auth.js?v=42"></script>
+<script src="js/render.js?v=58"></script>
+<script src="js/app.js?v=67"></script>
+<script src="js/workbench.js?v=65"></script>
+<script src="js/insight.js?v=64"></script>
+<script src="js/warncenter.js?v=7"></script>
+<script src="js/lyingflat.js?v=3"></script>
+
+<script>
+/* ═══════ 预览壳驱动（叠加在正式版 JS 之上） ═══════ */
+window.addEventListener('scroll', () => {
+  document.getElementById('pv-back-top').classList.toggle('show', window.scrollY > 400);
+}, { passive: true });
+const pv$ = id => document.getElementById(id);
+const pvMoney = v => v >= 10000 ? (v/10000).toFixed(1) + 'w' : Math.round(v);
+const pvMk = id => { const el = pv$(id); const old = echarts.getInstanceByDom(el); if (old) old.dispose(); return echarts.init(el); };
+
+let PV_CUR = 'overview';
+const PV_LOADERS = {
+  overview: pvLoadOverview,
+  alerts: () => { try{loadWarncenter();loadLyingFlat();loadSurvival();loadDissolveReasons();}catch(e){console.warn(e);} },
+  compare: () => { try{initCompareChart();}catch(e){console.warn(e);} try{if(typeof initRetentionDist==='function')initRetentionDist();}catch(e){} },
+  captains: () => { try{loadCaptains();}catch(e){} try{loadSisterProfile();}catch(e){} try{loadGradRetention();}catch(e){} try{if(typeof loadTalentPool==='function')loadTalentPool();}catch(e){} },
+  uid: () => {},
 };
-
-/* ── 页面切换（左导航） ── */
-let CUR = 'overview';
-function goPage(name) {
-  CUR = name;
-  document.querySelectorAll('.nav-item[data-page]').forEach(t => t.classList.toggle('on', t.dataset.page === name));
-  $('center').innerHTML = PAGES[name]();
+function pvGo(name) {
+  PV_CUR = name;
+  document.querySelectorAll('.pv-nav-item[data-page]').forEach(t => t.classList.toggle('on', t.dataset.page === name));
+  document.querySelectorAll('.pv-center-page').forEach(p => p.classList.remove('on'));
+  const el = pv$('pv-page-' + name);
+  if (el) el.classList.add('on');
   window.scrollTo({ top: 0 });
-  if (name === 'overview') loadOverview();
-  else if (name === 'alerts') loadAlerts();
-  else if (name === 'compare') loadCompare();
-  else if (name === 'captains') loadCaptainsPage();
-  else if (name === 'detail') loadDetailPage();
+  setTimeout(() => {
+    (PV_LOADERS[name] || (() => {}))();
+    try { if (typeof resizeAllCharts === 'function') resizeAllCharts(); } catch (e) {}
+  }, 60);
 }
-function reloadPage() { goPage(CUR); }
+function pvReload() { pvGo(PV_CUR); pvLoadRails(); }
 
-/* ═══════ 概览页（中列） ═══════ */
-async function loadOverview() {
-  const k = await (await fetch('/api/kpi?hall=' + encodeURIComponent(F.hall) + weekParam())).json();
+/* 概览页中列（自定 E 版内容） */
+async function pvLoadOverview() {
+  const hp = (typeof getHallParam === 'function') ? getHallParam() : '';
+  const wp = (typeof getWeekParam === 'function') ? getWeekParam() : '';
+  const k = await (await fetch('/api/kpi?' + hp + wp)).json();
   const kd = k.data;
-  $('ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
-  $('kpi-tbl-sub').textContent = `${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
+  pv$('pv-ref-date').textContent = `数据周期 ${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
+  pv$('pv-kpi-sub').textContent = `${k.week || ''} · 对比上一${k.period_type==='month'?'月':'周'}`;
   const items = [
     { l:'进行中姐妹团', v: kd.active_team.value, d: kd.active_team.change },
     { l:'新成团数', v: kd.new_team.value, d: kd.new_team.change },
     { l:'姐妹团留存率', v: Math.round(kd.retention.value)+'%', d: kd.retention.change, suf:'pp' },
     { l:'解散率', v: kd.dissolution.value.toFixed(1)+'%', d: -kd.dissolution.change, suf:'pp' },
     { l:'妹妹留存率', v: Math.round(kd.sister_retention.value)+'%', d: null },
-    { l:'礼物奖励', v: money(kd.revenue.value), d: kd.revenue.change },
+    { l:'礼物奖励', v: pvMoney(kd.revenue.value), d: kd.revenue.change },
   ];
-  $('slim').innerHTML = items.map(x => `<div class="it"><div class="l">${x.l}</div><div class="v">${x.v}${x.d!=null?`<small class="${x.d>=0?'up':'down'}">${x.d>=0?'↑':'↓'}${Math.abs(x.d)}${x.suf||'%'}</small>`:''}</div></div>`).join('');
-  $('hero-num').textContent = kd.active_team.value;
-  $('hero-new').textContent = kd.new_team.value;
-  $('hero-grad').textContent = kd.graduated_sisters.value;
-  $('hero-ret').textContent = Math.round(kd.retention.value) + '%';
-  $('hero-diss').textContent = kd.dissolution.value.toFixed(1) + '%';
-  $('hero-sis').textContent = Math.round(kd.sister_retention.value) + '%';
-  $('hero-rev').textContent = money(kd.revenue.value);
-  $('nav-ov').textContent = kd.active_team.value;
+  pv$('pv-slim').innerHTML = items.map(x => `<div class="it"><div class="l">${x.l}</div><div class="v">${x.v}${x.d!=null?`<small style="color:${x.d>=0?'#16A34A':'#DC2626'};font-size:10px;font-weight:400;margin-left:4px;">${x.d>=0?'↑':'↓'}${Math.abs(x.d)}${x.suf||'%'}</small>`:''}</div></div>`).join('');
+  pv$('pv-hero-num').textContent = kd.active_team.value;
+  pv$('pv-hero-new').textContent = kd.new_team.value;
+  pv$('pv-hero-grad').textContent = kd.graduated_sisters.value;
+  pv$('pv-hero-ret').textContent = Math.round(kd.retention.value) + '%';
+  pv$('pv-hero-diss').textContent = kd.dissolution.value.toFixed(1) + '%';
+  pv$('pv-hero-sis').textContent = Math.round(kd.sister_retention.value) + '%';
+  pv$('pv-hero-rev').textContent = pvMoney(kd.revenue.value);
+  pv$('pv-nav-ov').textContent = kd.active_team.value;
 
   const krows = [
     ['进行中姐妹团', kd.active_team.value + ' 个', kd.active_team.change, '%', false],
@@ -486,19 +891,19 @@ async function loadOverview() {
     ['礼物奖励金额', '¥' + Number(kd.revenue.value).toLocaleString(), kd.revenue.change, '%', false],
     ['主动解散占比', kd.active_dissolved_pct.value.toFixed(1) + '%', kd.active_dissolved_pct.change, 'pp', true],
   ];
-  $('kpi-tbl').innerHTML = '<thead><tr><th>指标</th><th style="text-align:right;">本期</th><th style="text-align:right;">环比</th></tr></thead><tbody>' +
+  pv$('pv-kpi-tbl').innerHTML = '<thead><tr><th>指标</th><th style="text-align:right;">本期</th><th style="text-align:right;">环比</th></tr></thead><tbody>' +
     krows.map(r => {
-      const txt = r[2] == null ? '<span style="color:var(--t3);">—</span>' : `<span style="color:${(r[4] ? r[2] < 0 : r[2] >= 0) ? 'var(--up)' : 'var(--down)'};">${r[2] > 0 ? '↑' : r[2] < 0 ? '↓' : '—'} ${Math.abs(r[2])}${r[3]}</span>`;
+      const txt = r[2] == null ? '<span style="color:#9CA3AF;">—</span>' : `<span style="color:${(r[4] ? r[2] < 0 : r[2] >= 0) ? '#16A34A' : '#DC2626'};">${r[2] > 0 ? '↑' : r[2] < 0 ? '↓' : '—'} ${Math.abs(r[2])}${r[3]}</span>`;
       return `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${txt}</td></tr>`;
     }).join('') + '</tbody>';
 
-  const d = await (await fetch('/api/daily-events?days=14' + (F.hall !== 'all' ? '&hall=' + encodeURIComponent(F.hall) : ''))).json();
-  $('hero-tnew').textContent = d.new_teams[d.new_teams.length - 1] ?? '—';
-  $('hero-tdiss').textContent = d.dissolved[d.dissolved.length - 1] ?? '—';
+  const d = await (await fetch('/api/daily-events?days=14' + hp)).json();
+  pv$('pv-hero-tnew').textContent = d.new_teams[d.new_teams.length - 1] ?? '—';
+  pv$('pv-hero-tdiss').textContent = d.dissolved[d.dissolved.length - 1] ?? '—';
   const labels = ['周日','周一','周二','周三','周四','周五','周六'];
   const dayName = s => labels[new Date(s+'T00:00:00').getDay()];
   const x = d.dates.slice(7).map(dayName);
-  mk('week-chart').setOption({
+  pvMk('pv-week-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['本周新成团','上周新成团','本周解散','上周解散'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:34,bottom:8,containLabel:true},
@@ -511,10 +916,9 @@ async function loadOverview() {
       {name:'上周解散',type:'line',data:d.dissolved.slice(0,7),smooth:true,symbol:'none',lineStyle:{width:1.5,type:'dashed',color:'#F0A3A3'},itemStyle:{color:'#F0A3A3'}},
     ]
   });
-
-  const wr = await (await fetch('/api/weekly-report?limit=all' + hallParam())).json();
+  const wr = await (await fetch('/api/weekly-report?limit=all' + hp)).json();
   const weeks = (wr.data || []).slice(-8);
-  mk('wk8-chart').setOption({
+  pvMk('pv-wk8-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['姐妹团留存率','解散率'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
@@ -525,7 +929,7 @@ async function loadOverview() {
       {name:'解散率',type:'line',data:weeks.map(w=>Math.round(w.dissolution_rate)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#D56060'},itemStyle:{color:'#D56060'}},
     ]
   });
-  mk('wk8n-chart').setOption({
+  pvMk('pv-wk8n-chart').setOption({
     tooltip:{trigger:'axis'},
     legend:{data:['新成团','毕业'],top:0,right:8,textStyle:{fontSize:11}},
     grid:{left:8,right:12,top:30,bottom:8,containLabel:true},
@@ -536,354 +940,118 @@ async function loadOverview() {
       {name:'毕业',type:'bar',data:weeks.map(w=>w.graduation_count||0),barMaxWidth:22,itemStyle:{color:'#C9A0DC',borderRadius:[4,4,0,0]}},
     ]
   });
-  loadMiniDetail();
 }
 
-/* 明细紧凑表（概览中列底部） */
-let miniDtPage = 1;
-async function loadMiniDetail() {
-  const tbl = $('mini-dt-tbl');
-  if (!tbl) return;
-  const q = encodeURIComponent(($('mini-dt-search') || {}).value || '');
-  const st = ($('mini-dt-status') || {}).value || 'all';
-  const d = await (await fetch(`/api/detail-table?page=${miniDtPage}&per_page=8&search=${q}&status=${st}` + hallParam())).json();
-  const rows = d.data || [];
-  tbl.innerHTML = '<thead><tr><th>团ID</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>保护期结束</th><th style="text-align:right;">状态</th></tr></thead><tbody>' +
-    (rows.map(r => `<tr><td>#${r.team_id}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.hall_name || '—'}</td><td>${r.sister_nickname || '—'}</td><td>${r.sister_nickname2 || '—'}</td><td>${r.protection_end || '—'}</td><td class="num" style="color:${r.dissolve_date ? 'var(--down)' : 'var(--up)'};">${r.dissolve_date ? '已结束' : '进行中'}</td></tr>`).join('') || '<tr><td colspan="6" style="color:var(--t3);">无匹配记录</td></tr>') + '</tbody>';
-  const totalPages = Math.max(1, Math.ceil((d.total || 0) / 8));
-  if (miniDtPage > totalPages) { miniDtPage = totalPages; return loadMiniDetail(); }
-  $('mini-dt-page').textContent = `第 ${miniDtPage}/${totalPages} 页`;
-  $('mini-dt-total').textContent = `共 ${d.total} 条`;
-}
-
-/* ═══════ 预警中心（中列） ═══════ */
-async function loadAlerts() {
-  const w = await (await fetch('/api/warncenter')).json();
-  $('alerts-ref2').textContent = `数据日 ${w.ref_date || '—'} · 点卡下钻`;
-  $('warn-cards').innerHTML = w.cards.map(c => {
-    const lv = c.triggered ? 'red' : c.level === 'severe' ? 'red' : c.level === 'warning' ? 'amber' : 'violet';
-    const cur = c.current == null ? (c.total != null ? c.total + ' 个' : '—') : c.current + (c.key === 'new_team' ? ' 个' : '%');
-    return `<div class="wcard"><div class="t"><span>${c.title}</span><span class="pill ${lv}">${c.triggered ? '触发' : '正常'}</span></div>
-      <div class="v" style="color:${c.triggered ? 'var(--down)' : 'var(--tx)'};">${cur}</div>
-      <div class="s">${c.threshold || ''}</div></div>`;
-  }).join('');
-  // 存活
-  const sv = await (await fetch('/api/survival?x=1' + hallParam())).json();
-  const chips = [['7天', sv.survival?.d7], ['14天', sv.survival?.d14], ['30天', sv.survival?.d30]].filter(x => x[1]);
-  $('survival-chips2').innerHTML = chips.map(([l, c]) =>
-    `<div class="chipx"><span style="color:var(--t3);">存活 ${l}</span><b style="color:${c.rate>=60?'var(--up)':c.rate>=40?'var(--warn)':'var(--down)'};">${c.rate}%</b><div style="font-size:9.5px;color:var(--t3);">${c.total} 团</div></div>`).join('');
-  const ref = sv.ref_date || '';
-  const dist = sv.days_dist || [];
-  mk('survival-chart').setOption({
-    tooltip:{trigger:'axis'},
-    grid:{left:8,right:12,top:26,bottom:8,containLabel:true},
-    xAxis:{type:'category',data:dist.map(x=>x.label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
-    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    series:[{type:'bar',data:dist.map(x=>x.count),barMaxWidth:36,itemStyle:{color:'#7C5CFF',borderRadius:[5,5,0,0]},label:{show:true,position:'top',fontSize:10,color:'#6B7280'}}],
-    title:{text:ref ? '快照 ' + ref : '',textStyle:{fontSize:10,color:'#9CA3AF',fontWeight:400},right:8,top:0}
-  });
-  // 解散原因
-  const dr = await (await fetch('/api/dissolve-reasons?x=1' + hallParam())).json();
-  mk('dr2-chart').setOption({
-    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
-    legend:{orient:'vertical',right:6,top:'middle',itemWidth:10,itemHeight:10,textStyle:{fontSize:11,color:'#6B7280'}},
-    series:[{type:'pie',radius:['40%','68%'],center:['36%','50%'],
-      label:{show:true,position:'outside',formatter:'{c}',fontSize:10,color:'#6B7280'},
-      itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
-      data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
-  });
-  // 躺平
-  const lf = await (await fetch('/api/lying-flat')).json();
-  const list = (lf.list || []).slice(0, 10);
-  $('lying-tbl').innerHTML = '<thead><tr><th>团ID</th><th>大厅</th><th>妹妹</th><th style="text-align:right;">连续未陪档</th><th style="text-align:right;">已成团天数</th></tr></thead><tbody>' +
-    (list.map(r => `<tr><td>#${r.team_id}</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.hall_name}</td><td>${r.sister_nickname2 || '—'}</td><td class="num" style="color:var(--down);">${r.accompany_streak} 天</td><td class="num">${r.days_since_formed} 天</td></tr>`).join('')
-    || '<tr><td colspan="5" style="color:var(--t3);">暂无躺平团</td></tr>') + '</tbody>';
-}
-
-/* ═══════ 厅分析（中列） ═══════ */
-let CP = { period: 'week', hall: '' };
-function cpPeriod(p) { CP.period = p; $('cp-w').classList.toggle('on', p === 'week'); $('cp-m').classList.toggle('on', p === 'month'); loadCompare(); }
-async function loadCompare() {
-  const ho = await (await fetch('/api/hall-overview?weeks=8')).json();
-  const rows = ho.data.filter(h => h.weeks && h.weeks.length)
-    .map(h => {
-      const rev = CP.period === 'month' ? (h.sister_monthly_revenue ?? null) : (h.sister_weekly_revenue ?? null);
-      return { name: h.hall_name, rev, weeks: h.weeks };
-    }).filter(x => x.rev != null).sort((a, b) => b.rev - a.rev).slice(0, 15);
-  const c = mk('hall-chart');
-  c.setOption({
-    tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>${CP.period==='month'?'本月':'本周'}流水 <b>¥${Number(ps[0].value).toLocaleString()}</b>`},
-    grid:{left:8,right:30,top:10,bottom:8,containLabel:true},
-    xAxis:{type:'value',axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    yAxis:{type:'category',data:rows.map(r=>r.name).reverse(),axisLabel:{fontSize:10,color:'#6B7280'}},
-    series:[{type:'bar',data:rows.map(r=>r.rev).reverse(),barMaxWidth:16,itemStyle:{color:'#7C5CFF',borderRadius:[0,4,4,0]}}]
-  });
-  c.off('click');
-  c.on('click', p => {
-    const h = rows[rows.length - 1 - p.dataIndex];
-    if (h) drillHall(h);
-  });
-}
-function drillHall(h) {
-  CP.hall = h.name;
-  $('hall-drill').style.display = '';
-  $('hall-drill-name').textContent = h.name + ' · 近 8 周姐妹团流水';
-  const weeks = h.weeks || [];
-  mk('hall-trend-chart').setOption({
-    tooltip:{trigger:'axis'},
-    grid:{left:8,right:12,top:26,bottom:8,containLabel:true},
-    xAxis:{type:'category',data:weeks.map(w=>w.week_label),axisLabel:{fontSize:10,color:'#6B7280',interval:0}},
-    yAxis:{type:'value',axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    series:[{type:'line',data:weeks.map(w=>Math.round(w.weekly_revenue||0)),smooth:true,symbolSize:5,lineStyle:{width:2.5,color:'#C98A2D'},itemStyle:{color:'#C98A2D'},areaStyle:{color:'rgba(201,138,45,.08)'}}]
-  });
-  $('hall-drill').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-/* ═══════ 姐姐分析（中列） ═══════ */
-let grList = [], grPage = 1;
-async function loadCaptainsPage() {
-  const gr = await (await fetch('/api/grad-retention?x=1' + hallParam())).json();
-  const g = gr.stats;
-  $('gr-total').textContent = g.total;
-  $('gr-sched').textContent = (g.w1s_rate ?? '—') + '%';
-  $('gr-prod').textContent = (g.w1_rate ?? '—') + '%';
-  $('gr-prod').style.color = (g.w1_rate != null && g.w1_rate < 60) ? 'var(--down)' : 'var(--up)';
-  $('gr-pro').textContent = g.promoted + ' 人';
-  mk('grad-trend2').setOption({
-    grid:{left:8,right:8,top:16,bottom:4,containLabel:true},
-    xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:10,color:'#9CA3AF',interval:0}},
-    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:26,itemStyle:{color:'#8F7BFF',borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9,color:'#6B7280'}}],
-    tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
-  });
-  grList = g.list || [];
-  grPage = 1;
-  renderGrTable();
-  const lr = await (await fetch('/api/lineage-rank?limit=10' + (hallParam() ? '?' + hallParam().slice(1) : ''))).json();
-  $('lin-tbl').innerHTML = '<thead><tr><th>#</th><th>姐姐</th><th style="text-align:right;">带出毕业</th><th style="text-align:right;">晋升姐姐</th><th style="text-align:right;">历史带团</th></tr></thead><tbody>' +
-    ((lr.data || []).map((c, i) => `<tr><td>${i + 1}</td><td>${esc(c.nickname)} <span style="color:var(--t3);font-size:10.5px;">(${c.uid})</span></td><td class="num">${c.grad_count}</td><td class="num" style="color:var(--ac);font-weight:700;">${c.promoted_count}</td><td class="num">${c.teams}</td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--t3);">暂无数据</td></tr>') + '</tbody>';
-}
-function renderGrTable() {
-  const tbl = $('gr-tbl');
-  if (!tbl) return;
-  const per = 10;
-  const totalPages = Math.max(1, Math.ceil(grList.length / per));
-  if (grPage > totalPages) grPage = totalPages;
-  const rows = grList.slice((grPage - 1) * per, grPage * per);
-  tbl.innerHTML = '<thead><tr><th>妹妹</th><th>毕业日期</th><th>配对姐姐</th><th>毕业后留存（第1~4周排档）</th><th style="text-align:right;">带妹</th></tr></thead><tbody>' +
-    (rows.map(g => {
-      const wa = g.weeks_scheduled || [];
-      const grad = g.grad_date ? new Date(g.grad_date + 'T00:00:00') : null;
-      const now = new Date();
-      let sq = '<span class="sq-strip">';
-      for (let i = 1; i <= 4; i++) {
-        const wStart = grad ? new Date(grad.getTime() + (7 * (i - 1) + 1) * 864e5) : null;
-        const future = !wStart || wStart > now;
-        const v = wa[i - 1];
-        const cls = (future || v == null) ? 'todo' : v === 1 ? 'done' : 'ended';
-        const tip = future ? `第${i}周·未到` : v == null ? `第${i}周·未追踪` : v === 1 ? `第${i}周·在排档` : `第${i}周·未排档`;
-        sq += `<span class="sq ${cls}" title="${tip}"></span>`;
-      }
-      sq += '</span>';
-      return `<tr><td>${esc(g.nickname || g.sister_uid2)}</td><td>${g.grad_date || '—'}</td><td>${esc(g.sister_nickname || '—')}</td><td>${sq}</td><td class="num">${g.promoted ? '<span class="pill green">已带</span>' : '<span style="color:var(--t3);">—</span>'}</td></tr>`;
-    }).join('') || '<tr><td colspan="5" style="color:var(--t3);">暂无</td></tr>') + '</tbody>';
-  $('gr-page').textContent = `第 ${grPage}/${totalPages} 页`;
-  $('gr-total2').textContent = `共 ${grList.length} 位`;
-}
-
-/* ═══════ 明细数据（中列） ═══════ */
-let dtPage = 1;
-async function loadDetailPage() {
-  const q = encodeURIComponent(($('dt-search') || {}).value || '');
-  const st = ($('dt-status') || {}).value || 'all';
-  const rs = encodeURIComponent(($('dt-reason') || {}).value || '');
-  const d = await (await fetch(`/api/detail-table?page=${dtPage}&per_page=12&search=${q}&status=${st}&reason=${rs}` + hallParam())).json();
-  const rows = d.data || [];
-  $('dt-tbl').innerHTML = '<thead><tr><th>团ID</th><th>成团日期</th><th>大厅</th><th>姐姐</th><th>妹妹</th><th>保护期结束</th><th style="text-align:right;">天数</th><th style="text-align:right;">状态</th></tr></thead><tbody>' +
-    (rows.map(r => `<tr><td>#${r.team_id}</td><td>${r.form_date || '—'}</td><td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.hall_name || '—'}</td><td>${r.sister_nickname || '—'}</td><td>${r.sister_nickname2 || '—'}</td><td>${r.protection_end || '—'}</td><td class="num">${r.days_since_formed ?? '—'}</td><td class="num" style="color:${r.dissolve_date ? 'var(--down)' : 'var(--up)'};">${r.dissolve_date ? '已结束' : '进行中'}</td></tr>`).join('') || '<tr><td colspan="8" style="color:var(--t3);">无匹配记录</td></tr>') + '</tbody>';
-  const totalPages = Math.max(1, Math.ceil((d.total || 0) / 12));
-  if (dtPage > totalPages) { dtPage = totalPages; return loadDetailPage(); }
-  let btns = `<button onclick="dtPage=Math.max(1,dtPage-1);loadDetailPage();">上一页</button><span>第 ${dtPage}/${totalPages} 页</span><button onclick="dtPage++;loadDetailPage();">下一页</button><span style="margin-left:auto;">共 ${d.total} 条</span>`;
-  $('dt-pager').innerHTML = btns;
-}
-
-/* ═══════ UID 查询（中列） ═══════ */
-async function queryUidFull() {
-  const uid = $('uid-input').value.trim();
-  if (!uid) return;
-  const type = $('uid-type').value;
-  $('uid-res').style.display = 'none';
+/* 左右栏（预览壳自有） */
+async function pvLoadRails() {
+  const hp = (typeof getHallParam === 'function') ? getHallParam() : '';
   try {
-    const res = await fetch('/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid, captain_type: type }) });
-    const d = await res.json();
-    if (!res.ok || d.error) throw new Error(d.error || '查询失败');
-    $('uid-res').style.display = '';
-    const tw = (d.this_week && d.this_week.data) || {};
-    $('uid-info').innerHTML = `<span>UID：<b>${d.uid}</b></span><span>昵称：<b>${esc(d.nickname || '—')}</b></span><span>类型：<b>${d.type_label || '—'}</b></span><span>大厅：<b>${esc((d.compare && d.compare.hall && d.compare.hall.this) || tw.schedule_hall || '—')}</b></span><span>当周流水：<b style="color:var(--ac);">¥${Number(tw.week_revenue || 0).toLocaleString()}</b></span><span>牌子：<b>${tw.week_level || '—'}</b></span>`;
-    // 周趋势（member_weekly，若被追踪）
-    const mw = await (await fetch('/api/member-weekly?uid=' + encodeURIComponent(uid))).json();
-    const wks = mw.weeks || [];
-    if (wks.length) {
-      mk('uid-trend-chart').setOption({
-        tooltip:{trigger:'axis'},
-        legend:{data:['周流水','排档天数'],right:8,top:0,textStyle:{fontSize:11}},
-        grid:{left:8,right:12,top:28,bottom:8,containLabel:true},
-        xAxis:{type:'category',data:wks.map(w=>w.week),axisLabel:{fontSize:10,color:'#6B7280'}},
-        yAxis:[{type:'value',axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-               {type:'value',max:7,minInterval:1,axisLabel:{fontSize:10,color:'#9CA3AF'},splitLine:{show:false}}],
-        series:[
-          {name:'周流水',type:'bar',data:wks.map(w=>w.revenue),barMaxWidth:30,itemStyle:{color:'#7C5CFF',borderRadius:[4,4,0,0]}},
-          {name:'排档天数',type:'line',yAxisIndex:1,data:wks.map(w=>w.schedule_days),smooth:true,lineStyle:{color:'#0EA5A4',width:2},itemStyle:{color:'#0EA5A4'}},
-        ]
+    const w = await (await fetch('/api/warncenter')).json();
+    const trig = w.cards.filter(c=>c.triggered).length;
+    pv$('pv-warn-n').textContent = trig + ' 项';
+    pv$('pv-sum-warn').textContent = trig + ' 项';
+    pv$('pv-sum-warn').style.color = trig ? '#DC2626' : '#16A34A';
+    pv$('pv-sum-warn-s').textContent = trig ? w.cards.filter(c=>c.triggered).map(c=>c.title).join('、') : '全部正常';
+    pv$('pv-warn-list').innerHTML = w.cards.map(c => {
+      const color = c.triggered ? '#DC2626' : c.level==='severe' ? '#D56060' : c.level==='warning' ? '#D97706' : '#7C5CFF';
+      const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
+      return `<div class="pv-warn-line"><span class="pv-dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
+    }).join('');
+    const dtCard = w.cards.find(c => c.key === 'dissolve_time');
+    if (dtCard && dtCard.hist) {
+      pvMk('pv-dt-chart').setOption({
+        tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
+        grid:{left:8,right:8,top:20,bottom:4,containLabel:true},
+        xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:9,color:'#6B7280',interval:0}},
+        yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+        series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:30,itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9,color:'#6B7280'}}]
       });
-    } else {
-      $('uid-trend-chart').innerHTML = '<div style="color:var(--t3);font-size:12px;padding:20px 0;text-align:center;">该 UID 不在毕业追踪范围（非近 12 周毕业妹妹）</div>';
     }
-    // 本周 vs 上周对比表
-    const cmp = d.compare || {};
-    const rowsMap = [
-      ['当周队长等级', 'week_level'], ['当周排档天数', 'week_schedule_days'], ['当周礼物流水', 'week_revenue'],
-      ['当周陪档时长(分钟)', 'week_accompany_time'], ['排行榜排名', 'week_rank'], ['每日任务完成', 'daily_task_count'],
-    ];
-    $('uid-cmp-tbl').innerHTML = '<thead><tr><th>指标</th><th style="text-align:right;">本周</th><th style="text-align:right;">上周</th></tr></thead><tbody>' +
-      rowsMap.map(([l, k]) => {
-        const c = cmp[k];
-        if (!c) return '';
-        return `<tr><td>${l}</td><td class="num">${c.this ?? '—'}</td><td class="num" style="color:var(--t3);">${c.last ?? '—'}</td></tr>`;
-      }).join('') + '</tbody>';
-  } catch (e) {
-    showErr('UID 查询失败：' + e.message);
-  }
-}
-function showErr(msg) { const t = document.createElement('div'); t.style.cssText = 'position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#FDECEC;color:#DC2626;padding:10px 18px;border-radius:10px;font-size:13px;z-index:999;box-shadow:0 4px 14px rgba(0,0,0,.12);'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 3200); }
-
-/* ═══════ 左右栏（全站不变部分） ═══════ */
-async function loadRails() {
-  // 预警速览
-  const w = await (await fetch('/api/warncenter')).json();
-  const trig = w.cards.filter(c=>c.triggered).length;
-  $('warn-n').textContent = trig;
-  const retCard = w.cards.find(c=>c.key==='retention');
-  $('warn-v').textContent = retCard && retCard.current != null ? retCard.current + '%' : '—';
-  $('sum-warn').textContent = trig + ' 项';
-  $('sum-warn').style.color = trig ? 'var(--down)' : 'var(--up)';
-  $('sum-warn-s').textContent = trig ? w.cards.filter(c=>c.triggered).map(c=>c.title).join('、') : '全部正常';
-  $('warn-list').innerHTML = w.cards.map(c => {
-    const color = c.triggered ? '#DC2626' : c.level==='severe' ? '#D56060' : c.level==='warning' ? '#D97706' : '#7C5CFF';
-    const cur = c.current == null ? (c.total!=null?c.total+' 个':'—') : c.current + (c.key==='new_team'?' 个':'%');
-    return `<div class="warn-line"><span class="dot" style="background:${color};"></span><span style="flex:1;">${c.title}</span><b>${cur}</b><span style="font-size:10.5px;color:${c.triggered?'#DC2626':'#9CA3AF'};">${c.triggered?'触发':'正常'}</span></div>`;
-  }).join('');
-  const dtCard = w.cards.find(c => c.key === 'dissolve_time');
-  if (dtCard && dtCard.hist) {
-    mk('dt-chart').setOption({
-      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}<br/>解散 ${ps[0].value} 个`},
-      grid:{left:8,right:8,top:20,bottom:4,containLabel:true},
-      xAxis:{type:'category',data:dtCard.hist.map(h=>h.label),axisLabel:{fontSize:9,color:'#6B7280',interval:0}},
-      yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-      series:[{type:'bar',data:dtCard.hist.map(h=>h.count),barMaxWidth:30,itemStyle:{color:(p)=> p.dataIndex===1 ? '#D56060' : '#C9A0DC', borderRadius:[4,4,0,0]},label:{show:true,position:'top',fontSize:9,color:'#6B7280'}}]
-    });
-  }
-  // 毕业妹妹
-  const gr = await (await fetch('/api/grad-retention?x=1' + hallParam())).json();
-  const g = gr.stats;
-  $('grad-v').textContent = (g.w1s_rate ?? '—') + '%';
-  $('sum-grad').textContent = (g.w1s_rate ?? '—') + '%';
-  $('sum-grad-s').textContent = `${g.w1_scheduled}/${g.w1s_covered} 位 · 产出达标 ${g.w1_rate ?? '—'}%`;
-  mk('grad-trend').setOption({
-    grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
-    xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
-    yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
-    series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:14,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
-    tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
-  });
-  // 解散原因（左栏）
-  const dr = await (await fetch('/api/dissolve-reasons?x=1' + hallParam())).json();
-  mk('dr-chart').setOption({
-    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
-    series:[{type:'pie',radius:['38%','68%'],center:['50%','50%'],
-      label:{show:true,position:'outside',formatter:'{c}',fontSize:9,color:'#6B7280'},labelLine:{length:6,length2:4},
-      itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
-      data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
-  });
-  // 左轨榜单
-  const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
-  const halls = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue);
-  const top = halls[0];
-  $('hall-v').textContent = top ? money(top.sister_weekly_revenue) : '—';
-  if (top) $('hall-s').textContent = top.hall_name.slice(0,10);
-  $('hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">${h.hall_name}</td><td class="num">${money(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:var(--t3);">本周暂无流水数据</td></tr>') + '</tbody>';
-  const lr = await (await fetch('/api/lineage-rank?limit=5' + (hallParam() ? '?' + hallParam().slice(1) : ''))).json();
-  const top1 = (lr.data||[])[0];
-  $('lin-v').textContent = top1 ? `毕业${top1.grad_count}` : '—';
-  if (top1) $('lin-s').textContent = top1.nickname.slice(0,10);
-  $('lin-top5').innerHTML = '<tbody>' + ((lr.data||[]).map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:var(--t3);">暂无数据</td></tr>') + '</tbody>';
-  const dt = await (await fetch('/api/detail-table?per_page=1' + hallParam())).json();
-  $('det-v').textContent = dt.total;
-  // 存活 chips（左栏）
+  } catch (e) { console.warn('rails warn:', e); }
   try {
-    const sv = await (await fetch('/api/survival?x=1' + hallParam())).json();
+    const gr = await (await fetch('/api/grad-retention?x=1' + hp)).json();
+    const g = gr.stats;
+    pv$('pv-grad-v').textContent = (g.w1s_rate ?? '—') + '%';
+    pv$('pv-sum-grad').textContent = (g.w1s_rate ?? '—') + '%';
+    pv$('pv-sum-grad-s').textContent = `${g.w1_scheduled}/${g.w1s_covered} 位 · 产出达标 ${g.w1_rate ?? '—'}%`;
+    pvMk('pv-grad-trend').setOption({
+      grid:{left:4,right:4,top:8,bottom:4,containLabel:true},
+      xAxis:{type:'category',data:(gr.trend||[]).map(t=>t.week),axisLabel:{fontSize:9,color:'#9CA3AF',interval:1}},
+      yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:9,color:'#9CA3AF'},splitLine:{lineStyle:{color:'#F0F1F4'}}},
+      series:[{type:'bar',data:(gr.trend||[]).map(t=>t.count),barMaxWidth:14,itemStyle:{color:'#8F7BFF',borderRadius:[3,3,0,0]}}],
+      tooltip:{trigger:'axis',formatter:ps=>`${ps[0].name}：毕业 ${ps[0].value} 人`}
+    });
+  } catch (e) {}
+  try {
+    const dr = await (await fetch('/api/dissolve-reasons?x=1' + hp)).json();
+    pvMk('pv-dr-chart').setOption({
+      tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.value} 个（${p.percent}%）`},
+      series:[{type:'pie',radius:['38%','68%'],center:['50%','50%'],
+        label:{show:true,position:'outside',formatter:'{c}',fontSize:9,color:'#6B7280'},labelLine:{length:6,length2:4},
+        itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},
+        data: dr.buckets.map((b,i)=>({name:b.name,value:b.count,itemStyle:{color:['#D56060','#C98A2D','#16A34A','#C0C4CC'][i%4]}}))}]
+    });
+  } catch (e) {}
+  try {
+    const ho = await (await fetch('/api/hall-overview?weeks=2')).json();
+    const halls = ho.data.filter(h=>h.sister_weekly_revenue!=null).sort((a,b)=>b.sister_weekly_revenue-a.sister_weekly_revenue);
+    const top = halls[0];
+    pv$('pv-hall-v').textContent = top ? pvMoney(top.sister_weekly_revenue) : '—';
+    pv$('pv-hall-top5').innerHTML = '<tbody>' + (halls.length ? halls.slice(0,5).map((h,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">${h.hall_name}</td><td class="num">${pvMoney(h.sister_weekly_revenue)}</td></tr>`).join('') : '<tr><td style="color:#9CA3AF;">本周暂无流水数据</td></tr>') + '</tbody>';
+  } catch (e) {}
+  try {
+    const lr = await (await fetch('/api/lineage-rank?limit=5' + (hp ? '?' + hp.slice(1) : ''))).json();
+    const list = lr.data || [];
+    pv$('pv-lin-top5').innerHTML = '<tbody>' + (list.map((c,i)=>`<tr><td>${i+1}</td><td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;">${c.nickname}</td><td class="num">毕业${c.grad_count} · 晋升${c.promoted_count}</td></tr>`).join('') || '<tr><td style="color:#9CA3AF;">暂无数据</td></tr>') + '</tbody>';
+  } catch (e) {}
+  try {
+    const sv = await (await fetch('/api/survival?x=1' + hp)).json();
     const chips = [['7天', sv.survival?.d7], ['14天', sv.survival?.d14], ['30天', sv.survival?.d30]].filter(x => x[1]);
-    $('survival-chips').innerHTML = chips.map(([l, c]) =>
-      `<div class="chipx"><span style="color:var(--t3);">存活 ${l}</span><b style="color:${c.rate>=60?'var(--up)':c.rate>=40?'var(--warn)':'var(--down)'};">${c.rate}%</b></div>`).join('') || '暂无';
-  } catch (e) { $('survival-chips').textContent = '暂无数据'; }
-  // 保护期将到期
+    pv$('pv-survival-chips').innerHTML = chips.map(([l, c]) =>
+      `<div style="background:#F8F9FB;border:1px solid #ECEEF2;border-radius:8px;padding:5px 9px;font-size:11px;text-align:center;flex:1;min-width:60px;"><span style="color:#9CA3AF;">存活 ${l}</span><b style="display:block;font-size:14px;margin-top:1px;color:${c.rate>=60?'#16A34A':c.rate>=40?'#D97706':'#DC2626'};">${c.rate}%</b></div>`).join('') || '暂无';
+  } catch (e) {}
   try {
     const pe = await (await fetch('/api/protection-expiring?days=3')).json();
     const list = pe.list || [];
-    $('prot-list').innerHTML = list.length ? list.slice(0,6).map(r => {
+    pv$('pv-prot-list').innerHTML = list.length ? list.slice(0,6).map(r => {
       const dl = r.days_left;
-      const badge = dl == null ? '' : dl < 0 ? `<span class="badge red">已过${-dl}天</span>` : dl === 0 ? '<span class="badge red">今天</span>' : `<span class="badge amber">${dl}天后</span>`;
-      return `<div class="mini-it"><span class="nm">${esc(r.nickname)}</span>${badge}</div>`;
-    }).join('') : '<div style="color:var(--t3);font-size:12px;">暂无将到期</div>';
-  } catch (e) { $('prot-list').textContent = '加载失败'; }
-  // 躺平 TOP
+      const badge = dl == null ? '' : dl < 0 ? `<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FDECEC;color:#DC2626;">已过${-dl}天</span>` : dl === 0 ? '<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FDECEC;color:#DC2626;">今天</span>' : `<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FFFBEB;color:#D97706;">${dl}天后</span>`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed #ECEEF2;font-size:12px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.nickname}</span>${badge}</div>`;
+    }).join('') : '<div style="color:#9CA3AF;font-size:12px;">暂无将到期</div>';
+  } catch (e) {}
   try {
     const lf = await (await fetch('/api/lying-flat')).json();
     const list = (lf.list || []).slice(0, 4);
-    $('lying-list').innerHTML = list.length ? list.map(r =>
-      `<div class="mini-it"><span class="nm">${esc(r.sister_nickname2 || r.sister_nickname)}</span><span class="badge red">${r.accompany_streak}天未陪档</span></div>`).join('')
-      : '<div style="color:var(--t3);font-size:12px;">暂无躺平团</div>';
-  } catch (e) { $('lying-list').textContent = '加载失败'; }
-  // 数据新鲜度
+    pv$('pv-lying-list').innerHTML = list.length ? list.map(r =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed #ECEEF2;font-size:12px;"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.sister_nickname2 || r.sister_nickname}</span><span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FDECEC;color:#DC2626;">${r.accompany_streak}天未陪档</span></div>`).join('')
+      : '<div style="color:#9CA3AF;font-size:12px;">暂无躺平团</div>';
+  } catch (e) {}
   try {
     const [lu, ka] = await Promise.all([
       fetch('/api/last-update').then(r => r.json()).catch(() => null),
       fetch('/api/keepalive-status').then(r => r.json()).catch(() => null),
     ]);
     const fmt = s => (s || '').slice(5, 16);
-    const dot = ok => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ok ? 'var(--up)' : 'var(--down)'};margin-right:4px;"></span>`;
-    $('fresh-line').innerHTML = [
+    const dot = ok => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ok ? '#16A34A' : '#DC2626'};margin-right:4px;"></span>`;
+    pv$('pv-fresh-line').innerHTML = [
       lu ? `${dot(lu.status === 'success')}最近抓取 ${fmt(lu.last_update)}` : '',
       ka ? `${dot(ka.uid && ka.uid.ok)}UID 查询 Cookie · ${dot(ka.bigdata && ka.bigdata.ok)}抓取 Cookie` : '',
-      ka && ka.last_run ? `<span style="color:var(--t3);font-size:10.5px;">保活巡检 ${fmt(ka.last_run)}</span>` : '',
+      ka && ka.last_run ? `<span style="color:#9CA3AF;font-size:10.5px;">保活巡检 ${fmt(ka.last_run)}</span>` : '',
     ].filter(Boolean).join('<br>');
   } catch (e) {}
-  $('sum-gradd').textContent = '—';
-  const k = await (await fetch('/api/kpi?hall=' + encodeURIComponent(F.hall) + weekParam())).json();
-  $('sum-gradd').textContent = k.data.graduated_sisters.value + ' 人';
-}
-
-/* UID 快查（右栏） */
-async function uidQuickQuery() {
-  const uid = $('uid-quick-input').value.trim();
-  if (!uid) return;
-  const box = $('uid-quick-res');
-  box.style.display = 'block';
-  box.innerHTML = '查询中…';
   try {
-    const res = await fetch('/api/uid-query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid, captain_type: 'game' }) });
-    const d = await res.json();
-    if (!res.ok || d.error) throw new Error(d.error || '查询失败');
-    const tw = (d.this_week && d.this_week.data) || {};
-    box.innerHTML = `<b>${esc(d.nickname || uid)}</b> · ${d.type_label || ''}<br>当周流水 <b style="color:var(--ac);">¥${Number(tw.week_revenue || 0).toLocaleString()}</b> · 排档 ${tw.week_schedule_days ?? '—'} 天 · ${tw.week_level || '—'}<br><a onclick="goPage('uid')" style="color:var(--ac);font-size:11px;cursor:pointer;">进入 UID 查询页看完整 →</a>`;
-  } catch (e) {
-    box.innerHTML = `<span style="color:var(--down);font-size:12px;">${e.message}</span>`;
-  }
+    const k = await (await fetch('/api/kpi?' + hp)).json();
+    pv$('pv-sum-gradd').textContent = k.data.graduated_sisters.value + ' 人';
+  } catch (e) {}
 }
 
-/* 启动 */
-loadFilters().then(() => { goPage('overview'); loadRails(); }).catch(e => {
-  document.body.insertAdjacentHTML('afterbegin', `<div style="background:#FDECEC;color:#DC2626;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;">加载失败（请先登录正式版页面）：${e.message}</div>`);
+/* 覆盖正式版切页函数：正式版内容块里的 switchTab/跳转到明细页 都路由到预览壳的页面切换 */
+window.switchTab = function(n) { pvGo(n); };
+window.switchPage = function(n) { pvGo(n); };
+
+/* 启动：等正式版 init 先跑（它填充筛选下拉），再渲染壳内容 */
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => { pvGo('overview'); pvLoadRails(); }, 900);
 });
 </script>
 </body>
